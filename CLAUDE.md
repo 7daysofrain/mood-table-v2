@@ -89,6 +89,18 @@ README + vídeo 2-3 min si es confidencial. `README.md` y `prompts.md` obligator
 
 ---
 
+## 4bis. Reparto de herramientas (decidido 08-sep-2026)
+
+- **Cowork (aquí):** ideación, investigación (Drive + web), decisiones, revisión crítica y
+  **redacción de los documentos**. Escribe y edita ficheros en la carpeta sin problema.
+- **Claude Code / terminal:** todo lo que toca el repo **como repo** — ramas, commits, PRs,
+  ejecutar código y tests, comandos de OpenSpec. Y las Entregas 2 y 3 completas.
+- ⚠️ **git NO es fiable desde Cowork**: el puente no permite borrar ficheros, así que un
+  `git add`/`commit` puede dejar un `.git/index.lock` huérfano que hay que borrar a mano
+  (`rm .git/index.lock`). **Haz git desde tu terminal o Claude Code.**
+- 💡 Usar ambas herramientas es **material para `prompts.md`** (LIDR pide "qué modelos y para
+  qué fase"): Opus/Cowork para specs y decisiones, Claude Code para implementación.
+
 ## 5. Metodología del máster a respetar (alinearse = parte de la nota)
 
 - **Spec-Driven Development (SDD) con OpenSpec.** La spec es el contrato: `propose →

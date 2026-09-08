@@ -18,6 +18,18 @@ ficha de idea.
 
 ---
 
+## 🔄 Cómo arrancar una sesión nueva
+
+Pega esto al empezar cualquier sesión de trabajo sobre los entregables:
+
+> Trabajo en el Proyecto Final del Máster AI4Devs. Antes de nada lee, en este orden:
+> `CLAUDE.md` (raíz), `docs/idea-design-system-agentico.md` y `docs/PLAN-entregables.md`.
+> Respeta las 4 bases de trabajo del `CLAUDE.md` — sobre todo: propón pero no tomes la
+> iniciativa sin consultarme, explícame siempre el porqué, y sé crítico conmigo.
+> Hoy vamos a trabajar en: **[SECCIÓN]**.
+
+Al terminar: actualizar el estado de este plan y anotar decisiones nuevas en la ficha de idea.
+
 ## ⚠️ Realidad de la Entrega 1
 
 La Entrega 1 (**25-sep**, quedan 17 días) es **100% documentación, sin código**. Pero varias
