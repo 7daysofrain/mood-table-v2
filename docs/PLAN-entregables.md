@@ -1,3 +1,13 @@
+> # 🔄 RESET DE IDEA — 09-sep-2026
+> La idea "Sutegi Design System" se descartó el 09-sep (ver
+> [`POSTMORTEM-sutegi.md`](./POSTMORTEM-sutegi.md)).
+> **El método, el guion por secciones y la definición de "entregado" de este plan siguen siendo
+> válidos**; lo que queda obsoleto es el estado de las secciones y las decisiones transversales,
+> que eran de la idea anterior.
+> **Filtro para la idea nueva:** que haya un sistema real que construir y que la IA lo haga posible
+> o mucho mejor — no un producto donde el valor central lo entrega el modelo. Pregunta de cribado:
+> *¿hay código sustancioso que no sea el bucle agéntico?*
+
 # 📋 Plan de entregables — Proyecto Final AI4Devs
 **Proyecto:** Sutegi Design System · **Autor:** Joseba Alonso (JA)
 **Creado:** 08-sep-2026 · **Repo:** github.com/7daysofrain/AI4Devs-finalproject
@@ -54,9 +64,9 @@ capturas, no.
 | 1.2 | Características y funcionalidades | 🟨 material listo | — |
 | 1.3 | Diseño y experiencia de usuario | ⬜ | Mockups del panel |
 | 1.4 | Instrucciones de instalación | ⬜ | Stack del panel |
-| 2.1 | Diagrama de arquitectura | ⬜ | — |
-| 2.2 | Componentes principales | 🟨 material listo | — |
-| 2.3 | Estructura de ficheros | ⬜ | — |
+| 2.1 | Diagrama de arquitectura | ✅ **cerrada** (revisada por JA, 09-sep) | — |
+| 2.2 | Componentes principales | ✅ | — (stack del panel marcado como pendiente en el texto) |
+| 2.3 | Estructura de ficheros | ✅ | — |
 | 2.4 | Infraestructura y despliegue | ⬜ | Dónde se despliega |
 | 2.5 | Seguridad | ⬜ | — |
 | 2.6 | Tests | ⬜ | — |
@@ -83,7 +93,8 @@ Leyenda: ⬜ pendiente · 🟨 material disponible, falta redactar · ✅ hecho 
 |---|---|---|
 | ~~Nombre del proyecto~~ | — | ✅ **Sutegi Design System** (08-sep) |
 | ~~Iniciales~~ | — | ✅ **JA** · rama `feature/entrega-1-JA` creada |
-| **Stack del panel** (front/back/BD) | 1.4, 2.x, 3, 4 | Da las 3 capas que pide LIDR |
+| ~~Stack del CLI~~ | — | ✅ Commander.js 15 · no interactivo · Node 24 LTS (09-sep) |
+| **Stack del panel** (front/back/BD) | 1.4, 2.4, 3, 4 | Da las 3 capas que pide LIDR. ⚠️ **Es ahora el bloqueo principal**: aplazado en la sesión de la sección 2, pero 3 (modelo de datos), 4 (API) y 6 (tickets) no se pueden cerrar sin él |
 | **Dónde se despliega el panel** | 2.4 | Necesario para la evidencia de la entrega final |
 | **Pipeline de tokens** (Style Dictionary vs Terrazzo) | 2.2 | Diferible: es dependencia hoja |
 
@@ -114,21 +125,26 @@ terminal). Decidir cómo representarlo: diagrama de secuencia + transcripción d
 **Falta:** stack cerrado. Escribir la versión **planeada** y marcarla como tal.
 **Sesión:** 30 min, tras cerrar stack.
 
-### 2.1 Diagrama de arquitectura
-**Pide:** diagrama, patrón seguido, justificación, beneficios **y sacrificios/déficits**.
-⚠️ **Piden explícitamente los déficits** → aquí la honestidad puntúa. Material que ya tenemos:
-ports & adapters (OpenSpec y tokens), separación runner/motor/panel, apoyo en primitivas de
-terceros, y los sacrificios (dependencia de Figma, cuota de 200 llamadas/día, un solo coding
-agent soportado).
-**Sesión:** 1 sesión completa. Es la sección más importante para el eje 1.
+### 2.1 Diagrama de arquitectura ✅ CERRADA (08-sep · revisada y aprobada por JA el 09-sep)
+Dos diagramas Mermaid (contenedores + secuencia del golden loop), patrón declarado **por niveles**
+con el **bucle de control** como titular, justificación, beneficios y **10 sacrificios y déficits**.
+⚠️ *Revisado el 09-sep:* se rebajó "arquitectura hexagonal" a **puertos + inyección de dependencias**
+y se documenta explícitamente por qué NO se aplica la capa de dominio. Ver ficha de idea §14.4.
+💡 El diagrama de secuencia es **reutilizable en 1.3**, donde la UX no es visual.
 
-### 2.2 Componentes principales
-**Tenemos:** agentes, workflows, skills, CLI, runner, motor de validación, panel.
-**Sesión:** se redacta junto con 2.1.
+### 2.2 Componentes principales ✅ HECHO (08-sep, revisado 09-sep)
+CLI, core (runner · puertos/adaptadores · definiciones), validator (AST · alias DTCG · reglas),
+panel (ingesta · API · front · BD) y los tres artefactos (tokens DTCG · `DESIGN.md` · runs).
+⚠️ *Revisado el 09-sep:* 4 paquetes en vez de 3; `harness` pasa a `core` y el motor de validación
+se extrae a `validator`. Ver ficha de idea §14.3.
+⚠️ El **stack del panel** queda marcado explícitamente como pendiente dentro del texto → hay que
+volver a esta sección cuando se decida.
 
-### 2.3 Estructura de ficheros
-**Falta:** diseñarla (monorepo con paquetes: `cli`, `runner`, `validator`, `panel`, `agents`…).
-**Sesión:** 30 min, junto con 2.1.
+### 2.3 Estructura de ficheros ✅ HECHO (08-sep, revisado 09-sep)
+Se documentan **dos** estructuras: el monorepo de Sutegi (4 paquetes) y la **huella que
+`sutegi init` crea en el repo del usuario** (esta segunda es el contrato público del producto).
+Incluye la dirección de dependencias `cli → core → validator`, verificable con linting.
+⚠️ La subcarpeta `src/` de `packages/panel/` es provisional hasta cerrar el stack.
 
 ### 2.4 Infraestructura y despliegue
 **Falta:** decidir dónde vive el panel y cómo se despliega. Incluir diagrama.

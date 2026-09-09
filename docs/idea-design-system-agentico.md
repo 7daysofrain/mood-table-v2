@@ -1,3 +1,9 @@
+> # ❌ IDEA DESCARTADA — 09-sep-2026
+> **No es la fuente viva del proyecto. Se conserva como archivo histórico.**
+> El razonamiento completo de por qué se cayó, y los filtros para la idea siguiente, están en
+> [`POSTMORTEM-sutegi.md`](./POSTMORTEM-sutegi.md). No reabrir esta discusión sin leerlo antes.
+> Lo único reutilizable tal cual es la §15 (decisiones de stack de CLI).
+
 <!-- WIP · idea en evaluación. Se rellena punto por punto en conversación. -->
 
 # 🔥 Sutegi Design System
@@ -373,3 +379,170 @@ panorama y enunciar el hueco en una frase es lo que distingue una entrega pensad
 **Fuentes:** [Agentic Design Systems — panorama](https://www.intodesignsystems.com/agentic-design-systems) ·
 [lifesized/figma-design-sync](https://github.com/lifesized/figma-design-sync) ·
 [Figma abre el canvas a los agentes](https://www.figma.com/blog/the-figma-canvas-is-now-open-to-agents/)
+
+---
+
+## 14. Decisiones de arquitectura ✅ CERRADAS (08-sep-2026, sesión de la sección 2)
+
+Tomadas al redactar 2.1/2.2/2.3 del `readme.md`. No rediscutir sin motivo nuevo.
+
+**14.1 · Cómo se alimenta el panel → artefacto en repo + ingesta.**
+El runner **no** escribe en la BD del panel. Escribe artefactos de ejecución versionados
+(`.sutegi/runs/*.json`) y el panel los **ingiere**. La BD es un **read model derivado y
+reconstruible**: se puede borrar y regenerar reingiriendo el repo.
+*Por qué:* mantiene la coherencia con code-first (la verdad vive en el repo), evita duplicar la
+verdad, y el flujo principal funciona con el panel apagado.
+*Déficit asumido:* el panel muestra lo ingerido, no el estado del disco del desarrollador; hasta la
+ingesta, ambos discrepan. (Redactado así el 09-sep: enunciarlo como "no hay tiempo real" era
+criticarse por no tener una funcionalidad que nunca estuvo en el alcance.)
+*Bloquea/desbloquea:* define la sección 3 (modelo de datos = proyección) y la 4 (la API del panel
+es de **lectura** + un endpoint de ingesta, no de escritura desde el runner).
+
+**14.2 · Extensibilidad asimétrica → solo las reglas del validador.**
+El motor carga reglas propias del proyecto desde `.sutegi/rules/`. Agentes y workflows **no** son
+extensibles en el MVP.
+*Por qué:* el criterio de un DS es específico de cada equipo y el contrato de una regla es pequeño
+y estable (AST + foundations → hallazgos); un sistema de extensión de workflows sería una
+abstracción universal difícil de acertar sin usuarios reales.
+*Consecuencia:* **no** se declara microkernel como patrón (habría entrado en tensión con la
+decisión de §8 de "un adaptador, no un sistema de plugins"). "Dónde el sistema es extensible y
+dónde decide no serlo" se usa como argumento en 2.1.
+
+**14.3 · Monorepo de 4 paquetes: `core`, `validator`, `cli`, `panel`.**
+⚠️ *Rectificado el 09-sep-2026.* Inicialmente se decidieron 3 (`harness`, `cli`, `panel`).
+Se cambió por dos motivos: el nombre "harness" sugería "carpeta de prompts" e indujo a error al
+propio autor, y meter el motor de validación —el grueso del código, y sin relación con los
+agentes— dentro de un paquete llamado así era una frontera mal puesta.
+*Efectos:* hace visible dónde está el peso técnico, da al validador suite de tests propia, y lo
+vuelve **utilizable por sí solo como un linter**, sin agentes de por medio.
+*Dirección de dependencias (verificable con linting):* `cli → core → validator`; `panel` no depende
+de nadie (solo lee artefactos del repo).
+*Propiedad clave:* **el `validator` no hace entrada/salida** — recibe código, tokens ya resueltos y
+reglas, y devuelve un informe. Lee del disco `core`, a través de sus puertos.
+
+**14.4 · El patrón se declara POR NIVELES, y el titular es el BUCLE DE CONTROL.**
+⚠️ *Rectificado el 09-sep-2026.* La primera versión ponía el titular en "arquitectura hexagonal".
+**Estaba sobrevendido.** Lo que el proyecto necesita de verdad es *inyección de dependencias* en las
+fronteras (para poder testear sin Figma ni modelos), no la estratificación `domain`/`application`
+que acompaña a hexagonal. Se descarta la capa de dominio por tres razones, documentadas en 2.1:
+el dominio es delgado (tokens, reglas y hallazgos son estructuras de datos, no un modelo con
+comportamiento); los puertos ya dan el aislamiento buscado; y declarar un patrón que el código
+luego no respeta es peor que no declararlo.
+*Los cuatro niveles:* 0) monorepo · 1) paquetes por capacidad · 2) `core`: puertos + inyección ·
+`validator`: motor de reglas · `panel`: capas · 3) **bucle de control cerrado** ← titular.
+*Argumento de nota:* saber justificar por qué **no** se aplica un patrón conocido demuestra más
+criterio que aplicarlo por inercia, y encaja en el apartado de sacrificios que pide la plantilla.
+*Insight reutilizable:* "monorepo vs hexagonal" es una falsa disyuntiva — los patrones operan en
+niveles distintos; es como preguntar si una casa es de ladrillo o tiene tres plantas.
+
+**14.5 · Los cinco puertos (interfaces inyectables de `core`).**
+`SpecRepository` (OpenSpec) · `AgentRuntime` (Claude Agent SDK) · `DesignSurface` (Figma MCP) ·
+`TokenSource` (DTCG en ficheros) · `RunSink` (artefactos de ejecución).
+*Efecto de calidad:* el núcleo se puede testear entero sin red, sin Figma y sin modelos.
+*Cada puerto tiene dos implementaciones: la real y un doble de pruebas.*
+**Dos razones de primer orden, no una** (rectificado el 09-sep, 2ª vez): la **modularidad** es la
+razón de producto —soportar otro coding agent u otro formato de SDD está en el alcance declarado,
+§2d y §8— y la **testabilidad** es la razón de ingeniería. Ordenarlas como "testabilidad primero,
+portabilidad como efecto colateral" era un error: contradecía §8, donde el adaptador de OpenSpec se
+decidió explícitamente para poder soportar spec-kit mañana.
+*Déficit asumido:* un solo adaptador **real** por puerto → la abstracción **no está probada**; un
+puerto con un único implementador tiende a adoptar su forma.
+
+**14.6 · El golden loop se nombra correctamente: bucle *generate-and-test* con verificador
+determinista externo al modelo.**
+Es la tesis y el diferencial frente al estado del arte (Tidy, FigmaLint **puntúan con IA** desde el
+lado de Figma; aquí **falla un test** sobre el código).
+*Comportamiento al agotar el tope:* se detiene, escribe el artefacto de ejecución con el último
+informe y devuelve el control con el componente a medio corregir.
+⚠️ *La no convergencia NO se lista como sacrificio* (decidido 09-sep): es inherente a cualquier
+bucle generate-and-test con generador estocástico, no consecuencia de esta arquitectura. Listar
+limitaciones heredadas del estado del arte como si fueran propias es relleno.
+
+**14.7 · Supuesto de stack (pendiente de confirmación): TypeScript sobre Node** para los cuatro
+paquetes. Implícito en el ecosistema ya elegido (React, headless, Style Dictionary, Storybook,
+distribución por npm), pero **no se había decidido formalmente**. Escrito así en 2.2.
+
+**14.8 · Disciplina de la API del componente y escotillas de escape ✅ (09-sep-2026).**
+⚠️ *Rectificado.* La primera versión listaba "valores que entran por props" como punto ciego del
+motor. **No lo es: es una regla que el motor debe comprobar.** Un componente del DS expone `variant`
+y `size`, no un `color` libre. Y las escotillas (`className`, `style`, props de paso) **no se
+prohíben** —un DS las necesita y usarlas es legítimo—: se **detectan y se marcan como excepción
+explícita**, y el panel muestra cuántas acumula cada componente. Excepción contada = gobernanza;
+excepción invisible = principio del drift. *(Razonamiento aportado por Joseba.)*
+
+**14.8bis · Nota de implementación para la Entrega 2 (no es un sacrificio declarado).** Lo que sí
+queda fuera del alcance de un recorrido de AST de un solo fichero: (a) un valor definido en otro
+módulo e importado (`import { BRAND_RED } from '../constants'`), (b) nombres de clase compuestos en
+ejecución (`` `text-[${n}px]` ``), (c) estilos que trae un componente de terceros renderizado
+dentro. Se decidió **no listarlo como déficit** en 2.1 —el caso (a) es resoluble siguiendo los
+imports— pero hay que tenerlo presente al implementar el motor: o se resuelven los imports, o se
+asume el hueco conscientemente.
+
+**14.9 · Deuda declarada al renunciar a la capa de dominio (09-sep-2026).** La lógica de negocio
+vive repartida entre el runner y las reglas. Es lo correcto al tamaño actual, pero si el dominio
+engorda —versionado de foundations, negociación entre agentes, reglas con estado— habrá que
+refactorizar. Escrito como sacrificio nº 6 en 2.1.
+
+**14.10 · Coste asumido: no hay patrón uniforme (09-sep-2026).** Cada paquete usa el suyo
+(inyección en `core`, motor de reglas en `validator`, capas en `panel`). Adecuado a cada problema,
+pero obliga a aprender tres modelos mentales. Escrito como sacrificio nº 7 en 2.1.
+
+---
+
+## 15. Decisiones de stack (paquete a paquete)
+
+**15.1 · `@sutegi/cli` → Commander.js 15** ✅ (09-sep-2026).
+*Datos del día de la decisión:* 28,4k ⭐ · 451M descargas/semana · v15.0.0 publicada el 29-may-2026 ·
+sin dependencias en runtime.
+*Alternativas evaluadas:* yargs (11,5k ⭐), oclif (9,6k), cac (3,1k), meow (3,7k), gluegun (3,1k),
+clipanion (1,3k, **en RC desde sep-2024**), citty (1,3k, **pre-1.0**), Stricli (1,1k), sade (dormido
+desde 2022), cmd-ts (nicho).
+*Por qué:* (a) se descartan los frameworks completos (oclif, gluegun) porque su valor diferencial
+—sistema de plugins y distribución con auto-actualización— no aplica: los workflows no son
+extensibles (§14.2) y la distribución es un paquete npm; (b) frente a clipanion/Stricli, que tipan
+mejor los comandos, pesó la **experiencia previa de Joseba con Commander**: con un solo
+desarrollador y fecha cerrada, la familiaridad reduce riesgo y la ventaja rival era marginal.
+⚠️ *Ojo al leer descargas de npm:* miden presencia en `node_modules` (dependencia transitiva), no
+elección deliberada. Las estrellas son mejor proxy de adopción consciente.
+📌 *Cabo suelto conocido:* el tipado de `opts()` en Commander es flojo. Mitigación prevista: parsear
+y validar la entrada del CLI en un objeto tipado en la frontera antes de llamar a `core` — coherente
+con "el CLI no tiene lógica de negocio".
+
+**15.2 · CLI NO interactivo** ✅ (09-sep-2026). Sin prompts: toda la entrada por argumentos, con
+valores por defecto razonables (sin asistente, los defaults importan más).
+*Razón principal — no es simplicidad, es propósito:* un CLI interactivo **no corre en un pipeline**,
+y para un producto de gobernanza la CI es donde la gobernanza se ejerce (`sutegi validate` en un
+hook o en una acción). *Efecto secundario:* testear el CLI = ejecutarlo y mirar salida y exit code,
+sin simular un pseudo-terminal.
+*Descartadas:* @clack/prompts (8,0k ⭐), @inquirer/prompts (21,6k ⭐), ink (39,2k ⭐).
+
+**15.3 · Salida del CLI: traza de texto plano + `--json`** ✅ (09-sep-2026).
+`core` emite eventos de progreso; el CLI los imprime como líneas planas según llegan (subflujo,
+iteración, hallazgos restantes). Sin biblioteca interactiva, sobrevive a redirección y a CI.
+Con `--json` emite el mismo artefacto que se escribe en `.sutegi/runs/` — coste casi nulo, el
+artefacto ya existe por §14.1.
+💡 **Reutilización en 1.3:** sin pantallas, esa traza **es** la UX del producto. Una transcripción de
+terminal del golden loop es el material de la sección 1.3, junto al diagrama de secuencia de 2.1.
+
+**15.4 · Node 24 LTS como mínimo** ✅ (09-sep-2026). Es un **requisito público del producto**, igual
+que Figma Professional con asiento Dev. Se gana soporte nativo de TypeScript y APIs recientes (menos
+herramienta de build); se asume que excluye a quien no haya migrado — barrera acumulada sobre la de
+Figma, a vigilar en 1.4.
+
+**15.5 · `@sutegi/validator` → motor propio con parser de terceros** ✅ (09-sep-2026).
+*Pregunta de partida de Joseba: "¿un plugin de ESLint?".* Se descarta como forma principal por tres
+motivos: (a) el informe **alimenta el bucle de control** y debe ser un objeto estructurado propio,
+no una derivación de la salida de un linter; (b) ESLint razona fichero a fichero y aquí la unidad es
+el **componente contra unas foundations**; (c) el validador es la pieza que debe llevar el peso
+técnico del eje 2, y como plugin ese peso se diluye en el framework de otro.
+*Lo que SÍ se reutiliza:* el recorrido del AST — escribir un parser contradiría el principio de no
+reinventar (§2.2 "qué NO construye Sutegi").
+*Las tres capas de código propio:* (1) resolución DTCG con alias encadenados, temas y modos;
+(2) índice de valores legales por propiedad; (3) evaluación de reglas + aritmética de color para
+contraste (Oklch / Display P3 de la 2025.10).
+*Roadmap declarado:* plugin de ESLint que envuelva las mismas reglas → subrayado en editor. Barato
+una vez las reglas son funciones puras.
+⚠️ *Corrección de una contradicción en 2.2:* decía a la vez que el validador "resuelve los alias" y
+que "recibe los tokens ya resueltos". Correcto: **`core` lee del disco, el `validator` resuelve el
+contenido**. E/S fuera, lógica dentro.
+📌 *Pendiente:* elegir el parser de AST y la librería de color.

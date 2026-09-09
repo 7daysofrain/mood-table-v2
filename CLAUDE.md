@@ -139,10 +139,27 @@ Documentar el **flujo de trabajo con IA**, no solo prompts sueltos:
 
 ---
 
+## 7bis. Estado de la idea (09-sep-2026)
+
+⚠️ **La idea "Sutegi Design System" fue DESCARTADA el 09-sep-2026**, dos días después de elegirla.
+Post-mortem completo, con el diagnóstico y los filtros para la siguiente idea, en
+`docs/POSTMORTEM-sutegi.md`. **Leerlo antes de proponer o evaluar ideas nuevas.**
+
+Resumen del diagnóstico: se eligió un producto en el que el valor central lo entregaba el modelo y
+luego se buscó algo difícil que construir alrededor. Orden invertido. El filtro para la próxima:
+**que haya un sistema real que construir y que la IA lo haga posible o mucho mejor**; y la pregunta
+de cribado del eje 2: **¿hay código sustancioso que no sea el bucle agéntico?**
+
+Sigue vigente todo lo demás de este fichero: bases de trabajo, criterios de LIDR, fechas, reparto de
+herramientas y metodología.
+
+---
+
 ## 8. Decisiones abiertas / puntos grises a resolver
 
-- [ ] **Idea de proyecto**: en ideación. Joseba tiene un par de propuestas a evaluar
-      críticamente contra los 3 ejes (§3) y el alcance de 3-5 historias must-have.
+- [ ] **Idea de proyecto**: 🔄 **EN RESET.** La primera (Sutegi DS) se descartó el 09-sep; ver
+      `docs/POSTMORTEM-sutegi.md`. Evaluar las nuevas contra los 3 ejes (§3), el alcance de 3-5
+      historias must-have y los filtros del post-mortem.
 - [x] **Alcance: "completo, no extenso".** Flujo cerrado de punta a punta > abarcar mucho.
       Horas flexibles.
 - [ ] **Stack**: por decidir (libre). Ejemplos del máster: AdonisJS+React, PHP+React,
@@ -150,4 +167,4 @@ Documentar el **flujo de trabajo con IA**, no solo prompts sueltos:
 - [ ] **Encaje del eje "uso de IA"**: elegir idea/enfoque que permita lucir SDD/OpenSpec,
       subagentes y skills, y valorar si la IA forma parte del propio producto (tipo RAG).
 
-*(Última actualización: 6 ago 2026)*
+*(Última actualización: 9 sep 2026 — reset de idea)*
