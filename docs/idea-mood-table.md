@@ -1,0 +1,218 @@
+<!--
+Ficha de idea (plantilla docs/PLANTILLA-idea.md) + registro de decisiones.
+Fuente viva de la idea: cualquier decisión nueva se anota aquí (§10) con su porqué.
+-->
+
+# 🎛️ Mood Table v2
+
+> **Pitch (1 frase):** Un **instrumento de luz** para la mesa de DJ: un motor de efectos propio,
+> reactivo a la música y controlable en vivo, con una tira virtual que permite desarrollarlo y
+> demostrarlo sin hardware.
+
+**Estado:** 🟡 **Candidata** (go razonado, ver §8; se compara con una tercera idea y se decide con el tutor) · **Fecha:** 09-sep-2026 · **Autor:** Joseba
+**Origen:** proyecto personal *Mood Table* (2021-2024, repo `7daysofrain/mood-table`), abandonado
+por falta de tiempo y porque necesitaba una reescritura total. Esta idea es esa reescritura,
+hecha con método (SDD/OpenSpec) y con agentes de código.
+**Filtros del post-mortem de Sutegi:** ✅ hay un sistema real que construir sin la IA; ✅ hay código
+sustancioso que no es un bucle agéntico (DSP, motor de frames, protocolo, mezcla, estado).
+
+---
+
+## 1. Problema y usuario
+
+- **Problema:** la v1 funcionaba (600 LEDs, dos tiras, control desde una Traktor F1, *music
+  responsive*) pero era una **amalgama de piezas ajenas**: Hyperion para la capa de ambiente, la
+  librería *dancyPi* para la reactiva, un controller Node orquestándolas por sockets y `spawn`, y
+  la configuración repartida en cuatro sitios (JSON de `config`, `effects.js`, JSON de Hyperion,
+  `config.py` parcheado con `sed`). Cada pieza tenía su ciclo de vida, su driver y su cuenta de
+  LEDs (200 / 186 / "600"). Consecuencia: **no se podían añadir efectos propios** sin meterse en
+  las tripas de un tercero, y cualquier cambio era arqueología.
+- **Usuario:** el DJ (Joseba) en su mesa. Un solo usuario, un solo instrumento. No hay "cliente".
+- **Por qué importa:** la parte artística —tocar parámetros en tiempo real mientras suena la
+  música— es lo que da valor al aparato, y es justo lo que la amalgama hacía más difícil de
+  extender. El dolor está documentado por el propio autor: "*era muy frankenstein y se me hacía
+  complejo*".
+
+## 2. Qué hace el MVP (flujo principal *end-to-end*)
+
+Suena música (fichero o tarjeta de sonido) → el **motor** (proceso sin navegador) la analiza
+(FFT, energía por banda, beat) → el **efecto activo** (código propio con parámetros declarados)
+produce un frame → el DJ **toca un parámetro** desde el panel web y la luz responde al instante →
+el frame se pinta en la **tira virtual** (canvas por WebSocket) **y en la tira real** (serie
+Adalight → Light Box) → al apagar y encender, la Pi **vuelve al último estado**.
+
+Back = motor + API · Front = panel de control + tira virtual · Datos = configuración de la tira +
+estado del instrumento (persistidos tras un puerto; JSON de inicio).
+
+## 3. Historias de usuario
+
+**Must-have (5):**
+1. **Ver la música en la tira.** Como DJ, con una fuente de audio activa, elijo un efecto y la
+   tira virtual reacciona a la música en tiempo real. *(Flujo vertebral: sin esto no hay producto.)*
+2. **Tocar los parámetros en vivo.** Como DJ, veo los controles del efecto activo (generados
+   desde su esquema) y al moverlos la luz responde al instante. *(La parte artística; la razón de
+   ser del instrumento.)*
+3. **Pintar la tira física.** Como DJ, lo que veo en la tira virtual se reproduce en la tira real
+   de la mesa. *(El alma del proyecto. Vía Adalight + Light Box: sin firmware nuevo.)*
+4. **Configurar mi tira.** Como DJ, defino número de LEDs, orden de color y límite de potencia, y
+   motor y tira virtual lo respetan. *(La "fuente de verdad" del hardware que la v1 nunca tuvo.)*
+5. **Arrancar en el último estado.** Como DJ, enciendo la Pi sin portátil y vuelve como estaba:
+   tira, efecto y valores. *(Persistencia de estado del instrumento, no de repertorio.)*
+
+**Should-have (2):**
+- **Firmware propio** (ESP8266/ESP32): el motor manda frames a un microcontrolador con firmware
+  fabricado por el agente en C++. *(Aquí vive el experimento del eje 3, ver §5.)*
+- **Capa de ambiente:** un segundo efecto sin audio, mezclado bajo el reactivo. *(Introduce el
+  concepto de mezcla; se deja para cuando el núcleo esté cerrado.)*
+
+**Explícitamente fuera del MVP (visión):** Traktor F1, pantalla táctil, encoder + TFT, presets /
+escenas guardadas, sincronía por tempo, varias tiras o segmentos, WiFi. Ver §11.
+
+## 4. Stack tentativo
+
+- **Motor (back):** TypeScript sobre Node (arm64 en la Pi). Bucle de tiempo real con búferes
+  preasignados (`Float32Array`/`Uint8Array`, cero `new` en el bucle caliente). FFT propia o
+  librería pequeña. Captura de audio en la Pi vía `arecord` → PCM crudo por `stdin` (sin binarios
+  nativos); fuente "fichero" = mismo lector sobre un WAV.
+- **Panel + tira virtual (front):** app web (React o similar) que genera los controles desde el
+  esquema del efecto y pinta la tira en un canvas; habla con el motor por WebSocket (frames y
+  estado) y HTTP (comandos, config). **Cero lógica de luces en el navegador.**
+- **Datos:** configuración de la tira + estado del instrumento, tras un puerto de persistencia.
+  Adaptador JSON de inicio; SQLite (fichero, sin servidor) como adaptador alternativo si conviene
+  blindar la sección de BD. *(Decisión D7.)*
+- **Salidas de luz:** adaptador **Adalight-serie** (Light Box Dream Color, 115.200 baudios),
+  adaptador **WebSocket** (tira virtual), y en should-have adaptador **serie propio** (ESP).
+- **Despliegue:** producción en la **Pi 4** de la mesa (proceso bajo `systemd`/pm2, arranque
+  autónomo). **Demo pública:** el mismo motor en un servidor con fuente "fichero" y tira virtual,
+  con URL, para la evidencia de despliegue de la entrega final. Desarrollo en la **Pi 3 B+**.
+- **¿IA dentro del producto?** **No.** Es un instrumento; el valor lo entrega el motor. La IA está
+  en el proceso (eje 3), que es donde LIDR la evalúa. Se dice así, sin disfrazarlo.
+
+## 5. Uso de IA — *eje de nota* (1/3 de la evaluación)
+
+- **Enfoque:** *fábrica dirigida por specs con puertas humanas*. Joseba escribe el PRD y las
+  specs OpenSpec (escenarios GIVEN/WHEN/THEN); el agente fabrica; los tests y el simulador son
+  las puertas por las que tiene que pasar cada cambio antes de que Joseba lo acepte.
+  Se declara con honestidad que **hay una pieza de código (el firmware C++) que Joseba no puede
+  evaluar**: la valida desde fuera (protocolo, tests en host, la tira pinta lo que debe).
+- **En el proceso:** SDD con OpenSpec (`propose → apply → archive`); PRD → backlog → spec →
+  código. Reparto de herramientas: **Cowork/Opus** para ideación, decisiones, specs y documentos;
+  **Claude Code** para implementación, tests, git. Candidatos a skills/subagentes: skill "nuevo
+  efecto" (esquema + render + test de frame dorado), subagente de **firmware** (C++ en un
+  lenguaje que Joseba no domina: el experimento controlado, con radio de daño mínimo y protocolo
+  definido byte a byte), subagente de **revisión contra spec**.
+- **Decisiones validadas por spike** (material de `prompts.md`): rendimiento de Node en la Pi 3
+  B+ antes de cerrar la spec del motor.
+- **Ajustes humanos ya registrables:** el pivote desde Sutegi (post-mortem), la corrección
+  "escenas guardadas → estado del instrumento" (el aparato es de *performance*, no de repertorio),
+  la corrección "dos motores peleándose → dos tiras legítimas", la elección TypeScript vs Python,
+  la identificación del Light Box como driver Adalight ya existente.
+- **En el producto:** no aplica.
+
+## 6. Riesgos y puntos grises
+
+| Riesgo | Impacto | Mitigación |
+|---|---|---|
+| **Rendimiento de Node en la Pi 3 B+** (dev) | Alto si el bucle no cabe en 16 ms | Spike obligatorio antes de la spec del motor (audio sintético → FFT → efecto → mezcla → salida nula; medir ms/frame). Objetivo: <8 ms a 300 LEDs. |
+| **Tirones por recolector de basura** | Medio (jitter visible) | Regla de spec: búferes preasignados, cero asignaciones en el bucle caliente. |
+| **Techo de fps por Adalight a 115.200 baudios** | Medio (~19 fps a 200 LEDs; ~6 fps a 600) | Fijar LEDs del MVP ≤ 200-300; firmware propio a 921.600 baudios como should-have. |
+| **Hardware no montado ahora mismo** | Medio | Todo se desarrolla contra la tira virtual; la tira real entra al final. El Light Box evita firmware nuevo. |
+| **Captura de audio en la Pi** (ALSA, id de tarjeta) | Bajo-medio | `arecord` por `stdin`; comprobar `arecord -l` en el spike. |
+| **Consumo de la tira vs fuente** (5 V 18 A ≈ 300 LEDs a blanco) | Bajo | Límite de potencia en el motor que escala el brillo del frame. |
+| **Revisión automática de E1/E2 y "BD = JSON"** | Medio | Modelo de datos honesto y dibujado (config de tira, estado, esquema de efectos); puerto de persistencia; hablar con el mentor (§9). |
+| **Alcance** (F1, TFT, encoder, capa ambiente, WiFi…) | Alto históricamente | Lista explícita de "fuera del MVP" (§11); should-have solo dos. |
+| **Evaluación de hardware sin verlo** | Bajo | Vídeo de 2-3 min + demo pública con tira virtual. |
+
+## 7. Atractivo (orgullo / redes)
+
+La mesa de cristal entera convertida en una lámpara que baila con la música, controlada desde el
+panel (y en el futuro desde la F1). Demostrable en 2-3 minutos con un vídeo de la mesa y, sin
+hardware, con la URL pública: suena un tema, la tira virtual reacciona, se mueve un slider y la
+luz cambia. Es un proyecto con historia (posts de Instagram de 2021, la v1 que funcionó) y con
+final: "lo reescribí bien".
+
+---
+
+## 8. Scorecard de comparación
+
+| Criterio | Peso | Nota (1-5) | Comentario |
+|---|:---:|:---:|---|
+| Eje 1 · Idea y arquitectura | Alto | **5** | Sistema real, decisiones de arquitectura de verdad (tiempo real vs control, puertos de entrada/salida justificados por hardware real). No es un CRUD. |
+| Eje 2 · Calidad de código viable en plazo | Alto | **5** | DSP, motor, protocolo, efectos como funciones con estado explícito: muy testeable (frames dorados, señales sintéticas, E2E sobre tira virtual). En TS, Joseba puede juzgarlo. |
+| Eje 3 · Lucimiento del uso de IA | Alto | **4** | Fábrica dirigida por specs con puertas; experimento de firmware en C++; decisiones por spike; pivote documentado. No hay IA en el producto (y no hace falta). |
+| "Completo, no extenso" (flujo E2E cerrable) | Alto | **5** | Un solo flujo, cinco historias, dos should-have. Lista explícita de exclusiones. |
+| Factibilidad en fechas (25-sep / 23-oct / 11-nov) | Medio | **4** | E1 es documentación; E2 se cierra contra la tira virtual; hardware al final. Riesgo: Pi 3 B+. |
+| Atractivo / orgullo / redes | Medio | **5** | Muy visual, con historia y vídeo. |
+| Motivación y dominio conocido | Medio | **5** | Proyecto propio, dominio conocido, deuda pendiente. |
+| Riesgo técnico (5 = bajo) | Medio | **3** | Tiempo real en la Pi, audio en Linux, hardware. Mitigado por spike y simulador. |
+| **TOTAL** (suma) | | **36/40** | |
+
+**Veredicto rápido:** **Seguir.** Invierte el error de Sutegi: aquí el sistema existe sin la IA y la
+IA lo hace posible en plazo (y en C++ donde Joseba no llega). Condiciones: simulador como
+must-have de primera, lenguaje decidido con argumentos (hecho: TS), alcance recortado (hecho).
+
+## 9. Preguntas para el mentor
+
+- Persistencia sin BD relacional: el modelo de datos son la configuración de la tira y el estado
+  del instrumento (JSON tras un puerto; SQLite como alternativa). ¿Vale como "BD o equivalente"
+  para la sección 4 del README y el ticket de BD?
+- Evidencia de hardware: vídeo de 2-3 min de la mesa + URL pública con tira virtual. ¿Suficiente?
+- Sin IA en el producto: ¿algún problema si el eje 3 se cubre íntegramente con el proceso?
+
+---
+
+## 10. Decisiones tomadas (09-sep-2026) — con su porqué
+
+| # | Decisión | Porqué |
+|---|---|---|
+| D1 | **Motor sin navegador**, proceso propio en la Pi/servidor | El navegador es un cliente tonto (panel + tira virtual). Evita atar el audio a APIs del navegador; el mismo motor corre en la Pi y en la demo pública. |
+| D2 | **Fuentes de audio como puerto**: tarjeta (`arecord` → `stdin`) y fichero (WAV) | Misma FFT y mismos rasgos en los dos casos; el fichero permite tests deterministas y desarrollo sin hardware. |
+| D3 | **Salidas de luz como puerto**: Adalight-serie, WebSocket (virtual), serie propio (should) | Son las tres formas reales de pintar en la mesa; el simulador no es una pieza aparte sino el motor con otro adaptador. |
+| D4 | **Efecto = módulo de código** con esquema de parámetros declarado y `render` con estado explícito | Un efecto es un algoritmo, no un dato (así lo hacen Hyperion y dancyPi). El esquema permite al panel generar controles sin conocer el efecto; el estado explícito da tests reproducibles (frames dorados). |
+| D5 | **Mandos como puerto**: `setEffect`, `setParam`, … emitidos por el panel hoy y por F1/encoder mañana | Un vocabulario, varios mandos. Los parámetros se aplican en un búfer que el bucle lee al empezar cada frame (nunca a mitad de render). |
+| D6 | **Sin escenas/presets guardados** | El aparato es de *performance*; un instrumento no guarda partituras. (Corrección de Joseba sobre una propuesta heredada de Hyperion.) |
+| D7 | **Persistencia = configuración de tira + estado del instrumento**, tras un puerto; JSON de inicio, SQLite si conviene | Datos reales sin BD con calzador; el arranque autónomo (H5) los necesita; deja la sección de BD del README defendible. |
+| D8 | **TypeScript/Node para el motor**, condicionado a spike en la Pi 3 B+ | Joseba puede leer, criticar y corregir lo que fabrica el agente (eje 2 y objetivo didáctico); tipos compartidos con el front; rendimiento sobrado en teoría (2-6 ms/frame). Python perdía el juicio humano sobre el código. |
+| D9 | **Experimento "fabricar en un lenguaje que no domino" reservado al firmware C++** | Pieza pequeña, spec precisa byte a byte, verificable desde fuera; radio de daño mínimo para el eje 2. |
+| D10 | **Tira física vía Adalight + Light Box como must-have**; firmware propio como should-have | El Light Box ya es un driver Adalight (era lo que usaba Hyperion): cierra H3 sin firmware ni compras. |
+| D11 | **Una sola capa (reactiva) en el MVP**; capa ambiente como should-have | La capa ambiente es más simple pero introduce la mezcla; primero el núcleo. |
+| D12 | **Número de LEDs del MVP ≤ 200-300**, definido en la config de la tira | Techo de Adalight a 115.200 baudios y fuente de 18 A. La cifra exacta se fija en el spike. |
+| D13 | **Spike de rendimiento en la Pi 3 B+** antes de cerrar la spec del motor | La 3 B+ va a la mitad que la 4; si va bien en la 3, sobra en la 4. Decisión validada con datos → `prompts.md`. |
+| D14 | **Límite de potencia en el motor** | Lo hacían Hyperion/dancyPi por debajo; ahora es código propio y evita quemar fuente/tira. |
+
+## 11. Fuera del MVP (visión, por orden de deseo)
+
+1. Traktor F1 como mando físico (adaptador HID sobre el puerto de mandos; la v1 ya lo tenía).
+2. Firmware propio en ESP32 con WiFi (sin cable serie).
+3. Capa de ambiente + mezcla de capas (should-have si hay tiempo).
+4. Varias tiras / segmentos (perímetro, bajo tablero) con efectos distintos.
+5. Sincronía por tempo (BPM) y efectos "a compás".
+6. Pantalla táctil en la mesa (la UI de la v1) y encoder + TFT.
+7. Presets/escenas, si algún día el uso lo pide.
+
+## 12. Diagnóstico de la v1 (para README §1.1 y `prompts.md`)
+
+Repo `mood-table` (Nx monorepo, 2021-2024): controller Node con estado MobX y tres "vistas"
+(Hyperion por JSON-TCP, dancyPi por `python-shell`, Traktor F1 por HID), UI React+MUI por
+WebSocket, Arduino con encoder + TFT por serie (protocolo a medias). Lo que faltaba no era
+calidad de código sino **una pieza central**: un motor propio con su modelo de tira y de estado.
+Sin ella, todo lo demás la suplía con sockets y `spawn`. El repo v1 se conserva como referencia
+(efectos y parámetros de `effects.js`, protocolo `knob_changed`, scripts de setup de la Pi).
+
+## 13. Inventario de hardware (09-sep-2026)
+
+- **Producción:** Raspberry Pi 4 (en la mesa) + Light Box Dream Color (USB→LED, Adalight) +
+  Mean Well LRS-100-5 (5 V, 18 A) ×2 + tiras LED (varias, tipo por confirmar) + tarjeta de sonido
+  USB (entrada: salida del mixer).
+- **Desarrollo:** Raspberry Pi 3 Model B+, Arduino Uno ×2, NodeMCU V3 (**ESP8266**, 3,3 V →
+  necesita conversor de nivel), encoders KY-040 ×2, OLED 0,91", TFT ST7789 1,3".
+- **Por comprar si hace falta:** ESP32 (tienda del barrio, de un día para otro), conversor de
+  nivel 3,3→5 V.
+
+## 14. Primeros pasos técnicos (antes de la E2)
+
+1. **Spike de rendimiento** en la Pi 3 B+ (D13). Salida: ms/frame a 200/300/600 LEDs, 30/60 fps.
+2. **Adalight con el Light Box**: script mínimo que manda un frame fijo y otro animado; confirma
+   baudios, orden de color y LEDs reales.
+3. **Captura de audio**: `arecord -l`, latencia y formato con la tarjeta USB en la Pi.
+4. Con los tres datos, cerrar la spec del motor (OpenSpec) y la config de la tira.

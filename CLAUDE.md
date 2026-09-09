@@ -1,7 +1,8 @@
 # CLAUDE.md — Contexto y reglas de trabajo
 ## Proyecto Final · Máster AI4Devs (LIDR) · Joseba Alonso
 
-**Proyecto:** 🔥 **Sutegi Design System** (*sutegi* = fragua en euskera) · **Iniciales: JA**
+**Proyecto:** 🟡 por decidir — candidata: 🎛️ **Mood Table v2** (instrumento de luz para la mesa de DJ) · **Iniciales: JA**
+*(Idea anterior, Sutegi Design System, descartada el 09-sep; ver `docs/POSTMORTEM-sutegi.md`.)*
 **Repo:** github.com/7daysofrain/AI4Devs-finalproject · **Rama actual:** `feature/entrega-1-JA`
 
 Este fichero es la memoria viva del proyecto. Cualquier sesión de Claude (Cowork o
@@ -139,32 +140,45 @@ Documentar el **flujo de trabajo con IA**, no solo prompts sueltos:
 
 ---
 
-## 7bis. Estado de la idea (09-sep-2026)
+## 7bis. Estado de la idea (09-sep-2026, noche)
 
-⚠️ **La idea "Sutegi Design System" fue DESCARTADA el 09-sep-2026**, dos días después de elegirla.
-Post-mortem completo, con el diagnóstico y los filtros para la siguiente idea, en
-`docs/POSTMORTEM-sutegi.md`. **Leerlo antes de proponer o evaluar ideas nuevas.**
+🟡 **Candidata: Mood Table v2** (NO seleccionada aún: se compara con una tercera idea conservadora y se decide con el tutor). Reescritura, con método y agentes, del proyecto personal
+*Mood Table* (mesa de DJ con LEDs reactivos a la música; repo `7daysofrain/mood-table`, 2021-2024).
+**Ficha completa y registro de decisiones en `docs/idea-mood-table.md`** — leerla antes de trabajar.
 
-Resumen del diagnóstico: se eligió un producto en el que el valor central lo entregaba el modelo y
-luego se buscó algo difícil que construir alrededor. Orden invertido. El filtro para la próxima:
-**que haya un sistema real que construir y que la IA lo haga posible o mucho mejor**; y la pregunta
-de cribado del eje 2: **¿hay código sustancioso que no sea el bucle agéntico?**
+Resumen: **motor de luces propio en TypeScript, sin navegador**, con fuentes de audio (tarjeta /
+fichero) y salidas de luz (Adalight-serie → Light Box, WebSocket → tira virtual, firmware propio
+como should-have) como puertos; efectos = código con esquema de parámetros declarado; panel web
+que genera sus controles; persistencia = config de tira + estado del instrumento (JSON tras un
+puerto). **5 must-have:** ver la música en la tira virtual · tocar parámetros en vivo · pintar la
+tira física · configurar la tira · arrancar en el último estado. **2 should-have:** firmware
+propio (ESP8266/ESP32) · capa de ambiente. **Sin escenas/presets** (es un instrumento de
+*performance*). **Sin IA en el producto**: el eje 3 se cubre con el proceso (specs OpenSpec como
+contrato, tests y simulador como puertas; se declara que el firmware C++ es una pieza que Joseba no
+puede evaluar y se valida desde fuera).
 
-Sigue vigente todo lo demás de este fichero: bases de trabajo, criterios de LIDR, fechas, reparto de
-herramientas y metodología.
+Pasa los filtros del post-mortem: hay un sistema real sin la IA, y hay código sustancioso que no
+es bucle agéntico (DSP, motor de frames, protocolo, mezcla, estado).
 
 ---
 
 ## 8. Decisiones abiertas / puntos grises a resolver
 
-- [ ] **Idea de proyecto**: 🔄 **EN RESET.** La primera (Sutegi DS) se descartó el 09-sep; ver
-      `docs/POSTMORTEM-sutegi.md`. Evaluar las nuevas contra los 3 ejes (§3), el alcance de 3-5
-      historias must-have y los filtros del post-mortem.
-- [x] **Alcance: "completo, no extenso".** Flujo cerrado de punta a punta > abarcar mucho.
-      Horas flexibles.
-- [ ] **Stack**: por decidir (libre). Ejemplos del máster: AdonisJS+React, PHP+React,
-      Python(FastAPI)+React.
-- [ ] **Encaje del eje "uso de IA"**: elegir idea/enfoque que permita lucir SDD/OpenSpec,
-      subagentes y skills, y valorar si la IA forma parte del propio producto (tipo RAG).
+- [ ] **Idea de proyecto**: 🟡 candidata Mood Table v2 (ficha `docs/idea-mood-table.md`, scorecard 36/40). Pendiente: tercera idea conservadora (10-sep) y decisión con el tutor entre ambas.
+- [x] **Alcance**: ✅ cerrado (5 must-have + 2 should-have; lista explícita de exclusiones en la
+      ficha §11). "Completo, no extenso".
+- [x] **Lenguaje del motor**: ✅ TypeScript/Node, **condicionado al spike de rendimiento en la
+      Pi 3 B+** (ficha D8/D13). Si el spike falla, reabrir.
+- [ ] **Spike de rendimiento** en la Pi 3 B+ (ms/frame a 200/300/600 LEDs) — primera tarea técnica,
+      antes de cerrar la spec del motor. Resultado → ficha §10 y `prompts.md`.
+- [ ] **Número de LEDs del MVP** (≤ 200-300 por Adalight a 115.200 baudios): fijar tras el spike y
+      la prueba con el Light Box.
+- [ ] **Stack del front** (React u otro) y del transporte (WebSocket + HTTP): decidir en la sesión
+      de arquitectura (README §2).
+- [ ] **Persistencia**: JSON tras puerto de inicio; ¿SQLite para blindar README §4 / ticket BD?
+      Preguntar al mentor (ficha §9).
+- [ ] **Actualizar `docs/PLAN-entregables.md`**: vaciar estado de secciones (era de Sutegi) y
+      adaptar el guion a Mood Table (modelo de datos simple, API del panel, tickets back/front/BD).
+- [ ] **`readme.md`**: las secciones 2.1-2.3 escritas para Sutegi hay que rehacerlas.
 
-*(Última actualización: 9 sep 2026 — reset de idea)*
+*(Última actualización: 9 sep 2026 — Mood Table v2 como candidata; decisión pendiente)*
