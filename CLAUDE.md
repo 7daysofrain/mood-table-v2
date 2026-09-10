@@ -1,7 +1,7 @@
 # CLAUDE.md — Contexto y reglas de trabajo
 ## Proyecto Final · Máster AI4Devs (LIDR) · Joseba Alonso
 
-**Proyecto:** 🟡 por decidir — candidata: 🎛️ **Mood Table v2** (instrumento de luz para la mesa de DJ) · **Iniciales: JA**
+**Proyecto:** 🟡 pendiente del mentor — **propuesta principal: 🎛️ Mood Table v2** (instrumento de luz para la mesa de DJ) · **plan B: 🎟️ Pura Belia · Zona de clientes** · **Iniciales: JA**
 *(Idea anterior, Sutegi Design System, descartada el 09-sep; ver `docs/POSTMORTEM-sutegi.md`.)*
 **Repo:** github.com/7daysofrain/AI4Devs-finalproject · **Rama actual:** `feature/entrega-1-JA`
 
@@ -140,9 +140,9 @@ Documentar el **flujo de trabajo con IA**, no solo prompts sueltos:
 
 ---
 
-## 7bis. Estado de la idea (09-sep-2026, noche)
+## 7bis. Estado de la idea (10-sep-2026)
 
-🟡 **Candidata: Mood Table v2** (NO seleccionada aún: se compara con una tercera idea conservadora y se decide con el tutor). Reescritura, con método y agentes, del proyecto personal
+🟡 **Propuesta principal: Mood Table v2** — es la que Joseba quiere hacer y la que llevará al mentor. Si el mentor confirma que encaja tal como está propuesta (ver las 4 preguntas de §8), se va con ella; si no, se activa el plan B. Reescritura, con método y agentes, del proyecto personal
 *Mood Table* (mesa de DJ con LEDs reactivos a la música; repo `7daysofrain/mood-table`, 2021-2024).
 **Ficha completa y registro de decisiones en `docs/idea-mood-table.md`** — leerla antes de trabajar.
 
@@ -160,11 +160,27 @@ puede evaluar y se valida desde fuera).
 Pasa los filtros del post-mortem: hay un sistema real sin la IA, y hay código sustancioso que no
 es bucle agéntico (DSP, motor de frames, protocolo, mezcla, estado).
 
+🎟️ **Plan B: Pura Belia · Zona de clientes** (ficha `docs/idea-pura-belia.md`, scorecard 32/40).
+Panel de cliente propio para la empresa de Joseba (plugins de audio; web Astro estática en
+`~/Proyectos/pura-belia/static/pura-belia-web`, hoy "Mi cuenta" redirige a Lemon Squeezy).
+Ownership de la identidad pasa a Pura Belia; LS queda como tercero detrás de un puerto (motivo:
+migración LS → Stripe prevista). **5 must-have:** alta automática por webhook (+ backfill) ·
+acceso a la cuenta · licencias y dispositivos (liberar/renombrar) · preferencias de email (Brevo)
+· datos y baja RGPD. **1 should-have:** descargas por licencia. Fuera: servidor de licencias
+propio (las activaciones siguen en LS; contrato del plugin congelado). Más convencional y de
+riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momento.
+
 ---
 
 ## 8. Decisiones abiertas / puntos grises a resolver
 
-- [ ] **Idea de proyecto**: 🟡 candidata Mood Table v2 (ficha `docs/idea-mood-table.md`, scorecard 36/40). Pendiente: tercera idea conservadora (10-sep) y decisión con el tutor entre ambas.
+- [ ] **Idea de proyecto**: 🟡 Mood Table v2 como propuesta principal (ficha `docs/idea-mood-table.md`,
+      36/40); Pura Belia como plan B (ficha `docs/idea-pura-belia.md`, 32/40). Decisión con el mentor.
+      Preguntar por separado, no "¿califica?": (1) persistencia sin BD relacional (JSON tras puerto /
+      SQLite) ¿vale para README §4 y ticket BD?; (2) evidencia de hardware = vídeo + URL pública con
+      tira virtual ¿suficiente?; (3) sin IA en el producto, eje 3 solo con el proceso ¿ok?; (4) front y
+      BD pesan poco frente al motor ¿problema para un evaluador que busque full-stack? Si las 4 pasan →
+      Mood Table; si alguna falla → plan B.
 - [x] **Alcance**: ✅ cerrado (5 must-have + 2 should-have; lista explícita de exclusiones en la
       ficha §11). "Completo, no extenso".
 - [x] **Lenguaje del motor**: ✅ TypeScript/Node, **condicionado al spike de rendimiento en la
@@ -181,4 +197,4 @@ es bucle agéntico (DSP, motor de frames, protocolo, mezcla, estado).
       adaptar el guion a Mood Table (modelo de datos simple, API del panel, tickets back/front/BD).
 - [ ] **`readme.md`**: las secciones 2.1-2.3 escritas para Sutegi hay que rehacerlas.
 
-*(Última actualización: 9 sep 2026 — Mood Table v2 como candidata; decisión pendiente)*
+*(Última actualización: 10 sep 2026 — Mood Table v2 propuesta principal, Pura Belia plan B; decisión con el mentor)*
