@@ -15,15 +15,25 @@
 
 ### **0.1. Tu nombre completo:**
 
+Joseba Alonso
+
 ### **0.2. Nombre del proyecto:**
+
+Mood Table
 
 ### **0.3. Descripción breve del proyecto:**
 
+Instrumento de luz para la mesa de DJ: un motor de efectos propio, reactivo a la música, que se toca en vivo y funciona sin conexión. En el MVP se controla desde un panel web local; la visión es tocarlo con una pantalla táctil en la mesa o un controlador tipo Traktor F1, que se conectarán al mismo puerto de mandos. Un simulador (audio desde fichero + tira virtual) permite desarrollarlo y demostrarlo sin hardware.
+
 ### **0.4. URL del proyecto:**
+
+*Pendiente.* Será la demo pública (el motor reproduciendo un fichero de audio y pintando la tira virtual) y llegará con la entrega final.
 
 > Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
 
 ### 0.5. URL o archivo comprimido del repositorio
+
+https://github.com/7daysofrain/AI4Devs-finalproject
 
 > Puedes tenerlo alojado en público o en privado, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/). También puedes compartir por correo un archivo zip con el contenido
 
@@ -38,9 +48,42 @@
 
 > Propósito del producto. Qué valor aporta, qué soluciona, y para quién.
 
+**Propósito.** Mood Table convierte la mesa de DJ en un instrumento de luz: la tira LED reacciona a la música que suena y el DJ modula esa reacción en tiempo real, igual que modula el sonido con el mixer.
+
+**Qué soluciona.** Es la reescritura de un proyecto personal (2021-2024) que funcionaba pero era una amalgama de piezas ajenas: Hyperion para el ambiente, dancyPi para la parte reactiva, un orquestador Node que las unía por sockets, y la configuración repartida en cuatro sitios, cada uno con su propia cuenta de LEDs. Añadir un efecto propio obligaba a meterse en las tripas de un tercero. Mood Table lo sustituye por una pieza central propia: un motor con un único modelo de tira y de estado, donde cada efecto es código con sus parámetros declarados.
+
+**Valor.**
+- **Efectos propios**, fáciles de crear y de probar.
+- **Control en vivo** de los parámetros mientras suena la música.
+- **Autonomía**: se enciende la Pi y vuelve como estaba, sin portátil ni internet.
+- **Desarrollo y demo sin hardware** gracias al simulador (audio desde fichero + tira virtual).
+
+**Para quién.** DJs y makers con una Raspberry Pi y una tira LED que quieren una iluminación reactiva que puedan tocar y ampliar. El caso de referencia es la mesa del autor, pero nada está atado a ella: el número de LEDs, el orden de color y el límite de potencia se configuran, y los efectos se añaden como módulos de código.
+
 ### **1.2. Características y funcionalidades principales:**
 
 > Enumera y describe las características y funcionalidades específicas que tiene el producto para satisfacer las necesidades identificadas.
+
+**MVP (must-have)**
+
+1. **Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, eliges un efecto y la tira virtual del navegador reacciona a la música en tiempo real.
+2. **Tocar los parámetros en vivo.** El panel genera los controles a partir del esquema que declara cada efecto; al moverlos, la luz responde al instante.
+3. **Pintar la tira física.** Lo que muestra la tira virtual se reproduce en la tira real de la mesa, conectada al Light Box por protocolo Adalight (serie). Cualquier Arduino con firmware Adalight sirve igual.
+4. **Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, orden de color y límites de potencia), y el motor, el límite de potencia y la tira virtual lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
+5. **Arrancar en el último estado.** Enciendes la Pi sin portátil y vuelve como estaba: el efecto de cada tira y sus valores.
+
+**Efectos incluidos.** Los tres efectos de la v1, reescritos en el motor propio. Así se demuestra que la nueva arquitectura cubre lo que hacía la anterior:
+
+- **Espectro:** cada zona de la tira representa una banda de frecuencia.
+- **Energía:** el brillo y la extensión de la luz siguen la energía del audio y los golpes.
+- **Scroll:** la energía entra por un extremo de la tira y la recorre.
+
+**Should-have**
+
+- **Tira de ambiente:** una segunda tira física con su propio efecto, que no necesita audio (por ejemplo, un color que respira despacio). Es la misma pieza del sistema que la tira principal, con otro efecto: el motor ya pinta varias tiras.
+- **Firmware propio** (ESP8266/ESP32): un hardware de referencia barato y muy extendido, con más LEDs y fps de los que permite Adalight y con el camino abierto al WiFi. Es una de las dos formas de conectar la segunda tira; la otra es un Arduino con Adalight.
+
+**Visión (fuera del MVP):** pantalla táctil y Traktor F1 como mandos (sobre el mismo puerto de mandos) · más de dos tiras o segmentos · conexión directa por GPIO de la Pi · WiFi · sincronía por tempo · presets.
 
 ### **1.3. Diseño y experiencia de usuario:**
 
@@ -54,497 +97,253 @@
 ## 2. Arquitectura del Sistema
 
 ### **2.1. Diagrama de arquitectura:**
+> Usa el formato que consideres más adecuado para representar los componentes principales de la aplicación y las tecnologías utilizadas. Explica si sigue algún patrón predefinido, justifica por qué se ha elegido esta arquitectura, y destaca los beneficios principales que aportan al proyecto y justifican su uso, así como sacrificios o déficits que implica.
 
-#### Vista de contenedores
+Mood Table es **un único proceso Node.js (TypeScript)** que corre en la Raspberry Pi de la mesa. En su centro está el **motor**: un bucle que, en cada frame, analiza el audio una vez y pinta **todas las tiras declaradas**, cada una con su propio efecto, su límite de potencia y su salida. Todo lo que toca el mundo exterior (la tarjeta de sonido, los puertos serie, el navegador, el disco, el fichero de configuración) está fuera del núcleo, en adaptadores que se conectan a él por interfaces.
 
 ```mermaid
-flowchart TB
-    Dev(["Desarrollador"])
+flowchart LR
+  mixer["🎚️ Mixer<br/>salida de audio"]
+  cfg["📄 Fichero de configuración<br/>tiras declaradas"]
+  panel["🖥️ Navegador<br/>React + Vite + TS<br/>panel · tira virtual"]
+  strip1["💡 Light Box<br/>→ tira principal"]
+  strip2["💡 Arduino / ESP<br/>→ tira de ambiente<br/>(should-have)"]
 
-    subgraph CLI["@sutegi/cli"]
-        Cmd["init · foundations · component · validate · panel"]
+  subgraph proc["Raspberry Pi · un único proceso Node.js (TypeScript) · montado en main.ts (raíz de composición)"]
+    direction LR
+    subgraph adIn["Adaptadores de entrada"]
+      direction TB
+      alsa["Tarjeta de sonido<br/>arecord → stdin"]
+      wav["Fichero WAV<br/>(simulador)"]
     end
 
-    subgraph Core["@sutegi/core — orquestación"]
-        Run["Runner<br/>máquina de estados · subflujos<br/>bucle generar-validar-corregir"]
-        Model["Modelo compartido<br/>Spec · Foundations · Componente · Ejecución"]
-        Ports["Puertos — interfaces inyectables<br/>SpecRepository · AgentRuntime · DesignSurface<br/>TokenSource · RunSink"]
-        Adap["Adaptadores<br/>OpenSpec · Claude Agent SDK · Figma MCP<br/>DTCG-fs · Run-fs"]
+    subgraph core["Núcleo · sin E/S"]
+      direction TB
+      subgraph rtp["Plano de tiempo real · una vuelta = todas las tiras"]
+        direction LR
+        dsp["Análisis de audio<br/>común · se omite si<br/>ninguna tira lo usa"]
+        subgraph t1["Tira 1"]
+          direction LR
+          fx1["Efecto"] --> pwr1["Límite de<br/>potencia"]
+        end
+        subgraph tn["Tira N"]
+          direction LR
+          fxn["Efecto"] --> pwrn["Límite de<br/>potencia"]
+        end
+        dsp --> fx1
+        dsp --> fxn
+      end
+      subgraph cpl["Plano de control"]
+        ctrl["Búfer de control<br/>efecto y parámetros por tira"]
+      end
+      ctrl -. "leído al inicio<br/>de cada frame" .-> t1
+      ctrl -.-> tn
     end
 
-    subgraph Val["@sutegi/validator — motor determinista, sin E/S"]
-        Eng["Recorrido de AST · resolución de alias DTCG<br/>evaluación de reglas de serie y del proyecto<br/>informe de hallazgos localizados"]
+    subgraph adOut["Adaptadores de salida"]
+      direction TB
+      ada1["Adalight serie<br/>(tira 1)"]
+      adan["Serie<br/>(tira N)"]
+      wsout["Tira virtual<br/>todas las tiras"]
     end
 
-    subgraph Repo["Repositorio del usuario — fuente de verdad"]
-        Tok[("design/tokens/*.tokens.json<br/>DTCG 2025.10")]
-        Des["design/DESIGN.md<br/>criterio autorado"]
-        Src["src/components/"]
-        Runs[(".sutegi/runs/*.json")]
-        Rules[".sutegi/rules/"]
+    subgraph adCtl["Adaptadores de control y datos"]
+      direction TB
+      http["Fastify + TypeBox<br/>HTTP · estáticos · WebSocket"]
+      store["Persistencia SQLite<br/>estado por tira"]
+      load["Carga de configuración<br/>validada con TypeBox"]
     end
+  end
 
-    subgraph Panel["@sutegi/panel — front + back + BD"]
-        Ing["Ingesta"]
-        Api["API HTTP"]
-        Web["Front"]
-        Db[("BD — read model<br/>reconstruible")]
-    end
+  mixer --> alsa
+  alsa -- AudioSource --> dsp
+  wav -- AudioSource --> dsp
+  pwr1 -- LightOutput --> ada1
+  pwrn -- LightOutput --> adan
+  pwr1 --> wsout
+  pwrn --> wsout
+  ada1 -- "USB serie" --> strip1
+  adan -. "USB serie" .-> strip2
+  wsout --> http
+  http <-- "HTTP comandos · WS frames y estado" --> panel
+  http -- Commands --> ctrl
+  store <-- StateStore --> ctrl
+  cfg --> load
+  load -- "tiras declaradas" --> ctrl
 
-    subgraph Ext["Sistemas externos"]
-        Figma["Figma<br/>plugin / MCP"]
-        LLM["Proveedor de modelos"]
-    end
-
-    Dev --> Cmd
-    Cmd --> Run
-    Run --> Model
-    Run --> Ports
-    Ports -. "reales en produccion, dobles en tests" .-> Adap
-    Run -- "codigo + tokens + reglas" --> Eng
-    Eng -- "informe determinista" --> Run
-    Adap --> Figma
-    Adap --> LLM
-    Adap --> Tok
-    Adap --> Des
-    Adap --> Src
-    Adap --> Runs
-    Adap --> Rules
-    Runs --> Ing
-    Ing --> Db
-    Db --> Api
-    Api --> Web
-    Dev --> Web
+  classDef rt fill:#ffe8cc,stroke:#d9480f,color:#000
+  classDef cp fill:#d0ebff,stroke:#1864ab,color:#000
+  classDef ext fill:#f1f3f5,stroke:#495057,color:#000
+  classDef opt fill:#f1f3f5,stroke:#495057,color:#000,stroke-dasharray: 5 5
+  class dsp,fx1,pwr1,fxn,pwrn,alsa,wav,ada1,adan,wsout rt
+  class ctrl,http,store,load cp
+  class mixer,panel,strip1,cfg ext
+  class strip2 opt
 ```
 
-#### Qué patrón sigue
+*Naranja: plano de tiempo real. Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El MVP se demuestra con una tira física (la del Light Box) y la tira virtual; el modelo admite N tiras.*
 
-Sutegi no sigue *un* patrón: los que aplica operan en **niveles de abstracción distintos** y por
-tanto no compiten entre sí. La arquitectura se declara por niveles:
+#### Patrón: hexagonal ligera (puertos y adaptadores)
 
-| Nivel | Qué decide | Patrón elegido |
-|---|---|---|
-| **0. Organización del código** | Un repositorio o varios | **Monorepo** de cuatro paquetes |
-| **1. Descomposición del sistema** | En qué piezas ejecutables se parte | **Paquetes por capacidad**: `core` (orquestación), `validator` (criterio), `cli` (interfaz), `panel` (observabilidad) |
-| **2. Estructura interna de cada pieza** | Cómo se organiza cada una por dentro | `core`: **puertos e inyección de dependencias** · `validator`: **motor de reglas** sobre AST · `panel`: **arquitectura por capas** |
-| **3. Comportamiento en ejecución** | Cómo interactúan mientras corren | **Bucle de control cerrado** (*generate-and-test*) con verificador determinista externo |
+El núcleo define **cuatro puertos** (interfaces de TypeScript) y no sabe qué hay detrás de ninguno:
 
-**El patrón que define este sistema es el del nivel 3.** Los niveles 0 a 2 son decisiones
-convencionales y bien resueltas por la industria; el bucle de control es lo que hace que Sutegi sea
-lo que es, y por eso encabeza la justificación.
+| Puerto | Para qué | Adaptadores en el MVP | Adaptadores previstos |
+|---|---|---|---|
+| `AudioSource` | Entregar muestras de audio | Tarjeta de sonido (`arecord` → `stdin`) · Fichero WAV | — |
+| `LightOutput` | Recibir los frames de una tira | Adalight por serie (una instancia por tira) · Tira virtual (WebSocket, todas las tiras) | Firmware propio ESP8266/ESP32 (should-have) |
+| `Commands` | Cambiar el efecto y los parámetros de una tira | API HTTP del panel | Traktor F1 (HID) · pantalla táctil |
+| `StateStore` | Guardar y recuperar el estado de cada tira | SQLite (ver §3) · En memoria (tests) | — |
+
+Es una versión **ligera** de la hexagonal: los adaptadores se crean y se conectan **a mano** en un único punto de arranque (`main.ts`, la *raíz de composición*), que lee el fichero de configuración y decide, por ejemplo, "fuente = fichero, tira 1 → Adalight en `/dev/ttyUSB0`, todas → tira virtual". **No hay contenedor de inyección de dependencias**, ni capas de casos de uso, ni mapeo de DTOs.
+
+Dentro del proceso conviven **dos planos** con reglas distintas:
+
+- **Plano de tiempo real** (naranja): audio → análisis → efecto de cada tira → límite de potencia de cada tira → salidas, a 30-60 fps. No puede retrasarse: trabaja con búferes preasignados y sin crear objetos en el bucle.
+- **Plano de control** (azul): panel, API, configuración y persistencia. Puede ser lento, pero no debe estorbar: sus cambios se escriben en un **búfer de control** que el bucle lee **al inicio de cada frame**, nunca a mitad de un render.
+
+**Reactivo o ambiente es cosa del efecto, no de la tira.** Todos los efectos implementan la misma interfaz y declaran si usan audio (patrón *Strategy*). Un efecto reactivo lee los rasgos del audio; uno de ambiente anima con el tiempo y los ignora. Cualquier efecto va en cualquier tira.
 
 #### Justificación
 
-**1. El bucle de control cerrado: la tesis del proyecto.** Un agente que genera un componente y
-luego se autoevalúa está juzgando con la misma facultad con la que produjo el error. Aquí el
-veredicto lo emite un **verificador determinista y externo al modelo**: el motor recorre el AST del
-componente, resuelve los alias de los tokens DTCG y comprueba el resultado contra las foundations
-declaradas. Lo que devuelve no es una puntuación, es una lista de hallazgos localizados — y
-**vuelve a entrar al agente como entrada de la siguiente iteración**.
+- **Los puertos los pide el hardware, no la teoría.** Cada puerto tiene al menos dos implementaciones reales (tarjeta o fichero; Light Box o navegador; panel o F1). Sin la separación, el motor quedaría acoplado a ALSA, a los puertos serie y al navegador.
+- **La tira es una entidad desde el principio.** La mesa real tiene dos tiras (una reactiva y otra de ambiente). Diseñar el bucle, los datos y la API para N tiras cuesta ahora lo mismo que para una, y evita rehacerlos cuando llegue la segunda.
+- **Cada dato donde le corresponde.** Lo que sale de la hoja de características del hardware y no cambia (salida, número de LEDs, orden de color, límites de potencia) se **declara en un fichero de configuración** versionado y validado al arrancar. Lo que cambia mientras se toca (efecto activo y valores de cada tira) va en la **base de datos**. Una tira existe porque está cableada, así que no se da de alta desde el panel.
+- **El simulador no es una pieza aparte.** Es el mismo motor con otros adaptadores (fichero WAV + tira virtual). Lo que se ve en la demo pública es exactamente el código que corre en la mesa.
+- **El motor funciona sin audio.** Si ninguna tira tiene un efecto reactivo, el análisis se omite y la mesa puede quedarse en modo ambiente sin música.
+- **Librería en el borde, no framework en el centro.** El servidor HTTP (Fastify) es un adaptador más. Se descartaron frameworks *full-stack* como AdonisJS porque imponen su estructura y su ciclo de vida alrededor de una aplicación web, y aquí el centro es un bucle de tiempo real. Se descartó también un contenedor de DI: son pocas dependencias elegidas una vez al arrancar, y no justifica la "magia" de decoradores y metadatos.
+- **Un solo proceso, no servicios separados.** Un usuario, una Pi y latencia crítica: repartir el sistema en servicios solo añadiría red y puntos de fallo entre el mando y la luz.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Dev as Desarrollador
-    participant CLI as CLI
-    participant R as Runner (core)
-    participant A as Agente (AgentRuntime)
-    participant F as Figma (MCP)
-    participant V as Validator
-    participant FS as Repositorio
+**Stack:**
 
-    Dev->>CLI: sutegi component create "Button"
-    CLI->>R: iniciar workflow E2E
-    R->>FS: cargar spec, tokens DTCG y DESIGN.md
-    FS-->>R: contexto de foundations
-
-    R->>A: subflujo 1 - definición y alcance
-    A-->>R: spec del componente
-    R->>A: subflujo 2 - UI design
-    A->>F: crear/actualizar componente (llamadas agrupadas)
-    F-->>A: nodo creado
-    R->>A: subflujo 3 - coding
-    A->>FS: escribir src/components/Button.tsx
-
-    loop bucle de control (máximo N iteraciones)
-        R->>FS: leer componente, tokens y reglas del proyecto
-        R->>V: validar (código + tokens + reglas)
-        V-->>R: informe determinista con hallazgos localizados
-        alt el informe tiene hallazgos
-            R->>A: corregir usando el informe como entrada
-            A->>FS: reescribir el componente
-        else informe limpio
-            R->>R: salir del bucle
-        end
-    end
-
-    R->>FS: escribir .sutegi/runs/[id].json
-    R-->>CLI: resultado de la ejecución
-    CLI-->>Dev: componente creado y validado
-```
-
-Esto es lo que sitúa a Sutegi frente al estado del arte. Las herramientas del espacio —Tidy,
-FigmaLint— **puntúan con IA y desde el lado de Figma**; aquí **falla un test sobre el código**. Y
-`lifesized/figma-design-sync`, la más cercana, declara explícitamente que no cubre gobernanza, ni
-panel, ni framework de validación: justo las tres piezas del MVP.
-
-**2. Puertos e inyección de dependencias en `core` — y por qué NO arquitectura hexagonal completa.**
-El runner necesita hablar con cinco cosas que están fuera del proceso: el formato de spec, el
-runtime de agentes, la superficie de diseño, los ficheros de tokens y el destino de los artefactos
-de ejecución. Cada una se declara como una **interfaz que se inyecta**, y de cada una hay dos
-implementaciones: la real y un doble de pruebas.
-
-| Puerto | Adaptador real | Doble en tests |
+| Pieza | Tecnología | Por qué |
 |---|---|---|
-| `SpecRepository` | OpenSpec en ficheros | Specs en memoria |
-| `AgentRuntime` | Claude Agent SDK | Agente con respuestas guionizadas |
-| `DesignSurface` | Figma vía plugin/MCP | Registro de llamadas, sin red |
-| `TokenSource` | Ficheros DTCG 2025.10 | Tokens literales en el test |
-| `RunSink` | `.sutegi/runs/*.json` | Recolector en memoria |
-
-Las fronteras responden a **dos razones de primer orden y de naturaleza distinta**:
-
-**Modularidad — la razón de producto.** Soportar más de un coding agent y más de un formato de
-spec-driven development forma parte del alcance declarado del framework: el MVP implementa Claude y
-OpenSpec, y añadir Codex, Copilot o spec-kit consiste en escribir un adaptador, no en reabrir el
-núcleo. Sin los puertos, cada una de esas ampliaciones sería una reescritura, y el framework
-quedaría atado de por vida a las herramientas que estaban vigentes el día que se empezó — en un
-ecosistema donde el formato de tokens se estabilizó en octubre de 2025 y Figma abrió su canvas a los
-agentes en 2026, eso es una apuesta que no compensa hacer.
-
-**Testabilidad — la razón de ingeniería.** Sin esa frontera, probar el runner exigiría Figma y
-llamadas reales a un modelo: no habría suite unitaria posible, solo tests lentos y no deterministas.
-Con ella, **la lógica de orquestación se prueba entera sin red**.
-
-Las dos se refuerzan: la primera justifica que los puertos existan, y la segunda hace que se paguen
-solos desde el primer día, antes de que llegue a escribirse un segundo adaptador de producción.
-
-**No se aplica arquitectura hexagonal completa.** Ports & Adapters suele venir acompañado
-de una estratificación `domain` / `application` con un modelo de dominio rico, DTOs y mappers en la
-frontera. Aquí se ha descartado deliberadamente por tres razones:
-
-- **El dominio es delgado.** Un token, una regla, un hallazgo y un informe son estructuras de datos,
-  no un modelo con comportamiento e invariantes que proteger. La complejidad real del sistema no
-  está en el dominio: está en la orquestación (`core`) y en el análisis estático (`validator`), que
-  son otra clase de problema.
-- **La capa no compraría nada.** El beneficio que se buscaba —aislar la lógica de la
-  infraestructura— ya lo dan los puertos. Añadir dominio y aplicación encima sería ceremonia con
-  coste de mantenimiento y cero retorno.
-- **Una estructura declarada y no respetada es peor que no declararla.** El código de las entregas
-  siguientes tiene que sostener lo que afirma este documento, y una estratificación que solo existe
-  sobre el papel es ruido para quien lo lea.
-
-**3. La verdad vive en el repositorio; la base de datos es un *read model*.** Los tokens DTCG y el
-`DESIGN.md` están versionados en el repositorio del usuario: son *diffeables*, se revisan en una
-pull request como cualquier otro cambio, los agentes los leen directamente y el motor valida contra
-ellos sin salir a la red. En consecuencia, **el runner no escribe en la base de datos del panel**:
-escribe artefactos de ejecución (`.sutegi/runs/*.json`) también versionados, y el panel los
-ingiere. La base de datos es un modelo de lectura derivado y **reconstruible desde cero**: se puede
-borrar y regenerar reingiriendo el repositorio. No hay verdad duplicada, y el flujo principal
-funciona aunque el panel esté apagado.
-
-**4. Extensibilidad asimétrica.** El `validator` **sí** carga reglas propias del proyecto desde
-`.sutegi/rules/`; los agentes y los workflows **no** son extensibles en el MVP. El criterio de un
-design system es específico de cada equipo —"este rojo solo para acciones destructivas"— mientras
-que los workflows son comunes; y el contrato de una regla es pequeño y estable (recibe un AST y las
-foundations, devuelve hallazgos), mientras que un sistema de extensión de workflows sería una
-abstracción universal difícil de acertar sin usuarios reales. Se abre el sistema donde la extensión
-aporta valor inmediato y se mantiene cerrado donde solo añadiría coste.
-
-**5. Cuatro paquetes y una dirección de dependencias.** El reparto separa las cuatro
-responsabilidades por su naturaleza, no por comodidad: `core` orquesta, `validator` juzga, `cli`
-interactúa, `panel` observa. Sacar el `validator` a su propio paquete tiene tres efectos concretos:
-hace visible dónde está el peso técnico del proyecto, le da una suite de tests propia, y lo vuelve
-**útil por sí solo** —se puede ejecutar como un linter sobre un repositorio, sin agentes de por
-medio—. La dirección de dependencias es lineal y verificable automáticamente:
-
-```
-cli  →  core  →  validator
-panel → (nada: solo lee artefactos del repositorio)
-```
-
-El `validator` **no hace entrada/salida**: recibe el código, los tokens ya resueltos y las reglas, y
-devuelve un informe. Es `core` quien lee del disco a través de sus puertos. Eso hace que la pieza
-más densa del sistema sea también la más fácil de probar: entrada literal, salida literal, sin
-montar nada.
+| Motor | TypeScript sobre Node.js (arm64) | El autor puede leer y corregir lo que genera el agente; tipos compartidos con el front. Condicionado a un spike de rendimiento en la Pi. |
+| Panel y tira virtual | React + Vite + TypeScript | Stack conocido; comparte tipos (esquemas de parámetros) con el motor. El motor sirve el build estático: no hay servidor aparte. |
+| API | Fastify + TypeBox | Un solo esquema da el tipo de TypeScript, la validación y el OpenAPI (§4). El mismo esquema describe los parámetros de cada efecto y el fichero de configuración. |
+| Transporte | HTTP para comandos · WebSocket (motor → navegador) para frames binarios y estado | HTTP se documenta en OpenAPI; el WebSocket lleva el flujo continuo (300 LEDs × 3 bytes × 60 fps ≈ 54 KB/s por tira). |
+| Persistencia | SQLite tras el puerto `StateStore` | Transacciones seguras ante cortes de luz (§3). |
+| Salida física | Protocolo Adalight por serie | Protocolo abierto que ya hablan el Light Box de la mesa y cualquier Arduino con el sketch Adalight. Sin GPIO ni software de terceros. |
 
 #### Beneficios
 
-- **La lógica de orquestación se prueba sin red, sin Figma y sin modelos**, sustituyendo los cinco
-  puertos por dobles. Es lo que hace viable la suite unitaria que exige la entrega final.
-- **El `validator` es una función**: mismas entradas, mismo informe. Eso permite tests unitarios
-  triviales de cada regla y aserciones estables en un E2E que, por lo demás, involucra un modelo
-  estocástico.
-- **Los agentes se fundamentan en hechos, no en opinión**, porque el veredicto lo emite un
-  verificador externo a ellos.
-- **Sustituir una pieza del ecosistema es escribir un adaptador**, no reabrir el núcleo.
-- **El panel es desechable y reconstruible**: borrar la base de datos no pierde información.
-- **Revisabilidad**: todo lo que produce un agente —tokens, componente, informe— llega en un diff
-  que un humano puede revisar antes de aceptarlo.
-- **Ritmos independientes**: el panel evoluciona sin tocar el núcleo, y viceversa.
-- **Detección temprana por dogfooding**: construir el panel de Sutegi con Sutegi expone los fallos
-  del framework durante el propio desarrollo, antes de que lleguen a un usuario.
+- **Testabilidad determinista:** con fuente = fichero y salida = memoria, un efecto produce siempre los mismos frames, así que se puede comparar contra frames de referencia ("frames dorados").
+- **Desarrollo y demo sin hardware:** el simulador sale gratis de la arquitectura.
+- **Extensible sin tocar el núcleo:** una tira nueva es una entrada en el fichero de configuración; la F1, la pantalla táctil o el firmware propio son adaptadores nuevos. El motor no cambia.
+- **Una sola fuente de verdad** para los esquemas: panel, API, configuración y documentación salen del mismo sitio.
+- **Despliegue simple:** un proceso bajo `systemd` en la Pi, que arranca solo y recupera el último estado.
 
 #### Sacrificios y déficits
 
-Esta arquitectura paga los siguientes precios:
-
-1. **La cuota de Figma es un límite de diseño, no un detalle.** El camino plugin/MCP evita exigir
-   Figma Enterprise —lo que haría el producto inviable para su usuario objetivo—, pero impone 200
-   llamadas al día en el plan Professional. Obliga a **agrupar operaciones y cachear**, y condiciona
-   cuánto puede iterar un agente sobre el canvas. Además, el producto **exige a sus usuarios Figma
-   Professional con asiento Dev**: una barrera de entrada asumida conscientemente.
-2. **Un solo adaptador real por puerto significa que la abstracción no está probada.** Existe el
-   puerto `AgentRuntime`, pero solo hay una implementación de producción. Un puerto con un único
-   implementador tiende a adoptar su forma, y eso solo se descubre al escribir el segundo. La
-   generalidad es una hipótesis razonada, no un hecho verificado — y el riesgo se concentra
-   precisamente en los dos puertos de los que depende el roadmap: `AgentRuntime` y
-   `SpecRepository`.
-3. **El panel muestra lo ingerido, no lo que hay en el disco del desarrollador.** Entre que el
-   runner escribe el artefacto de ejecución y el panel lo ingiere hay una ventana en la que ambos
-   discrepan: quien acaba de validar un componente en local ve un panel que todavía no lo refleja.
-   Es el coste directo de haber elegido «artefacto versionado + ingesta» en lugar de que el runner
-   escribiera en la API del panel; la alternativa descartada no tendría esa discrepancia, a cambio
-   de duplicar la verdad y de que el flujo principal dependiera de un servicio levantado.
-4. **Un adaptador de spec, no un sistema de formatos.** OpenSpec es el único formato soportado.
-   Añadir spec-kit exigiría escribir un segundo adaptador, no configurar un plugin.
-5. **Apoyarse en primitivas de terceros traslada riesgo aguas arriba.** El sistema hereda las
-   decisiones y los cambios de ruptura de DTCG, del Claude Agent SDK, del MCP de Figma y de la
-   librería headless que use el usuario. Es el precio de no reinventar: se gana superficie útil y se
-   pierde control sobre el calendario de esas piezas. Los puertos amortiguan las tres primeras; la
-   librería headless queda fuera porque vive en el código del usuario, no en el de Sutegi.
-
----
+- **Un solo hilo compartido.** El bucle de frames y las peticiones HTTP se turnan en el mismo *event loop* de Node: una petición lenta retrasaría un frame. Mitigación: el plano de control solo escribe en el búfer. Si el spike mostrara tirones, el motor pasaría a un *worker thread*.
+- **Recolector de basura.** Node puede pausar para liberar memoria y provocar tirones. Mitigación: búferes preasignados y cero asignaciones en el bucle.
+- **Latencia de HTTP en los sliders.** Mover un parámetro por HTTP es algo más lento que por WebSocket (milisegundos en red local; el panel limita el envío mientras arrastras). Si en uso real no se siente inmediato, `setParam` pasaría a WebSocket; el cambio es acotado porque `Commands` es un puerto.
+- **Techo de Adalight por tira.** A 115.200 baudios, unos 19 fps con 200 LEDs en cada puerto serie. Limita el número de LEDs por tira en el MVP (≤ 200-300); el firmware propio es la salida.
+- **Cambiar el hardware exige reiniciar.** La configuración de las tiras se lee al arrancar. Es aceptable en un aparato que se cablea una vez.
+- **Sin clave foránea hacia las tiras.** Como las tiras viven en el fichero, la base de datos no puede apuntar a ellas. Al arrancar, el motor **reconcilia**: crea el estado de las tiras nuevas e ignora el de las que ya no existen.
+- **Montaje manual.** Sin contenedor, `main.ts` crece con cada adaptador nuevo. Aceptable con el número de piezas previsto.
+- **Proceso único = punto único de fallo.** Si el proceso cae, se apaga todo. `systemd` lo reinicia y vuelve al último estado guardado.
 
 ### **2.2. Descripción de componentes principales:**
 
-El sistema se distribuye como un monorepo de cuatro paquetes en **TypeScript sobre Node 24 LTS**, más un
-conjunto de **artefactos versionados** que viven en el repositorio del usuario y que son, en la
-práctica, el contrato público del framework.
+> Describe los componentes más importantes, incluyendo la tecnología utilizada
 
-| Componente | Responsabilidad | Tecnología |
-|---|---|---|
-| `@sutegi/cli` | Interfaz de usuario y scaffolding | TypeScript · Node 24 LTS · Commander.js 15 |
-| `@sutegi/core` | Orquestación de workflows y agentes | TypeScript · Claude Agent SDK · MCP de Figma |
-| `@sutegi/validator` | Criterio determinista sobre el código | TypeScript · análisis de AST · DTCG 2025.10 |
-| `@sutegi/panel` | Observabilidad del design system | Front + API + BD *(stack por decidir)* |
-| Artefactos | Fuente de verdad y salida de las ejecuciones | JSON DTCG 2025.10 · Markdown |
+*El porqué de cada tecnología está en §2.1. Aquí se describe qué hace cada componente por dentro. Es el diseño previsto para la Entrega 2.*
 
-**`@sutegi/cli` — la superficie de entrada.** Instala e inicializa el framework sobre el repositorio
-del usuario (`init`) y lanza los workflows (`foundations`, `component`, `validate`, `panel`). Es
-deliberadamente delgado: entrada/salida, plantillas de scaffolding y traducción de argumentos a
-invocaciones de `core`, sin lógica de negocio.
+#### Núcleo (motor)
 
-Se construye sobre **Commander.js 15**, el parser de argumentos más establecido del ecosistema Node
-y sin dependencias en tiempo de ejecución. Se descartaron los frameworks completos del espacio
-—oclif, gluegun— porque su aportación diferencial es un sistema de plugins y un mecanismo de
-distribución con auto-actualización, y ninguna de las dos cosas encaja aquí: el MVP decide
-explícitamente que agentes y workflows **no** son extensibles, y la distribución es un paquete de
-npm. Frente a alternativas con tipado de comandos más estricto (clipanion, Stricli), pesó que
-Commander es conocido de antemano: con un solo desarrollador y una fecha de entrega cerrada, la
-familiaridad con la herramienta reduce riesgo real y las alternativas solo ofrecían ventajas
-marginales.
+**Bucle de frames** — TypeScript, sin dependencias de E/S.
+Marca el ritmo del sistema a una tasa objetivo configurable (30-60 fps). En cada vuelta: (1) lee el búfer de control, (2) si alguna tira tiene un efecto que usa audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica su límite de potencia y entrega el frame a su salida y a la tira virtual. Mide cuánto tarda cada vuelta; si llega tarde, **se salta el frame en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
 
-**El CLI es no interactivo por diseño.** No hace preguntas: toda la entrada llega por argumentos y
-opciones, y cada comando funciona con valores por defecto razonables sin un solo flag. La razón no
-es de simplicidad sino de propósito: un CLI que exige a una persona contestar preguntas **no puede
-correr en un pipeline**, y para un producto cuya tesis es la gobernanza de un design system, la
-integración continua es justamente donde esa gobernanza se ejerce — `sutegi validate` en un hook de
-pre-commit o en una acción de CI es el caso de uso que da valor al motor. Como efecto secundario,
-probar el CLI se reduce a ejecutarlo y comprobar su salida y su código de salida, sin simular un
-pseudo-terminal.
+**Análisis de audio** — TypeScript + FFT (`fft.js` o implementación propia; se decide en el spike de rendimiento).
+Recibe muestras PCM de la fuente de audio en un búfer circular. Cuando alguna tira lo necesita, aplica una ventana y una FFT sobre las últimas muestras y calcula los **rasgos** que consumen los efectos: energía por bandas de frecuencia (repartidas en escala logarítmica, como el oído), energía total y detección de golpes (un golpe es un salto de energía por encima de su media reciente). Se calcula **una vez por frame** y lo comparten todas las tiras. Si ninguna tira usa audio, no se calcula, y el motor puede funcionar sin fuente de audio.
 
-Que no pregunte no significa que no informe. El golden loop dura minutos y encadena varias vueltas
-de agente, así que `core` **emite eventos de progreso** que el CLI imprime como líneas de texto
-plano a medida que llegan: subflujo en curso, número de iteración, hallazgos que quedan. No requiere
-ninguna biblioteca interactiva, sobrevive a la redirección a un fichero y funciona igual en un
-terminal que en un runner de CI. Con `--json`, el comando emite en su lugar el mismo artefacto de
-ejecución que se escribe en `.sutegi/runs/`, de modo que un pipeline puede consumir el resultado sin
-parsear texto.
+**Efectos** — módulos de TypeScript con esquema TypeBox.
+Cada efecto es un módulo con la misma forma, sea reactivo o de ambiente (patrón *Strategy*):
 
-**En el MVP solo soporta Claude como coding agent.** Los demás (Codex, Copilot) aparecen marcados
-explícitamente como roadmap al arrancar, para que se lean como una decisión y no como un fallo.
+```ts
+interface Effect<P, S> {
+  id: string;                     // "spectrum", "energy", "scroll", …
+  usesAudio: boolean;             // declarado: reactivo (true) o ambiente (false)
+  paramsSchema: TSchema;          // TypeBox: tipos, rangos y valores por defecto
+  createState(strip: StripConfig): S;
+  render(ctx: FrameContext, params: P, state: S, out: Uint8Array): void;
+}
+// FrameContext = { time, dt, audio }: el ambiente anima con el tiempo; el reactivo, además, con el audio
+```
 
-**`@sutegi/core` — la orquestación.** Tres partes:
+El **esquema** es lo que permite que el panel genere los controles sin conocer el efecto y que la API rechace un valor fuera de rango. El **estado explícito** (lo que el efecto recuerda entre frames, como la posición del scroll o el suavizado) es **por tira**, y hace que, con la misma entrada, un efecto produzca siempre los mismos frames, así que se puede testear. `usesAudio` le dice al panel cómo etiquetar el efecto y al bucle si hace falta analizar el audio. El MVP incluye tres efectos reactivos: **espectro**, **energía** y **scroll** (los de la v1, reescritos).
 
-- **El Runner.** Máquina de estados del workflow, encadenado de subflujos, paso de contexto entre
-  agentes y, sobre todo, el **bucle generar → validar → corregir** con su tope de iteraciones y su
-  manejo de errores. No implementa un runtime de agentes propio —eso sería reimplementar un harness
-  ya resuelto— sino que se apoya en el **Claude Agent SDK** a través del puerto `AgentRuntime` y
-  aporta la lógica de control que ese SDK no da.
-- **Los puertos y sus adaptadores.** Las cinco interfaces inyectables (`SpecRepository`,
-  `AgentRuntime`, `DesignSurface`, `TokenSource`, `RunSink`) y sus implementaciones: OpenSpec, Claude
-  Agent SDK, Figma vía MCP, lectura/escritura de ficheros DTCG y escritura de artefactos. El
-  adaptador de Figma no es un envoltorio fino: **agrupa operaciones y cachea** para no agotar las
-  200 llamadas diarias, y esa lógica es parte del código propio del proyecto.
-- **Las definiciones declarativas.** Los tres perfiles de agente —*Design System UI Architect*,
-  *A11Y Advisor* y *Engineering Architect*— y los dos workflows (*Design Foundations* y *E2E
-  Component Creation*) se escriben como definiciones que `core` carga y ejecuta; las skills combinan
-  las oficiales de Figma con skills propias. **Son datos que consume el código, no el paquete**: en
-  el MVP no son extensibles por el usuario.
+**Límite de potencia** — TypeScript, uno por tira.
+Estima el consumo del frame a partir del valor de cada canal y del consumo máximo por LED declarado para esa tira. Si supera el límite configurado para su fuente de alimentación, escala el brillo de todo el frame en proporción. Protege fuentes y tiras, algo que en la v1 hacían por debajo piezas de terceros.
 
-**`@sutegi/validator` — el criterio.** El componente de mayor densidad técnica del proyecto: es
-quien decide si lo que afirma el resto del sistema es cierto. Su trabajo se organiza en tres capas.
+**Búfer de control** — TypeScript.
+Guarda lo que el bucle necesita **de cada tira**: efecto activo y valores de sus parámetros. Los comandos que llegan del plano de control (ya validados) se escriben aquí, y el bucle los recoge al inicio del frame siguiente. Cada cambio avisa al puerto de persistencia, que guarda con un pequeño retardo (agrupa los cambios mientras se arrastra un slider en lugar de escribir en disco cien veces).
 
-1. **Resolución DTCG.** Recibe el contenido de los ficheros de tokens —`core` los lee del disco; el
-   validador no toca el sistema de ficheros— y resuelve los alias y referencias encadenadas
-   (`button.bg` → `semantic.action` → `core.blue.600`), incluidos temas y modos, que en la versión
-   2025.10 pueden dar valores finales distintos para un mismo token.
-2. **Índice de valores legales.** A partir de esa resolución construye qué puede valer cada
-   propiedad de diseño del sistema. Es la capa que convierte "aquí hay un color hexadecimal" en
-   "aquí hay un color que no existe en tu design system".
-3. **Evaluación de reglas** sobre el AST del componente: uso de tokens frente a valores
-   *hardcodeados*, contraste, aserciones de accesibilidad, conformidad con las foundations
-   declaradas y **disciplina de la propia API del componente** — un componente del design system
-   expone `variant` y `size`, no un `color` libre por el que pueda colarse cualquier valor. Ejecuta
-   tanto las reglas de serie como las propias del proyecto cargadas desde `.sutegi/rules/`.
+#### Configuración de las tiras
 
-**El recorrido del AST no se construye: lo aporta una librería existente.** Escribir un parser sería
-contradecir el principio de no reinventar lo resuelto. El código propio —y el peso técnico del
-proyecto— está en las tres capas de arriba: la resolución de tokens, el índice de valores legales y
-el juicio, incluida la aritmética de color que exige comprobar contraste cuando DTCG 2025.10 admite
-espacios modernos como Oklch y Display P3.
+**Carga de configuración** — TypeScript + TypeBox.
+Al arrancar, lee el fichero de configuración del despliegue, que declara las tiras (identificador, nombre, salida y puerto, número de LEDs, orden de color y límites de potencia) y la fuente de audio. Lo valida contra su esquema TypeBox: si algo está mal, **el motor no arranca** y dice exactamente qué campo falla. Después **reconcilia** con la base de datos: crea el estado de las tiras nuevas (con su primer efecto y valores por defecto) e ignora el de las que ya no están declaradas.
 
-Las escotillas de escape —`className`, `style`, props de paso— **no se prohíben**: un design system
-las necesita para los casos excepcionales y usarlas es una decisión legítima del desarrollador. Lo
-que hace el motor es **detectarlas y marcarlas como excepción explícita**, de modo que el panel
-pueda mostrar cuántas acumula cada componente y cómo evoluciona esa cifra. Una excepción declarada
-y contada es gobernanza; una excepción invisible es el principio del *drift*.
+#### Adaptadores
 
-Su propiedad de diseño más importante es que **no hace entrada/salida**: recibe el código fuente, el
-contenido de los ficheros de tokens y las reglas, y devuelve un informe de hallazgos localizados.
-Quien lee del disco es `core`. Eso lo hace determinista, trivial de testear —entrada literal, salida
-literal, sin montar nada— y **utilizable por sí solo**, como un linter, sin agentes de por medio.
+| Adaptador | Puerto | Tecnología | Qué hace |
+|---|---|---|---|
+| **Tarjeta de sonido** | `AudioSource` | `arecord` (ALSA) como proceso hijo | Lee PCM crudo (16 bits, mono) por `stdout`. Sin binarios nativos en Node. |
+| **Fichero WAV** | `AudioSource` | Lector WAV en TypeScript | Entrega las muestras al mismo ritmo que si sonaran en tiempo real, en bucle. Es la fuente del simulador y de los tests. |
+| **Adalight serie** | `LightOutput` | `serialport` | Una instancia **por tira física**, en su puerto. Añade la cabecera Adalight (`Ada` + número de LEDs + checksum), reordena los canales según el orden de color de la tira (RGB, GRB…) y escribe por USB serie. Si el puerto sigue ocupado con el frame anterior, descarta el nuevo en lugar de encolarlo. |
+| **Tira virtual** | `LightOutput` | WebSocket (`@fastify/websocket`) | Envía los frames de **todas las tiras** en binario a los navegadores conectados, junto con los cambios de estado. |
+| **API HTTP** | `Commands` | Fastify + TypeBox | Rutas para listar las tiras (solo lectura) y los efectos con sus esquemas, y para cambiar el efecto y los parámetros de una tira. Valida cada petición y publica el OpenAPI. También sirve el build del panel. |
+| **Persistencia** | `StateStore` | SQLite (§3) · en memoria para tests | Guarda y carga el estado de cada tira: efecto activo y valores de cada efecto. Al arrancar, el motor recupera el último estado desde aquí. |
 
-**Un plugin de ESLint es roadmap declarado, no MVP.** Envolver estas reglas en un plugin daría
-subrayado en el editor mientras se escribe, y como las reglas son funciones puras sobre un AST y un
-índice de valores, envolverlas es trabajo mecánico. Se deja fuera del MVP por una razón de fondo: el
-informe que alimenta el bucle de control tiene que ser un objeto estructurado propio, con la forma
-que necesita el agente para corregir, y derivarlo de la salida de un linter pensado para otro
-propósito sería construir el sistema del revés.
+**Raíz de composición (`main.ts`).** Carga la configuración, crea los adaptadores que indica (fuente de audio, una salida por tira, tira virtual, API, persistencia), los conecta al núcleo y arranca el bucle. Es el único punto del código que conoce todas las piezas.
 
-**`@sutegi/panel` — la cara visible.** Las tres capas que exige la entrega: front, API y base de
-datos. Su particularidad es que **no es la fuente de verdad de nada**: un módulo de ingesta lee los
-artefactos `.sutegi/runs/*.json` del repositorio y los proyecta a un esquema relacional que permite
-consultar inventario de componentes, estado de las foundations, resultados de validación, drift e
-histórico de ejecuciones. *El stack concreto (framework, ORM y motor de base de datos) está
-pendiente de decisión y se documenta en 1.4 y 2.4.*
+#### Panel y tira virtual (front)
 
-**Primitivas de terceros: qué NO construye Sutegi.** Sutegi no implementa primitivas de UI —los
-componentes que genera se apoyan en librerías *headless* (Radix / React Aria / shadcn), que
-resuelven accesibilidad y comportamiento mejor de lo que los resolvería este proyecto—, no define un
-formato de tokens propio (usa DTCG 2025.10), no construye un runtime de agentes (usa el Claude Agent
-SDK) y no genera la documentación visual (Storybook). Lo que sí es código propio es exactamente lo
-que nadie más pone: **la orquestación, el criterio determinista y la gobernanza**. *El pipeline de
-transformación de tokens —Style Dictionary v4 frente a Terrazzo— está pendiente de decisión; es una
-dependencia hoja que corre en build y emite ficheros por plataforma, y cambiarla es tocar una
-configuración y un script.*
+**Tecnología:** React + Vite + TypeScript, servido por el propio motor. No contiene lógica de luces: solo muestra y envía comandos.
 
-**Los artefactos.** Tres, con naturalezas distintas:
+- **Selector de tira:** lista las tiras declaradas; lo que se toca se aplica a la tira seleccionada.
+- **Panel de control:** muestra los efectos, etiquetados como reactivos o de ambiente, y **genera los controles a partir del esquema** del efecto activo de la tira (un número con rango se convierte en slider, un color en selector de color, una lista de opciones en desplegable). Al mover un control, envía el cambio por HTTP, limitando la frecuencia de envío mientras se arrastra.
+- **Tira virtual:** recibe los frames binarios por WebSocket y dibuja **todas las tiras** en un `<canvas>`, un punto de luz por LED, con la geometría declarada en la configuración.
 
-- **Tokens DTCG (`design/tokens/*.tokens.json`)** — el contrato **legible por máquina**, en el
-  formato W3C DTCG versión 2025.10. Contienen **valores**. Es contra esto contra lo que valida el
-  motor.
-- **`DESIGN.md`** — la guía **legible por humanos y por agentes**: principios, criterios y el porqué
-  de las decisiones. Contiene **criterio**, no valores. **No es un artefacto generado**: de `#D32F2F`
-  no se deduce "este color solo para acciones destructivas irreversibles". Es un documento autorado
-  por el workflow de Foundations con el mantenedor en el bucle, y tratarlo como generado haría que
-  cualquier regeneración borrase decisiones humanas. Sus secciones autogeneradas —por ejemplo, la
-  tabla de tokens disponibles— van claramente delimitadas.
-- **Artefactos de ejecución (`.sutegi/runs/*.json`)** — la salida de cada ejecución del runner: qué
-  workflow corrió, cuántas iteraciones del bucle hicieron falta, qué informe devolvió el validador y
-  qué cambió. Es lo que ingiere el panel.
-
----
+**Tipos compartidos.** Los esquemas TypeBox (efectos, comandos, configuración de las tiras) viven en un paquete común que importan el motor y el panel. Si cambia un parámetro, el compilador avisa en los dos lados.
 
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 
-El proyecto tiene **dos estructuras**: la del repositorio de Sutegi y la huella que Sutegi **crea**
-en el repositorio de quien lo instala. La segunda es el contrato público del producto.
+> Representa la estructura del proyecto y explica brevemente el propósito de las carpetas principales, así como si obedece a algún patrón o arquitectura específica.
 
-#### Estructura del repositorio de Sutegi
+*Estructura prevista para la Entrega 2.*
 
-```text
-sutegi/
+El repositorio es un **monorepo con pnpm workspaces** y tres paquetes: `engine` (el motor), `panel` (el front) y `shared` (los esquemas comunes). Se descartó un único paquete porque con paquetes separados la frontera entre motor y navegador la impone la estructura: el panel **solo puede importar lo que exporta `shared`**, así que no puede acabar lógica de luces en el navegador. Además, cada lado tiene sus dependencias y su configuración de TypeScript (Node frente a DOM), y en la Pi solo se instala el motor. No se usa Nx ni Turborepo porque con tres paquetes no aportan nada que los workspaces no den ya.
+
+```
+AI4Devs-finalproject/
 ├── packages/
-│   ├── core/                       # Orquestación. Puertos + inyección de dependencias
-│   │   ├── src/
-│   │   │   ├── model/              # Tipos compartidos: Spec · Foundations · Componente · Ejecución
-│   │   │   ├── runner/             # Máquina de estados, subflujos y bucle de control
-│   │   │   ├── ports/              # Las 5 interfaces inyectables
-│   │   │   ├── adapters/           # Implementaciones reales de esas interfaces
-│   │   │   │   ├── openspec/       #   SpecRepository
-│   │   │   │   ├── claude-agent-sdk/  # AgentRuntime
-│   │   │   │   ├── figma-mcp/      #   DesignSurface (agrupa llamadas y cachea)
-│   │   │   │   ├── tokens-dtcg-fs/ #   TokenSource
-│   │   │   │   └── runs-fs/        #   RunSink
-│   │   │   └── definitions/        # Agentes, workflows y skills (datos, no código)
-│   │   └── tests/                  # Unitarios con dobles inyectados en los puertos
-│   ├── validator/                  # Criterio determinista. Sin entrada/salida
-│   │   ├── src/
-│   │   │   ├── ast/                # Parseo y recorrido del componente
-│   │   │   ├── tokens/             # Resolución de alias y referencias DTCG
-│   │   │   ├── rules/              # Reglas de serie
-│   │   │   ├── loader/             # Carga de las reglas del proyecto
-│   │   │   └── report/             # Modelo de hallazgos e informe
-│   │   └── tests/                  # Entrada literal → informe literal
-│   ├── cli/
-│   │   ├── src/commands/           # init · foundations · component · validate · panel
-│   │   ├── src/templates/          # Lo que `sutegi init` escribe en el repo del usuario
-│   │   └── tests/
-│   └── panel/                      # Front + API + BD (stack por decidir)
-│       ├── src/ingest/             # Lee .sutegi/runs/*.json → base de datos
-│       ├── src/api/                # Endpoints documentados en OpenAPI (sección 4)
-│       ├── src/web/                # Interfaz
-│       ├── src/db/                 # Esquema y migraciones (sección 3)
-│       └── tests/
-├── openspec/                       # SDD del propio proyecto: specs vivas y deltas
-├── examples/
-│   └── design-system-demo/         # Repo de ejemplo: demo, dogfooding y test E2E
-├── docs/
-├── readme.md
-└── prompts.md
+│   ├── shared/     # Esquemas TypeBox comunes: parámetros de efectos, comandos, config de la tira, formato de frames
+│   ├── engine/     # Motor (un proceso Node en la Pi): núcleo y adaptadores, separados
+│   └── panel/      # Front (React + Vite): panel de control y tira virtual
+├── e2e/            # Tests E2E (Playwright) del flujo principal
+├── firmware/       # (should-have) Firmware C++ para ESP8266/ESP32
+├── openspec/       # Specs de SDD: specs vivas y cambios propuestos
+├── deploy/         # Servicio systemd y ficheros de configuración de tiras (mesa y demo pública)
+├── docs/           # Documentación de apoyo (ficha, decisiones)
+├── .claude/        # Skills y subagentes de Claude Code
+└── AGENTS.md       # Instrucciones para agentes de código (estándar abierto)
 ```
 
-La estructura la gobierna la **dirección de las dependencias**, que es lineal y se puede verificar
-automáticamente con una regla de linting, de modo que la arquitectura no dependa de la disciplina de
-quien escribe el código:
+**Cómo refleja la arquitectura hexagonal (§2.1):**
 
-```
-cli  →  core  →  validator
-panel → (nada: solo lee artefactos del repositorio)
-```
+- Dentro de **`engine`**, el **núcleo** (bucle, análisis de audio, efectos y los **puertos**, que son interfaces del núcleo) y los **adaptadores** (audio, luz, HTTP, persistencia) viven en carpetas separadas. El núcleo no conoce ALSA, el puerto serie, Fastify ni el disco; añadir la F1 o el firmware propio es añadir un adaptador.
+- Solo la **raíz de composición** conoce a la vez el núcleo y los adaptadores.
+- La regla "el núcleo no importa de los adaptadores" se comprueba con una **regla de lint** (restricción de rutas de import), así que no depende de la disciplina de quien escriba el código, sea persona o agente.
 
-Dentro de `core`, la misma idea a menor escala: `runner` depende de `ports`, nunca de `adapters`; los
-adaptadores solo se conocen en el punto de composición, que es donde se decide si se inyecta el real
-o el doble de pruebas.
+**Por qué un efecto vive en dos paquetes:** su **esquema** de parámetros está en `shared`, porque lo necesitan el panel (para generar controles) y la API (para validar). Su **render** está en `engine`, porque es lógica de luces y el navegador no debe tenerla.
 
-#### Huella de Sutegi en el repositorio del usuario
+**Carpetas fuera de los workspaces:**
 
-Lo que `sutegi init` crea, y sobre lo que operan todos los workflows:
-
-```text
-mi-design-system/
-├── .sutegi/
-│   ├── config.json                 # Configuración del framework
-│   ├── rules/                      # ← ÚNICO punto de extensión del MVP
-│   │   └── no-hardcoded-radius.ts  #   Reglas propias del proyecto
-│   └── runs/                       # Artefactos de ejecución (los ingiere el panel)
-│       └── 2026-10-12T09-14-22.json
-├── design/
-│   ├── tokens/                     # ← FUENTE DE VERDAD (DTCG 2025.10)
-│   │   ├── core.tokens.json        #   Primitivas
-│   │   ├── semantic.tokens.json    #   Alias con significado
-│   │   └── themes/                 #   Claro/oscuro, multimarca, variantes a11y
-│   └── DESIGN.md                   # Criterio autorado, NO generado
-├── src/components/                 # Lo que produce y valida el golden loop
-└── openspec/                       # Specs, si el proyecto usa SDD
-```
-
-Todo lo que aquí aparece está **versionado en git**. Esa es la propiedad de la que cuelga el resto de
-la arquitectura: los tokens son *diffeables*, los cambios de un agente llegan en una pull request
-revisable, el motor valida sin salir a la red, y la base de datos del panel puede reconstruirse
-íntegramente reingiriendo `.sutegi/runs/`.
+- `e2e/`: los tests del flujo completo arrancan el motor con fuente = fichero y comprueban en el navegador que la tira virtual reacciona y que mover un control cambia la luz.
+- `firmware/`: proyecto C++ independiente (should-have).
+- `openspec/`: las specs que guían cada cambio (Spec-Driven Development).
+- `.claude/` y `AGENTS.md`: la configuración del agente de código es parte de la evidencia del uso de IA (ver `prompts.md`). Donde existe un estándar se usa: las instrucciones del proyecto van en **`AGENTS.md`**, que leen distintas herramientas (Claude Code lo recibe a través de un `CLAUDE.md` que lo importa). Donde no existe, se usa la ubicación de la herramienta: las skills (por ejemplo, "nuevo efecto") y los subagentes (por ejemplo, revisión contra spec) van en `.claude/`, que es donde Claude Code los busca.
 
 ### **2.4. Infraestructura y despliegue**
 
@@ -554,6 +353,40 @@ revisable, el motor valida sin salir a la red, y la base de datos del panel pued
 
 > Enumera y describe las prácticas de seguridad principales que se han implementado en el proyecto, añadiendo ejemplos si procede
 
+*Diseño previsto para la Entrega 2.*
+
+La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la mesa que en internet. Buena parte la resuelven decisiones de arquitectura, sin código adicional.
+
+#### En la mesa (red local)
+
+- **Sin autenticación, por decisión explícita.** Es una red doméstica de confianza, el sistema no guarda datos personales y el peor caso es que alguien de la casa cambie las luces. Queda fuera del MVP.
+- **La API no puede tocar el hardware.** Las tiras (puertos, número de LEDs, límites de potencia) se declaran en el fichero de configuración, no en la base de datos (§3). Desde la red solo se puede cambiar el efecto y sus parámetros, nunca a qué puerto se escribe ni cuánta corriente se permite.
+- **El proceso no corre como root.** Se ejecuta con un usuario propio que solo tiene acceso a los puertos serie (grupo `dialout`). Es una de las razones para descartar la conexión por GPIO, que exige root.
+
+#### En la demo pública (internet)
+
+- **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria**: nada se escribe en disco y el estado vuelve al inicial cada cierto tiempo. Todos los visitantes ven la misma tira virtual; que uno vea lo que toca otro se asume como parte de la demo.
+- **Sin hardware.** La configuración de la demo solo declara tiras virtuales, así que no hay puertos serie expuestos.
+- **Límite de peticiones** por IP en la API (`@fastify/rate-limit`) y **máximo de conexiones WebSocket** simultáneas.
+- **HTTPS** proporcionado por la plataforma de despliegue (§2.4).
+
+#### En todo el sistema
+
+- **Validación de todas las entradas** con los esquemas TypeBox: tipos, rangos y rechazo de campos desconocidos. Un parámetro fuera de rango se rechaza antes de llegar al motor. El fichero de configuración se valida igual al arrancar.
+- **Mismo origen:** el panel lo sirve el propio motor, así que no se abre CORS.
+- **Cabeceras de seguridad** HTTP con `@fastify/helmet`.
+- **Tamaño máximo** de los mensajes WebSocket entrantes.
+- **Sin secretos:** el sistema no necesita claves ni credenciales. No hay login: el README lo indica expresamente en las instrucciones de prueba.
+
+#### Análisis automático en cada PR
+
+El código lo escribe en buena parte un agente, así que el análisis automático es **una puerta más** antes de aceptar un cambio, junto a los tests y el simulador.
+
+| Herramienta | Qué revisa | Cómo actúa |
+|---|---|---|
+| **SonarQube Cloud** (plan gratuito para proyectos públicos) | Bugs, vulnerabilidades y *security hotspots* en el código, *code smells*, duplicados y cobertura de tests | **Quality gate** en cada PR: si el código nuevo no la supera, el PR no se integra |
+| **Dependabot** (GitHub) | Vulnerabilidades conocidas en las dependencias | Alertas y PRs automáticos de actualización. Cubre lo que el plan gratuito de Sonar no analiza |
+
 ### **2.6. Tests**
 
 > Describe brevemente algunos de los tests realizados
@@ -562,14 +395,108 @@ revisable, el motor valida sin salir a la red, y la base de datos del panel pued
 
 ## 3. Modelo de Datos
 
+*Diseño previsto para la Entrega 2.*
+
+**Regla de reparto:** lo que sale de la hoja de características del hardware y no cambia se **declara en un fichero de configuración**; lo que cambia mientras se toca el instrumento se guarda en la **base de datos**.
+
+| Dato | Ejemplos | Dónde vive | Quién lo cambia |
+|---|---|---|---|
+| **Declaración de las tiras** | salida y puerto, nº de LEDs, orden de color, límites de potencia | Fichero de configuración del despliegue (versionado, validado con TypeBox al arrancar) | El maker, al cablear; se aplica al reiniciar |
+| **Estado del instrumento** | efecto activo de cada tira y valores de sus parámetros | Base de datos SQLite | El DJ, desde el panel, mientras toca |
+| **Definición de los efectos** | parámetros, tipos, rangos, `render` | Código (§2.2) | El desarrollador |
+
+Una tira existe porque está cableada, así que no se da de alta desde el panel. Y la definición de un efecto es código, así que no se duplica en la base de datos: **el código define, la base de datos guarda lo que decide el usuario.**
+
+**Motor de persistencia: SQLite**, detrás del puerto `StateStore` (§2.1). La razón principal no es la rúbrica sino el aparato: **la Pi de una mesa de DJ se desenchufa sin apagarla**. Con las transacciones de SQLite, un corte de luz a mitad de un guardado deja el dato anterior o el nuevo, nunca uno a medias, y el arranque en el último estado (H5) sigue funcionando. Además, las restricciones viven en el esquema y los cambios se versionan con migraciones. Se descartó un fichero JSON: habría que implementar a mano la escritura segura y el modelo quedaría sin claves ni restricciones.
+
+Hay dos adaptadores del puerto: **SQLite** (producción y demo) y **en memoria** (tests). La base de datos es un único fichero en la Pi, sin servidor.
+
 ### **3.1. Diagrama del modelo de datos:**
 
 > Recomendamos usar mermaid para el modelo de datos, y utilizar todos los parámetros que permite la sintaxis para dar el máximo detalle, por ejemplo las claves primarias y foráneas.
 
+```mermaid
+erDiagram
+  STRIP_STATE {
+    TEXT strip_id PK, FK "id de la tira declarada en el fichero"
+    TEXT active_effect_id FK "NOT NULL"
+    TEXT updated_at "NOT NULL, ISO 8601"
+  }
+  STRIP_EFFECTS {
+    TEXT strip_id PK "clave compuesta (strip_id, effect_id)"
+    TEXT effect_id PK "spectrum | energy | scroll | …"
+    TEXT values_json "NOT NULL, validado con el esquema TypeBox"
+    INTEGER schema_version "NOT NULL, CHECK > 0"
+    TEXT updated_at "NOT NULL, ISO 8601"
+  }
+  STRIP_EFFECTS ||--o| STRIP_STATE : "(strip_id, active_effect_id) es el efecto activo"
+```
 
 ### **3.2. Descripción de entidades principales:**
 
 > Recuerda incluir el máximo detalle de cada entidad, como el nombre y tipo de cada atributo, descripción breve si procede, claves primarias y foráneas, relaciones y tipo de relación, restricciones (unique, not null…), etc.
+
+#### `strip_state` — estado de cada tira (H5)
+
+Lo que el motor restaura al arrancar: qué efecto tenía cada tira. Una fila por tira declarada.
+
+| Atributo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `strip_id` | TEXT | PK | Identificador de la tira tal como aparece en el fichero de configuración (por ejemplo, `principal`). |
+| `active_effect_id` | TEXT | NOT NULL; FK compuesta `(strip_id, active_effect_id)` → `strip_effects (strip_id, effect_id)` | Efecto activo de la tira. La FK compuesta garantiza que el efecto activo **siempre tiene valores guardados para esa tira**. |
+| `updated_at` | TEXT | NOT NULL | Fecha del último cambio (ISO 8601). |
+
+#### `strip_effects` — valores de cada efecto en cada tira (H2)
+
+Una fila por cada combinación de tira y efecto. Guarda los valores **de todos los efectos**, no solo del activo: al volver a un efecto, la tira recupera cómo lo dejaste. Y son **por tira**: el mismo efecto puede tener valores distintos en una tira de 50 LEDs y en otra de 200.
+
+| Atributo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `strip_id` | TEXT | PK (compuesta) | Tira a la que pertenecen los valores. |
+| `effect_id` | TEXT | PK (compuesta) | Identificador del efecto (`spectrum`, `energy`, `scroll`…). |
+| `values_json` | TEXT | NOT NULL | Valores de los parámetros en JSON. Se validan contra el esquema TypeBox del efecto al leer y al escribir. |
+| `schema_version` | INTEGER | NOT NULL, `CHECK > 0` | Versión del esquema del efecto con la que se guardaron los valores. Si el esquema cambia, los valores se migran o se sustituyen por los valores por defecto. |
+| `updated_at` | TEXT | NOT NULL | Fecha de la última modificación. |
+
+**Relación:** `strip_effects` 1 — 0..1 `strip_state`. El estado de una tira apunta siempre a exactamente una fila de sus valores; cada fila de valores es la del efecto activo (1) o no (0). La clave foránea se hace cumplir con `PRAGMA foreign_keys = ON`.
+
+**Por qué los valores van en una columna JSON y no en una fila por parámetro:** la definición de los parámetros (tipo, rango, valor por defecto) pertenece al código del efecto, en su esquema TypeBox. La base de datos solo guarda valores. Una fila por parámetro obligaría a duplicar en tablas lo que ya define el esquema y a guardar valores de tipos distintos (número, color, opción) en una misma columna. La integridad de los valores la garantiza la validación con el esquema.
+
+#### Tira declarada — en el fichero de configuración, no en la base de datos (H4)
+
+Se documenta aquí porque es la otra mitad del modelo. Su esquema TypeBox vive en el paquete compartido y se valida al arrancar.
+
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | string | Obligatorio, único en el fichero | Identificador estable de la tira; es el `strip_id` de la base de datos. |
+| `name` | string | Obligatorio | Nombre que muestra el panel. |
+| `output` | objeto | Obligatorio | Tipo de salida (`adalight`, `virtual`) y puerto serie si aplica (por ejemplo, `/dev/ttyUSB0`). |
+| `ledCount` | entero | > 0 | Número de LEDs. El máximo práctico con Adalight es ≈ 200-300 por tira. |
+| `colorOrder` | enum | RGB, RBG, GRB, GBR, BRG, BGR | Orden de los canales que espera la tira. |
+| `maxCurrentMa` | entero | > 0 | Consumo máximo permitido (mA) según su fuente de alimentación. Lo usa el límite de potencia. |
+| `ledMaxMa` | entero | > 0, por defecto 60 | Consumo de un LED en blanco a máximo brillo (mA), para estimar el consumo de cada frame. |
+
+#### Reconciliación al arrancar
+
+Como las tiras viven en el fichero, la base de datos no puede tener una clave foránea hacia ellas. La sustituye una reconciliación al arrancar, dentro de una transacción:
+
+- **Tira nueva en el fichero:** se crean sus filas en `strip_effects` con los valores por defecto de cada efecto y su `strip_state` con el primer efecto.
+- **Efecto nuevo en el código:** se crea su fila en `strip_effects` para cada tira, con sus valores por defecto.
+- **Tira que ya no está en el fichero:** su estado se ignora (no se borra, por si vuelve a declararse).
+
+#### Garantías y evolución del esquema
+
+- **Durabilidad ante cortes de luz:** SQLite en modo WAL con `synchronous = FULL`; cada guardado es una transacción. El guardado se agrupa con un pequeño retardo (§2.2) para no escribir en la tarjeta SD con cada movimiento de un slider.
+- **Migraciones versionadas:** el esquema se crea y evoluciona con migraciones numeradas que se aplican al arrancar; una tabla de control registra cuáles se han aplicado.
+- **Sin datos personales:** la base de datos no guarda nada de usuarios, solo el estado del aparato.
+
+#### Cómo se prueba la persistencia
+
+1. **Tests de contrato del puerto:** el mismo conjunto de tests se ejecuta contra el adaptador SQLite y contra el adaptador en memoria. Guardar y leer devuelve lo mismo, y los valores fuera de esquema se rechazan.
+2. **Tests de restricciones:** SQLite rechaza lo que el esquema prohíbe (un efecto activo sin valores guardados para esa tira, una versión de esquema no positiva).
+3. **Test de reconciliación:** se añade y se quita una tira del fichero de configuración, se arranca, y se comprueba el estado resultante.
+4. **Test de arranque tras corte:** se arranca el motor, se cambian el efecto y los parámetros de una tira por la API, **se mata el proceso sin cerrarlo** (`kill -9`, que simula desenchufar), se vuelve a arrancar y se comprueba que la API devuelve el mismo estado.
+5. **Comprobación manual:** la base de datos se puede inspeccionar con `sqlite3` (por ejemplo, `SELECT * FROM strip_state;`).
 
 ---
 

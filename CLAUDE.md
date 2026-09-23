@@ -1,7 +1,7 @@
 # CLAUDE.md — Contexto y reglas de trabajo
 ## Proyecto Final · Máster AI4Devs (LIDR) · Joseba Alonso
 
-**Proyecto:** 🟡 pendiente del mentor — **propuesta principal: 🎛️ Mood Table v2** (instrumento de luz para la mesa de DJ) · **plan B: 🎟️ Pura Belia · Zona de clientes** · **Iniciales: JA**
+**Proyecto:** ✅ **🎛️ Mood Table** (instrumento de luz para la mesa de DJ) — luz verde del mentor el 22-sep-2026 · *(plan B Pura Belia archivado)* · **Iniciales: JA**
 *(Idea anterior, Sutegi Design System, descartada el 09-sep; ver `docs/POSTMORTEM-sutegi.md`.)*
 **Repo:** github.com/7daysofrain/AI4Devs-finalproject · **Rama actual:** `feature/entrega-1-JA`
 
@@ -94,6 +94,7 @@ README + vídeo 2-3 min si es confidencial. `README.md` y `prompts.md` obligator
 
 - **Cowork (aquí):** ideación, investigación (Drive + web), decisiones, revisión crítica y
   **redacción de los documentos**. Escribe y edita ficheros en la carpeta sin problema.
+- **Borradores:** se escriben en `docs/borradores/` (ignorada en `.gitignore`); al validarse, pasan al `readme.md`.
 - **Claude Code / terminal:** todo lo que toca el repo **como repo** — ramas, commits, PRs,
   ejecutar código y tests, comandos de OpenSpec. Y las Entregas 2 y 3 completas.
 - ⚠️ **git NO es fiable desde Cowork**: el puente no permite borrar ficheros, así que un
@@ -140,20 +141,22 @@ Documentar el **flujo de trabajo con IA**, no solo prompts sueltos:
 
 ---
 
-## 7bis. Estado de la idea (10-sep-2026)
+## 7bis. Estado de la idea (22-sep-2026)
 
-🟡 **Propuesta principal: Mood Table v2** — es la que Joseba quiere hacer y la que llevará al mentor. Si el mentor confirma que encaja tal como está propuesta (ver las 4 preguntas de §8), se va con ella; si no, se activa el plan B. Reescritura, con método y agentes, del proyecto personal
+✅ **Elegida: Mood Table** (sin "v2" en el nombre; D16). El mentor validó el 22-sep las 4 preguntas de §8 (respuestas en la ficha §9 y D15). Decisiones de la sesión de redacción del README (22-sep): D15-D29 en la ficha §10. Reescritura, con método y agentes, del proyecto personal
 *Mood Table* (mesa de DJ con LEDs reactivos a la música; repo `7daysofrain/mood-table`, 2021-2024).
 **Ficha completa y registro de decisiones en `docs/idea-mood-table.md`** — leerla antes de trabajar.
 
-Resumen: **motor de luces propio en TypeScript, sin navegador**, con fuentes de audio (tarjeta /
-fichero) y salidas de luz (Adalight-serie → Light Box, WebSocket → tira virtual, firmware propio
-como should-have) como puertos; efectos = código con esquema de parámetros declarado; panel web
-que genera sus controles; persistencia = config de tira + estado del instrumento (JSON tras un
-puerto). **5 must-have:** ver la música en la tira virtual · tocar parámetros en vivo · pintar la
-tira física · configurar la tira · arrancar en el último estado. **2 should-have:** firmware
-propio (ESP8266/ESP32) · capa de ambiente. **Sin escenas/presets** (es un instrumento de
-*performance*). **Sin IA en el producto**: el eje 3 se cubre con el proceso (specs OpenSpec como
+Resumen (act. 22-sep): **motor de luces propio en TypeScript, sin navegador**, que pinta **N tiras**
+(cada una con su efecto; MVP con una tira física —la del Light Box— + la virtual). Fuentes de audio
+(tarjeta / fichero) y salidas de luz (Adalight-serie, WebSocket → tira virtual, firmware propio como
+should-have) como puertos; **sin Hyperion ni GPIO**. Efectos = código con esquema declarado y
+`usesAudio` (reactivo o ambiente, misma interfaz); el motor funciona sin audio. Panel web que genera
+sus controles. **Tiras declaradas en fichero de configuración; SQLite solo para el estado** (efecto
+activo y valores por tira). **5 must-have:** probar en el simulador · tocar parámetros en vivo ·
+pintar la tira física · declarar mis tiras · arrancar en el último estado. **2 should-have:** tira de
+ambiente (segunda tira física, no una capa mezclada) · firmware propio (ESP8266/ESP32). **Sin
+escenas/presets** (es un instrumento de *performance*). **Sin IA en el producto**: el eje 3 se cubre con el proceso (specs OpenSpec como
 contrato, tests y simulador como puertas; se declara que el firmware C++ es una pieza que Joseba no
 puede evaluar y se valida desde fuera).
 
@@ -174,13 +177,13 @@ riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momen
 
 ## 8. Decisiones abiertas / puntos grises a resolver
 
-- [ ] **Idea de proyecto**: 🟡 Mood Table v2 como propuesta principal (ficha `docs/idea-mood-table.md`,
-      36/40); Pura Belia como plan B (ficha `docs/idea-pura-belia.md`, 32/40). Decisión con el mentor.
-      Preguntar por separado, no "¿califica?": (1) persistencia sin BD relacional (JSON tras puerto /
-      SQLite) ¿vale para README §4 y ticket BD?; (2) evidencia de hardware = vídeo + URL pública con
-      tira virtual ¿suficiente?; (3) sin IA en el producto, eje 3 solo con el proceso ¿ok?; (4) front y
-      BD pesan poco frente al motor ¿problema para un evaluador que busque full-stack? Si las 4 pasan →
-      Mood Table; si alguna falla → plan B.
+- [x] **Idea de proyecto**: ✅ **Mood Table** (22-sep). El mentor respondió a las 4 preguntas:
+      (1) JSON/SQLite vale como "BD o equivalente" si README y ticket documentan **modelo, puerto y
+      cómo probar la persistencia** (SQLite deja el ticket más "clásico"); (2) vídeo 2-3 min + URL
+      con tira virtual es suficiente si el README dice **cómo reproducir la demo web** y el vídeo
+      muestra el **E2E en la mesa**; (3) IA en producto y/o proceso, sin problema; (4) no preocupa el
+      peso del motor si **front + persistencia + motor cierran un circuito operable** (MVP
+      demostrable, no checklist CRUD). Ficha §9 y D15.
 - [x] **Alcance**: ✅ cerrado (5 must-have + 2 should-have; lista explícita de exclusiones en la
       ficha §11). "Completo, no extenso".
 - [x] **Lenguaje del motor**: ✅ TypeScript/Node, **condicionado al spike de rendimiento en la
@@ -189,12 +192,52 @@ riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momen
       antes de cerrar la spec del motor. Resultado → ficha §10 y `prompts.md`.
 - [ ] **Número de LEDs del MVP** (≤ 200-300 por Adalight a 115.200 baudios): fijar tras el spike y
       la prueba con el Light Box.
-- [ ] **Stack del front** (React u otro) y del transporte (WebSocket + HTTP): decidir en la sesión
-      de arquitectura (README §2).
-- [ ] **Persistencia**: JSON tras puerto de inicio; ¿SQLite para blindar README §4 / ticket BD?
-      Preguntar al mentor (ficha §9).
+- [x] **Stack y arquitectura** ✅ (22-sep, README §2.1): hexagonal ligera (4 puertos: AudioSource,
+      LightOutput, Commands, StateStore) con montaje manual en `main.ts`, **sin contenedor de DI**; dos
+      planos (tiempo real / control con búfer leído al inicio de cada frame); un solo proceso Node.
+      Front React + Vite + TS servido por el motor; API **Fastify + TypeBox** (OpenAPI desde esquemas;
+      AdonisJS descartado: framework en el centro vs librería en el borde); HTTP para comandos/config,
+      WebSocket motor → navegador para frames y estado (fallback: `setParam` por WS si hay latencia).
+- [ ] **Renombrar `CLAUDE.md` → `AGENTS.md`** (Joseba, desde terminal con `git mv`) y crear un
+      `CLAUDE.md` mínimo que lo importe (`@AGENTS.md`). Comprometido en README §2.3 (22-sep).
+- [x] **Seguridad (README §2.5)** ✅ (23-sep): por contexto (mesa sin auth por decisión; demo pública
+      con estado en memoria, rate limit, máx. WS, HTTPS); TypeBox, helmet, sin CORS; **SonarQube Cloud
+      (quality gate en PR) + Dependabot** (Sonar gratis no hace SCA; Snyk descartado).
+- [x] **Persistencia** ✅ SQLite solo para estado (`strip_state`, `strip_effects`); tiras en fichero de configuración (22-sep, README §3, ficha D25/D29).
 - [ ] **Actualizar `docs/PLAN-entregables.md`**: vaciar estado de secciones (era de Sutegi) y
       adaptar el guion a Mood Table (modelo de datos simple, API del panel, tickets back/front/BD).
-- [ ] **`readme.md`**: las secciones 2.1-2.3 escritas para Sutegi hay que rehacerlas.
+- [ ] **`readme.md`** (Entrega 1, 25-sep): ✅ §0, §1.1, §1.2, §2.1, §2.2, §2.3, §2.5, §3 escritas (22-23 sep); §2 de Sutegi
+      borrada, estructura de la plantilla original. Siguiente: ver §8bis y cierre (`prompts.md`, verificación contra plantilla).
 
-*(Última actualización: 10 sep 2026 — Mood Table v2 propuesta principal, Pura Belia plan B; decisión con el mentor)*
+## 8bis. Plan para la próxima sesión (act. 23-sep)
+
+**Orden de trabajo:**
+
+1. **Actualizar requisitos de LIDR.** El 23-sep LIDR indicó por chat cambios respecto a §4 de este
+   fichero: (a) **repo propio**, no fork — la plantilla `AI4Devs-finalproject` solo sirve para copiar
+   `readme.md`/`prompts.md`; (b) en el Typeform de cada entrega va el **link a la rama**
+   (`…/tree/nombre-rama`), no el del PR; (c) repo privado → invitar a `LIDR-AI4Devs` (el nuestro será
+   público); (d) **sin despliegue no hay feedback** en la entrega final; (e) el `readme.md` debe incluir
+   **cómo probar el MVP y credenciales** (Mood Table no tiene login → decirlo explícitamente en §1.4).
+   Joseba aportará el documento de definiciones actualizado si existe: **revisar §4 contra él** y
+   corregir lo que haya cambiado antes de seguir.
+2. **Seguir con el README en Cowork:** §2.4 (infraestructura y despliegue), §2.6 (tests), §1.3 (UX),
+   §1.4 (instalación + cómo probar + "sin credenciales"), todas en versión "previsto"; y `prompts.md`.
+   - **§2.4 decisión pendiente:** plataforma de la demo pública — **Fly.io** (~2-4 €/mes, siempre
+     encendido; recomendado) vs **Render gratis** (se duerme a los 15 min, ~1 min en despertar). Pi:
+     `systemd` + usuario propio + SQLite + script en `deploy/`. Idea a incluir: en modo demo el bucle
+     se pausa si no hay clientes WebSocket.
+3. **§4, §5, §6 — EN ESPERA de respuesta de LIDR.** Pregunta enviada por Joseba: ¿van en la Entrega 1 o
+   se completan durante el desarrollo junto con la §7? Decisión ya tomada: **no se redactan en
+   Cowork**; salen del flujo SDD en el repo (**Claude Code + OpenSpec**) a partir de las 5 historias
+   (README §1.2, ficha §3), y el README las **resume y enlaza**. Si LIDR confirma que van en la E1,
+   hacerlo en Claude Code antes del 25-sep. **§7 (PRs): entrega final.**
+4. **Tareas de Joseba en terminal:** borrar `.borrador-2.1.tmp.md`; commitear `.gitignore`
+   (`docs/borradores/`); `git mv CLAUDE.md AGENTS.md` + `CLAUDE.md` con `@AGENTS.md`.
+
+**Estado del README (23-sep):** ✅ §0, §1.1, §1.2, §2.1, §2.2, §2.3, §2.5, §3 · ⬜ §1.3, §1.4, §2.4,
+§2.6 · ⏸ §4, §5, §6 (en espera de LIDR) · ⛔ §7 (entrega final). Borradores en `docs/borradores/`.
+Decisiones D15-D29 en la ficha (`docs/idea-mood-table.md` §10). `docs/PLAN-entregables.md` está
+**obsoleto** (era de Sutegi): no usarlo como guía.
+
+*(Última actualización: 23 sep 2026 — README §0-§3 + §2.5 escritas; §4-§6 en espera de LIDR; nuevos requisitos de entrega pendientes de revisar (§8bis))*
