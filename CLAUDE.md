@@ -3,7 +3,7 @@
 
 **Proyecto:** ✅ **🎛️ Mood Table** (instrumento de luz para la mesa de DJ) — luz verde del mentor el 22-sep-2026 · *(plan B Pura Belia archivado)* · **Iniciales: JA**
 *(Idea anterior, Sutegi Design System, descartada el 09-sep; ver `docs/POSTMORTEM-sutegi.md`.)*
-**Repo:** github.com/7daysofrain/AI4Devs-finalproject · **Rama actual:** `feature/entrega-1-JA`
+**Repo:** github.com/7daysofrain/mood-table-v2 *(propio, no fork; historial conservado — ficha D32)* · **Rama actual:** `feature/entrega-1-JA`
 
 Este fichero es la memoria viva del proyecto. Cualquier sesión de Claude (Cowork o
 Claude Code) debe leerlo antes de trabajar y respetarlo.
@@ -62,11 +62,11 @@ luzca en producto pero no deje mostrar buen uso de IA (o al revés) está desequ
 
 | # | Entrega | Contenido | Fecha | Revisión |
 |---|---------|-----------|-------|----------|
-| 1 | Documentación técnica | 100% doc, sin código. Un `readme.md` con 8 secciones (ver abajo) | **25 sep 2026** | Automatizada |
+| 1 | Documentación técnica | 100% doc, sin código. Según el doc 99.2: ficha, descripción, arquitectura, modelo de datos, **historias de usuario y tickets de trabajo** (la API no se nombra) | **25 sep 2026** | Automatizada |
 | 2 | Código funcional | Scaffolds front+back+BD conectados; flujo principal casi completo; primeras funcionalidades | **23 oct 2026** | Automatizada |
-| 3 | Entrega final | E1+E2 unidas; **3-5 funcionalidades completas**; suite de tests (unit + integración + **≥1 E2E del flujo principal**); evidencia de despliegue (URL pública/screenshots/vídeo); **`prompts.md` completo** | **11 nov 2026** | **Feedback humano** |
+| 3 | Entrega final | E1+E2 unidas; **3-5 funcionalidades completas**; suite de tests (unit + integración + **≥1 E2E del flujo principal**); **despliegue obligatorio** (sin él no hay feedback) + evidencia de funcionamiento; **`prompts.md` completo** | **11 nov 2026** | **Feedback humano** |
 
-Prórroga posible hasta **25 nov** (pedir al TA con antelación).
+Prórroga posible hasta **25 nov** (pedir al TA con antelación). *(El doc 99.2 no la menciona; no reconfirmada.)*
 
 **Estructura REAL de la plantilla oficial** (verificado 08-sep-2026 en el repo):
 un solo **`readme.md` con 8 secciones** + **`prompts.md`**:
@@ -82,11 +82,32 @@ requisito de la plantilla. (Corrección de un error previo.)
 README se destacan **3**; los 3 tickets deben cubrir back/front/BD (el panel de control lo
 permite); la API del panel se documenta en **OpenAPI** → el panel no es decorativo.
 
-**Mecánica:** fork de `github.com/LIDR-academy/AI4Devs-finalproject`; rama por entrega con
-iniciales (`feature/entrega-1-JA`, `feature/entrega-2-JA`, `final-project-JA`); formulario
-Typeform tras cada entrega (pide nombre, email, tipo de entrega y URL del PR; sin
-formulario la entrega "no existe"). Repo puede ser privado dando acceso al TA, o entregar
-README + vídeo 2-3 min si es confidencial. `README.md` y `prompts.md` obligatorios siempre.
+**Mecánica (act. 23-sep, fuente: doc Drive "99.2 - Sesión de acompañamiento — Proyecto Final" +
+vídeo de la sesión):**
+- **Repo propio, no fork.** `LIDR-academy/AI4Devs-finalproject` ya no se usa para trabajar ni para PR:
+  solo es plantilla para copiar `readme.md`/`prompts.md`. → Joseba creará un **repo nuevo** y se moverá
+  todo allí (en otra sesión).
+- **Rama por entrega** con iniciales (`feature/entrega-1-JA`, `feature/entrega-2-JA`, `final-project-JA`).
+- **Typeform** (`lidr.typeform.com/proyectoai4devs`) tras cada entrega (1, 2 y final): se envía **solo
+  el link de la rama** en formato `…/tree/nombre-de-la-rama` (**no** el del PR). Sin formulario la
+  entrega "no existe".
+- **Repo privado → invitar a la cuenta `LIDR-AI4Devs`.** (El nuestro será público.)
+- **`readme.md` debe incluir cómo probar el MVP y las credenciales** para loguearse. Mood Table no
+  tiene login → decirlo expresamente (README §1.4).
+- **Sin despliegue no hay feedback** en la entrega final: no basta el código fuente.
+- **Vídeo como sustituto del acceso → sin feedback.** El vídeo de la mesa (hardware) **complementa**
+  la demo desplegada; no la sustituye.
+- `README.md` y `prompts.md` obligatorios siempre.
+
+**Cambio de impacto (23-sep):** el doc 99.2 sitúa **historias de usuario y tickets en la E1**. Resuelve
+la duda enviada a LIDR sobre README §5/§6 (ver §8 y §8bis). La **§4 (API)** no aparece en la lista de
+la E1: sigue en espera. No aparecen en el doc (ni confirmado ni anulado): revisión automatizada,
+prórroga, 8 secciones exactas del readme.
+
+**Consejos del vídeo (min. 42):** iterar el **PRD** hasta que cubra todo (lo que falte aparecerá en el
+desarrollo); **priorizar el backlog** que genere la IA ("vámonos por esas funcionalidades") en vez de
+aceptar uno lineal; de ahí los tickets; pensar **qué agentes necesita el flujo** (sistema multiagente,
+hooks, elección de modelo por tarea).
 
 ---
 
@@ -123,6 +144,11 @@ Documentar el **flujo de trabajo con IA**, no solo prompts sueltos:
 - Si se usaron skills, subagentes, rules o comandos personalizados.
 - Los prompts/workflows más importantes.
 - Qué ajustes humanos hubo que hacer sobre el output de la IA.
+
+**Regla (23-sep): al cerrar cada sección del readme, se registra en `prompts.md`.** Formato de la
+plantilla: **máx.** 3 prompts por sección (solo los que aporten; si es uno, es uno), **copiados literalmente** (sin corregir ni recortar) + una línea
+en cursiva de contexto/resultado. §2.4 rellenada como muestra; las secciones ya cerradas (§0-§3, §2.5)
+las rellena Joseba reabriendo las sesiones en las que se escribieron.
 
 ---
 
@@ -200,44 +226,104 @@ riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momen
       WebSocket motor → navegador para frames y estado (fallback: `setParam` por WS si hay latencia).
 - [ ] **Renombrar `CLAUDE.md` → `AGENTS.md`** (Joseba, desde terminal con `git mv`) y crear un
       `CLAUDE.md` mínimo que lo importe (`@AGENTS.md`). Comprometido en README §2.3 (22-sep).
+      **Aplazado (23-sep): se hace al pasar a Claude Code.** Riesgo: comprobar que Cowork resuelve `@AGENTS.md`
+      (si no, pedir en el prompt que lea `AGENTS.md`). En la E2, separar instrucciones de código y plan del curso.
 - [x] **Seguridad (README §2.5)** ✅ (23-sep): por contexto (mesa sin auth por decisión; demo pública
       con estado en memoria, rate limit, máx. WS, HTTPS); TypeBox, helmet, sin CORS; **SonarQube Cloud
       (quality gate en PR) + Dependabot** (Sonar gratis no hace SCA; Snyk descartado).
 - [x] **Persistencia** ✅ SQLite solo para estado (`strip_state`, `strip_effects`); tiras en fichero de configuración (22-sep, README §3, ficha D25/D29).
+- [ ] **README §5 (historias) y §6 (tickets) van en la E1** (doc 99.2, 23-sep). Siguen sin redactarse en
+      Cowork: salen de **PRD → backlog priorizado → 3 historias + 3 tickets (back/front/BD)** en Claude
+      Code + OpenSpec, **en el repo nuevo**. ⚠️ Riesgo de plazo: `docs/PRD.md` aún no existe y la E1 es el
+      25-sep. §4 (API) sigue en espera de LIDR.
+- [x] **Repo nuevo** ✅ (23-sep): `7daysofrain/mood-table-v2`, público, historial conservado, remoto del fork
+      eliminado. Ideas descartadas fuera del árbol (en local: `docs/borradores/descartadas/`); `PLAN-entregables.md`
+      borrado. Ficha D32. Pendiente opcional: archivar el fork antiguo en GitHub.
+- [ ] **`HARDWARE_SETUP.md`** (raíz): montaje de la tira, alimentación, Light Box/Arduino Adalight, tarjeta de
+      sonido. Prometido en README §1.4 (D31). Revisión cuidadosa de Joseba (errores de cableado = hardware quemado).
+- [x] **URL de clonado** ✅ en README §0.5, §1.4 y árbol de §2.3 (23-sep).
+- [ ] **Instrucciones del Proyecto de claude.ai** (Joseba, en claude.ai): aún dicen "7 docs numerados";
+      corregir a "readme.md con 8 secciones + prompts.md".
 - [ ] **Actualizar `docs/PLAN-entregables.md`**: vaciar estado de secciones (era de Sutegi) y
       adaptar el guion a Mood Table (modelo de datos simple, API del panel, tickets back/front/BD).
 - [ ] **`readme.md`** (Entrega 1, 25-sep): ✅ §0, §1.1, §1.2, §2.1, §2.2, §2.3, §2.5, §3 escritas (22-23 sep); §2 de Sutegi
       borrada, estructura de la plantilla original. Siguiente: ver §8bis y cierre (`prompts.md`, verificación contra plantilla).
 
-## 8bis. Plan para la próxima sesión (act. 23-sep)
+## 8bis. Plan de las próximas sesiones (act. 23-sep, tarde)
 
-**Orden de trabajo:**
+✅ **Sesión del 23-sep (mañana), cerrada:** §4 de este fichero actualizada con el doc 99.2 de LIDR; README
+§1.3 (+ wireframe en Claude Design → `docs/img/panel-wireframe.png`), §1.4, §2.4, §2.6 escritas; §1.2 con
+códigos H1-H5; §2.5 ajustada (HTTPS con Caddy); decisiones D30-D31 en la ficha; `prompts.md` con formato
+acordado (§6 de este fichero) y §1.3, §1.4, §2.4, §2.6 registradas.
 
-1. **Actualizar requisitos de LIDR.** El 23-sep LIDR indicó por chat cambios respecto a §4 de este
-   fichero: (a) **repo propio**, no fork — la plantilla `AI4Devs-finalproject` solo sirve para copiar
-   `readme.md`/`prompts.md`; (b) en el Typeform de cada entrega va el **link a la rama**
-   (`…/tree/nombre-rama`), no el del PR; (c) repo privado → invitar a `LIDR-AI4Devs` (el nuestro será
-   público); (d) **sin despliegue no hay feedback** en la entrega final; (e) el `readme.md` debe incluir
-   **cómo probar el MVP y credenciales** (Mood Table no tiene login → decirlo explícitamente en §1.4).
-   Joseba aportará el documento de definiciones actualizado si existe: **revisar §4 contra él** y
-   corregir lo que haya cambiado antes de seguir.
-2. **Seguir con el README en Cowork:** §2.4 (infraestructura y despliegue), §2.6 (tests), §1.3 (UX),
-   §1.4 (instalación + cómo probar + "sin credenciales"), todas en versión "previsto"; y `prompts.md`.
-   - **§2.4 decisión pendiente:** plataforma de la demo pública — **Fly.io** (~2-4 €/mes, siempre
-     encendido; recomendado) vs **Render gratis** (se duerme a los 15 min, ~1 min en despertar). Pi:
-     `systemd` + usuario propio + SQLite + script en `deploy/`. Idea a incluir: en modo demo el bucle
-     se pausa si no hay clientes WebSocket.
-3. **§4, §5, §6 — EN ESPERA de respuesta de LIDR.** Pregunta enviada por Joseba: ¿van en la Entrega 1 o
-   se completan durante el desarrollo junto con la §7? Decisión ya tomada: **no se redactan en
-   Cowork**; salen del flujo SDD en el repo (**Claude Code + OpenSpec**) a partir de las 5 historias
-   (README §1.2, ficha §3), y el README las **resume y enlaza**. Si LIDR confirma que van en la E1,
-   hacerlo en Claude Code antes del 25-sep. **§7 (PRs): entrega final.**
-4. **Tareas de Joseba en terminal:** borrar `.borrador-2.1.tmp.md`; commitear `.gitignore`
-   (`docs/borradores/`); `git mv CLAUDE.md AGENTS.md` + `CLAUDE.md` con `@AGENTS.md`.
+**Orden acordado:** el **PRD va antes que la herramienta de gestión** (el setup de la herramienta —épicas,
+etiquetas, qué es feature/task— sale del PRD; hacerlo antes es configurar a ciegas). Así lo recomendaba
+también el vídeo de LIDR: iterar el PRD → priorizar backlog → tickets.
 
-**Estado del README (23-sep):** ✅ §0, §1.1, §1.2, §2.1, §2.2, §2.3, §2.5, §3 · ⬜ §1.3, §1.4, §2.4,
-§2.6 · ⏸ §4, §5, §6 (en espera de LIDR) · ⛔ §7 (entrega final). Borradores en `docs/borradores/`.
+### Sesión 1 — 23-sep (tarde) · Claude Code + terminal
+
+1. **Repo nuevo (propio, no fork)** y mover todo. Decidir en la sesión:
+   - **¿Conservar el historial de git?** (recomendable: los commits son evidencia del proceso) o empezar limpio.
+   - **Qué se mueve:** `readme.md`, `prompts.md`, `CLAUDE.md` (→ `AGENTS.md` + `CLAUDE.md` con `@AGENTS.md`),
+     `.gitignore`, `docs/idea-mood-table.md`, `docs/img/`. Decidir qué hacer con lo de ideas descartadas
+     (`POSTMORTEM-sutegi.md`, `idea-design-system-agentico.md`, `idea-pura-belia.md`, `PLANTILLA-idea.md`):
+     ¿archivar en `docs/archivo/` (evidencia del proceso de ideación) o dejar fuera? `docs/PLAN-entregables.md`
+     (obsoleto) **no se mueve**. `docs/borradores/` sigue ignorada.
+   - Rama `feature/entrega-1-JA`; actualizar la URL del repo en README §0.5 y §1.4 y en la cabecera de este fichero.
+   - Si el repo es privado: invitar a `LIDR-AI4Devs` (previsto: público).
+2. **PRD** (`docs/PRD.md`), iterado hasta que cubra todo, a partir de README §1-§3 y la ficha. **No quedarse en
+   la primera iteración.** Revisar vocabulario (nombres de tiras, efectos, parámetros) para que no aparezcan
+   luego palabras que no debían en el desarrollo.
+3. **Elegir la herramienta de gestión** de historias/features/tasks y hacer su setup. Criterios a valorar:
+   - **GitHub Issues + Projects:** historias, PRs (§7) y specs en el mismo sitio; Claude Code lo maneja con `gh`.
+   - **Linear:** más cómodo, con MCP, pero otra pieza que sincronizar con OpenSpec.
+   - **Jira:** probablemente excesivo para un proyecto de una persona.
+   - **Riesgo común: duplicar información** (PRD, herramienta y spec OpenSpec). Decidir qué es la **fuente de
+     verdad** de cada cosa (p. ej.: PRD = qué y por qué; herramienta = backlog y estado; OpenSpec = contrato de
+     cada cambio).
+
+### Sesión 2 — 24-sep · Claude Code (+ Cowork para revisión)
+
+0. **Formato de §5/§6 según los ejemplos de LIDR** (revisados el 23-sep; la TA los recomienda "para estructurar"):
+   - **Ejemplo 1** (`AI4Devs-finalproject-Example1`): el README solo lista los 3 títulos y **enlaza** a
+     `5-historias-de-usuario.md` / `6-tickets-de-trabajo.md`.
+     - **Historia:** `HU001: título` · **Como / Quiero / Para** · Criterios de aceptación (lista) · Prioridad ·
+       Estimación (puntos) · Justificación.
+     - **Ticket:** Información general (ID, Tipo back/front/BD, Historia relacionada, Prioridad, Estimación,
+       Sprint, Asignado, Estado) · Descripción · Objetivos · Requisitos técnicos · Tareas de desarrollo (con
+       puntos y checkbox) · Criterios de aceptación · Dependencias · Riesgos y mitigaciones · Tests.
+   - **Ejemplo 2** (`AI4Devs-finalproject-Example2`, `README.md`): historias con Como/Quiero/Para, criterios
+     de aceptación, **escenarios de uso** y **métricas de éxito**; tickets con metadatos (tipo, prioridad,
+     puntos, sprint), descripción, requisitos funcionales y técnicos, criterios de aceptación y dependencias.
+   - **Para Mood Table:** criterios en **Given/When/Then** (lo pide la metodología SDD del máster, §5; los
+     ejemplos usan listas). Decidir en la sesión si inline en el README o resumen + enlace (como el Ejemplo 1
+     y como ya estaba previsto: "el README resume y enlaza"). Los 3 tickets: **back / front / BD**.
+1. **Backlog priorizado** desde el PRD (no aceptar el backlog lineal que genere la IA: elegir "vámonos por esas
+   funcionalidades").
+2. **README §5** (3 historias principales, Given/When/Then) y **§6** (3 tickets: backend, frontend, BD) —
+   **van en la E1** (doc 99.2). Salen del flujo SDD (OpenSpec); el README los resume y enlaza.
+3. **`prompts.md`:** sección 0 (flujo de trabajo con IA) y las secciones de esta sesión.
+4. **Verificación final contra la plantilla** y los requisitos del doc 99.2 (cómo probar + "sin credenciales" ✅
+   en §1.4; link de rama; repo accesible).
+5. **Entrega:** PR/merge según convenga y **Typeform con el link de la rama** (`…/tree/feature/entrega-1-JA`).
+
+⚠️ **Plazo:** E1 el **viernes 25-sep**. La sesión 2 va sin margen: si la sesión 1 se alarga, recortar setup de la
+herramienta (se puede terminar después de la E1), nunca §5/§6.
+
+### README §4 (API): no requerida en la E1
+
+Confirmado por LIDR el 23-sep (mensaje de la TA: la E1 = ficha, descripción, arquitectura y modelo de datos,
+historias y tickets, stack; la API no aparece, igual que en el doc 99.2). Se documenta en OpenAPI en la **E2**,
+junto al código. El stack ya está en README §2.1 (tabla "Stack").
+
+### Tareas de Joseba en terminal (antes o durante la sesión 1)
+
+- ~~Borrar `.borrador-2.1.tmp.md`~~ ✅ (ya no existe).
+- Revisar en GitHub si el repo actual figura como "forked from LIDR-academy" (informativo: se sustituye igualmente).
+- Corregir en claude.ai las instrucciones del Proyecto ("7 docs numerados" → readme con 8 secciones + prompts.md).
+
+**Estado del README (23-sep):** ✅ §0, §1.1, §1.2, §2.1, §2.2, §2.3, §1.3 (wireframe en `docs/img/`), §1.4 (D31), §2.4 (D30), §2.5, §2.6, §3 · ⏸ §4 (en espera de LIDR) · 🔜 §5, §6 (van en E1; Claude Code, otra sesión) · ⛔ §7 (entrega final). Borradores en `docs/borradores/`.
 Decisiones D15-D29 en la ficha (`docs/idea-mood-table.md` §10). `docs/PLAN-entregables.md` está
 **obsoleto** (era de Sutegi): no usarlo como guía.
 
-*(Última actualización: 23 sep 2026 — README §0-§3 + §2.5 escritas; §4-§6 en espera de LIDR; nuevos requisitos de entrega pendientes de revisar (§8bis))*
+*(Última actualización: 23 sep 2026 — sesión de mañana cerrada (README §1.3, §1.4, §2.4, §2.6); plan de dos sesiones en §8bis: hoy tarde repo nuevo → PRD → herramienta; 24-sep backlog → §5/§6 → verificación y entrega)*

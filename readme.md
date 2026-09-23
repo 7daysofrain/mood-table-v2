@@ -33,7 +33,7 @@ Instrumento de luz para la mesa de DJ: un motor de efectos propio, reactivo a la
 
 ### 0.5. URL o archivo comprimido del repositorio
 
-https://github.com/7daysofrain/AI4Devs-finalproject
+https://github.com/7daysofrain/mood-table-v2
 
 > Puedes tenerlo alojado en público o en privado, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/). También puedes compartir por correo un archivo zip con el contenido
 
@@ -64,13 +64,13 @@ https://github.com/7daysofrain/AI4Devs-finalproject
 
 > Enumera y describe las características y funcionalidades específicas que tiene el producto para satisfacer las necesidades identificadas.
 
-**MVP (must-have)**
+**MVP (must-have)**. Cada historia lleva un código (H1-H5) con el que se cita en el resto del documento.
 
-1. **Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, eliges un efecto y la tira virtual del navegador reacciona a la música en tiempo real.
-2. **Tocar los parámetros en vivo.** El panel genera los controles a partir del esquema que declara cada efecto; al moverlos, la luz responde al instante.
-3. **Pintar la tira física.** Lo que muestra la tira virtual se reproduce en la tira real de la mesa, conectada al Light Box por protocolo Adalight (serie). Cualquier Arduino con firmware Adalight sirve igual.
-4. **Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, orden de color y límites de potencia), y el motor, el límite de potencia y la tira virtual lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
-5. **Arrancar en el último estado.** Enciendes la Pi sin portátil y vuelve como estaba: el efecto de cada tira y sus valores.
+- **H1 · Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, eliges un efecto y la tira virtual del navegador reacciona a la música en tiempo real.
+- **H2 · Tocar los parámetros en vivo.** El panel genera los controles a partir del esquema que declara cada efecto; al moverlos, la luz responde al instante.
+- **H3 · Pintar la tira física.** Lo que muestra la tira virtual se reproduce en la tira real de la mesa, conectada al Light Box por protocolo Adalight (serie). Cualquier Arduino con firmware Adalight sirve igual.
+- **H4 · Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, orden de color y límites de potencia), y el motor, el límite de potencia y la tira virtual lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
+- **H5 · Arrancar en el último estado.** Enciendes la Pi sin portátil y vuelve como estaba: el efecto de cada tira y sus valores.
 
 **Efectos incluidos.** Los tres efectos de la v1, reescritos en el motor propio. Así se demuestra que la nueva arquitectura cubre lo que hacía la anterior:
 
@@ -89,8 +89,85 @@ https://github.com/7daysofrain/AI4Devs-finalproject
 
 > Proporciona imágenes y/o videotutorial mostrando la experiencia del usuario desde que aterriza en la aplicación, pasando por todas las funcionalidades principales.
 
+*Diseño previsto para la Entrega 2. Las capturas y el vídeo del producto real llegarán con la entrega final.*
+
+La interfaz del MVP es **un único panel web**, técnico y pensado para escritorio, que sirve igual para la **demo pública** y para la **mesa**. El panel no sabe si detrás hay una tira física: solo ve las tiras declaradas. Pasar del simulador a la mesa es cambiar la configuración del despliegue (fuente de audio y salidas), no la interfaz (§2.1).
+
+La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor F1 o un mando propio) queda **fuera del MVP**; se conectará al mismo puerto de mandos.
+
+![Wireframe del panel del MVP](docs/img/panel-wireframe.png)
+*Wireframe de baja fidelidad: estructura prevista, no diseño final.*
+
+#### Zonas del panel
+
+- **Cabecera:** estado de la conexión con el motor, fuente de audio activa (fichero o tarjeta) con su nivel, y fps reales del motor.
+- **Tira virtual:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
+- **Tiras:** lista de las tiras declaradas en el fichero de configuración, en solo lectura: nombre, número de LEDs y salida (virtual o Adalight con su puerto). Al seleccionar una, el resto del panel actúa sobre ella.
+- **Efectos:** los efectos disponibles para la tira seleccionada, etiquetados como *reactivo* o *ambiente*, con el activo marcado.
+- **Controles:** generados a partir del esquema del efecto activo: un número con rango es un slider, un color es un selector de color y una lista de opciones es un desplegable.
+
+#### Recorrido por las funcionalidades principales
+
+1. **Probar en el simulador (H1).** Se abre la demo pública: suena el fichero de audio y la tira virtual ya reacciona. Se elige otro efecto (espectro, energía, scroll) y la tira cambia al instante.
+2. **Tocar los parámetros en vivo (H2).** Se mueve un slider (por ejemplo, la sensibilidad) y la luz responde mientras se arrastra.
+3. **Pintar la tira física (H3).** En la mesa, la lista de tiras muestra la principal con salida *Adalight · /dev/ttyUSB0*. Lo que se ve en la tira virtual es lo que pinta la mesa.
+4. **Declarar mis tiras (H4).** Las tiras, su número de LEDs y su salida son las del fichero de configuración; el panel las muestra pero no las edita.
+5. **Arrancar en el último estado (H5).** Al reiniciar el motor y volver a abrir el panel, cada tira tiene el efecto y los valores con los que se dejó, y el panel avisa de que el estado se ha restaurado.
+
 ### **1.4. Instrucciones de instalación:**
 > Documenta de manera precisa las instrucciones para instalar y poner en marcha el proyecto en local (librerías, backend, frontend, servidor, base de datos, migraciones y semillas de datos, etc.)
+
+*Diseño previsto para la Entrega 2. Los comandos definitivos se confirmarán con el código.*
+
+Hay tres formas de probar Mood Table, de menos a más esfuerzo: la **demo pública** (sin instalar nada), el **simulador en local** (sin hardware) y la **mesa** (Raspberry Pi con una tira LED real).
+
+> **Credenciales: no hay.** Mood Table no tiene login en ningún entorno (§2.5). La demo pública y el panel local se abren directamente.
+
+#### 1. Probar la demo pública (sin instalar nada)
+
+1. Abre `https://moodtable.josebaalonso.tech`.
+2. Suena una pista de ejemplo y las dos tiras virtuales ya reaccionan (**H1**).
+3. En **Efectos**, cambia de *Espectro* a *Energía* o *Scroll*: la tira cambia al instante (**H1**).
+4. En **Controles**, mueve *Sensibilidad*: la luz responde mientras arrastras (**H2**).
+5. En **Tiras**, selecciona la otra tira: los controles pasan a ser los suyos (**H4**).
+
+La demo comparte el estado entre todos los visitantes y lo reinicia cada cierto tiempo. La tira física (**H3**) y el arranque en el último estado (**H5**) se ven en el vídeo de la mesa (§2.4) o en local (abajo).
+
+#### 2. Simulador en local (sin hardware)
+
+**Requisitos:** Node.js LTS y pnpm (`corepack enable`). Linux, macOS o Windows.
+
+```bash
+git clone https://github.com/7daysofrain/mood-table-v2.git
+cd mood-table-v2
+pnpm install
+pnpm dev
+```
+
+`pnpm dev` arranca el motor con la configuración de ejemplo (`deploy/config/demo.json`: fuente = pista de ejemplo incluida en el repo, dos tiras virtuales) y el panel con recarga en caliente. Abre `http://localhost:8080`.
+
+**Base de datos:** no hay que instalar nada. SQLite es un fichero que el motor crea al arrancar; **las migraciones se aplican solas** al arrancar y **no hay semillas**: la reconciliación crea el estado inicial de cada tira declarada con los valores por defecto de cada efecto (§3).
+
+**Probar el arranque en el último estado (H5):** cambia el efecto y algún control, para el motor (`Ctrl+C`), vuelve a lanzar `pnpm dev` y recarga el panel: cada tira vuelve como la dejaste.
+
+**Tests:**
+
+```bash
+pnpm test        # unitarios e integración (Vitest)
+pnpm test:e2e    # flujo principal en el navegador (Playwright)
+```
+
+#### 3. En la mesa (Raspberry Pi con tira real)
+
+**Hardware:** Raspberry Pi 4 (o 3 B+) con Raspberry Pi OS de 64 bits · tira LED direccionable conectada a un **Light Box** o a un **Arduino con el sketch Adalight** por USB · fuente de alimentación adecuada para la tira · tarjeta de sonido USB con la salida del mixer en su entrada.
+
+> **Montaje del hardware:** el cableado de la tira, su alimentación, la conexión al Light Box o al Arduino (con el sketch Adalight) y la tarjeta de sonido se documentarán paso a paso en [`HARDWARE_SETUP.md`](HARDWARE_SETUP.md), en la raíz del repositorio (*pendiente*). Los pasos siguientes dan por hecho que el hardware ya está montado.
+
+1. En la Pi, clona el repositorio y ejecuta `sudo deploy/install.sh`. Crea el usuario `moodtable`, instala Node.js y deja el motor como servicio `systemd` (§2.4).
+2. Copia `deploy/config/mesa.example.json` a `/etc/moodtable/config.json` y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Si algo está mal, el motor no arranca y dice qué campo falla.
+3. `sudo systemctl start moodtable`.
+4. Desde cualquier dispositivo de la red local, abre `http://<ip-de-la-pi>:8080`. Lo que ves en la tira virtual lo pinta la tira real (**H3**).
+5. Desenchufa la Pi y vuelve a enchufarla: arranca sola y vuelve al último estado (**H5**).
 
 ---
 
@@ -316,7 +393,7 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 El repositorio es un **monorepo con pnpm workspaces** y tres paquetes: `engine` (el motor), `panel` (el front) y `shared` (los esquemas comunes). Se descartó un único paquete porque con paquetes separados la frontera entre motor y navegador la impone la estructura: el panel **solo puede importar lo que exporta `shared`**, así que no puede acabar lógica de luces en el navegador. Además, cada lado tiene sus dependencias y su configuración de TypeScript (Node frente a DOM), y en la Pi solo se instala el motor. No se usa Nx ni Turborepo porque con tres paquetes no aportan nada que los workspaces no den ya.
 
 ```
-AI4Devs-finalproject/
+mood-table-v2/
 ├── packages/
 │   ├── shared/     # Esquemas TypeBox comunes: parámetros de efectos, comandos, config de la tira, formato de frames
 │   ├── engine/     # Motor (un proceso Node en la Pi): núcleo y adaptadores, separados
@@ -349,6 +426,117 @@ AI4Devs-finalproject/
 
 > Detalla la infraestructura del proyecto, incluyendo un diagrama en el formato que creas conveniente, y explica el proceso de despliegue que se sigue
 
+*Diseño previsto para la Entrega 2.*
+
+Mood Table se despliega en **dos entornos con el mismo artefacto y el mismo procedimiento**: la **mesa** (producción real, una Raspberry Pi 4 en la red local) y la **demo pública** (una instancia EC2 en AWS, para que cualquiera pueda probarla sin hardware). Los dos son una máquina Linux **arm64** con el motor como servicio `systemd`. Solo cambia el fichero de configuración: qué tiras hay, de dónde sale el audio y dónde se guarda el estado.
+
+```mermaid
+flowchart LR
+  dev["💻 Desarrollo<br/>portátil · Pi 3 B+"]
+
+  subgraph gh["GitHub"]
+    direction TB
+    repo["Repositorio"]
+    ci["GitHub Actions<br/>lint · tipos · tests · E2E<br/>SonarQube (quality gate)"]
+    rel["Release<br/>paquete del motor + build del panel"]
+    repo --> ci --> rel
+  end
+
+  subgraph home["Casa · red local"]
+    direction TB
+    subgraph pi["Raspberry Pi 4 (arm64) · mesa"]
+      direction TB
+      svcPi["systemd · usuario moodtable<br/>motor Node.js :8080"]
+      db[("SQLite<br/>estado")]
+      svcPi --- db
+    end
+    lb["💡 Light Box<br/>USB serie"]
+    snd["🎚️ Tarjeta de sonido USB"]
+    lan["🖥️ Panel en la red local"]
+    svcPi --> lb
+    snd --> svcPi
+    lan <--> svcPi
+  end
+
+  subgraph aws["AWS · región UE"]
+    direction TB
+    subgraph ec2["EC2 t4g.micro (arm64) · demo · IP elástica"]
+      direction TB
+      caddy["Caddy :80/:443<br/>HTTPS Let's Encrypt"]
+      svcDemo["systemd · usuario moodtable<br/>motor Node.js 127.0.0.1:8080<br/>audio = WAV · estado en memoria"]
+      caddy --> svcDemo
+    end
+  end
+
+  dns["Spaceship DNS<br/>A moodtable.josebaalonso.tech"]
+  visitor["🌍 Visitante / evaluador"]
+
+  dev -- "push / PR" --> repo
+  rel -- "update.sh (manual, por la red local)" --> svcPi
+  rel -- "CD: GitHub Actions → SSM → update.sh" --> svcDemo
+  visitor -- "HTTPS + WSS" --> caddy
+  dns -.-> caddy
+
+  classDef ext fill:#f1f3f5,stroke:#495057,color:#000
+  class dev,visitor,dns,lb,snd,lan ext
+```
+
+#### Los dos entornos
+
+| | Mesa (producción) | Demo pública |
+|---|---|---|
+| **Máquina** | Raspberry Pi 4 (arm64) | AWS EC2 `t4g.micro`: 2 vCPU Graviton (arm64), 1 GB |
+| **Tiras** | Tira del Light Box (Adalight) + tira virtual | Solo tiras virtuales: sin puertos serie |
+| **Audio** | Tarjeta de sonido USB (`arecord`) | Fichero WAV en bucle, con licencia libre |
+| **Estado** | SQLite en la tarjeta SD (§3) | En memoria; se reinicia cada cierto tiempo (§2.5) |
+| **Acceso** | Red local, sin autenticación | `https://moodtable.josebaalonso.tech`, sin login |
+| **Despliegue** | Manual: se lanza `deploy/update.sh` desde la red local | **Continuo (CD) con GitHub Actions** al integrar en `main` |
+
+**Por qué arm64 en los dos.** Es la arquitectura de la Pi. Con una instancia Graviton en la nube, el motor y sus dependencias nativas (`serialport`, SQLite) se instalan y se prueban igual en los dos sitios, y las medidas de rendimiento de la demo son representativas de la mesa. Es un único procedimiento de despliegue, no dos.
+
+**Por qué una máquina virtual (EC2).** El motor es un proceso de larga duración con un bucle continuo y WebSocket, así que necesita una máquina siempre disponible y no un servicio que duerma la aplicación. Una EC2 replica la mesa (Linux + `systemd`), de modo que el procedimiento de despliegue es el mismo en los dos entornos.
+
+#### Proceso de despliegue
+
+1. **Integración continua (en cada PR).** GitHub Actions ejecuta lint (incluida la regla "el núcleo no importa de los adaptadores", §2.3), comprobación de tipos, tests unitarios y de integración, el E2E con Playwright (§2.6) y el análisis de SonarQube Cloud. Si algo falla o no se supera el *quality gate*, el PR no se integra.
+2. **Release (al integrar en `main`).** Se construye el panel (build estático de Vite) y el motor, y se publica un paquete versionado como release de GitHub.
+3. **Instalación inicial (una vez por máquina).** `deploy/install.sh` es idempotente: crea el usuario de sistema `moodtable` (en la Pi, con el grupo `dialout` para los puertos serie), instala Node.js LTS, copia el fichero de configuración del entorno e instala la unidad `systemd`. En la demo instala además Caddy.
+4. **Despliegue continuo de la demo (al integrar en `main`).** Tras publicar la release, el mismo workflow de GitHub Actions la despliega en la EC2. Como Actions corre en servidores de GitHub, llega a la máquina por **AWS Systems Manager** (SSM), con un rol temporal (OIDC): no hay claves de AWS guardadas en GitHub ni puerto SSH abierto. Lo que ejecuta dentro de la máquina es `deploy/update.sh <versión>`.
+5. **Despliegue de la mesa (manual).** Se lanza el **mismo** `deploy/update.sh` desde la red local. GitHub no puede llegar a la Pi, y es preferible no actualizar el instrumento en mitad de una sesión.
+
+**Qué hace `update.sh`** (el paso que se ejecuta en la máquina, igual en los dos entornos): descarga la release indicada, instala las dependencias de producción y reinicia el servicio. Tras cada despliegue, el autor comprueba a mano que la demo funciona. **Volver atrás** es ejecutar el mismo script con la versión anterior.
+
+**Por qué los pasos viven en un script y no en el YAML del workflow.** GitHub Actions **decide y lanza** el despliegue; el script es **lo que se hace dentro de la máquina**. Tenerlo en un script da un único procedimiento para la mesa y la demo (en el YAML habría dos versiones que acabarían divergiendo), se puede probar sin GitHub en la Pi de desarrollo y deja el workflow corto y legible: construir, publicar y pedir por SSM que se ejecute `update.sh`.
+
+**Servicio `systemd`.** Arranca el motor al encender la máquina, lo reinicia si cae (`Restart=on-failure`) y le pasa la ruta del fichero de configuración. Junto con el guardado del estado en SQLite, es lo que permite que la mesa "vuelva como estaba" (H5) tras un corte de luz.
+
+#### Detalles de la demo pública
+
+- **HTTPS con Caddy.** Caddy recibe el tráfico en los puertos 80 y 443, obtiene y renueva solo el certificado de Let's Encrypt y reenvía HTTP y WebSocket al motor, que solo escucha en `127.0.0.1`. La configuración cabe en unas líneas:
+
+  ```
+  moodtable.josebaalonso.tech {
+      reverse_proxy 127.0.0.1:8080
+  }
+  ```
+
+- **DNS.** Un registro `A` en Spaceship apunta el subdominio a la **IP elástica** de la instancia. La IP elástica no cambia aunque la instancia se pare, y no cuesta más que una IP pública automática.
+- **CPU.** Las `t4g` acumulan créditos de CPU cuando están ociosas y los gastan en ráfagas. Por eso, en la demo, **el bucle se pausa cuando no hay ningún navegador conectado** y corre a **30 fps**: acumula créditos mientras nadie mira y tiene CPU de sobra cuando alguien entra. La instancia va en modo de créditos *standard* (si se agotan, se ralentiza en lugar de facturar más). El consumo real se mide en el spike de rendimiento.
+- **Red y acceso.** El grupo de seguridad solo abre 80 y 443. La administración se hace por SSM Session Manager, sin SSH. Las actualizaciones de seguridad del sistema operativo se aplican solas (`unattended-upgrades`).
+- **Coste previsto.** ~6 $/mes de instancia + ~3,6 $/mes de IPv4 pública + disco: **unos 10 $/mes**, con una **alerta de presupuesto** en AWS.
+
+#### Evidencia de funcionamiento (entrega final)
+
+- **URL pública** de la demo: suena un tema, la tira virtual reacciona y el panel cambia los parámetros en vivo. Cómo probarla, en §1.4.
+- **Vídeo de 2-3 minutos** del flujo completo en la mesa: panel → motor → tira física → apagar y encender → vuelve al último estado.
+
+#### Sacrificios
+
+- **Operación a cargo del autor.** Sistema operativo, Caddy y la instancia se mantienen a mano; un PaaS lo daría hecho. Se compensa con scripts idempotentes y actualizaciones automáticas.
+- **Una sola instancia, sin alta disponibilidad.** Si cae, la demo no está hasta que `systemd` la reinicia. Es suficiente para una demo.
+- **Infraestructura sin código (IaC).** La instancia, el grupo de seguridad, la IP y el rol se crean una vez y se documentan paso a paso en `deploy/`; Terraform o CDK quedan fuera del MVP.
+- **Coste fijo** de ~10 $/mes.
+
 ### **2.5. Seguridad**
 
 > Enumera y describe las prácticas de seguridad principales que se han implementado en el proyecto, añadiendo ejemplos si procede
@@ -368,7 +556,7 @@ La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la 
 - **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria**: nada se escribe en disco y el estado vuelve al inicial cada cierto tiempo. Todos los visitantes ven la misma tira virtual; que uno vea lo que toca otro se asume como parte de la demo.
 - **Sin hardware.** La configuración de la demo solo declara tiras virtuales, así que no hay puertos serie expuestos.
 - **Límite de peticiones** por IP en la API (`@fastify/rate-limit`) y **máximo de conexiones WebSocket** simultáneas.
-- **HTTPS** proporcionado por la plataforma de despliegue (§2.4).
+- **HTTPS** con Caddy y certificado de Let's Encrypt; la instancia solo abre los puertos 80 y 443 y se administra sin SSH, por AWS Systems Manager (§2.4).
 
 #### En todo el sistema
 
@@ -390,6 +578,31 @@ El código lo escribe en buena parte un agente, así que el análisis automátic
 ### **2.6. Tests**
 
 > Describe brevemente algunos de los tests realizados
+
+*Diseño previsto para la Entrega 2.*
+
+La estrategia sigue la arquitectura (§2.1): el núcleo no tiene E/S, así que casi todo se prueba con entradas controladas y resultados deterministas. Con fuente = fichero y salida = memoria, un efecto produce siempre los mismos frames.
+
+| Nivel | Qué se prueba | Herramienta |
+|---|---|---|
+| **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (una sinusoide de 100 Hz cae en su banda). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). | Vitest |
+| **Integración** | API con `fastify.inject()`, sin abrir puertos. Tests de contrato de `StateStore` contra SQLite y en memoria. Reconciliación al arrancar. Arranque tras `kill -9` (§3). | Vitest |
+| **E2E (flujo principal)** | El motor arranca con fuente = WAV; en el navegador, la tira virtual reacciona a la música, mover un control cambia la luz y, tras reiniciar el motor, vuelve el último estado. | Playwright |
+| **Hardware** | Tira física con el Light Box: lista de comprobación manual y vídeo. | Manual |
+
+**Por qué así:**
+
+- **Un solo runner (Vitest)** para el motor, el panel y `shared`: misma sintaxis y un único informe de cobertura, que es el que lee SonarQube.
+- **Los frames dorados hacen testeable lo visual:** "la luz se ve bien" pasa a ser una comparación exacta. Es clave cuando el código lo escribe un agente.
+- **El E2E recorre el circuito completo:** panel → motor → tira → persistencia → arranque.
+
+Todos los niveles automáticos se ejecutan en cada PR (§2.4).
+
+#### Cobertura
+
+- **Quality gate de SonarQube:** ≥ 80 % de cobertura en el **código nuevo** de cada PR; si no se cumple, el PR no se integra.
+- **Núcleo** (bucle, análisis, efectos, límite de potencia): objetivo cercano al 100 %, por ser lógica pura y determinista.
+- **Adaptadores de hardware** (serie, `arecord`) y la raíz de composición: excluidos del cálculo; se prueban a mano (nivel "Hardware").
 
 ---
 
