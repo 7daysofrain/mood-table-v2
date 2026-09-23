@@ -280,6 +280,29 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ### 6. Tickets de Trabajo
 
+#### 6.0 Herramienta de gestión y flujo de trabajo (Linear, `docs/instructions/`)
+
+**Prompt 1:**
+
+> Si no tenemos capacidad de tipos (historia, tarea, subissue...etc) casi me lo descarta por muy buena integración que tenga. No puedo crear la jerarquía que me va a demandar la ejecución autónoma. Por otro lado Linear es lo que se ha mostrado durante las demos del curso y en la documentación. Jira descartado por overkill. Confirma lo de Github Issues + Projects. También mira en el drive el contenido del curso por si se menciona alguna alternativa interesante
+
+*Claude (Cowork, modelo `claude-opus-5-5`, con Google Drive). La IA recomendaba GitHub Issues + Projects por visibilidad pública. Verificado: los tipos de issue solo existen en organizaciones (los sub-issues sí funcionan; la IA corrigió su primera afirmación). El módulo 4 del curso fija Linear y la pirámide PRD → Epic → Historia → Tarea. Decisión: Linear (ficha D35).*
+
+**Prompt 2:**
+
+> 1 -> a
+> Antes de seguir, me está chirriando un poco de que cada proyecto sea una H. No hemos tocado el concepto de epica hasta ahora, ¿porque introducirlo? Nadie nos lo ha pedido. Para mi tiene mas sentido que haya un proyecto "Mood Table" y a partir de ahi construimos. ¿Se puede reorganizar asi? ¿Como quedaria?
+
+*La IA había modelado cada épica como un proyecto de Linear. Se mantiene la pirámide del curso, pero en un único proyecto: épica = issue padre, historia = sub-issue, tarea = sub-sub-issue. Setup hecho con el conector MCP de Linear y el navegador integrado (estados con "Spec", etiquetas, parent auto-close, automatizaciones de PR, linkbacks públicos).*
+
+**Prompt 3:**
+
+> incluso te diria sub-issue -> PR, paso en task.md -> commit
+
+*Se resuelve la duplicación de tareas entre Linear y el `tasks.md` de OpenSpec con una frontera objetiva: una tarea de Linear = una PR; un paso del `tasks.md` = un commit. Queda en `docs/instructions/workflow.md`, referenciado desde un índice en `CLAUDE.md`.*
+
+#### 6.1 Tickets
+
 **Prompt 1:**
 
 **Prompt 2:**

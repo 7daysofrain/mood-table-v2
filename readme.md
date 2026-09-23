@@ -409,7 +409,7 @@ mood-table-v2/
 ├── firmware/       # (should-have) Firmware C++ para ESP8266/ESP32
 ├── openspec/       # Specs de SDD: specs vivas y cambios propuestos
 ├── deploy/         # Servicio systemd y ficheros de configuración de tiras (mesa y demo pública)
-├── docs/           # Documentación de apoyo (ficha, decisiones)
+├── docs/           # PRD, instrucciones de trabajo (workflow, Linear), ficha y decisiones
 ├── .claude/        # Skills y subagentes de Claude Code
 └── AGENTS.md       # Instrucciones para agentes de código (estándar abierto)
 ```

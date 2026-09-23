@@ -14,8 +14,8 @@ Léelas **cuando toque**, no todas al empezar. Si una tarea encaja en la columna
 
 | Fichero | Qué contiene | Cuándo consultarlo |
 |---|---|---|
-| [`workflow.md`](docs/instructions/workflow.md) | La cadena PRD → Épica → Historia → Tarea → OpenSpec → PR, la fuente de verdad de cada cosa y la vida de una historia | Antes de crear o tocar épicas, historias, tareas o specs, y antes de abrir una PR |
-| [`linear.md`](docs/instructions/linear.md) *(pendiente)* | Convenciones de Linear: épica = Proyecto, estados, etiquetas, estimación, plantilla de historia, enlace con GitHub | Antes de crear o editar cualquier cosa en Linear |
+| [`workflow.md`](docs/instructions/workflow.md) | La cadena PRD → Épica → Historia → Tarea → OpenSpec → PR, la granularidad (tarea → PR, paso → commit), la fuente de verdad de cada cosa y la vida de una historia | Antes de crear o tocar épicas, historias, tareas o specs, y antes de abrir una PR |
+| [`linear.md`](docs/instructions/linear.md) | Convenciones de Linear: proyecto único *Mood Table*, épica = issue padre, estados, etiquetas, estimación, plantilla de historia, enlace con GitHub | Antes de crear o editar cualquier cosa en Linear |
 
 Referencias de producto: [`docs/PRD.md`](docs/PRD.md) (fuente de verdad; glosario en §8) · [`docs/idea-mood-table.md`](docs/idea-mood-table.md) (decisiones D1-D35).
 
@@ -249,6 +249,8 @@ riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momen
 - [x] **Repo nuevo** ✅ (23-sep): `7daysofrain/mood-table-v2`, público, historial conservado, remoto del fork
       eliminado. Ideas descartadas fuera del árbol (en local: `docs/borradores/descartadas/`); `PLAN-entregables.md`
       borrado. Ficha D32. Pendiente opcional: archivar el fork antiguo en GitHub.
+- [x] **Herramienta de gestión** ✅ Linear (23-sep, D35): proyecto único, épicas = issues padre, `docs/instructions/linear.md`.
+      Pendiente: **invitar al evaluador** al workspace en la entrega.
 - [ ] **`HARDWARE_SETUP.md`** (raíz): montaje de la tira, alimentación, Light Box/Arduino Adalight, tarjeta de
       sonido. Prometido en README §1.4 (D31). Revisión cuidadosa de Joseba (errores de cableado = hardware quemado).
 - [x] **URL de clonado** ✅ en README §0.5, §1.4 y árbol de §2.3 (23-sep).
@@ -283,6 +285,15 @@ también el vídeo de LIDR: iterar el PRD → priorizar backlog → tickets.
   alternativas en §1.1, `createMemory`). Pendiente: el wireframe aún rotula "Tira virtual".
 - ✅ `prompts.md` §5.0 (PRD) con 3 prompts; candidatos descartados en `docs/borradores/prd-prompts-candidatos.md`.
 - Umbrales técnicos para la spec del motor (100 ms / 45 ms ITU…) en `docs/borradores/umbrales-para-specs.md`.
+- ✅ **Herramienta: Linear** (D35). Workspace `7daysofrain`, equipo *Mood Table*, clave **`MOO`**. **Un solo proyecto
+  *Mood Table***; **7 épicas como issues padre** (`MOO-5`…`MOO-11` = H1-H5 *High*, S1-S2 *Low*), en Backlog y sin
+  estimar. Estados Backlog → Todo → **Spec** → In Progress → In Review → Done; *parent auto-close*; Fibonacci; sin
+  cycles; etiquetas **Tipo** (Feature, Bug, Refactor, Spike, Chore) y **áreas sueltas** (engine, panel, shared, db,
+  infra, firmware); GitHub conectado, automatizaciones de PR y *linkbacks* públicos con descripción.
+- ✅ **`docs/instructions/`** (`workflow.md`, `linear.md`) + **índice en este fichero**. Granularidad: **tarea de
+  Linear = PR; paso de `tasks.md` = commit**. `prompts.md` §6.0 con 3 prompts.
+- ⚠️ **Nada de hoy está commiteado**: Joseba hace commit + push desde terminal (los enlaces de Linear al PRD apuntan
+  a la rama `feature/entrega-1-JA` y funcionarán tras el push).
 
 **Plan original de la sesión:**
 
@@ -309,6 +320,13 @@ también el vídeo de LIDR: iterar el PRD → priorizar backlog → tickets.
 
 ### Sesión 2 — 24-sep · Claude Code (+ Cowork para revisión)
 
+**Primer paso (acordado 23-sep): crear la skill "crear historia"** en `.claude/` a partir de la plantilla de
+`docs/instructions/linear.md` §5 (Como/Quiero/Para, AC GWT con caso feliz de Joseba + *poke-holes*, non-goals, DoD,
+contexto técnico al final). Con ella se generan las historias en Linear (sub-issues de las épicas) y de ahí §5/§6.
+Antes: renombrar `CLAUDE.md` → `AGENTS.md` + `CLAUDE.md` con `@AGENTS.md` (aplazado a Claude Code) y conectar el
+MCP de Linear en Claude Code (permisos iniciales leer + crear).
+
+
 0. **Formato de §5/§6 según los ejemplos de LIDR** (revisados el 23-sep; la TA los recomienda "para estructurar"):
    - **Ejemplo 1** (`AI4Devs-finalproject-Example1`): el README solo lista los 3 títulos y **enlaza** a
      `5-historias-de-usuario.md` / `6-tickets-de-trabajo.md`.
@@ -323,8 +341,9 @@ también el vídeo de LIDR: iterar el PRD → priorizar backlog → tickets.
    - **Para Mood Table:** criterios en **Given/When/Then** (lo pide la metodología SDD del máster, §5; los
      ejemplos usan listas). Decidir en la sesión si inline en el README o resumen + enlace (como el Ejemplo 1
      y como ya estaba previsto: "el README resume y enlaza"). Los 3 tickets: **back / front / BD**.
-1. **Backlog priorizado** desde el PRD (no aceptar el backlog lineal que genere la IA: elegir "vámonos por esas
-   funcionalidades").
+1. **Backlog priorizado en Linear** desde el PRD: historias como sub-issues de las épicas, con la skill (no aceptar
+   el backlog lineal que genere la IA: elegir "vámonos por esas funcionalidades"). Las §5/§6 del README salen de ahí:
+   3 historias y 3 tareas (áreas `engine` / `panel` / `db`).
 2. **README §5** (3 historias principales, Given/When/Then) y **§6** (3 tickets: backend, frontend, BD) —
    **van en la E1** (doc 99.2). Salen del flujo SDD (OpenSpec); el README los resume y enlaza.
 3. **`prompts.md`:** sección 0 (flujo de trabajo con IA) y las secciones de esta sesión.
@@ -351,4 +370,4 @@ junto al código. El stack ya está en README §2.1 (tabla "Stack").
 Decisiones D15-D29 en la ficha (`docs/idea-mood-table.md` §10). `docs/PLAN-entregables.md` está
 **obsoleto** (era de Sutegi): no usarlo como guía.
 
-*(Última actualización: 23 sep 2026, noche — repo nuevo y PRD v1.0 cerrados; README alineado con el PRD; siguiente: herramienta de gestión, luego 24-sep backlog → §5/§6 → verificación y entrega)*
+*(Última actualización: 23 sep 2026, noche — sesión 1 cerrada: repo nuevo, PRD v1.0, README alineado, Linear montado, `docs/instructions/`. Siguiente (24-sep): skill "crear historia" → backlog en Linear → §5/§6 → prompts.md §0 → verificación y entrega)*
