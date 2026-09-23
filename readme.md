@@ -23,11 +23,11 @@ Mood Table
 
 ### **0.3. Descripción breve del proyecto:**
 
-Instrumento de luz para la mesa de DJ: un motor de efectos propio, reactivo a la música, que se toca en vivo y funciona sin conexión. En el MVP se controla desde un panel web local; la visión es tocarlo con una pantalla táctil en la mesa o un controlador tipo Traktor F1, que se conectarán al mismo puerto de mandos. Un simulador (audio desde fichero + tira virtual) permite desarrollarlo y demostrarlo sin hardware.
+Instrumento de luz para la mesa de DJ: un motor de efectos propio, reactivo a la música, que se toca en vivo y funciona sin conexión. En el MVP se controla desde un panel web local; la visión es tocarlo con una pantalla táctil en la mesa o un controlador tipo Traktor F1, que se conectarán al mismo puerto de mandos. Un simulador (audio desde fichero + tiras virtuales en el visor del navegador) permite desarrollarlo y demostrarlo sin hardware.
 
 ### **0.4. URL del proyecto:**
 
-*Pendiente.* Será la demo pública (el motor reproduciendo un fichero de audio y pintando la tira virtual) y llegará con la entrega final.
+*Pendiente.* Será la demo pública (el motor reproduciendo un fichero de audio y pintando tiras virtuales en el visor) y llegará con la entrega final.
 
 > Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
 
@@ -44,19 +44,23 @@ https://github.com/7daysofrain/mood-table-v2
 
 > Describe en detalle los siguientes aspectos del producto:
 
+*La fuente de verdad del producto (problema, alternativas, usuarios, expectativas, historias y alcance) es el [PRD](docs/PRD.md). Esta sección lo resume.*
+
 ### **1.1. Objetivo:**
 
 > Propósito del producto. Qué valor aporta, qué soluciona, y para quién.
 
 **Propósito.** Mood Table convierte la mesa de DJ en un instrumento de luz: la tira LED reacciona a la música que suena y el DJ modula esa reacción en tiempo real, igual que modula el sonido con el mixer.
 
-**Qué soluciona.** Es la reescritura de un proyecto personal (2021-2024) que funcionaba pero era una amalgama de piezas ajenas: Hyperion para el ambiente, dancyPi para la parte reactiva, un orquestador Node que las unía por sockets, y la configuración repartida en cuatro sitios, cada uno con su propia cuenta de LEDs. Añadir un efecto propio obligaba a meterse en las tripas de un tercero. Mood Table lo sustituye por una pieza central propia: un motor con un único modelo de tira y de estado, donde cada efecto es código con sus parámetros declarados.
+**Qué soluciona.** Es la reescritura de un proyecto personal (2021-2024) que funcionaba pero era una amalgama de piezas ajenas: Hyperion para el ambiente, dancyPi para la parte reactiva, un orquestador Node que las unía por sockets, y la configuración repartida en cuatro sitios, cada uno con su propia cuenta de LEDs. Añadir un efecto propio obligaba a meterse en las tripas de un tercero y, sobre todo, no se podía probar nada sin la mesa montada. Mood Table lo sustituye por una pieza central propia: un motor con un único modelo de tira y de estado, donde cada efecto es código con sus parámetros declarados.
+
+**Alternativas.** Hay herramientas maduras que hacen buena parte de lo mismo; la más cercana es [LedFx](https://docs.ledfx.app/) (Python + React, en una Raspberry Pi, con panel web y salida Adalight). Mood Table no pretende competir con ellas: se construye por **propiedad** (un instrumento propio, pequeño y entendible de punta a punta) y por **aprendizaje** (hacerlo con Spec-Driven Development y agentes de código). Detalle en el PRD §1.2.
 
 **Valor.**
 - **Efectos propios**, fáciles de crear y de probar.
 - **Control en vivo** de los parámetros mientras suena la música.
 - **Autonomía**: se enciende la Pi y vuelve como estaba, sin portátil ni internet.
-- **Desarrollo y demo sin hardware** gracias al simulador (audio desde fichero + tira virtual).
+- **Desarrollo y demo sin hardware** gracias al simulador (audio desde fichero + tiras virtuales en el visor).
 
 **Para quién.** DJs y makers con una Raspberry Pi y una tira LED que quieren una iluminación reactiva que puedan tocar y ampliar. El caso de referencia es la mesa del autor, pero nada está atado a ella: el número de LEDs, el orden de color y el límite de potencia se configuran, y los efectos se añaden como módulos de código.
 
@@ -66,24 +70,27 @@ https://github.com/7daysofrain/mood-table-v2
 
 **MVP (must-have)**. Cada historia lleva un código (H1-H5) con el que se cita en el resto del documento.
 
-- **H1 · Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, eliges un efecto y la tira virtual del navegador reacciona a la música en tiempo real.
-- **H2 · Tocar los parámetros en vivo.** El panel genera los controles a partir del esquema que declara cada efecto; al moverlos, la luz responde al instante.
-- **H3 · Pintar la tira física.** Lo que muestra la tira virtual se reproduce en la tira real de la mesa, conectada al Light Box por protocolo Adalight (serie). Cualquier Arduino con firmware Adalight sirve igual.
-- **H4 · Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, orden de color y límites de potencia), y el motor, el límite de potencia y la tira virtual lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
+- **H1 · Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, las tiras virtuales reaccionan a la música en el visor del navegador, en tiempo real.
+- **H2 · Tocar los parámetros en vivo.** Mientras suena la música, eliges el efecto de cada tira y mueves sus controles, que el panel genera a partir del esquema que declara cada efecto; la luz responde al instante.
+- **H3 · Pintar la tira física.** Lo que muestra el visor se reproduce en la tira real de la mesa, conectada al Light Box por protocolo Adalight (serie). Cualquier Arduino con firmware Adalight sirve igual.
+- **H4 · Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, orden de color y límites de potencia), y el motor, el límite de potencia y el visor lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
 - **H5 · Arrancar en el último estado.** Enciendes la Pi sin portátil y vuelve como estaba: el efecto de cada tira y sus valores.
 
-**Efectos incluidos.** Los tres efectos de la v1, reescritos en el motor propio. Así se demuestra que la nueva arquitectura cubre lo que hacía la anterior:
+**Efectos incluidos.** Los tres efectos reactivos de la v1, reescritos en el motor propio, y uno de ambiente. Así se demuestra que la nueva arquitectura cubre lo que hacía la anterior y que un efecto puede no usar el audio:
 
 - **Espectro:** cada zona de la tira representa una banda de frecuencia.
 - **Energía:** el brillo y la extensión de la luz siguen la energía del audio y los golpes.
 - **Scroll:** la energía entra por un extremo de la tira y la recorre.
+- **Respiración** (ambiente): un color que sube y baja despacio, sin audio.
 
 **Should-have**
 
 - **Tira de ambiente:** una segunda tira física con su propio efecto, que no necesita audio (por ejemplo, un color que respira despacio). Es la misma pieza del sistema que la tira principal, con otro efecto: el motor ya pinta varias tiras.
 - **Firmware propio** (ESP8266/ESP32): un hardware de referencia barato y muy extendido, con más LEDs y fps de los que permite Adalight y con el camino abierto al WiFi. Es una de las dos formas de conectar la segunda tira; la otra es un Arduino con Adalight.
 
-**Visión (fuera del MVP):** pantalla táctil y Traktor F1 como mandos (sobre el mismo puerto de mandos) · más de dos tiras o segmentos · conexión directa por GPIO de la Pi · WiFi · sincronía por tempo · presets.
+**Visión (fuera del MVP):** Traktor F1 como mando · firmware en ESP32 con WiFi · más de dos tiras o segmentos · conexión directa por GPIO de la Pi · pantalla táctil o encoder + pantalla pequeña (los mandos, sobre el mismo puerto de mandos). En el MVP se toca desde el panel en un portátil: es una solución provisional para contener el alcance.
+
+**Fuera por decisión:** escenas y presets · sincronía con el tempo · cuentas y login · editar tiras desde el panel · crear efectos sin programar (motivos en el PRD §5.4).
 
 ### **1.3. Diseño y experiencia de usuario:**
 
@@ -101,16 +108,16 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 #### Zonas del panel
 
 - **Cabecera:** estado de la conexión con el motor, fuente de audio activa (fichero o tarjeta) con su nivel, y fps reales del motor.
-- **Tira virtual:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
+- **Visor:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
 - **Tiras:** lista de las tiras declaradas en el fichero de configuración, en solo lectura: nombre, número de LEDs y salida (virtual o Adalight con su puerto). Al seleccionar una, el resto del panel actúa sobre ella.
 - **Efectos:** los efectos disponibles para la tira seleccionada, etiquetados como *reactivo* o *ambiente*, con el activo marcado.
 - **Controles:** generados a partir del esquema del efecto activo: un número con rango es un slider, un color es un selector de color y una lista de opciones es un desplegable.
 
 #### Recorrido por las funcionalidades principales
 
-1. **Probar en el simulador (H1).** Se abre la demo pública: suena el fichero de audio y la tira virtual ya reacciona. Se elige otro efecto (espectro, energía, scroll) y la tira cambia al instante.
-2. **Tocar los parámetros en vivo (H2).** Se mueve un slider (por ejemplo, la sensibilidad) y la luz responde mientras se arrastra.
-3. **Pintar la tira física (H3).** En la mesa, la lista de tiras muestra la principal con salida *Adalight · /dev/ttyUSB0*. Lo que se ve en la tira virtual es lo que pinta la mesa.
+1. **Probar en el simulador (H1).** Se abre la demo pública: suena el fichero de audio y las tiras virtuales ya reaccionan en el visor.
+2. **Tocar los parámetros en vivo (H2).** Se elige otro efecto (espectro, energía, scroll o respiración) y la tira cambia al instante. Se mueve un slider (por ejemplo, la sensibilidad) y la luz responde mientras se arrastra.
+3. **Pintar la tira física (H3).** En la mesa, la lista de tiras muestra la principal con salida *Adalight · /dev/ttyUSB0*. Lo que se ve en el visor es lo que pinta la mesa.
 4. **Declarar mis tiras (H4).** Las tiras, su número de LEDs y su salida son las del fichero de configuración; el panel las muestra pero no las edita.
 5. **Arrancar en el último estado (H5).** Al reiniciar el motor y volver a abrir el panel, cada tira tiene el efecto y los valores con los que se dejó, y el panel avisa de que el estado se ha restaurado.
 
@@ -127,7 +134,7 @@ Hay tres formas de probar Mood Table, de menos a más esfuerzo: la **demo públi
 
 1. Abre `https://moodtable.josebaalonso.tech`.
 2. Suena una pista de ejemplo y las dos tiras virtuales ya reaccionan (**H1**).
-3. En **Efectos**, cambia de *Espectro* a *Energía* o *Scroll*: la tira cambia al instante (**H1**).
+3. En **Efectos**, cambia de *Espectro* a *Energía* o *Scroll*: la tira cambia al instante (**H2**).
 4. En **Controles**, mueve *Sensibilidad*: la luz responde mientras arrastras (**H2**).
 5. En **Tiras**, selecciona la otra tira: los controles pasan a ser los suyos (**H4**).
 
@@ -166,7 +173,7 @@ pnpm test:e2e    # flujo principal en el navegador (Playwright)
 1. En la Pi, clona el repositorio y ejecuta `sudo deploy/install.sh`. Crea el usuario `moodtable`, instala Node.js y deja el motor como servicio `systemd` (§2.4).
 2. Copia `deploy/config/mesa.example.json` a `/etc/moodtable/config.json` y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Si algo está mal, el motor no arranca y dice qué campo falla.
 3. `sudo systemctl start moodtable`.
-4. Desde cualquier dispositivo de la red local, abre `http://<ip-de-la-pi>:8080`. Lo que ves en la tira virtual lo pinta la tira real (**H3**).
+4. Desde cualquier dispositivo de la red local, abre `http://<ip-de-la-pi>:8080`. Lo que ves en el visor lo pinta la tira real (**H3**).
 5. Desenchufa la Pi y vuelve a enchufarla: arranca sola y vuelve al último estado (**H5**).
 
 ---
@@ -182,7 +189,7 @@ Mood Table es **un único proceso Node.js (TypeScript)** que corre en la Raspber
 flowchart LR
   mixer["🎚️ Mixer<br/>salida de audio"]
   cfg["📄 Fichero de configuración<br/>tiras declaradas"]
-  panel["🖥️ Navegador<br/>React + Vite + TS<br/>panel · tira virtual"]
+  panel["🖥️ Navegador<br/>React + Vite + TS<br/>panel · visor"]
   strip1["💡 Light Box<br/>→ tira principal"]
   strip2["💡 Arduino / ESP<br/>→ tira de ambiente<br/>(should-have)"]
 
@@ -221,7 +228,7 @@ flowchart LR
       direction TB
       ada1["Adalight serie<br/>(tira 1)"]
       adan["Serie<br/>(tira N)"]
-      wsout["Tira virtual<br/>todas las tiras"]
+      wsout["Visor<br/>todas las tiras"]
     end
 
     subgraph adCtl["Adaptadores de control y datos"]
@@ -258,7 +265,7 @@ flowchart LR
   class strip2 opt
 ```
 
-*Naranja: plano de tiempo real. Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El MVP se demuestra con una tira física (la del Light Box) y la tira virtual; el modelo admite N tiras.*
+*Naranja: plano de tiempo real. Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El MVP se demuestra con una tira física (la del Light Box), que el visor muestra en tiempo real, y con tiras virtuales en el simulador; el modelo admite N tiras.*
 
 #### Patrón: hexagonal ligera (puertos y adaptadores)
 
@@ -267,11 +274,11 @@ El núcleo define **cuatro puertos** (interfaces de TypeScript) y no sabe qué h
 | Puerto | Para qué | Adaptadores en el MVP | Adaptadores previstos |
 |---|---|---|---|
 | `AudioSource` | Entregar muestras de audio | Tarjeta de sonido (`arecord` → `stdin`) · Fichero WAV | — |
-| `LightOutput` | Recibir los frames de una tira | Adalight por serie (una instancia por tira) · Tira virtual (WebSocket, todas las tiras) | Firmware propio ESP8266/ESP32 (should-have) |
+| `LightOutput` | Recibir los frames de una tira | Adalight por serie (una instancia por tira) · Visor (WebSocket, todas las tiras) | Firmware propio ESP8266/ESP32 (should-have) |
 | `Commands` | Cambiar el efecto y los parámetros de una tira | API HTTP del panel | Traktor F1 (HID) · pantalla táctil |
 | `StateStore` | Guardar y recuperar el estado de cada tira | SQLite (ver §3) · En memoria (tests) | — |
 
-Es una versión **ligera** de la hexagonal: los adaptadores se crean y se conectan **a mano** en un único punto de arranque (`main.ts`, la *raíz de composición*), que lee el fichero de configuración y decide, por ejemplo, "fuente = fichero, tira 1 → Adalight en `/dev/ttyUSB0`, todas → tira virtual". **No hay contenedor de inyección de dependencias**, ni capas de casos de uso, ni mapeo de DTOs.
+Es una versión **ligera** de la hexagonal: los adaptadores se crean y se conectan **a mano** en un único punto de arranque (`main.ts`, la *raíz de composición*), que lee el fichero de configuración y decide, por ejemplo, "fuente = fichero, tira 1 → Adalight en `/dev/ttyUSB0`, todas → visor". **No hay contenedor de inyección de dependencias**, ni capas de casos de uso, ni mapeo de DTOs.
 
 Dentro del proceso conviven **dos planos** con reglas distintas:
 
@@ -285,7 +292,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 - **Los puertos los pide el hardware, no la teoría.** Cada puerto tiene al menos dos implementaciones reales (tarjeta o fichero; Light Box o navegador; panel o F1). Sin la separación, el motor quedaría acoplado a ALSA, a los puertos serie y al navegador.
 - **La tira es una entidad desde el principio.** La mesa real tiene dos tiras (una reactiva y otra de ambiente). Diseñar el bucle, los datos y la API para N tiras cuesta ahora lo mismo que para una, y evita rehacerlos cuando llegue la segunda.
 - **Cada dato donde le corresponde.** Lo que sale de la hoja de características del hardware y no cambia (salida, número de LEDs, orden de color, límites de potencia) se **declara en un fichero de configuración** versionado y validado al arrancar. Lo que cambia mientras se toca (efecto activo y valores de cada tira) va en la **base de datos**. Una tira existe porque está cableada, así que no se da de alta desde el panel.
-- **El simulador no es una pieza aparte.** Es el mismo motor con otros adaptadores (fichero WAV + tira virtual). Lo que se ve en la demo pública es exactamente el código que corre en la mesa.
+- **El simulador no es una pieza aparte.** Es el mismo motor con otros adaptadores (fichero WAV + tiras virtuales). Lo que se ve en la demo pública es exactamente el código que corre en la mesa.
 - **El motor funciona sin audio.** Si ninguna tira tiene un efecto reactivo, el análisis se omite y la mesa puede quedarse en modo ambiente sin música.
 - **Librería en el borde, no framework en el centro.** El servidor HTTP (Fastify) es un adaptador más. Se descartaron frameworks *full-stack* como AdonisJS porque imponen su estructura y su ciclo de vida alrededor de una aplicación web, y aquí el centro es un bucle de tiempo real. Se descartó también un contenedor de DI: son pocas dependencias elegidas una vez al arrancar, y no justifica la "magia" de decoradores y metadatos.
 - **Un solo proceso, no servicios separados.** Un usuario, una Pi y latencia crítica: repartir el sistema en servicios solo añadiría red y puntos de fallo entre el mando y la luz.
@@ -295,7 +302,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 | Pieza | Tecnología | Por qué |
 |---|---|---|
 | Motor | TypeScript sobre Node.js (arm64) | El autor puede leer y corregir lo que genera el agente; tipos compartidos con el front. Condicionado a un spike de rendimiento en la Pi. |
-| Panel y tira virtual | React + Vite + TypeScript | Stack conocido; comparte tipos (esquemas de parámetros) con el motor. El motor sirve el build estático: no hay servidor aparte. |
+| Panel y visor | React + Vite + TypeScript | Stack conocido; comparte tipos (esquemas de parámetros) con el motor. El motor sirve el build estático: no hay servidor aparte. |
 | API | Fastify + TypeBox | Un solo esquema da el tipo de TypeScript, la validación y el OpenAPI (§4). El mismo esquema describe los parámetros de cada efecto y el fichero de configuración. |
 | Transporte | HTTP para comandos · WebSocket (motor → navegador) para frames binarios y estado | HTTP se documenta en OpenAPI; el WebSocket lleva el flujo continuo (300 LEDs × 3 bytes × 60 fps ≈ 54 KB/s por tira). |
 | Persistencia | SQLite tras el puerto `StateStore` | Transacciones seguras ante cortes de luz (§3). |
@@ -329,7 +336,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 #### Núcleo (motor)
 
 **Bucle de frames** — TypeScript, sin dependencias de E/S.
-Marca el ritmo del sistema a una tasa objetivo configurable (30-60 fps). En cada vuelta: (1) lee el búfer de control, (2) si alguna tira tiene un efecto que usa audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica su límite de potencia y entrega el frame a su salida y a la tira virtual. Mide cuánto tarda cada vuelta; si llega tarde, **se salta el frame en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
+Marca el ritmo del sistema a una tasa objetivo configurable (30-60 fps). En cada vuelta: (1) lee el búfer de control, (2) si alguna tira tiene un efecto que usa audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica su límite de potencia y entrega el frame a su salida y al visor. Mide cuánto tarda cada vuelta; si llega tarde, **se salta el frame en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
 
 **Análisis de audio** — TypeScript + FFT (`fft.js` o implementación propia; se decide en el spike de rendimiento).
 Recibe muestras PCM de la fuente de audio en un búfer circular. Cuando alguna tira lo necesita, aplica una ventana y una FFT sobre las últimas muestras y calcula los **rasgos** que consumen los efectos: energía por bandas de frecuencia (repartidas en escala logarítmica, como el oído), energía total y detección de golpes (un golpe es un salto de energía por encima de su media reciente). Se calcula **una vez por frame** y lo comparten todas las tiras. Si ninguna tira usa audio, no se calcula, y el motor puede funcionar sin fuente de audio.
@@ -338,17 +345,17 @@ Recibe muestras PCM de la fuente de audio en un búfer circular. Cuando alguna t
 Cada efecto es un módulo con la misma forma, sea reactivo o de ambiente (patrón *Strategy*):
 
 ```ts
-interface Effect<P, S> {
+interface Effect<P, M> {
   id: string;                     // "spectrum", "energy", "scroll", …
   usesAudio: boolean;             // declarado: reactivo (true) o ambiente (false)
   paramsSchema: TSchema;          // TypeBox: tipos, rangos y valores por defecto
-  createState(strip: StripConfig): S;
-  render(ctx: FrameContext, params: P, state: S, out: Uint8Array): void;
+  createMemory(strip: StripConfig): M;   // memoria del efecto entre frames (no es el estado del instrumento)
+  render(ctx: FrameContext, params: P, memory: M, out: Uint8Array): void;
 }
 // FrameContext = { time, dt, audio }: el ambiente anima con el tiempo; el reactivo, además, con el audio
 ```
 
-El **esquema** es lo que permite que el panel genere los controles sin conocer el efecto y que la API rechace un valor fuera de rango. El **estado explícito** (lo que el efecto recuerda entre frames, como la posición del scroll o el suavizado) es **por tira**, y hace que, con la misma entrada, un efecto produzca siempre los mismos frames, así que se puede testear. `usesAudio` le dice al panel cómo etiquetar el efecto y al bucle si hace falta analizar el audio. El MVP incluye tres efectos reactivos: **espectro**, **energía** y **scroll** (los de la v1, reescritos).
+El **esquema** es lo que permite que el panel genere los controles sin conocer el efecto y que la API rechace un valor fuera de rango. La **memoria explícita** del efecto (lo que recuerda entre frames, como la posición del scroll o el suavizado; no confundir con el estado del instrumento, que es lo que se guarda) es **por tira**, y hace que, con la misma entrada, un efecto produzca siempre los mismos frames, así que se puede testear. `usesAudio` le dice al panel cómo etiquetar el efecto y al bucle si hace falta analizar el audio. El MVP incluye tres efectos reactivos, **espectro**, **energía** y **scroll** (los de la v1, reescritos), y uno de ambiente, **respiración**.
 
 **Límite de potencia** — TypeScript, uno por tira.
 Estima el consumo del frame a partir del valor de cada canal y del consumo máximo por LED declarado para esa tira. Si supera el límite configurado para su fuente de alimentación, escala el brillo de todo el frame en proporción. Protege fuentes y tiras, algo que en la v1 hacían por debajo piezas de terceros.
@@ -368,19 +375,19 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 | **Tarjeta de sonido** | `AudioSource` | `arecord` (ALSA) como proceso hijo | Lee PCM crudo (16 bits, mono) por `stdout`. Sin binarios nativos en Node. |
 | **Fichero WAV** | `AudioSource` | Lector WAV en TypeScript | Entrega las muestras al mismo ritmo que si sonaran en tiempo real, en bucle. Es la fuente del simulador y de los tests. |
 | **Adalight serie** | `LightOutput` | `serialport` | Una instancia **por tira física**, en su puerto. Añade la cabecera Adalight (`Ada` + número de LEDs + checksum), reordena los canales según el orden de color de la tira (RGB, GRB…) y escribe por USB serie. Si el puerto sigue ocupado con el frame anterior, descarta el nuevo en lugar de encolarlo. |
-| **Tira virtual** | `LightOutput` | WebSocket (`@fastify/websocket`) | Envía los frames de **todas las tiras** en binario a los navegadores conectados, junto con los cambios de estado. |
+| **Visor** | `LightOutput` | WebSocket (`@fastify/websocket`) | Envía los frames de **todas las tiras** en binario a los navegadores conectados, junto con los cambios de estado. |
 | **API HTTP** | `Commands` | Fastify + TypeBox | Rutas para listar las tiras (solo lectura) y los efectos con sus esquemas, y para cambiar el efecto y los parámetros de una tira. Valida cada petición y publica el OpenAPI. También sirve el build del panel. |
 | **Persistencia** | `StateStore` | SQLite (§3) · en memoria para tests | Guarda y carga el estado de cada tira: efecto activo y valores de cada efecto. Al arrancar, el motor recupera el último estado desde aquí. |
 
-**Raíz de composición (`main.ts`).** Carga la configuración, crea los adaptadores que indica (fuente de audio, una salida por tira, tira virtual, API, persistencia), los conecta al núcleo y arranca el bucle. Es el único punto del código que conoce todas las piezas.
+**Raíz de composición (`main.ts`).** Carga la configuración, crea los adaptadores que indica (fuente de audio, una salida por tira, visor, API, persistencia), los conecta al núcleo y arranca el bucle. Es el único punto del código que conoce todas las piezas.
 
-#### Panel y tira virtual (front)
+#### Panel y visor (front)
 
 **Tecnología:** React + Vite + TypeScript, servido por el propio motor. No contiene lógica de luces: solo muestra y envía comandos.
 
 - **Selector de tira:** lista las tiras declaradas; lo que se toca se aplica a la tira seleccionada.
 - **Panel de control:** muestra los efectos, etiquetados como reactivos o de ambiente, y **genera los controles a partir del esquema** del efecto activo de la tira (un número con rango se convierte en slider, un color en selector de color, una lista de opciones en desplegable). Al mover un control, envía el cambio por HTTP, limitando la frecuencia de envío mientras se arrastra.
-- **Tira virtual:** recibe los frames binarios por WebSocket y dibuja **todas las tiras** en un `<canvas>`, un punto de luz por LED, con la geometría declarada en la configuración.
+- **Visor:** recibe los frames binarios por WebSocket y dibuja **todas las tiras** en un `<canvas>`, un punto de luz por LED, con la geometría declarada en la configuración.
 
 **Tipos compartidos.** Los esquemas TypeBox (efectos, comandos, configuración de las tiras) viven en un paquete común que importan el motor y el panel. Si cambia un parámetro, el compilador avisa en los dos lados.
 
@@ -397,7 +404,7 @@ mood-table-v2/
 ├── packages/
 │   ├── shared/     # Esquemas TypeBox comunes: parámetros de efectos, comandos, config de la tira, formato de frames
 │   ├── engine/     # Motor (un proceso Node en la Pi): núcleo y adaptadores, separados
-│   └── panel/      # Front (React + Vite): panel de control y tira virtual
+│   └── panel/      # Front (React + Vite): panel de control y visor
 ├── e2e/            # Tests E2E (Playwright) del flujo principal
 ├── firmware/       # (should-have) Firmware C++ para ESP8266/ESP32
 ├── openspec/       # Specs de SDD: specs vivas y cambios propuestos
@@ -417,7 +424,7 @@ mood-table-v2/
 
 **Carpetas fuera de los workspaces:**
 
-- `e2e/`: los tests del flujo completo arrancan el motor con fuente = fichero y comprueban en el navegador que la tira virtual reacciona y que mover un control cambia la luz.
+- `e2e/`: los tests del flujo completo arrancan el motor con fuente = fichero y comprueban en el navegador que el visor reacciona y que mover un control cambia la luz.
 - `firmware/`: proyecto C++ independiente (should-have).
 - `openspec/`: las specs que guían cada cambio (Spec-Driven Development).
 - `.claude/` y `AGENTS.md`: la configuración del agente de código es parte de la evidencia del uso de IA (ver `prompts.md`). Donde existe un estándar se usa: las instrucciones del proyecto van en **`AGENTS.md`**, que leen distintas herramientas (Claude Code lo recibe a través de un `CLAUDE.md` que lo importa). Donde no existe, se usa la ubicación de la herramienta: las skills (por ejemplo, "nuevo efecto") y los subagentes (por ejemplo, revisión contra spec) van en `.claude/`, que es donde Claude Code los busca.
@@ -486,7 +493,7 @@ flowchart LR
 | | Mesa (producción) | Demo pública |
 |---|---|---|
 | **Máquina** | Raspberry Pi 4 (arm64) | AWS EC2 `t4g.micro`: 2 vCPU Graviton (arm64), 1 GB |
-| **Tiras** | Tira del Light Box (Adalight) + tira virtual | Solo tiras virtuales: sin puertos serie |
+| **Tiras** | Tira del Light Box (Adalight), visible también en el visor | Solo tiras virtuales: sin puertos serie |
 | **Audio** | Tarjeta de sonido USB (`arecord`) | Fichero WAV en bucle, con licencia libre |
 | **Estado** | SQLite en la tarjeta SD (§3) | En memoria; se reinicia cada cierto tiempo (§2.5) |
 | **Acceso** | Red local, sin autenticación | `https://moodtable.josebaalonso.tech`, sin login |
@@ -527,7 +534,7 @@ flowchart LR
 
 #### Evidencia de funcionamiento (entrega final)
 
-- **URL pública** de la demo: suena un tema, la tira virtual reacciona y el panel cambia los parámetros en vivo. Cómo probarla, en §1.4.
+- **URL pública** de la demo: suena un tema, las tiras virtuales reaccionan y el panel cambia los parámetros en vivo. Cómo probarla, en §1.4.
 - **Vídeo de 2-3 minutos** del flujo completo en la mesa: panel → motor → tira física → apagar y encender → vuelve al último estado.
 
 #### Sacrificios
@@ -553,7 +560,7 @@ La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la 
 
 #### En la demo pública (internet)
 
-- **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria**: nada se escribe en disco y el estado vuelve al inicial cada cierto tiempo. Todos los visitantes ven la misma tira virtual; que uno vea lo que toca otro se asume como parte de la demo.
+- **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria**: nada se escribe en disco y el estado vuelve al inicial cada cierto tiempo. Todos los visitantes ven el mismo visor; que uno vea lo que toca otro se asume como parte de la demo.
 - **Sin hardware.** La configuración de la demo solo declara tiras virtuales, así que no hay puertos serie expuestos.
 - **Límite de peticiones** por IP en la API (`@fastify/rate-limit`) y **máximo de conexiones WebSocket** simultáneas.
 - **HTTPS** con Caddy y certificado de Let's Encrypt; la instancia solo abre los puertos 80 y 443 y se administra sin SSH, por AWS Systems Manager (§2.4).
@@ -587,7 +594,7 @@ La estrategia sigue la arquitectura (§2.1): el núcleo no tiene E/S, así que c
 |---|---|---|
 | **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (una sinusoide de 100 Hz cae en su banda). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). | Vitest |
 | **Integración** | API con `fastify.inject()`, sin abrir puertos. Tests de contrato de `StateStore` contra SQLite y en memoria. Reconciliación al arrancar. Arranque tras `kill -9` (§3). | Vitest |
-| **E2E (flujo principal)** | El motor arranca con fuente = WAV; en el navegador, la tira virtual reacciona a la música, mover un control cambia la luz y, tras reiniciar el motor, vuelve el último estado. | Playwright |
+| **E2E (flujo principal)** | El motor arranca con fuente = WAV; en el navegador, el visor reacciona a la música, mover un control cambia la luz y, tras reiniciar el motor, vuelve el último estado. | Playwright |
 | **Hardware** | Tira física con el Light Box: lista de comprobación manual y vídeo. | Manual |
 
 **Por qué así:**

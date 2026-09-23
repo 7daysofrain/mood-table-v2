@@ -248,6 +248,28 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ### 5. Historias de Usuario
 
+#### 5.0 PRD (`docs/PRD.md`)
+
+**Prompt 1:**
+
+> No lo veo claro. Hasta donde yo se el PRD es un documento de negocio, donde se describe que es lo que quieres, su proposito y su valor. Luego existe otro documento de REQUIREMENTS donde se detalle los requerimientos y donde encajan los RF y el Gherkin. Pero yo lo veo como dos cosas distintas con dos enfoques distintos. Quiero que hagas un research en internet para ver si esto es cierto o no. No necesito como resultado un informe grande, pero si un resultado compacto con sus fuentes que lo sostengan
+
+*Claude (Cowork, modelo `claude-opus-5-5`). La IA proponía un PRD con requisitos numerados y cifras, más cercano a un SRS. Tras un research con fuentes (Atlassian, Jama, OpenSpec), el PRD queda como fuente de verdad de alto nivel (qué y por qué); los requisitos y los GIVEN/WHEN/THEN pasan al backlog y a OpenSpec.*
+
+**Prompt 2:**
+
+> Si, estoy de acuerdo ya nos hemos embarcado, esto tendria que haber surgido durante la seleccion del producto. Vamos a ello, el objetivo primario entonces es educativo y de tener la propiedad
+
+*Al redactar el problema, la IA buscó alternativas y encontró LedFx, que cubre casi todo el MVP. El PRD lo cita como referencia y declara por qué se construye: propiedad y aprendizaje. Lección: el análisis de alternativas debió hacerse al elegir la idea (ficha D33).*
+
+**Prompt 3:**
+
+> Opino lo contrario, que hagamos una publicación para que lo puedan probar es una exigencia de la entrega, no del producto, por tanto pertenece al README, no al PRD. Hay que tener en cuenta que este proyecto puede vivir mas allá de la entrega y el README en ese caso cambiará bastante pero el PRD no deberia
+
+*La IA proponía al visitante de la demo como tercer usuario. Queda como criterio para todo el PRD: lo que exige la entrega va al README; el PRD describe el producto y debe sobrevivir al máster.*
+
+#### 5.1 Historias de usuario
+
 **Prompt 1:**
 
 **Prompt 2:**

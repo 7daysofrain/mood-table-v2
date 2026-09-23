@@ -8,6 +8,17 @@
 Este fichero es la memoria viva del proyecto. Cualquier sesión de Claude (Cowork o
 Claude Code) debe leerlo antes de trabajar y respetarlo.
 
+### 📚 Índice de instrucciones (`docs/instructions/`)
+
+Léelas **cuando toque**, no todas al empezar. Si una tarea encaja en la columna "Cuándo", lee el fichero antes de actuar.
+
+| Fichero | Qué contiene | Cuándo consultarlo |
+|---|---|---|
+| [`workflow.md`](docs/instructions/workflow.md) | La cadena PRD → Épica → Historia → Tarea → OpenSpec → PR, la fuente de verdad de cada cosa y la vida de una historia | Antes de crear o tocar épicas, historias, tareas o specs, y antes de abrir una PR |
+| [`linear.md`](docs/instructions/linear.md) *(pendiente)* | Convenciones de Linear: épica = Proyecto, estados, etiquetas, estimación, plantilla de historia, enlace con GitHub | Antes de crear o editar cualquier cosa en Linear |
+
+Referencias de producto: [`docs/PRD.md`](docs/PRD.md) (fuente de verdad; glosario en §8) · [`docs/idea-mood-table.md`](docs/idea-mood-table.md) (decisiones D1-D35).
+
 ---
 
 ## 1. Cómo trabajar conmigo (las 4 bases — innegociables)
@@ -234,8 +245,7 @@ riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momen
 - [x] **Persistencia** ✅ SQLite solo para estado (`strip_state`, `strip_effects`); tiras en fichero de configuración (22-sep, README §3, ficha D25/D29).
 - [ ] **README §5 (historias) y §6 (tickets) van en la E1** (doc 99.2, 23-sep). Siguen sin redactarse en
       Cowork: salen de **PRD → backlog priorizado → 3 historias + 3 tickets (back/front/BD)** en Claude
-      Code + OpenSpec, **en el repo nuevo**. ⚠️ Riesgo de plazo: `docs/PRD.md` aún no existe y la E1 es el
-      25-sep. §4 (API) sigue en espera de LIDR.
+      Code + OpenSpec, **en el repo nuevo**. PRD ✅ (v1.0, 23-sep). §4 (API) no va en la E1 (confirmado por LIDR).
 - [x] **Repo nuevo** ✅ (23-sep): `7daysofrain/mood-table-v2`, público, historial conservado, remoto del fork
       eliminado. Ideas descartadas fuera del árbol (en local: `docs/borradores/descartadas/`); `PLAN-entregables.md`
       borrado. Ficha D32. Pendiente opcional: archivar el fork antiguo en GitHub.
@@ -260,7 +270,22 @@ acordado (§6 de este fichero) y §1.3, §1.4, §2.4, §2.6 registradas.
 etiquetas, qué es feature/task— sale del PRD; hacerlo antes es configurar a ciegas). Así lo recomendaba
 también el vídeo de LIDR: iterar el PRD → priorizar backlog → tickets.
 
-### Sesión 1 — 23-sep (tarde) · Claude Code + terminal
+### Sesión 1 — 23-sep (tarde-noche) · hecha en Cowork (+ terminal de Joseba para git)
+
+**Resultado (act. 23-sep, noche):**
+- ✅ **Repo nuevo** `7daysofrain/mood-table-v2` (D32). `AGENTS.md` aplazado a Claude Code.
+- ✅ **PRD v1.0** en `docs/PRD.md` (D33, D34): PRD = qué y por qué (sin RF ni GIVEN/WHEN/THEN, que van al backlog y
+  OpenSpec); §1 problema + **alternativas (LedFx)**, §2 usuarios (DJ, maker), §3 expectativas **E1-E9**, §4 historias
+  H1-H5 + S1-S2 (Como/Quiero/Para), §5 alcance (MVP · should · visión · **fuera por decisión**), §6 supuestos A1-A3 y
+  restricciones, §7 preguntas abiertas **Q1-Q6**, §8 glosario. Regla: **el PRD manda**; lo que exige la entrega
+  (demo pública) va al README.
+- ✅ README alineado con el PRD (visor ≠ tira virtual, respiración, H2 con cambio de efecto, visión/fuera por decisión,
+  alternativas en §1.1, `createMemory`). Pendiente: el wireframe aún rotula "Tira virtual".
+- ✅ `prompts.md` §5.0 (PRD) con 3 prompts; candidatos descartados en `docs/borradores/prd-prompts-candidatos.md`.
+- Umbrales técnicos para la spec del motor (100 ms / 45 ms ITU…) en `docs/borradores/umbrales-para-specs.md`.
+
+**Plan original de la sesión:**
+
 
 1. **Repo nuevo (propio, no fork)** y mover todo. Decidir en la sesión:
    - **¿Conservar el historial de git?** (recomendable: los commits son evidencia del proceso) o empezar limpio.
@@ -326,4 +351,4 @@ junto al código. El stack ya está en README §2.1 (tabla "Stack").
 Decisiones D15-D29 en la ficha (`docs/idea-mood-table.md` §10). `docs/PLAN-entregables.md` está
 **obsoleto** (era de Sutegi): no usarlo como guía.
 
-*(Última actualización: 23 sep 2026 — sesión de mañana cerrada (README §1.3, §1.4, §2.4, §2.6); plan de dos sesiones en §8bis: hoy tarde repo nuevo → PRD → herramienta; 24-sep backlog → §5/§6 → verificación y entrega)*
+*(Última actualización: 23 sep 2026, noche — repo nuevo y PRD v1.0 cerrados; README alineado con el PRD; siguiente: herramienta de gestión, luego 24-sep backlog → §5/§6 → verificación y entrega)*
