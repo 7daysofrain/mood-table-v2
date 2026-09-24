@@ -21,11 +21,38 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Herramientas y modelos por fase:**
 
+| Fase | Herramienta | Modelo | Para qué |
+|---|---|---|---|
+| Ideación y elección de la idea | Claude (Cowork) + conector de Google Drive (material del curso) | Opus | Comparar ideas con un *scorecard*, post-mortem de la idea descartada, ficha de decisiones con su porqué (`docs/idea-mood-table.md`) |
+| Documentación de la E1 (README §0-§3, PRD) | Claude (Cowork) | Opus (`claude-opus-5-5`) | Redacción sección a sección, *research* con fuentes (PRD frente a SRS, hosting, seguridad) y revisión crítica |
+| Diseño del panel | Claude Design (artefacto de tipo *Design*) | — | Wireframe de baja fidelidad (`docs/img/panel-wireframe.png`) |
+| Herramienta de gestión | Claude (Cowork) + MCP de Linear + navegador integrado | Opus | Elegir Linear y configurarlo (estados, etiquetas, automatizaciones con GitHub) |
+| Arnés y backlog (en el repo) | **Claude Code** (app de escritorio) + MCP de Linear | `claude-opus-5-5` en la sesión principal · subagentes: `poke-holes` en **Opus**, `estimator` en **Sonnet** | `AGENTS.md`, skills y subagentes, historias en Linear, README §5-§6, commits |
+| E2 y E3 *(previsto)* | Claude Code + OpenSpec | Opus para specs, Sonnet para implementar | Spec-Driven Development: `propose → apply → archive`, con tests y SonarQube como puertas |
+
+Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Claude Code** para todo lo que toca el repo como repo (git, Linear con reglas de permisos, código y tests).
+
 **Skills, subagentes, rules y comandos personalizados:**
+
+- **`AGENTS.md`** (estándar abierto) con el contexto y las 4 bases de trabajo; `CLAUDE.md` solo lo importa (`@AGENTS.md`). Un **índice** apunta a `docs/instructions/` (`workflow.md`, `linear.md`), que el agente lee *cuando toca*, no siempre.
+- **Tres skills de invocación manual** (`.claude/skills/`), una por estado de Linear: `/create-story` → `/refine-story` → `/estimate-story`. Son manuales a propósito: cada paso empieza con una decisión humana. Escritas con la guía de la *skill-creator*, en inglés; el contenido que generan (Linear) va en español.
+- **Subagentes** (`.claude/agents/`): **`poke-holes`** (Opus, solo lectura) busca huecos en una historia **sin ver la conversación**, para no compartir los puntos ciegos del autor; **`estimator`** (Sonnet) estima **a ciegas** en el planning poker. Además, un subagente de exploración contrastó el protocolo de las skills con los documentos del curso (módulo 4 y 11.2).
+- **MCP de Linear** como configuración del proyecto (`.mcp.json`), con **reglas de permisos** versionadas (`.claude/settings.json`): lecturas permitidas, `save_issue`/`save_comment` piden confirmación, el resto (borrados, etiquetas, proyectos…) denegado. Conector de **Google Drive** para el material del curso.
 
 **Cómo se trabaja con la IA (método):**
 
+- **La IA propone, el humano decide.** Cada escritura en Linear pasa por una confirmación; cada commit se enseña antes y espera el OK.
+- **El contenido es humano, el formato es de la IA.** El caso feliz de cada historia lo describe el humano en lenguaje natural; la IA lo traduce a Gherkin sin añadir comportamiento.
+- **Revisores con contexto limpio.** Los subagentes solo reciben la historia, no la conversación, y la estimación se hace a ciegas: la discrepancia entre cartas es el resultado útil, no se promedia.
+- **Una fuente de verdad por dato:** PRD (qué y por qué) · Linear (backlog y criterios) · OpenSpec (cómo) · README (diseño y entrega) · ficha (decisiones con su porqué).
+- **Se mide y se ajusta el propio arnés.** Ejemplo: `poke-holes` se rehízo tras analizar su primera ejecución y se comprobó en las dos siguientes (§5.2).
+- **Todo queda registrado:** decisiones D1-D36 en la ficha, prompts literales (máx. 3 por sección) aquí, y los candidatos descartados en `docs/borradores/`.
+
 **Ajustes humanos más relevantes (resumen):**
+
+- **Producto:** el PRD es un documento de negocio, no de requisitos (§5.0); la demo pública es una exigencia de la entrega y va al README, no al PRD; LedFx cubre casi todo el MVP, así que el porqué pasa a ser propiedad y aprendizaje; oír el fichero de audio entra en el MVP (§5.2).
+- **Arquitectura:** hexagonal ligera sin contenedor de DI; tiras en fichero y SQLite solo para el estado; Fly.io → EC2 `t4g` para que la demo corra en arm64 como la Pi; SonarQube Cloud + Dependabot porque Sonar gratis no analiza dependencias.
+- **Proceso:** Linear en un solo proyecto y tarea = PR, paso = commit (§6.0); tres skills separadas y en inglés (§5.1); backlog refinado justo a tiempo, solo H1 (§5.2); sin ticket de BD forzado (§6.1); escala de estimación 1-13 y layout del panel sacado a *enablers* tras el planning poker (§6.1); el *loopback* de ALSA en CI queda como deuda técnica explícita (§6.1).
 
 ---
 
