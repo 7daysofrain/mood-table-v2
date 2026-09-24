@@ -732,11 +732,214 @@ Como las tiras viven en el fichero, la base de datos no puede tener una clave fo
 
 > Documenta 3 de las historias de usuario principales utilizadas durante el desarrollo, teniendo en cuenta las buenas prácticas de producto al respecto.
 
+> **Copia para la entrega (25-sep-2026).** El backlog vive en **Linear** (proyecto [*Mood Table*](https://linear.app/7daysofrain/project/mood-table-d4004b9e3c3d), clave `MOO`), que es su fuente de verdad (`docs/instructions/workflow.md` §3). Aquí se reproduce completo para que se pueda leer sin acceso a Linear.
+
+#### Cómo se ha construido el backlog
+
+- **Jerarquía** (curso, módulo 4): **PRD → épica → historia (1-2 días) → tarea (una PR)**. Cada historia del PRD (H1-H5, S1-S2) es una **épica** en Linear; se descompone en historias, y cada historia en tareas de un área (`engine`, `panel`, `db`…).
+- **Refinamiento justo a tiempo.** Solo se ha descompuesto la épica que se construye primero, **H1 · Probar el instrumento en el simulador** (`MOO-5`). El resto se refinará durante el desarrollo, cuando toque: descomponer todo el alcance el primer día es trabajo que el propio desarrollo haría cambiar.
+- **Flujo de tres skills de Claude Code** (`.claude/skills/`), una por estado de Linear:
+  1. `/create-story`: la IA propone las historias (Como/Quiero/Para, non-goals, talla de camiseta para priorizar) y el humano valida cada una → *Backlog*.
+  2. `/refine-story`: **el humano describe el caso feliz**; la IA lo traduce a Gherkin y el subagente **`poke-holes`** (Opus, sin ver la conversación) busca casos límite; el humano se queda con 3-5. Se añaden DoD por tipo, contexto técnico, INVEST y tareas.
+  3. `/estimate-story`: **planning poker a ciegas** entre el humano (su carta primero) y el subagente **`estimator`** (Sonnet); la diferencia se discute, no se promedia → *Todo*.
+- **Escala:** Fibonacci 1-13; una historia vale como mucho 8 y un 13 obliga a dividirla (`docs/instructions/linear.md` §4).
+
+| Épica | Historias | Estado |
+|---|---|---|
+| **H1 · Probar el instrumento en el simulador** (`MOO-5`) | `MOO-12` spike de rendimiento en la Pi · **`MOO-13`** · **`MOO-14`** · **`MOO-15`** · `MOO-22` oír el fichero en el panel | Las tres de abajo, refinadas y estimadas (*Todo*); el resto en *Backlog* |
+| H2-H5 (must) · S1-S2 (should) (`MOO-6`…`MOO-11`) | Sin descomponer | *Backlog*: se refinan durante el desarrollo |
+
+**Definition of Done** de las tres (tipo *Feature*, igual para todas las historias de ese tipo):
+
+- [ ] OpenSpec change aprobado; archivado tras el merge
+- [ ] Tests que cubren todos los escenarios (GIVEN/WHEN/THEN) de la historia
+- [ ] Lint, tipos, E2E y quality gate de SonarQube en verde
+- [ ] Glosario del PRD actualizado si aparece un término nuevo
+- [ ] README actualizado si cambia el diseño, la instalación o la API (OpenAPI)
+
+Los criterios de aceptación están en **Gherkin en español**, con el vocabulario del glosario del PRD (§8). Al especificar cada historia en OpenSpec (Entrega 2), se convierten en los escenarios de su spec.
+
 **Historia de Usuario 1**
+
+### HU1 · `MOO-13` · Ver una tira virtual respirando en el visor
+
+| Épica | Rol | Prioridad | Estimación | Estado |
+|---|---|---|---|---|
+| H1 (expectativa E7) | Maker | Alta | **8** puntos | Todo · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-13/ver-una-tira-virtual-respirando-en-el-visor) |
+
+**Como** maker, **quiero** arrancar el instrumento sin hardware y ver en el visor una tira virtual con el efecto *respiración*, **para** comprobar de punta a punta que el instrumento funciona antes de añadir audio.
+
+**Justificación.** Es el esqueleto de todo el sistema: motor → salida virtual → visor. Sin ella no se ve nada, y todas las historias siguientes se apoyan en ella. Va sin audio a propósito, para separar el riesgo del recorrido completo del riesgo del análisis del audio (HU2).
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: El maker ve la tira virtual respirando en el visor
+  Dado que el instrumento funciona sin hardware, con una sola tira virtual declarada
+    Y la tira tiene el efecto "respiración"
+  Cuando el maker abre el panel
+  Entonces ve la tira virtual en el visor
+    Y ve la tira animarse con el efecto "respiración"
+
+Escenario: El panel avisa si el motor no está en marcha
+  Dado que el motor no está en marcha
+  Cuando el maker abre el panel
+  Entonces el panel avisa de que no hay conexión con el motor
+
+Escenario: El visor se recupera solo tras un reinicio del motor
+  Dado que el maker tiene el panel abierto
+    Y el motor se ha reiniciado
+  Cuando el motor vuelve a estar en marcha
+  Entonces el visor vuelve a mostrar la tira animándose, sin que el maker recargue el panel
+
+Esquema del escenario: El instrumento no arranca si el fichero de configuración no sirve
+  Dado que el fichero de configuración <problema>
+  Cuando el maker arranca el instrumento
+  Entonces el instrumento no arranca
+    Y dice qué falla en el fichero de configuración
+  Ejemplos:
+    | problema                |
+    | no existe               |
+    | no declara ninguna tira |
+
+Escenario: Dos paneles ven lo mismo
+  Dado que el maker tiene el panel abierto en un navegador
+  Cuando abre el panel en un segundo navegador
+  Entonces los dos visores muestran la tira en el mismo momento de la animación (asumido)
+```
+
+**Non-goals**
+
+- Sin audio: llega en HU2.
+- Sin elegir efecto ni mover controles: es H2.
+- Sin tira física: es H3.
+- El fichero de tiras es mínimo (nombre, nº de LEDs y salida virtual); orden de color, límite de potencia y validación van en H4 *(asumido)*.
+- Sin montaje del repositorio ni layout del panel (sus zonas): van en una épica de *enablers*, pendiente de crear.
+- El panel solo muestra el visor y la conexión con el motor; la fuente de audio y su nivel llegan con HU2 y HU3.
+
+**Tareas** (una PR cada una): `MOO-16` Arrancar el motor con una tira virtual y el efecto respiración (`engine`, **Ticket 1**) · `MOO-17` Enviar los frames de las tiras al visor (`engine`) · `MOO-18` Dibujar las tiras en el visor y mostrar la conexión con el motor (`panel`, **Ticket 2**).
+
+**Estimación.** Primera ronda: humano 13 / IA 8. El humano contaba el layout de todo el panel, que la historia no pedía; se sacó a la épica de *enablers* y ambos votaron 8. **Bloqueada por** `MOO-12` (spike de rendimiento en la Pi, D13).
 
 **Historia de Usuario 2**
 
+### HU2 · `MOO-14` · La tira virtual reacciona a un fichero de audio
+
+| Épica | Rol | Prioridad | Estimación | Estado |
+|---|---|---|---|---|
+| H1 (expectativas E7, E2) | Maker | Alta | **8** puntos | Todo · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-14/la-tira-virtual-reacciona-a-un-fichero-de-audio) |
+
+**Como** maker, **quiero** usar un fichero de audio como fuente y ver la tira virtual reaccionar con el efecto *energía*, **para** probar la parte reactiva sin tarjeta de sonido ni mesa.
+
+**Justificación.** Es el núcleo de la expectativa E2 (*la luz sigue a la música*) y la pieza de más incertidumbre de H1: el análisis del audio. Con un fichero, además, el resultado es determinista y se puede testear con frames dorados.
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: La tira virtual reacciona a un fichero de audio
+  Dado que el instrumento funciona sin hardware, con un fichero de audio como fuente de audio
+    Y el fichero de configuración indica el efecto "energía" para la tira virtual (asumido)
+  Cuando el maker abre el panel
+  Entonces ve en el visor cómo la tira reacciona al audio
+    Y el panel indica que la fuente de audio es un fichero, con su nombre
+    Y el panel muestra el nivel de la fuente de audio en tiempo real
+
+Escenario: La tira marca cada golpe
+  Dado que el fichero de audio tiene golpes aislados, separados por silencio
+    Y la tira virtual tiene el efecto "energía"
+  Cuando llega un golpe
+  Entonces la tira se ilumina con el golpe
+    Y vuelve a apagarse antes del siguiente
+
+Esquema del escenario: En silencio, cada efecto hace lo suyo
+  Dado que la tira virtual tiene el efecto <efecto>
+  Cuando el fichero de audio llega a un tramo en silencio
+  Entonces la tira <comportamiento>
+  Ejemplos:
+    | efecto      | comportamiento   |
+    | energía     | se apaga         |
+    | respiración | sigue animándose |
+
+Escenario: El fichero de audio vuelve a empezar al acabarse
+  Dado que la tira virtual reacciona al fichero de audio
+  Cuando el fichero de audio llega al final
+  Entonces el fichero vuelve a empezar desde el principio
+    Y la tira sigue reaccionando al audio
+```
+
+**Non-goals**
+
+- Solo el efecto *energía*: *espectro* y *scroll* van con H2 *(asumido)*.
+- Sin tarjeta de sonido: es HU3.
+- Sin sincronía con el tempo (PRD §5.4).
+- Sin controles de sensibilidad: es H2.
+- Sin subir ficheros desde el panel: el fichero es local y se declara en la configuración.
+- El audio no se oye en el panel: va en `MOO-22`.
+- Sin controles de reproducción ni cambio de fichero en caliente.
+
+**Tareas:** `MOO-19` Leer un fichero WAV como fuente de audio (`engine`) · `MOO-20` Analizar el audio y pintar el efecto energía (`engine`, **Ticket 3**) · `MOO-21` Mostrar la fuente de audio y su nivel en el panel (`panel`).
+
+**Estimación.** Humano 8 / IA 5. La IA usaba HU1 como techo (menos piezas nuevas); el humano pesó el ajuste iterativo del análisis (detectar golpes, umbrales). Decide el humano: 8. **Bloqueada por** `MOO-13`.
+
 **Historia de Usuario 3**
+
+### HU3 · `MOO-15` · Usar la tarjeta de sonido como fuente de audio
+
+| Épica | Rol | Prioridad | Estimación | Estado |
+|---|---|---|---|---|
+| H1 (expectativa E2) | Maker | Media | **3** puntos | Todo · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-15/usar-la-tarjeta-de-sonido-como-fuente-de-audio) |
+
+**Como** maker, **quiero** usar la tarjeta de sonido como fuente de audio, **para** ver el instrumento reaccionar a la música que suena de verdad.
+
+**Justificación.** Es la fuente de audio de la mesa: la música que sale del mixer. Cierra H1 con audio real y sin tiras físicas. Prioridad media porque el simulador ya funciona con fichero (HU2), y reutiliza todo su análisis.
+
+**Criterios de aceptación**
+
+```gherkin
+Escenario: La tira virtual reacciona a la tarjeta de sonido
+  Dado que el fichero de configuración declara la tarjeta de sonido como fuente de audio
+    Y a la tarjeta de sonido le llega música
+    Y la tira virtual tiene el efecto "energía"
+  Cuando el maker abre el panel
+  Entonces ve en el visor cómo la tira reacciona a la música
+    Y el panel indica que la fuente de audio es la tarjeta de sonido
+    Y el panel muestra el nivel de la fuente de audio en tiempo real
+
+Esquema del escenario: El instrumento no arranca si la tarjeta de sonido declarada no está
+  Dado que el fichero de configuración declara una tarjeta de sonido como fuente de audio
+    Y esa tarjeta de sonido <problema>
+  Cuando el maker arranca el instrumento
+  Entonces el instrumento no arranca
+    Y dice qué tarjeta de sonido no encuentra
+  Ejemplos:
+    | problema                 |
+    | no está conectada        |
+    | no existe con ese nombre |
+
+Escenario: La tira no llega tarde a la música
+  Dado que a la tarjeta de sonido le llega música con golpes marcados
+    Y la tira virtual tiene el efecto "energía"
+  Cuando suena un golpe
+  Entonces la tira se ilumina sin un retraso perceptible respecto al golpe (umbral en la spec)
+
+Escenario: Con varias tarjetas de sonido, usa la declarada
+  Dado que hay varias tarjetas de sonido conectadas
+    Y el fichero de configuración declara una de ellas como fuente de audio
+  Cuando el maker abre el panel
+  Entonces el panel indica qué tarjeta de sonido se usa
+    Y la tira reacciona solo a la música que llega a esa tarjeta
+```
+
+**Non-goals**
+
+- La fuente de audio no se elige desde el panel ni se cambia en caliente: se declara en configuración *(asumido)*.
+- Sin conexión directa por GPIO (PRD §6.2).
+- Solo Linux (ALSA): en macOS y Windows el simulador usa el fichero. En la demo pública no hay tarjeta de sonido.
+- Si la tarjeta se desconecta en plena sesión, no se reconecta sola *(asumido)*.
+
+**Tareas:** `MOO-23` Leer la tarjeta de sonido como fuente de audio (`engine`). No hay tarea de panel: la cabecera de HU2 ya muestra la fuente y su nombre de forma genérica.
+
+**Estimación.** Humano 3 / IA 5. La IA contaba montar el *loopback* de ALSA en CI para probar los escenarios sin hardware. Se saca como deuda técnica (`MOO-24`) y el escenario del retraso se verifica a mano en la mesa, como **excepción explícita al DoD**. **Bloqueada por** `MOO-14`.
 
 ---
 
@@ -744,11 +947,192 @@ Como las tiras viven en el fichero, la base de datos no puede tener una clave fo
 
 > Documenta 3 de los tickets de trabajo principales del desarrollo, uno de backend, uno de frontend, y uno de bases de datos. Da todo el detalle requerido para desarrollar la tarea de inicio a fin teniendo en cuenta las buenas prácticas al respecto. 
 
+> **Copia para la entrega (25-sep-2026).** Un ticket es una **tarea** de Linear: un cambio de **una sola área** que se integra en **una PR** (`workflow.md` §2). En Linear, la tarea tiene una o dos líneas y enlaza su historia; el paso a paso vivirá en el `tasks.md` del **OpenSpec change** de la historia, que se escribe en la Entrega 2 (un paso = un commit). Esta ficha reúne lo que ya existe (criterios de la historia, diseño de §2-§3, riesgos) y marca como ***previsto*** lo que fijará la spec.
+
 **Ticket 1**
+
+### Ticket 1 · Backend · `MOO-16` · Arrancar el motor con una tira virtual y el efecto respiración
+
+| Campo | Valor |
+|---|---|
+| **Tipo / área** | Backend · `engine` |
+| **Historia** | HU1 · `MOO-13` (8 puntos, compartidos por sus tres tareas) |
+| **Prioridad** | Alta (heredada de la historia) |
+| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-16/arrancar-el-motor-con-una-tira-virtual-y-el-efecto-respiracion) |
+| **Rama / PR** | `7daysofrain/moo-16-…` · PR con `Fixes MOO-16`; commits con `Refs MOO-16` |
+
+**Descripción.** Primer código del motor. Lee un fichero de configuración mínimo, arranca el bucle de frames y pinta una tira virtual con el efecto *respiración*. Los frames todavía no salen del motor (eso es `MOO-17`): se comprueban con una salida en memoria.
+
+**Objetivos**
+
+- Dejar montado el **núcleo hexagonal** (§2.1) con su primer puerto, `LightOutput`, y un adaptador en memoria.
+- Fijar el **contrato `Effect`** (§2.2) con un efecto de ambiente. Es el mismo que usará *energía* (Ticket 3), así que se diseña pensando en los dos.
+- Que un error en el fichero de configuración **impida arrancar y diga qué falla**.
+
+**Requisitos técnicos**
+
+- TypeScript sobre Node LTS. Código en `packages/engine` (núcleo sin E/S; adaptadores aparte) y `packages/shared` (esquema TypeBox de la configuración).
+- **Configuración mínima:** `id`, `name`, `output: { type: "virtual" }`, `ledCount`. Toda tira arranca con *respiración* (efecto por defecto en el código); declarar el efecto inicial en el fichero llega con `MOO-19`, y el resto de campos del §3, con H4. El esquema se escribe para crecer.
+- **Bucle de frames** (§2.2): tasa objetivo configurable (30-60 fps); si una vuelta llega tarde, **salta el frame** en lugar de acumular retraso; búfer preasignado por tira (`Uint8Array` de `ledCount × 3`); sin crear objetos dentro del bucle (pausas del recolector).
+- **Reloj inyectable** en el bucle y en los efectos, para que los tests sean deterministas.
+- **Efecto *respiración*:** `usesAudio: false`, esquema de parámetros con valores por defecto, memoria por tira (`createMemory`). Los valores concretos (color, periodo) se fijan al escribir el efecto (PRD Q2); cualquier animación cumple la historia.
+- **Raíz de composición** (`main.ts`): carga la configuración, crea los adaptadores y arranca el bucle. Regla de lint: el núcleo no importa de los adaptadores.
+
+**Tareas de desarrollo** *(previstas; el detalle definitivo será la sección `MOO-16` del `tasks.md`, un paso = un commit)*
+
+1. Esquema TypeBox de la configuración mínima en `shared`, con carga y validación (fichero inexistente, sin tiras).
+2. Contrato `Effect` y efecto *respiración*, con su test de frames dorados.
+3. Bucle de frames con reloj inyectable y salto de frames.
+4. Puerto `LightOutput`, adaptador en memoria y raíz de composición.
+5. Arranque con `pnpm dev` y `deploy/config/demo.json`.
+
+**Criterios de aceptación** (de HU1, los que cubre esta tarea)
+
+- *Esquema del escenario:* **El instrumento no arranca si el fichero de configuración no sirve** (los dos ejemplos).
+- La precondición del caso feliz: con una tira virtual declarada, el motor produce frames de *respiración* (se comprueba en la salida en memoria; que se vean en el visor lo cierran `MOO-17` y `MOO-18`).
+
+**Dependencias**
+
+- **Bloqueada por:** `MOO-12` (spike de rendimiento: librería FFT, fps alcanzables, si hace falta un *worker thread*) y por la épica de *enablers* (monorepo, lint, CI).
+- **Desbloquea:** `MOO-17` (visor), `MOO-19` y `MOO-20` (audio).
+
+**Riesgos y mitigaciones**
+
+| Riesgo | Mitigación |
+|---|---|
+| Node no llega a tiempo real en la Pi (supuesto A1) | El spike `MOO-12` va antes; el bucle salta frames en vez de acumular retraso |
+| Pausas del recolector de basura | Búferes preasignados; nada se crea dentro del bucle |
+| El contrato `Effect` queda hecho a la medida de *respiración* | Se diseña con `usesAudio` y `FrameContext.audio` desde el principio; la spec lo revisa pensando en *energía* |
+| El fichero mínimo se queda corto para H4 | Esquema TypeBox extensible; los campos nuevos se añaden sin romper los existentes |
+
+**Tests**
+
+- **Unitarios (Vitest):** *respiración* con reloj fijo contra frames dorados; bucle con reloj falso (respeta la tasa, salta frames si llega tarde); carga de configuración (válida, inexistente, sin tiras) con el mensaje de error.
+- **Integración:** arranque con `demo.json` y un adaptador en memoria que recibe frames.
+- **Cobertura:** núcleo cercano al 100 % (§2.6).
 
 **Ticket 2**
 
+### Ticket 2 · Frontend · `MOO-18` · Dibujar las tiras en el visor y mostrar la conexión con el motor
+
+| Campo | Valor |
+|---|---|
+| **Tipo / área** | Frontend · `panel` |
+| **Historia** | HU1 · `MOO-13` (8 puntos, compartidos por sus tres tareas) |
+| **Prioridad** | Alta (heredada de la historia) |
+| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-18/dibujar-las-tiras-en-el-visor-y-mostrar-la-conexion-con-el-motor) |
+| **Rama / PR** | `7daysofrain/moo-18-…` · PR con `Fixes MOO-18` |
+
+**Descripción.** El **visor** del panel: recibe los frames binarios que emite el motor por WebSocket y dibuja cada tira en un `<canvas>`, un punto de luz por LED. Muestra si hay conexión con el motor y se reconecta solo cuando el motor vuelve.
+
+**Objetivos**
+
+- Que el visor pinte **exactamente lo que emite el motor**, sin lógica de luces en el navegador (§2.2).
+- Que el maker sepa en todo momento si el panel está conectado al motor.
+- Que un reinicio del motor no obligue a recargar el panel.
+
+**Requisitos técnicos**
+
+- `packages/panel`: React + Vite + TypeScript. Solo importa de `shared` (el formato de los frames lo define `shared`; la frontera la impone la estructura, §2.3).
+- **WebSocket binario** con tres estados: *conectado*, *sin conexión* y *reconectando*. Reintento con espera creciente *(asumido; la spec fija los tiempos)*.
+- **Dibujo:** en cada `requestAnimationFrame` se pinta el **último** frame recibido; los intermedios se descartan (no se acumula retraso).
+- **Indicador de conexión** en la cabecera. El layout completo del panel (zonas) no es de esta tarea: va en la épica de *enablers*.
+
+**Tareas de desarrollo** *(previstas; el detalle definitivo será la sección `MOO-18` del `tasks.md`)*
+
+1. Cliente WebSocket con su máquina de estados y la reconexión.
+2. Decodificador de frames con el formato de `shared`.
+3. Componente *Visor* en `<canvas>`, una fila de LEDs por tira.
+4. Indicador de conexión.
+5. Test E2E del recorrido de HU1.
+
+**Criterios de aceptación** (de HU1, los que cubre esta tarea)
+
+- **El maker ve la tira virtual respirando en el visor** (caso feliz).
+- **El panel avisa si el motor no está en marcha.**
+- **El visor se recupera solo tras un reinicio del motor.**
+- **Dos paneles ven lo mismo.**
+
+**Dependencias**
+
+- **Necesita:** `MOO-17` (adaptador *Visor* del motor y formato de los frames) y el layout del panel (épica de *enablers*).
+
+**Riesgos y mitigaciones**
+
+| Riesgo | Mitigación |
+|---|---|
+| El navegador no da abasto con muchos LEDs a 60 fps | `<canvas>` en lugar de un elemento por LED; solo se dibuja el último frame |
+| Tormenta de reconexiones si el motor tarda en volver | Espera creciente entre intentos |
+| Dos paneles desfasados | Los dos dibujan los frames del motor; ninguno calcula nada por su cuenta |
+
+**Tests**
+
+- **Unitarios (Vitest):** decodificador de frames; máquina de estados de la conexión con un WebSocket falso.
+- **E2E (Playwright):** arrancar el motor → el visor se anima; parar el motor → aparece el aviso; volver a arrancarlo → el visor se recupera sin recargar; dos contextos de navegador ven el mismo frame.
+
 **Ticket 3**
+
+### Ticket 3 · Backend · `MOO-20` · Analizar el audio y pintar el efecto energía
+
+| Campo | Valor |
+|---|---|
+| **Tipo / área** | Backend · `engine` |
+| **Historia** | HU2 · `MOO-14` (8 puntos, compartidos por sus tres tareas) |
+| **Prioridad** | Alta (heredada de la historia) |
+| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-20/analizar-el-audio-y-pintar-el-efecto-energia) |
+| **Rama / PR** | `7daysofrain/moo-20-…` · PR con `Fixes MOO-20` |
+
+**Descripción.** El análisis del audio en el núcleo y el primer efecto reactivo. A partir de las muestras de la fuente de audio calcula, una vez por frame, los **rasgos** que consumen los efectos, y el efecto *energía* los convierte en luz. El motor envía además al panel el tipo de fuente y su nivel.
+
+**Objetivos**
+
+- Que la tira **reaccione a la música**: marca cada golpe y vuelve al reposo (E2).
+- Aplicar la regla del silencio (PRD Q4, resuelta): un efecto reactivo se apaga; uno de ambiente sigue.
+- Que el análisis **solo se calcule si alguna tira lo necesita** (`usesAudio`).
+
+**Requisitos técnicos** (§2.2)
+
+- **Análisis:** búfer circular de muestras PCM; ventana y **FFT** sobre las últimas muestras (`fft.js` o implementación propia, según el spike `MOO-12`); rasgos: energía por bandas en escala logarítmica, energía total y **golpes** (un golpe es un salto de energía por encima de su media reciente). Se calcula una vez por frame y lo comparten todas las tiras.
+- **Efecto *energía*:** `usesAudio: true`; recibe los rasgos en `FrameContext.audio`; en silencio, la tira se apaga. Sus parámetros de sensibilidad se declaran en el esquema, pero no tienen controles hasta H2.
+- **Nivel y fuente** al panel por el mismo WebSocket del visor.
+
+**Tareas de desarrollo** *(previstas; el detalle definitivo será la sección `MOO-20` del `tasks.md`)*
+
+1. Búfer circular, ventana y FFT.
+2. Rasgos: bandas, energía total y detección de golpes.
+3. Efecto *energía*, con la regla del silencio.
+4. Cálculo condicionado a que alguna tira use audio.
+5. Publicar la fuente de audio y su nivel hacia el panel.
+
+**Criterios de aceptación** (de HU2, los que cubre esta tarea)
+
+- **La tira marca cada golpe.**
+- **En silencio, cada efecto hace lo suyo** (los dos ejemplos).
+- La parte de motor del caso feliz: la tira reacciona al audio y el nivel se envía al panel (el panel lo muestra en `MOO-21`).
+
+**Dependencias**
+
+- **Necesita:** `MOO-19` (fuente de audio: fichero WAV), `MOO-16` (bucle y contrato `Effect`) y `MOO-12` (librería FFT y coste en la Pi).
+- **Desbloquea:** `MOO-21` (nivel en el panel) y HU3 (`MOO-15`), que reutiliza este análisis.
+
+**Riesgos y mitigaciones**
+
+| Riesgo | Mitigación |
+|---|---|
+| Ajustar umbrales y suavizado es iterativo (motivo de la estimación de 8) | Fichero WAV sintético de golpes aislados y frames dorados: cada ajuste se comprueba en segundos |
+| Coste de CPU en la Pi | Una sola FFT por frame, compartida; medido en el spike |
+| La luz llega tarde respecto al sonido | Ventana corta; el umbral (~100 ms) lo fija la spec |
+
+**Tests**
+
+- **Unitarios (Vitest):** una sinusoide de 100 Hz cae en su banda; golpes sintéticos generan golpes detectados; silencio → *energía* apagada; *respiración* no cambia con audio.
+- **Integración:** WAV de golpes aislados → secuencia de frames esperada; sin tiras con audio, el análisis no se ejecuta.
+
+**Ticket de base de datos**
+
+No hay ticket de base de datos en esta entrega, **por decisión**. En Mood Table la base de datos solo guarda el **estado del instrumento** (efecto y valores de cada tira) para arrancar como se dejó; es la épica **H5** (`MOO-9`), que se refinará justo a tiempo, como el resto de épicas. Inventar una tarea de base de datos dentro de H1, que no la necesita, habría sido forzar la plantilla, pensada para aplicaciones CRUD.
+
+Lo que pidió el mentor para aceptar SQLite como "base de datos o equivalente" ya está documentado en el **§3**: el **modelo** (`strip_state`, `strip_effects`, con claves, restricciones y reconciliación), el **puerto** (`StateStore`, con adaptadores SQLite y en memoria) y **cómo se prueba la persistencia** (tests de contrato, restricciones, reconciliación y arranque tras `kill -9`).
 
 ---
 
