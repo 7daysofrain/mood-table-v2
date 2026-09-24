@@ -70,7 +70,7 @@ https://github.com/7daysofrain/mood-table-v2
 
 **MVP (must-have)**. Cada historia lleva un código (H1-H5) con el que se cita en el resto del documento.
 
-- **H1 · Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, las tiras virtuales reaccionan a la música en el visor del navegador, en tiempo real.
+- **H1 · Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, las tiras virtuales reaccionan a la música en el visor del navegador, en tiempo real, y si la fuente es un fichero, se oye en el panel.
 - **H2 · Tocar los parámetros en vivo.** Mientras suena la música, eliges el efecto de cada tira y mueves sus controles, que el panel genera a partir del esquema que declara cada efecto; la luz responde al instante.
 - **H3 · Pintar la tira física.** Lo que muestra el visor se reproduce en la tira real de la mesa, conectada al Light Box por protocolo Adalight (serie). Cualquier Arduino con firmware Adalight sirve igual.
 - **H4 · Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, orden de color y límites de potencia), y el motor, el límite de potencia y el visor lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
@@ -115,7 +115,7 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 
 #### Recorrido por las funcionalidades principales
 
-1. **Probar en el simulador (H1).** Se abre la demo pública: suena el fichero de audio y las tiras virtuales ya reaccionan en el visor.
+1. **Probar en el simulador (H1).** Se abre la demo pública y se pulsa play: suena el fichero de audio y las tiras virtuales reaccionan en el visor.
 2. **Tocar los parámetros en vivo (H2).** Se elige otro efecto (espectro, energía, scroll o respiración) y la tira cambia al instante. Se mueve un slider (por ejemplo, la sensibilidad) y la luz responde mientras se arrastra.
 3. **Pintar la tira física (H3).** En la mesa, la lista de tiras muestra la principal con salida *Adalight · /dev/ttyUSB0*. Lo que se ve en el visor es lo que pinta la mesa.
 4. **Declarar mis tiras (H4).** Las tiras, su número de LEDs y su salida son las del fichero de configuración; el panel las muestra pero no las edita.
@@ -130,10 +130,10 @@ Hay tres formas de probar Mood Table, de menos a más esfuerzo: la **demo públi
 
 > **Credenciales: no hay.** Mood Table no tiene login en ningún entorno (§2.5). La demo pública y el panel local se abren directamente.
 
-#### 1. Probar la demo pública (sin instalar nada)
+#### 1. Probar la demo pública (sin instalar nada) — *disponible con la entrega final*
 
 1. Abre `https://moodtable.josebaalonso.tech`.
-2. Suena una pista de ejemplo y las dos tiras virtuales ya reaccionan (**H1**).
+2. Pulsa play: suena una pista de ejemplo y las dos tiras virtuales reaccionan (**H1**).
 3. En **Efectos**, cambia de *Espectro* a *Energía* o *Scroll*: la tira cambia al instante (**H2**).
 4. En **Controles**, mueve *Sensibilidad*: la luz responde mientras arrastras (**H2**).
 5. En **Tiras**, selecciona la otra tira: los controles pasan a ser los suyos (**H4**).
@@ -390,6 +390,7 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 - **Selector de tira:** lista las tiras declaradas; lo que se toca se aplica a la tira seleccionada.
 - **Panel de control:** muestra los efectos, etiquetados como reactivos o de ambiente, y **genera los controles a partir del esquema** del efecto activo de la tira (un número con rango se convierte en slider, un color en selector de color, una lista de opciones en desplegable). Al mover un control, envía el cambio por HTTP, limitando la frecuencia de envío mientras se arrastra.
 - **Visor:** recibe los frames binarios por WebSocket y dibuja **todas las tiras** en un `<canvas>`, un punto de luz por LED, con la geometría declarada en la configuración.
+- **Reproductor:** cuando la fuente es un fichero, lo reproduce en el navegador (el motor sirve el mismo fichero que analiza) con un botón de play, porque los navegadores no reproducen audio sin un gesto del usuario. Cómo se sincroniza con los frames del motor se decide en la spec de `MOO-22`.
 
 **Tipos compartidos.** Los esquemas TypeBox (efectos, comandos, configuración de las tiras) viven en un paquete común que importan el motor y el panel. Si cambia un parámetro, el compilador avisa en los dos lados.
 
@@ -726,6 +727,8 @@ Como las tiras viven en el fichero, la base de datos no puede tener una clave fo
 
 > Si tu backend se comunica a través de API, describe los endpoints principales (máximo 3) en formato OpenAPI. Opcionalmente puedes añadir un ejemplo de petición y de respuesta para mayor claridad
 
+**No entra en la Entrega 1.** LIDR confirmó que la E1 no incluye la especificación de la API. Se documentará en OpenAPI en la Entrega 2, generada desde los esquemas TypeBox (§2.1) junto al código. El alcance de la API ya está descrito en el §2.2 (componente *API HTTP*).
+
 ---
 
 ## 5. Historias de Usuario
@@ -747,7 +750,9 @@ Como las tiras viven en el fichero, la base de datos no puede tener una clave fo
 | Épica | Historias | Estado |
 |---|---|---|
 | **H1 · Probar el instrumento en el simulador** (`MOO-5`) | `MOO-12` spike de rendimiento en la Pi · **`MOO-13`** · **`MOO-14`** · **`MOO-15`** · `MOO-22` oír el fichero en el panel | Las tres de abajo, refinadas y estimadas (*Todo*); el resto en *Backlog* |
-| H2-H5 (must) · S1-S2 (should) (`MOO-6`…`MOO-11`) | Sin descomponer | *Backlog*: se refinan durante el desarrollo |
+| H5 · Arrancar en el último estado (`MOO-9`) | `MOO-25` volver al último estado tras reiniciar el motor | *Backlog*, sin refinar; creada para el ticket de base de datos (§6, `MOO-26`) |
+| EN · Base técnica (*enablers*, `MOO-27`) | Sin historias: tareas directas `MOO-28` monorepo, lint, tests y CI · `MOO-29` layout del panel | *Backlog*; épica técnica, no sale del PRD |
+| H2-H4 (must) · S1-S2 (should) (`MOO-6`…`MOO-8`, `MOO-10`, `MOO-11`) | Sin descomponer | *Backlog*: se refinan durante el desarrollo |
 
 **Definition of Done** de las tres (tipo *Feature*, igual para todas las historias de ese tipo):
 
@@ -805,7 +810,7 @@ Esquema del escenario: El instrumento no arranca si el fichero de configuración
 Escenario: Dos paneles ven lo mismo
   Dado que el maker tiene el panel abierto en un navegador
   Cuando abre el panel en un segundo navegador
-  Entonces los dos visores muestran la tira en el mismo momento de la animación (asumido)
+  Entonces los dos visores muestran la tira con como mucho un frame de diferencia (asumido)
 ```
 
 **Non-goals**
@@ -813,13 +818,13 @@ Escenario: Dos paneles ven lo mismo
 - Sin audio: llega en HU2.
 - Sin elegir efecto ni mover controles: es H2.
 - Sin tira física: es H3.
-- El fichero de tiras es mínimo (nombre, nº de LEDs y salida virtual); orden de color, límite de potencia y validación van en H4 *(asumido)*.
-- Sin montaje del repositorio ni layout del panel (sus zonas): van en una épica de *enablers*, pendiente de crear.
+- El fichero de tiras es mínimo (nombre, nº de LEDs y salida virtual); orden de color, límite de potencia y la validación completa de cada campo van en H4 *(asumido)*.
+- Sin montaje del repositorio ni layout del panel (sus zonas): van en la épica de *enablers* (`MOO-27`), tareas `MOO-28` y `MOO-29`.
 - El panel solo muestra el visor y la conexión con el motor; la fuente de audio y su nivel llegan con HU2 y HU3.
 
 **Tareas** (una PR cada una): `MOO-16` Arrancar el motor con una tira virtual y el efecto respiración (`engine`, **Ticket 1**) · `MOO-17` Enviar los frames de las tiras al visor (`engine`) · `MOO-18` Dibujar las tiras en el visor y mostrar la conexión con el motor (`panel`, **Ticket 2**).
 
-**Estimación.** Primera ronda: humano 13 / IA 8. El humano contaba el layout de todo el panel, que la historia no pedía; se sacó a la épica de *enablers* y ambos votaron 8. **Bloqueada por** `MOO-12` (spike de rendimiento en la Pi, D13).
+**Estimación.** Primera ronda: humano 13 / IA 8. El humano contaba el layout de todo el panel, que la historia no pedía; se sacó a la épica de *enablers* (`MOO-29`) y ambos votaron 8. **Bloqueada por** `MOO-12` (spike de rendimiento en la Pi, D13), `MOO-28` y `MOO-29`.
 
 **Historia de Usuario 2**
 
@@ -877,7 +882,7 @@ Escenario: El fichero de audio vuelve a empezar al acabarse
 - El audio no se oye en el panel: va en `MOO-22`.
 - Sin controles de reproducción ni cambio de fichero en caliente.
 
-**Tareas:** `MOO-19` Leer un fichero WAV como fuente de audio (`engine`) · `MOO-20` Analizar el audio y pintar el efecto energía (`engine`, **Ticket 3**) · `MOO-21` Mostrar la fuente de audio y su nivel en el panel (`panel`).
+**Tareas:** `MOO-19` Leer un fichero WAV como fuente de audio (`engine`) · `MOO-20` Analizar el audio y pintar el efecto energía (`engine`, **ticket adicional** del §6) · `MOO-21` Mostrar la fuente de audio y su nivel en el panel (`panel`).
 
 **Estimación.** Humano 8 / IA 5. La IA usaba HU1 como techo (menos piezas nuevas); el humano pesó el ajuste iterativo del análisis (detectar golpes, umbrales). Decide el humano: 8. **Bloqueada por** `MOO-13`.
 
@@ -920,7 +925,7 @@ Escenario: La tira no llega tarde a la música
   Dado que a la tarjeta de sonido le llega música con golpes marcados
     Y la tira virtual tiene el efecto "energía"
   Cuando suena un golpe
-  Entonces la tira se ilumina sin un retraso perceptible respecto al golpe (umbral en la spec)
+  Entonces la tira se ilumina menos de 100 ms después del golpe (asumido; la spec fija el umbral)
 
 Escenario: Con varias tarjetas de sonido, usa la declarada
   Dado que hay varias tarjetas de sonido conectadas
@@ -966,7 +971,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 **Objetivos**
 
 - Dejar montado el **núcleo hexagonal** (§2.1) con su primer puerto, `LightOutput`, y un adaptador en memoria.
-- Fijar el **contrato `Effect`** (§2.2) con un efecto de ambiente. Es el mismo que usará *energía* (Ticket 3), así que se diseña pensando en los dos.
+- Fijar el **contrato `Effect`** (§2.2) con un efecto de ambiente. Es el mismo que usará *energía* (ticket adicional), así que se diseña pensando en los dos.
 - Que un error en el fichero de configuración **impida arrancar y diga qué falla**.
 
 **Requisitos técnicos**
@@ -993,7 +998,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 **Dependencias**
 
-- **Bloqueada por:** `MOO-12` (spike de rendimiento: librería FFT, fps alcanzables, si hace falta un *worker thread*) y por la épica de *enablers* (monorepo, lint, CI).
+- **Bloqueada por:** `MOO-12` (spike de rendimiento: librería FFT, fps alcanzables, si hace falta un *worker thread*) y por `MOO-28` (monorepo, lint, CI; épica de *enablers*).
 - **Desbloquea:** `MOO-17` (visor), `MOO-19` y `MOO-20` (audio).
 
 **Riesgos y mitigaciones**
@@ -1036,7 +1041,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 - `packages/panel`: React + Vite + TypeScript. Solo importa de `shared` (el formato de los frames lo define `shared`; la frontera la impone la estructura, §2.3).
 - **WebSocket binario** con tres estados: *conectado*, *sin conexión* y *reconectando*. Reintento con espera creciente *(asumido; la spec fija los tiempos)*.
 - **Dibujo:** en cada `requestAnimationFrame` se pinta el **último** frame recibido; los intermedios se descartan (no se acumula retraso).
-- **Indicador de conexión** en la cabecera. El layout completo del panel (zonas) no es de esta tarea: va en la épica de *enablers*.
+- **Indicador de conexión** en la cabecera. El layout completo del panel (zonas) no es de esta tarea: es `MOO-29` (épica de *enablers*).
 
 **Tareas de desarrollo** *(previstas; el detalle definitivo será la sección `MOO-18` del `tasks.md`)*
 
@@ -1055,7 +1060,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 **Dependencias**
 
-- **Necesita:** `MOO-17` (adaptador *Visor* del motor y formato de los frames) y el layout del panel (épica de *enablers*).
+- **Necesita:** `MOO-17` (adaptador *Visor* del motor y formato de los frames) y `MOO-29` (layout del panel; épica de *enablers*).
 
 **Riesgos y mitigaciones**
 
@@ -1072,7 +1077,76 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 **Ticket 3**
 
-### Ticket 3 · Backend · `MOO-20` · Analizar el audio y pintar el efecto energía
+### Ticket 3 · Base de datos · `MOO-26` · Crear la base de persistencia del estado del instrumento (SQLite + `StateStore`)
+
+| Campo | Valor |
+|---|---|
+| **Tipo / área** | Base de datos · `db` |
+| **Historia** | `MOO-25` · Volver al último estado del instrumento tras reiniciar el motor (épica H5, `MOO-9`). Sin refinar ni estimar: se refina justo a tiempo, como el resto de H5 |
+| **Prioridad** | Alta (heredada de la épica, must-have) |
+| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-26/crear-la-base-de-persistencia-del-estado-del-instrumento-sqlite) |
+| **Rama / PR** | `7daysofrain/moo-26-…` · PR con `Fixes MOO-26`; commits con `Refs MOO-26` |
+
+**Descripción.** La base técnica de la persistencia del **estado del instrumento** (efecto activo y valores de cada tira, §3): el esquema con sus migraciones, el modelo en TypeScript, el puerto `StateStore` con sus dos adaptadores y la conexión al arrancar. No incluye la lógica que decide *cuándo* se guarda ni la reconciliación con el fichero de tiras: son tareas `engine` de la misma historia. Esta tarea deja la persistencia lista y probada para que esas tareas solo tengan que usarla.
+
+**Objetivos**
+
+- Que el **modelo del §3 exista en el esquema**, con sus restricciones: lo que el modelo prohíbe, SQLite lo rechaza.
+- Que el núcleo dependa solo del **puerto `StateStore`**, nunca de SQLite (§2.1), y que el adaptador en memoria sirva para los tests y para la demo pública (§2.5).
+- Que **los dos adaptadores se comporten igual**, comprobado con el mismo conjunto de tests.
+
+**Requisitos técnicos**
+
+- **Esquema** (§3): `strip_state` (PK `strip_id`; FK compuesta `(strip_id, active_effect_id)` → `strip_effects`) y `strip_effects` (PK compuesta `(strip_id, effect_id)`; `values_json` NOT NULL; `schema_version` con `CHECK > 0`), más la tabla de control de migraciones.
+- **Migraciones versionadas:** ficheros numerados que se aplican al arrancar, en orden y dentro de una transacción; una migración aplicada no se vuelve a aplicar.
+- **Conexión:** `PRAGMA foreign_keys = ON`, modo WAL y `synchronous = FULL` (§3, durabilidad ante cortes de luz). La ruta del fichero `.db` sale de la configuración del motor. Librería de SQLite para Node *(se decide en la spec: que funcione en arm64 sin compilar en la Pi)*.
+- **Modelo TypeScript:** tipos del estado del instrumento en `packages/shared`, derivados de esquemas TypeBox. El puerto `StateStore` es una interfaz del núcleo (`packages/engine`, carpeta de puertos); los adaptadores van en la carpeta de adaptadores (§2.3).
+- **Validación:** `values_json` se valida contra el esquema TypeBox del efecto al leer y al escribir; un valor fuera de esquema se rechaza con un error que dice qué campo falla.
+- **Raíz de composición** (`main.ts`): elige el adaptador SQLite en la mesa y el de memoria en la demo pública.
+
+**Tareas de desarrollo** *(previstas; el detalle definitivo será la sección `MOO-26` del `tasks.md` del change de `MOO-25`, un paso = un commit)*
+
+1. Tipos del estado del instrumento en `shared` y puerto `StateStore` en el núcleo.
+2. Adaptador en memoria y conjunto de tests de contrato del puerto.
+3. Migración inicial y ejecutor de migraciones con su tabla de control.
+4. Adaptador SQLite (conexión, pragmas, transacciones) que pasa los mismos tests de contrato.
+5. Montaje en la raíz de composición según el entorno.
+
+**Criterios de aceptación** *(previstos; los definitivos saldrán de `/refine-story` sobre `MOO-25`)*
+
+- **Guardar y leer devuelve lo mismo** en los dos adaptadores, para varias tiras y varios efectos por tira.
+- **Un valor fuera de esquema se rechaza** y no llega a la base de datos.
+- **SQLite rechaza lo que el modelo prohíbe:** un efecto activo sin valores guardados para esa tira y una versión de esquema no positiva.
+- **Las migraciones son idempotentes:** arrancar dos veces con la misma base de datos no cambia el esquema ni los datos.
+- **La base de datos se puede inspeccionar** con `sqlite3` (`SELECT * FROM strip_state;`).
+
+**Dependencias**
+
+- **Bloqueada por:** `MOO-16` (núcleo hexagonal y raíz de composición) y `MOO-28` (monorepo, lint, CI; épica de *enablers*).
+- **Desbloquea:** las tareas `engine` de `MOO-25` (guardar desde los comandos con retardo, reconciliación al arrancar y el test de arranque tras `kill -9`).
+
+**Riesgos y mitigaciones**
+
+| Riesgo | Mitigación |
+|---|---|
+| La librería de SQLite necesita compilar código nativo en la Pi | Se elige en la spec con ese criterio; la CI compila también para arm64 |
+| El adaptador en memoria y el de SQLite divergen con el tiempo | Un solo conjunto de tests de contrato para los dos |
+| Un corte de luz a mitad de una escritura corrompe el estado | Transacciones + WAL + `synchronous = FULL` |
+| Escrituras constantes desgastan la tarjeta SD | El adaptador escribe cuando se le pide; agrupar cambios es responsabilidad del motor (retardo, §2.2) |
+| Cambia el esquema de un efecto y los valores guardados dejan de ser válidos | `schema_version` por fila; al leer, valores de otra versión se migran o se sustituyen por los por defecto |
+
+**Tests**
+
+- **Contrato (Vitest):** el mismo conjunto contra el adaptador en memoria y contra SQLite (en un fichero temporal): ida y vuelta, rechazo de valores fuera de esquema, varias tiras.
+- **Restricciones:** inserciones directas que violan la FK compuesta y el `CHECK` fallan.
+- **Migraciones:** base vacía → esquema completo; segunda ejecución → sin cambios.
+- **Cobertura:** adaptadores y ejecutor de migraciones cercanos al 100 % (§2.6).
+
+**Ticket adicional**
+
+*Un segundo ticket de backend, fuera de los tres que pide la plantilla: es el que mejor enseña el núcleo del motor (el análisis del audio).*
+
+### Ticket adicional · Backend · `MOO-20` · Analizar el audio y pintar el efecto energía
 
 | Campo | Valor |
 |---|---|
@@ -1128,21 +1202,11 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 - **Unitarios (Vitest):** una sinusoide de 100 Hz cae en su banda; golpes sintéticos generan golpes detectados; silencio → *energía* apagada; *respiración* no cambia con audio.
 - **Integración:** WAV de golpes aislados → secuencia de frames esperada; sin tiras con audio, el análisis no se ejecuta.
 
-**Ticket de base de datos**
-
-No hay ticket de base de datos en esta entrega, **por decisión**. En Mood Table la base de datos solo guarda el **estado del instrumento** (efecto y valores de cada tira) para arrancar como se dejó; es la épica **H5** (`MOO-9`), que se refinará justo a tiempo, como el resto de épicas. Inventar una tarea de base de datos dentro de H1, que no la necesita, habría sido forzar la plantilla, pensada para aplicaciones CRUD.
-
-Lo que pidió el mentor para aceptar SQLite como "base de datos o equivalente" ya está documentado en el **§3**: el **modelo** (`strip_state`, `strip_effects`, con claves, restricciones y reconciliación), el **puerto** (`StateStore`, con adaptadores SQLite y en memoria) y **cómo se prueba la persistencia** (tests de contrato, restricciones, reconciliación y arranque tras `kill -9`).
-
 ---
 
 ## 7. Pull Requests
 
 > Documenta 3 de las Pull Requests realizadas durante la ejecución del proyecto
 
-**Pull Request 1**
-
-**Pull Request 2**
-
-**Pull Request 3**
+**Llegan con la entrega final.** Las PRs salen de las tareas de Linear (una tarea, una PR; ver [`docs/instructions/workflow.md`](docs/instructions/workflow.md)).
 

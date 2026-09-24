@@ -2,7 +2,7 @@
 ## Proyecto Final · Máster AI4Devs (LIDR) · Joseba Alonso
 
 **Proyecto:** ✅ **🎛️ Mood Table** (instrumento de luz para la mesa de DJ) — luz verde del mentor el 22-sep-2026 · *(plan B Pura Belia archivado)* · **Iniciales: JA**
-*(Idea anterior, Sutegi Design System, descartada el 09-sep; ver `docs/POSTMORTEM-sutegi.md`.)*
+*(Idea anterior, Sutegi Design System, descartada el 09-sep; post-mortem fuera del repo, D32.)*
 **Repo:** github.com/7daysofrain/mood-table-v2 *(propio, no fork; historial conservado — ficha D32)* · **Rama actual:** `feature/entrega-1-JA`
 
 Este fichero es la memoria viva del proyecto. Cualquier sesión de Claude (Cowork o
@@ -22,7 +22,7 @@ Léelas **cuando toque**, no todas al empezar. Si una tarea encaja en la columna
 - **`docs/instructions/` = el qué** (convenciones y flujo, transversal); **skills = el cómo** (protocolo, plantillas, DoD).
 - **Lo que solo usa una skill vive en su carpeta** (`references/` o `assets/`), no en `docs/`.
 
-Referencias de producto: [`docs/PRD.md`](docs/PRD.md) (fuente de verdad; glosario en §8) · [`docs/idea-mood-table.md`](docs/idea-mood-table.md) (decisiones D1-D35).
+Referencias de producto: [`docs/PRD.md`](docs/PRD.md) (fuente de verdad; glosario en §8) · [`docs/idea-mood-table.md`](docs/idea-mood-table.md) (decisiones D1-D36).
 
 ---
 
@@ -205,15 +205,7 @@ puede evaluar y se valida desde fuera).
 Pasa los filtros del post-mortem: hay un sistema real sin la IA, y hay código sustancioso que no
 es bucle agéntico (DSP, motor de frames, protocolo, mezcla, estado).
 
-🎟️ **Plan B: Pura Belia · Zona de clientes** (ficha `docs/idea-pura-belia.md`, scorecard 32/40).
-Panel de cliente propio para la empresa de Joseba (plugins de audio; web Astro estática en
-`~/Proyectos/pura-belia/static/pura-belia-web`, hoy "Mi cuenta" redirige a Lemon Squeezy).
-Ownership de la identidad pasa a Pura Belia; LS queda como tercero detrás de un puerto (motivo:
-migración LS → Stripe prevista). **5 must-have:** alta automática por webhook (+ backfill) ·
-acceso a la cuenta · licencias y dispositivos (liberar/renombrar) · preferencias de email (Brevo)
-· datos y baja RGPD. **1 should-have:** descargas por licencia. Fuera: servidor de licencias
-propio (las activaciones siguen en LS; contrato del plugin congelado). Más convencional y de
-riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momento.
+🎟️ **Plan B archivado** (D32): su ficha queda fuera del repo.
 
 ---
 
@@ -247,9 +239,10 @@ riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momen
       con estado en memoria, rate limit, máx. WS, HTTPS); TypeBox, helmet, sin CORS; **SonarQube Cloud
       (quality gate en PR) + Dependabot** (Sonar gratis no hace SCA; Snyk descartado).
 - [x] **Persistencia** ✅ SQLite solo para estado (`strip_state`, `strip_effects`); tiras en fichero de configuración (22-sep, README §3, ficha D25/D29).
-- [ ] **README §5 (historias) y §6 (tickets) van en la E1** (doc 99.2, 23-sep). Siguen sin redactarse en
-      Cowork: salen de **PRD → backlog priorizado → 3 historias + 3 tickets (back/front/BD)** en Claude
-      Code + OpenSpec, **en el repo nuevo**. PRD ✅ (v1.0, 23-sep). §4 (API) no va en la E1 (confirmado por LIDR).
+- [x] **README §5 (historias) y §6 (tickets)** ✅ (24-sep): backlog de H1 refinado y estimado (`MOO-13`…`MOO-15`);
+      tickets back `MOO-16`, front `MOO-18` y **BD `MOO-26`** (historia `MOO-25` de H5, añadida tras la auditoría:
+      el mentor pidió "README **y ticket**"). Épica técnica **EN · enablers** (`MOO-27`: `MOO-28` monorepo/CI,
+      `MOO-29` layout del panel). §4 (API) no va en la E1 (confirmado por LIDR; nota en el README).
 - [x] **Repo nuevo** ✅ (23-sep): `7daysofrain/mood-table-v2`, público, historial conservado, remoto del fork
       eliminado. Ideas descartadas fuera del árbol (en local: `docs/borradores/descartadas/`); `PLAN-entregables.md`
       borrado. Ficha D32. Pendiente opcional: archivar el fork antiguo en GitHub.
@@ -260,8 +253,7 @@ riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momen
 - [x] **URL de clonado** ✅ en README §0.5, §1.4 y árbol de §2.3 (23-sep).
 - [ ] **Instrucciones del Proyecto de claude.ai** (Joseba, en claude.ai): aún dicen "7 docs numerados";
       corregir a "readme.md con 8 secciones + prompts.md".
-- [ ] **Actualizar `docs/PLAN-entregables.md`**: vaciar estado de secciones (era de Sutegi) y
-      adaptar el guion a Mood Table (modelo de datos simple, API del panel, tickets back/front/BD).
+- [x] ~~Actualizar `PLAN-entregables.md`~~: borrado al mover el repo (D32).
 - [ ] **`readme.md`** (Entrega 1, 25-sep): ✅ §0, §1.1, §1.2, §2.1, §2.2, §2.3, §2.5, §3 escritas (22-23 sep); §2 de Sutegi
       borrada, estructura de la plantilla original. Siguiente: ver §8bis y cierre (`prompts.md`, verificación contra plantilla).
 
@@ -296,8 +288,7 @@ también el vídeo de LIDR: iterar el PRD → priorizar backlog → tickets.
   infra, firmware); GitHub conectado, automatizaciones de PR y *linkbacks* públicos con descripción.
 - ✅ **`docs/instructions/`** (`workflow.md`, `linear.md`) + **índice en este fichero**. Granularidad: **tarea de
   Linear = PR; paso de `tasks.md` = commit**. `prompts.md` §6.0 con 3 prompts.
-- ⚠️ **Nada de hoy está commiteado**: Joseba hace commit + push desde terminal (los enlaces de Linear al PRD apuntan
-  a la rama `feature/entrega-1-JA` y funcionarán tras el push).
+- ✅ Commiteado y subido (24-sep).
 
 **Plan original de la sesión:**
 
@@ -390,7 +381,14 @@ junto al código. El stack ya está en README §2.1 (tabla "Stack").
 - Corregir en claude.ai las instrucciones del Proyecto ("7 docs numerados" → readme con 8 secciones + prompts.md).
 
 **Estado del README (23-sep):** ✅ §0, §1.1, §1.2, §2.1, §2.2, §2.3, §1.3 (wireframe en `docs/img/`), §1.4 (D31), §2.4 (D30), §2.5, §2.6, §3 · ⏸ §4 (en espera de LIDR) · 🔜 §5, §6 (van en E1; Claude Code, otra sesión) · ⛔ §7 (entrega final). Borradores en `docs/borradores/`.
-Decisiones D15-D29 en la ficha (`docs/idea-mood-table.md` §10). `docs/PLAN-entregables.md` está
-**obsoleto** (era de Sutegi): no usarlo como guía.
+Decisiones D1-D36 en la ficha (`docs/idea-mood-table.md` §10).
 
-*(Última actualización: 24 sep 2026 — sesión 2a (Claude Code): AGENTS.md, MCP de Linear con reglas, skills create/refine/estimate-story y subagentes. Siguiente: sesión nueva para el backlog (punto 2) → §5/§6 → prompts.md §0 → verificación y entrega)*
+**Estado (24-sep, tarde) · auditoría de la E1:** una auditoría contra la plantilla y los docs 99.x de LIDR dio 1
+bloqueante (rama sin subir → push hecho) y 9 puntos más. Aplicados: notas en README/`prompts.md` §4 y §7; demo
+"disponible con la entrega final"; "oír el fichero" (D36) en H1, recorrido, §1.4 y §2.2 (*Reproductor*); ticket de BD
+(`MOO-25`/`MOO-26`); épica de enablers (`MOO-27`…`MOO-29`, excepción en `linear.md` §1); este fichero sin Pura Belia
+ni estado caducado. Pendientes del triaje: `prompts.md` sin referencias a lo no versionado (7), criterios
+verificables en HU1/HU3 (8), incoherencias menores (9). Después de la E1: reestructurar este fichero
+(instrucciones estables vs. diario de sesiones).
+
+*(Última actualización: 24 sep 2026, tarde — triaje de la auditoría de la E1 (Claude Code). Siguiente: cerrar puntos 7-9 → verificación contra plantilla → push, comprobar `…/tree/feature/entrega-1-JA` y Typeform)*

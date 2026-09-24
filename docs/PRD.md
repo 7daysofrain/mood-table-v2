@@ -196,6 +196,9 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | **Valor** | `value` | Lo que vale ahora un parámetro en una tira concreta. Lo decide el DJ y se guarda. |
 | **Control** | *(solo UI)* | Elemento del panel que representa un parámetro: slider, selector de color o desplegable. *El DJ mueve un control → cambia el valor de un parámetro.* |
 | **Estado del instrumento** | `instrumentState` | Efecto activo y valores de cada tira. Es lo que vuelve al arrancar (H5). **"Estado" a secas no se usa**: la memoria interna de un efecto entre frames es otra cosa y se nombra aparte en la spec del motor (p. ej. `effectMemory`). |
+| **Motor** | `engine` | El proceso que, en cada frame, lee la fuente de audio, calcula los colores de cada tira con su efecto y los envía a sus salidas. También sirve el panel y la API. |
+| **Frame** | `frame` | Cada fotograma que calcula el motor: los colores de todos los LEDs de una tira en un instante (unos 60 por segundo). La tira física y el visor reciben los mismos frames. |
+| **Fichero de configuración** | `config` | Fichero JSON donde se declaran las tiras (nombre, número de LEDs, salida) y la fuente de audio. Las tiras solo se cambian aquí, no desde el panel (p. ej. `config/demo.json`). |
 | **Panel** | `panel` | Interfaz web desde la que se toca el instrumento: elegir tira y efecto y mover controles. Incluye el visor. En el MVP es el único mando. |
 | **Mando** | `commands` | Cualquier superficie desde la que se toca el instrumento: hoy el panel; en el futuro una pantalla táctil, la F1 o un mando propio. Todos dan las mismas órdenes (cambiar efecto, cambiar un valor). |
 | **Límite de potencia** | `powerLimit` | Corriente máxima que admite la fuente de una tira. El instrumento baja el brillo de cada frame para no superarla (E8). |

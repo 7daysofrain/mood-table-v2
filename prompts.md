@@ -46,13 +46,13 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 - **Revisores con contexto limpio.** Los subagentes solo reciben la historia, no la conversación, y la estimación se hace a ciegas: la discrepancia entre cartas es el resultado útil, no se promedia.
 - **Una fuente de verdad por dato:** PRD (qué y por qué) · Linear (backlog y criterios) · OpenSpec (cómo) · README (diseño y entrega) · ficha (decisiones con su porqué).
 - **Se mide y se ajusta el propio arnés.** Ejemplo: `poke-holes` se rehízo tras analizar su primera ejecución y se comprobó en las dos siguientes (§5.2).
-- **Todo queda registrado:** decisiones D1-D36 en la ficha, prompts literales (máx. 3 por sección) aquí, y los candidatos descartados en `docs/borradores/`.
+- **Todo queda registrado:** decisiones D1-D36 en la ficha, prompts literales (máx. 3 por sección) aquí, y los prompts descartados se quedan fuera del repo.
 
 **Ajustes humanos más relevantes (resumen):**
 
 - **Producto:** el PRD es un documento de negocio, no de requisitos (§5.0); la demo pública es una exigencia de la entrega y va al README, no al PRD; LedFx cubre casi todo el MVP, así que el porqué pasa a ser propiedad y aprendizaje; oír el fichero de audio entra en el MVP (§5.2).
 - **Arquitectura:** hexagonal ligera sin contenedor de DI; tiras en fichero y SQLite solo para el estado; Fly.io → EC2 `t4g` para que la demo corra en arm64 como la Pi; SonarQube Cloud + Dependabot porque Sonar gratis no analiza dependencias.
-- **Proceso:** Linear en un solo proyecto y tarea = PR, paso = commit (§6.0); tres skills separadas y en inglés (§5.1); backlog refinado justo a tiempo, solo H1 (§5.2); sin ticket de BD forzado (§6.1); escala de estimación 1-13 y layout del panel sacado a *enablers* tras el planning poker (§6.1); el *loopback* de ALSA en CI queda como deuda técnica explícita (§6.1).
+- **Proceso:** Linear en un solo proyecto y tarea = PR, paso = commit (§6.0); tres skills separadas y en inglés (§5.1); backlog refinado justo a tiempo, solo H1 (§5.2); ticket de BD en H5 tras una auditoría, no forzado en H1 (§6.1); escala de estimación 1-13 y layout del panel sacado a *enablers* tras el planning poker (§6.1); el *loopback* de ALSA en CI queda como deuda técnica explícita (§6.1).
 
 ---
 
@@ -265,11 +265,7 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 
 ### 4. Especificación de la API
 
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
+*Se registrará con la Entrega 2.*
 
 ---
 
@@ -340,6 +336,12 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 
 *En su primera ejecución (`MOO-13`), el subagente `poke-holes` (Opus) devolvió 14 huecos y solo la mitad servían como criterio (el resto eran diseño, dependencias o repetían los non-goals). Diagnóstico: el rango "10-15" empujaba a rellenar, las categorías invitaban a preguntas de diseño y leía la arquitectura del README. Se rehízo con un filtro de observabilidad ("¿lo notaría el maker o el DJ sin mirar el código?"), máximo 8 criterios + 3 notas con destino, y comprobación contra non-goals antes de devolver. Segunda medición (`MOO-14`, `MOO-15`): 8 candidatos, todos observables. Antes, el caso feliz había pasado a describirse en lenguaje natural y la IA lo traduce a Gherkin sin añadir comportamiento (cambio en `/refine-story`).*
 
+Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://github.com/7daysofrain/mood-table-v2/commit/4f7738fa24dc1971edbe0df85a35174a0b7e450e), `.claude/agents/poke-holes.md`):
+
+> **Antes:** Between 10 and 15 candidates, grouped into four categories: Casos límite · Supuestos implícitos · Escenarios faltantes · Dependencias. […] If needed, `readme.md` §2-§3 (architecture and data model).
+
+> **Después:** The one test every candidate must pass: **would the maker or the DJ notice it without looking at the code?** If not, it is not a criterion. […] Candidatos a criterio (up to 8) […] Fuera de criterio (up to 3), tagged with their destination. […] Do **not** read the architecture or the data model. […] Before returning, check every candidate against the happy path and the non-goals.
+
 **Prompt 3:**
 
 > 3- vale, el a, pero creo que es importante que suene porque si no en el simulador no vas a ver si el efecto está funcionando correctamente, creo que esto tiene que entrar en el MVP, tenemos que ver donde encaja. Si necesita un play, necesita un play
@@ -381,6 +383,8 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 
 *Claude Code (`claude-opus-5-5`). La IA proponía añadir una historia de H5 para tener un ticket de BD y avisó del riesgo: el mentor condicionó SQLite a que "README y ticket" documenten la persistencia. Decisión humana: sin ticket de BD, porque inventarlo en H1 sería forzar la plantilla (pensada para CRUD). El README lo explica y remite al modelo de datos (§3).*
 
+*Revisión (24-sep, tarde): una auditoría de la entrega contra la plantilla y los documentos de LIDR cruzó el README con `AGENTS.md` y la ficha (condición del mentor: "README y ticket") y marcó la contradicción. Se revirtió la decisión, pero sin forzar H1: historia `MOO-25` en la épica H5 (en Backlog, sin refinar) y su tarea `MOO-26` (esquema, modelo TypeScript, puerto `StateStore`, adaptadores y tests de contrato) como Ticket 3. El ticket de energía (`MOO-20`) pasa a ticket adicional.*
+
 **Prompt 2:**
 
 > Creo que hay que hacer dos cosas diferentes importantes, una meter el layout que va a gobernar el dashboard y otra lo que se busca en si
@@ -397,8 +401,4 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 
 ### 7. Pull Requests
 
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
+*Se registrará con la entrega final.*

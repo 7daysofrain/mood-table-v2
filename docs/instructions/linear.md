@@ -12,6 +12,10 @@
   `H3 · Pintar la tira física` · `H4 · Declarar mis tiras` · `H5 · Arrancar en el último estado` ·
   `S1 · Tira de ambiente` · `S2 · Firmware propio`. Su descripción enlaza la historia del PRD (§4) y
   sus expectativas (E#); no las copia. Las épicas no llevan etiqueta de tipo.
+- **Épica técnica** (*enabler*): la excepción. `EN · Base técnica (enablers)` agrupa lo que necesitan las
+  historias para empezar (monorepo, CI, layout del panel) y no sale de ninguna historia del PRD, así que
+  **cuelga tareas directamente, sin historia**. Esas tareas llevan etiqueta de tipo (`Chore`) además de la
+  de área, porque no heredan el DoD de ninguna historia.
 - **Historia = sub-issue de su épica. Tarea = sub-issue de su historia** (tres niveles de anidación).
 - **Sin cycles** (una sola persona). Must/should: prioridad de la épica (**High** = must, **Low** =
   should). Dentro del backlog, el orden lo da la **prioridad** nativa de cada historia.
@@ -84,7 +88,7 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia.
 ## 7. Enlace con GitHub
 
 - Integración nativa con `7daysofrain/mood-table-v2`; **sin** sincronización con GitHub Issues.
-- Una rama por tarea, con su ID (Linear la copia con `Cmd+Shift+.`): `7daysofrain/moo-13-lector-wav`.
+- Una rama por tarea, con su ID (Linear la copia con `Cmd+Shift+.`): `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`.
 - PR: `Fixes MOO-n` con el ID de la **tarea**. Commits: `Refs MOO-n` (nunca `Fixes`).
 - *Linkbacks* activados también en **repos públicos**, con descripción: la PR muestra la historia de la
   que sale (trazabilidad pública para la evaluación). *Link commits to issues* desactivado (no hace falta).
