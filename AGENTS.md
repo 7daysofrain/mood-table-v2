@@ -257,7 +257,26 @@ es bucle agéntico (DSP, motor de frames, protocolo, mezcla, estado).
 - [ ] **`readme.md`** (Entrega 1, 25-sep): ✅ §0, §1.1, §1.2, §2.1, §2.2, §2.3, §2.5, §3 escritas (22-23 sep); §2 de Sutegi
       borrada, estructura de la plantilla original. Siguiente: ver §8bis y cierre (`prompts.md`, verificación contra plantilla).
 
-## 8bis. Plan de las próximas sesiones (act. 23-sep, tarde)
+## 8bis. Plan de las próximas sesiones (act. 24-sep, noche)
+
+### ✅ Entrega 1 enviada (24-sep, un día antes del plazo)
+
+Rama `feature/entrega-1-JA` en `84061f4` (README §0-§3, §5, §6; §4 y §7 con nota), Typeform enviado con el enlace
+de la rama. Antes, auditoría contra la plantilla y los docs 99.x con sus 10 puntos resueltos (ver bloque de estado al
+final de esta sección).
+
+**Próximos pasos (en orden):**
+1. **Invitar al evaluador al workspace de Linear** (Joseba, desde los ajustes de Linear; el README enlaza a Linear, que es privado).
+2. **Reestructurar este fichero** antes de la E2: `AGENTS.md` corto y estable (reglas, índice, estado actual) y el
+   diario de sesiones + plan del curso en otro fichero. Quitar el "Plan original de la sesión" y lo que ya es historia.
+3. **Spike de rendimiento en la Pi** (`MOO-12`): primera tarea técnica de la E2; condiciona la spec del motor (D8/D13)
+   y el número de LEDs del MVP (§8).
+4. **Enablers** (`MOO-27`): `MOO-28` monorepo, lint, tests y CI → `MOO-29` layout del panel. Desbloquean `MOO-16`, `MOO-18` y `MOO-26`.
+5. **Primer OpenSpec change** (`MOO-13`) → tareas `MOO-16`/`MOO-17`/`MOO-18`, y **README §4 (OpenAPI)** con el código.
+6. Pendientes del arnés (hook `validate-ac`, evals de skills) y refinar justo a tiempo `MOO-22` (oír el fichero) y `MOO-25` (H5).
+
+**E2: 23-oct.**
+
 
 ✅ **Sesión del 23-sep (mañana), cerrada:** §4 de este fichero actualizada con el doc 99.2 de LIDR; README
 §1.3 (+ wireframe en Claude Design → `docs/img/panel-wireframe.png`), §1.4, §2.4, §2.6 escritas; §1.2 con
@@ -387,8 +406,7 @@ Decisiones D1-D36 en la ficha (`docs/idea-mood-table.md` §10).
 bloqueante (rama sin subir → push hecho) y 9 puntos más. Aplicados: notas en README/`prompts.md` §4 y §7; demo
 "disponible con la entrega final"; "oír el fichero" (D36) en H1, recorrido, §1.4 y §2.2 (*Reproductor*); ticket de BD
 (`MOO-25`/`MOO-26`); épica de enablers (`MOO-27`…`MOO-29`, excepción en `linear.md` §1); este fichero sin Pura Belia
-ni estado caducado. Pendientes del triaje: `prompts.md` sin referencias a lo no versionado (7), criterios
-verificables en HU1/HU3 (8), incoherencias menores (9). Después de la E1: reestructurar este fichero
-(instrucciones estables vs. diario de sesiones).
+ni estado caducado. También resueltos: `prompts.md` sin referencias a lo no versionado (7), criterios verificables
+en HU1/HU3 (8), incoherencias menores y glosario con motor, frame y fichero de configuración (9).
 
-*(Última actualización: 24 sep 2026, tarde — triaje de la auditoría de la E1 (Claude Code). Siguiente: cerrar puntos 7-9 → verificación contra plantilla → push, comprobar `…/tree/feature/entrega-1-JA` y Typeform)*
+*(Última actualización: 24 sep 2026, noche — E1 enviada tras el triaje de la auditoría (Claude Code). Siguiente: próximos pasos al inicio de §8bis)*
