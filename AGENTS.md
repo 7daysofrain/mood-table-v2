@@ -240,10 +240,9 @@ riesgo técnico bajo; no es trabajo perdido: se hará igualmente en algún momen
       Front React + Vite + TS servido por el motor; API **Fastify + TypeBox** (OpenAPI desde esquemas;
       AdonisJS descartado: framework en el centro vs librería en el borde); HTTP para comandos/config,
       WebSocket motor → navegador para frames y estado (fallback: `setParam` por WS si hay latencia).
-- [ ] **Renombrar `CLAUDE.md` → `AGENTS.md`** (Joseba, desde terminal con `git mv`) y crear un
-      `CLAUDE.md` mínimo que lo importe (`@AGENTS.md`). Comprometido en README §2.3 (22-sep).
-      **Aplazado (23-sep): se hace al pasar a Claude Code.** Riesgo: comprobar que Cowork resuelve `@AGENTS.md`
-      (si no, pedir en el prompt que lea `AGENTS.md`). En la E2, separar instrucciones de código y plan del curso.
+- [x] **Renombrar `CLAUDE.md` → `AGENTS.md`** ✅ (24-sep): `CLAUDE.md` mínimo con `@AGENTS.md`, verificado con una
+      sesión nueva. En git consta como `AGENTS.md` nuevo (la historia previa está en `git log -- CLAUDE.md`).
+      Pendiente E2: separar instrucciones de código y plan del curso. Sin comprobar aún si Cowork resuelve `@AGENTS.md`.
 - [x] **Seguridad (README §2.5)** ✅ (23-sep): por contexto (mesa sin auth por decisión; demo pública
       con estado en memoria, rate limit, máx. WS, HTTPS); TypeBox, helmet, sin CORS; **SonarQube Cloud
       (quality gate en PR) + Dependabot** (Sonar gratis no hace SCA; Snyk descartado).
@@ -325,6 +324,25 @@ también el vídeo de LIDR: iterar el PRD → priorizar backlog → tickets.
 
 ### Sesión 2 — 24-sep · Claude Code (+ Cowork para revisión)
 
+**Estado (24-sep, primera sesión de Claude Code, `claude-opus-5-5`)** — commits `1b7f36e`, `8000628` y el de cierre:
+- ✅ **Punto 0:** `AGENTS.md` + `CLAUDE.md` con `@AGENTS.md`. **MCP de Linear como config del proyecto** (`.mcp.json`,
+  servidor `linear`) con reglas en `.claude/settings.json`: lecturas `allow`, `save_issue`/`save_comment` `ask`, resto
+  `deny` (Linear no tiene scope "leer + crear"; `linear.md` §8). Conector de Linear de claude.ai **desactivado** (también
+  por defecto en sesiones nuevas) para que solo haya un camino, el que tiene reglas.
+- ✅ **Punto 1:** flujo de **3 skills** `/create-story` (Backlog + talla IA) → `/refine-story` (caso feliz humano +
+  subagente `poke-holes`, Opus) → `/estimate-story` (planning poker a ciegas con subagente `estimator`, Sonnet → Todo).
+  Contrastado con el módulo 4 (04.2-04.6) y 11.2 BDD. Redactadas con la guía de skill-creator, **en inglés**.
+  Convenciones del arnés en este fichero (bajo el índice). `prompts.md` §5.1 registrado.
+- ⏭ **Pendiente del arnés:** evals de skill-creator (hasta la primera puerta humana); hook `validate-ac` (04.6, E2);
+  migrar al inglés el resto del arnés (`docs/instructions/`, este fichero) cuando toque; revisar `workflow.md` §4 con la
+  regla qué/cómo después de la E1; decidir si `save_issue` pasa de `ask` a `allow` tras un par de historias con puerta.
+
+**Siguiente sesión (nueva, para cargar el MCP `linear` y las skills): punto 2 → backlog.** Arranque: leer este §8bis y
+`docs/instructions/linear.md`; priorizar con Joseba qué épicas/historias entran ("vámonos por esas funcionalidades",
+no un backlog lineal); `/create-story` por épica; `/refine-story` + `/estimate-story` **solo** para las 3 historias del
+README. Después: README §5/§6 (decidir completo vs. resumen + enlace) → `prompts.md` §0 y secciones del día →
+verificación contra plantilla y doc 99.2 → PR/merge y Typeform (`…/tree/feature/entrega-1-JA`).
+
 **Primer paso (acordado 23-sep): crear la skill "crear historia"** en `.claude/` a partir de la plantilla de
 `docs/instructions/linear.md` §5 (Como/Quiero/Para, AC GWT con caso feliz de Joseba + *poke-holes*, non-goals, DoD,
 contexto técnico al final). Con ella se generan las historias en Linear (sub-issues de las épicas) y de ahí §5/§6.
@@ -375,4 +393,4 @@ junto al código. El stack ya está en README §2.1 (tabla "Stack").
 Decisiones D15-D29 en la ficha (`docs/idea-mood-table.md` §10). `docs/PLAN-entregables.md` está
 **obsoleto** (era de Sutegi): no usarlo como guía.
 
-*(Última actualización: 23 sep 2026, noche — sesión 1 cerrada: repo nuevo, PRD v1.0, README alineado, Linear montado, `docs/instructions/`. Siguiente (24-sep): skill "crear historia" → backlog en Linear → §5/§6 → prompts.md §0 → verificación y entrega)*
+*(Última actualización: 24 sep 2026 — sesión 2a (Claude Code): AGENTS.md, MCP de Linear con reglas, skills create/refine/estimate-story y subagentes. Siguiente: sesión nueva para el backlog (punto 2) → §5/§6 → prompts.md §0 → verificación y entrega)*

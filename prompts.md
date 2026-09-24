@@ -268,7 +268,38 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 *La IA proponía al visitante de la demo como tercer usuario. Queda como criterio para todo el PRD: lo que exige la entrega va al README; el PRD describe el producto y debe sobrevivir al máster.*
 
-#### 5.1 Historias de usuario
+#### 5.1 Arnés para las historias (Claude Code: `AGENTS.md`, MCP de Linear, skills y subagentes)
+
+**Prompt 1:**
+
+> A1
+> B -> subagente
+> C -> me parece buena la propuesta
+>
+> Entes de empezar me gustaría contrastar el protocolo de la skill con la doc del curso. La verdad es que me parece bastante alineada con el protocolo pero por hacer un doble check. Tienes acceso a los docs del Google Drive que han guiado esto?
+
+*Claude Code (app de escritorio, `claude-opus-5-5`, con el conector de Google Drive). Un subagente de solo lectura contrastó el protocolo con los documentos 04.0-04.6 del módulo 4 y el 11.2 (BDD). Estaba alineado con 04.3; se añadieron las 4 categorías de poke-holes, la checklist de Gherkin de 11.2, el DoD por tipo (04.6) y el planning poker a ciegas (04.4). Se detectó una contradicción del curso (la skill `expand-issue` de 04.6 genera los criterios con IA; 04.3 los reserva al humano): se sigue 04.3.*
+
+**Prompt 2:**
+
+> 1. La estimación igual no tendría sentido sacarla a un skill aparte también? Lo veo como un procedimiento aislado. De hecho tiene sentido sacar 3 skills y hacer una especie de flujo? Me gusta como está planteado, pero pido aislarlo
+> 2. ok las añadimos
+> 3. ok
+> 4. DoD por tipo es lo que tiene sentido
+>
+> 5- ok
+>
+> Por otro lado si que le metería talla de camiseta. La regla de no estimar me refería a fibonacci, planning poker. Una talla de camiseta hecha por IA me parece bien
+
+*La IA había diseñado dos skills (crear y refinar) con la estimación dentro del refinamiento. Queda un flujo de tres skills, una por estado de Linear: `/create-story` (Backlog, con talla de camiseta de la IA para priorizar) → `/refine-story` (caso feliz humano + subagente `poke-holes`, Opus) → `/estimate-story` (planning poker a ciegas contra el subagente `estimator`, Sonnet; pasa a Todo). Separar la estimación de la redacción es lo que pide 04.2.*
+
+**Prompt 3:**
+
+> veo que has creado las skills directamente, has usado el skill creator? Deberiamos haberlo hecho así. Por otra parte las voy a querer en Inglés, de hecho el arnés entero irá en inglés. No lo migremos todo ahora pero lo que vamos creando de momento a Inglés
+
+*La IA había escrito los `SKILL.md` a mano. Se rehicieron con la guía de la skill-creator (explicar el porqué en vez de MUST, *assets* con revelación progresiva) y en inglés, con el contenido de Linear en español. De esta ronda y las siguientes salen las convenciones del arnés en `AGENTS.md`: arnés en inglés; `docs/instructions/` = el qué y skills = el cómo; lo que solo usa una skill vive en su carpeta (el DoD y la plantilla de la historia, repartida por dueño de sección). Los evals de la skill-creator quedan pendientes; la optimización de la `description` no aplica (skills de invocación manual).*
+
+#### 5.2 Historias de usuario
 
 **Prompt 1:**
 
