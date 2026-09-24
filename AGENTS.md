@@ -17,6 +17,11 @@ Léelas **cuando toque**, no todas al empezar. Si una tarea encaja en la columna
 | [`workflow.md`](docs/instructions/workflow.md) | La cadena PRD → Épica → Historia → Tarea → OpenSpec → PR, la granularidad (tarea → PR, paso → commit), la fuente de verdad de cada cosa y la vida de una historia | Antes de crear o tocar épicas, historias, tareas o specs, y antes de abrir una PR |
 | [`linear.md`](docs/instructions/linear.md) | Convenciones de Linear: proyecto único *Mood Table*, épica = issue padre, estados, etiquetas, estimación, plantilla de historia, enlace con GitHub | Antes de crear o editar cualquier cosa en Linear |
 
+**Convenciones del arnés** (`.claude/`, `docs/instructions/`):
+- **Arnés en inglés** (skills, subagentes, nombres); **documentos de producto y contenido de Linear en español**, con el glosario del PRD (§8) como puente. Las skills se dirigen a "the user", no a una persona concreta.
+- **`docs/instructions/` = el qué** (convenciones y flujo, transversal); **skills = el cómo** (protocolo, plantillas, DoD).
+- **Lo que solo usa una skill vive en su carpeta** (`references/` o `assets/`), no en `docs/`.
+
 Referencias de producto: [`docs/PRD.md`](docs/PRD.md) (fuente de verdad; glosario en §8) · [`docs/idea-mood-table.md`](docs/idea-mood-table.md) (decisiones D1-D35).
 
 ---

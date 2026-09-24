@@ -42,36 +42,26 @@ historia, la épica. *Sub-issue auto-close* desactivado.
 
 ## 4. Estimación
 
-Fibonacci (1, 2, 3, 5, 8), con la IA como *peer*. Una historia **≤ 5**; si sale 8, se divide.
-**Las historias se crean sin estimación y en `Backlog`**; se estiman al refinarlas (paso a `Todo`).
+- **Talla (IA)** al crear la historia: XS · S · M · L · XL, **solo para priorizar**. Va en la
+  descripción, no en el campo *estimate*.
+- **Estimación** Fibonacci (1, 2, 3, 5, 8) en el campo *estimate*, por **planning poker** entre el
+  humano y la IA, y **separada en el tiempo** de la redacción (curso 04.2, 04.4). Una historia **≤ 5**;
+  si sale 8, se divide.
+- **Las historias se crean en `Backlog` sin estimación Fibonacci**; se estiman tras refinarlas (paso a
+  `Todo`).
 
-## 5. Plantilla de historia (descripción del issue)
+## 5. Vida de una historia en Linear
 
-```markdown
-## Historia
-Como <DJ | maker>, quiero <…>, para <…>.
-**Épica:** H# · **Expectativas:** E#
+Cada paso lo ejecuta una skill de Claude Code (`.claude/skills/`). El **cómo** (plantilla de la
+descripción, protocolo, DoD por tipo) vive en la skill; aquí solo el **qué**.
 
-## Criterios de aceptación
-Scenario: <caso feliz>            ← los escribe Joseba
-  Given … When … Then …
-Scenario: <caso límite>           ← de poke-holes, solo los aceptados
-  Given … When … Then …
-(Marca "(asumido)" lo que no tenga evidencia.)
+| Paso | Skill | Aporta a la historia | Estado al terminar |
+|---|---|---|---|
+| Crear | `/create-story <épica>` | Como/quiero/para, épica y E#, talla (IA), non-goals, etiquetas, prioridad | Backlog |
+| Refinar | `/refine-story <historia>` | Criterios GIVEN/WHEN/THEN (caso feliz del humano + poke-holes), DoD por tipo, contexto técnico, INVEST y tareas | Backlog |
+| Estimar | `/estimate-story <historia>` | Estimación Fibonacci por planning poker | **Todo** |
 
-## Non-goals
-- …
-
-## Definition of Done (<tipo>)
-- [ ] OpenSpec change aprobado; archivado tras el merge
-- [ ] Tests que cubren todos los escenarios
-- [ ] Lint, tipos, E2E y quality gate de SonarQube en verde
-- [ ] Glosario del PRD actualizado si aparece un término nuevo
-
-## Contexto técnico (para el agente)
-- Secciones del README o specs relevantes
-- OpenSpec change: `openspec/changes/<id>`
-```
+Toda escritura en Linear pasa por la puerta humana de la skill y por la regla `ask` de `save_issue` (§8).
 
 ## 6. Tareas (sub-issues)
 
