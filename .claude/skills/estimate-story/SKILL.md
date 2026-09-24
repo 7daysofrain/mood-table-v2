@@ -1,6 +1,6 @@
 ---
 name: estimate-story
-description: Estimate a refined Mood Table story in Linear with blind planning poker between the user and the estimator subagent (Fibonacci 1-8), then move it to Todo. Third step of the create-story → refine-story → estimate-story flow.
+description: Estimate a refined Mood Table story in Linear with blind planning poker between the user and the estimator subagent (Fibonacci 1-13, 13 = split), then move it to Todo. Third step of the create-story → refine-story → estimate-story flow.
 argument-hint: <story-id>
 disable-model-invocation: true
 ---
@@ -26,7 +26,7 @@ Spanish**.
    a DoD. If it is not, stop and point to `/refine-story`. An estimate of an unrefined story measures
    uncertainty, not effort.
 
-2. **The user's card first.** Ask the user for their estimate (1, 2, 3, 5 or 8) and a one-line reason.
+2. **The user's card first.** Ask the user for their estimate (1, 2, 3, 5, 8 or 13) and a one-line reason.
    Before that, give no hints at all: no opinion, no size, no comparisons. The most common failure
    (04.4) is accepting the AI's number when you have no strong opinion of your own, and the only
    defence is committing to a number first.
@@ -43,8 +43,8 @@ Spanish**.
    The user decides the final number. Do not average and do not break the tie yourself: the user is
    accountable for the estimate.
 
-5. **Size rules** (`linear.md` §4). A story is at most **5**. An **8** is not an estimate but a
-   signal to split: send the story back to `/refine-story`.
+5. **Size rules** (`linear.md` §4, which also defines what each card means). A story is at most
+   **8**. A **13** is not an estimate but a signal to split: send the story back to `/refine-story`.
 
 6. **Human gate and save.** With the user's approval, call `save_issue` with the `id`:
    - `estimate` = the final number;

@@ -1,6 +1,6 @@
 ---
 name: refine-story
-description: Refine a Mood Table user story that is in Backlog in Linear. The user writes the happy path in GIVEN/WHEN/THEN; the poke-holes subagent finds gaps; the user keeps 3-5. Adds the DoD by type, technical context, an INVEST check and the proposed tasks. Second step of the create-story → refine-story → estimate-story flow.
+description: Refine a Mood Table user story that is in Backlog in Linear. The user describes the happy path and the AI translates it to GIVEN/WHEN/THEN; the poke-holes subagent finds gaps; the user keeps 3-5. Adds the DoD by type, technical context, an INVEST check and the proposed tasks. Second step of the create-story → refine-story → estimate-story flow.
 argument-hint: <story-id>
 disable-model-invocation: true
 ---
@@ -29,10 +29,13 @@ Spanish**, using the PRD glossary (§8).
    - In `docs/PRD.md`: the H#/S#, its E#, §6 (assumptions and constraints), §7 (open questions) and
      §8 (glossary).
 
-2. **Happy path (the user writes it).** Ask the user to write the happy-path scenario in
-   GIVEN/WHEN/THEN. Do not offer a draft, not even as a starting point: a draft anchors the user and
-   the scenario stops being theirs. Once you have it, review it only against this checklist (course
-   11.2) and point out what fails, without rewriting it:
+2. **Happy path (the user writes it).** Ask the user to describe the happy path **in natural
+   language**. Do not offer a draft, not even as a starting point: a draft anchors the user and the
+   scenario stops being theirs. The content is the user's; the format is yours. Translate the
+   description into GIVEN/WHEN/THEN **without adding behaviour**: anything you had to fill in is marked
+   *(asumido)* or asked, never slipped in. Show the translation and wait for the user to validate it.
+   Apply this checklist (course 11.2) to the translation, and if the description itself breaks a rule
+   (e.g. two actions, a `Then` that cannot be observed), point it out instead of silently fixing it:
    - one `When` per scenario;
    - domain language: glossary terms, no UI steps (clicks, buttons) and no technical details
      (endpoints, tables). The scenario must survive a redesign of the panel or the API;
@@ -42,11 +45,15 @@ Spanish**, using the PRD glossary (§8).
 3. **Poke-holes (subagent).** Launch the **`poke-holes`** subagent and give it only the story ID, the
    Como/quiero/para, the non-goals and the user's happy path. Do not pass this conversation. The value
    of the subagent is that it has not seen what was already decided, so it does not share the
-   author's blind spots. It returns 10-15 candidates in four categories.
+   author's blind spots. It returns up to 8 candidate criteria and up to 3 out-of-criteria notes, each
+   tagged with its destination.
 
 4. **Selection (the user decides).**
-   - Show the candidates numbered and grouped, and let the user keep **3-5**. More than that usually
-     means the story is too big or the criteria are testing implementation details.
+   - Show the candidates numbered, and let the user keep **3-5** of the criteria. More than that
+     usually means the story is too big or the criteria are testing implementation details.
+   - Route the out-of-criteria notes to their destination once the user agrees: `dependencia` → a
+     relation in Linear (`blockedBy`) or the technical context; `non-goal` → the Non-goals section;
+     `spec` → the technical context, as a question for the OpenSpec change.
    - Write only the kept ones in GWT, using the same checklist, and mark *(asumido)* anything without
      evidence. Ask the user to approve the wording.
    - If a discarded candidate is really a product question (a decision for the DJ), propose adding it

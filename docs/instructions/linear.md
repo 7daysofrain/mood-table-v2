@@ -44,9 +44,21 @@ historia, la épica. *Sub-issue auto-close* desactivado.
 
 - **Talla (IA)** al crear la historia: XS · S · M · L · XL, **solo para priorizar**. Va en la
   descripción, no en el campo *estimate*.
-- **Estimación** Fibonacci (1, 2, 3, 5, 8) en el campo *estimate*, por **planning poker** entre el
-  humano y la IA, y **separada en el tiempo** de la redacción (curso 04.2, 04.4). Una historia **≤ 5**;
-  si sale 8, se divide.
+- **Estimación** Fibonacci (1, 2, 3, 5, 8, 13) en el campo *estimate*, por **planning poker** entre el
+  humano y la IA, y **separada en el tiempo** de la redacción (curso 04.2, 04.4). Una historia **≤ 8**;
+  si sale **13**, se divide (el 13 nunca se guarda). *(24-sep: se amplía de 1-8 a 1-13 para ganar
+  resolución dentro de la franja de 1-2 días, no para admitir historias más grandes.)*
+- **Qué significa cada carta** (tamaño relativo: complejidad + incertidumbre + esfuerzo; la referencia
+  en tiempo es orientativa, no una conversión):
+
+  | Carta | Significa |
+  |---|---|
+  | 1 | Trivial: cambio acotado y conocido |
+  | 2 | Pequeña: poco que decidir, sin sorpresas previsibles |
+  | 3 | Media: alguna decisión o pieza nueva, riesgo bajo |
+  | 5 | Grande: varias piezas o áreas, alguna incógnita |
+  | 8 | Límite de una historia (~2 días): muchas piezas o una incógnita seria |
+  | 13 | Demasiado grande: se divide |
 - **Las historias se crean en `Backlog` sin estimación Fibonacci**; se estiman tras refinarlas (paso a
   `Todo`).
 
