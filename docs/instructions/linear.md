@@ -94,3 +94,19 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia.
 
 MCP oficial de Linear. Permisos iniciales **leer + crear** (recomendación del curso); mover estados,
 editar o cerrar, solo con confirmación de Joseba.
+
+**Cómo se aplica** (24-sep). Linear no tiene un scope "leer + crear": el OAuth da `read` (solo lectura) o
+escritura completa, y en el MCP crear y editar son la misma herramienta (`save_issue`: sin `id` crea, con
+`id` edita). Por eso la frontera se pone en Claude Code, versionada en el repo:
+
+- **`.mcp.json`**: servidor `linear` → `https://mcp.linear.app/mcp` (HTTP). Cada persona se autentica una
+  vez con `/mcp` en una sesión interactiva de `claude`.
+- **`.claude/settings.json`** (precedencia `deny` > `ask` > `allow`; sin comodines parciales, cada
+  herramienta por su nombre):
+  - `allow`: todas las lecturas (`get_*`, `list_*`, `search_documentation`, `extract_images`).
+  - `ask`: `save_issue` y `save_comment`. Crear historias y tareas pide confirmación, y editar o mover
+    estados también.
+  - `deny`: borrados, etiquetas, proyectos, hitos, documentos, *releases*, diffs y adjuntos. Si hace falta
+    alguno, se mueve a `ask` a propósito.
+- Las herramientas nuevas que publique Linear no quedan cubiertas: caen en el modo de permisos por
+  defecto. Hay que revisar la lista si aparece alguna.
