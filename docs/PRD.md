@@ -1,7 +1,7 @@
 # Mood Table · PRD (Product Requirements Document)
 
 **Versión:** 1.0 · **Fecha:** 23-sep-2026 · **Autor:** Joseba Alonso
-**Estado:** cerrado. Los cambios posteriores se anotan con fecha.
+**Estado:** documento vivo: se actualiza a medida que avanza el producto; el historial de cambios está en git.
 
 > **Qué es este documento.** La fuente de verdad **de alto nivel** del producto: qué se quiere, para
 > quién, qué valor aporta y qué experiencia debe dar. **No** contiene requisitos detallados ni
@@ -77,7 +77,7 @@ tiras en un fichero.
 | E4 | **Cada tira, su efecto.** | Varias tiras a la vez, cada una con su efecto y sus valores. | MVP (la segunda tira física, *should*) |
 | E5 | **Se controla con el hardware que elijas.** | El mismo instrumento se toca desde el panel web y, en el futuro, desde una pantalla táctil, una Traktor F1 o un mando propio. | MVP: panel · Visión: el resto |
 | E6 | **Autónomo.** | Se enchufa y vuelve como estaba, sin portátil ni internet, incluso tras un corte de luz. | MVP |
-| E7 | **Se prueba sin hardware.** | Con un ordenador y un fichero de audio se ve el instrumento funcionar. | MVP |
+| E7 | **Se prueba sin hardware.** | Con un ordenador y un fichero de audio se ve y se oye el instrumento funcionar. | MVP |
 | E8 | **Cuida el hardware.** | Nunca pide más corriente de la que aguanta la fuente declarada. | MVP |
 | E9 | **Fácil de ampliar.** | Añadir un efecto nuevo es escribir una pieza pequeña, sin tocar el resto. | MVP |
 
@@ -86,8 +86,9 @@ tiras en un fichero.
 **Must-have**
 
 - **H1 · Probar el instrumento en el simulador.** Como **maker**, quiero ver el instrumento funcionando
-  sin hardware, con un fichero de audio o la tarjeta de sonido como fuente y las tiras virtuales en el
-  visor, para desarrollarlo y probarlo antes de montar nada. *(E7, E2)*
+  sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, las tiras virtuales en el
+  visor y, si la fuente es un fichero, oyéndolo, para desarrollarlo y probarlo antes de montar nada.
+  *(E7, E2)*
 - **H2 · Tocar los parámetros en vivo.** Como **DJ**, quiero cambiar el efecto de cada tira y mover sus
   controles mientras suena la música, para modular la luz como modulo el sonido. *(E1, E3)*
 - **H3 · Pintar la tira física.** Como **DJ**, quiero que la tira de mi mesa pinte lo mismo que veo en el
@@ -172,9 +173,10 @@ tiras en un fichero.
 | Q1 | ¿Cuántos LEDs por tira admite el instrumento con fluidez? | Con la prueba de rendimiento (A1, A2). |
 | Q2 | ¿Qué controles tiene cada efecto? Por ejemplo, sensibilidad, color o velocidad. | Decisión del DJ, a partir de los efectos de la v1. |
 | Q3 | Al cambiar de efecto, ¿se pasa con un **fundido** o con un **corte seco**? | Decisión del DJ. |
-| Q4 | ¿Qué hacen los efectos reactivos cuando hay **silencio** o no hay fuente de audio? ¿Se apagan o quedan con un mínimo? | Decisión del DJ. |
+| Q4 | ¿Qué hacen los efectos reactivos cuando hay **silencio** o no hay fuente de audio? ¿Se apagan o quedan con un mínimo? | ✅ **Resuelta:** en silencio, un efecto reactivo se apaga y uno de ambiente sigue (decisión del DJ al refinar MOO-14). |
 | Q5 | Si la tira física falla (el Light Box se desconecta), ¿qué pasa? ¿El resto sigue funcionando y el panel avisa? | Decisión de producto. |
 | Q6 | ¿Cuál será el mando físico definitivo: la F1, un mando propio u otro? | Más adelante (visión, §5.3). |
+| Q7 | ¿El instrumento se adapta solo al volumen de la entrada (una señal muy baja o saturada), o eso lo resuelve el DJ con un control de sensibilidad (H2, Q2)? | Decisión del DJ. |
 
 ## 8. Glosario
 
@@ -186,7 +188,7 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | **Tira** | `strip` | Tira LED declarada en el fichero de configuración: nombre, salida, nº de LEDs, orden de color y límite de potencia. Existe porque está cableada (o declarada como virtual). |
 | **Tira virtual** | `strip` con salida `virtual` | Tira cuya salida es virtual: no tiene hardware y solo se ve en el visor. |
 | **Visor** | `viewer` | Vista del navegador que dibuja **todas** las tiras (físicas y virtuales), LED a LED y en tiempo real. |
-| **Simulador** | *(no es una pieza)* | Uso del instrumento **sin hardware**: fuente de audio = fichero y solo tiras virtuales. Es la H1. |
+| **Simulador** | *(no es una pieza)* | Uso del instrumento **sin tiras físicas**: solo tiras virtuales, con cualquier fuente de audio (fichero, o tarjeta de sonido en Linux). Es la H1. |
 | **Salida** | `output` | A dónde van los colores de una tira: **Adalight** (serie, tira física) o **virtual**. |
 | **Fuente de audio** | `audioSource` | De dónde sale la música: **tarjeta de sonido** o **fichero**. Opcional: sin fuente solo funcionan los efectos de ambiente. |
 | **Efecto** | `effect` | Algoritmo que decide los colores de una tira en cada instante. **Reactivo** si usa el audio; **de ambiente** si no. |

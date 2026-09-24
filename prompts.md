@@ -303,9 +303,23 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Prompt 1:**
 
+> vale, vamos a acotar esto. No es razonable descomponer todo el alcance asi de primeras. En realidad esto nunca ocurre asi en un flujo normal solo lo estamos haciendo para cumplir con la rubrica. Mi razonamiento es el siguiente. La entrega esta orientada a un proyecto en el que se van a invertir 30h, nuestra aspiración es mayor. Yo lo que veo sentido es descomponer solo la primera. De esta manera queda demostrado el conocimiento y la forma pero el resto de Hs se iran descomponiendo durante el desarrollo segun se vaya avanzando. ¿Como lo ves? ¿Hay algo que nos lo impida?
+
+*Claude Code (app de escritorio, `claude-opus-5-5`, MCP de Linear). La IA proponía descomponer H1, H2 y H5 a fondo y H3-H4 por encima. Queda un backlog refinado justo a tiempo: solo se descompone H1 (`MOO-5`) en cuatro historias (spike `MOO-12`, `MOO-13`, `MOO-14`, `MOO-15`); el resto de épicas se refinan durante el desarrollo. Las tres historias del README salen todas de H1.*
+
 **Prompt 2:**
 
+> 1,2,3 y 4. Pero antes de pasar al siguiente paso me gustaría que vieramos porque el agente nos ha dado tantos casos que nos aplican. Son muchisimos. Creo que podríamos deducir como optimizar el subagente en base a eso
+
+*En su primera ejecución (`MOO-13`), el subagente `poke-holes` (Opus) devolvió 14 huecos y solo la mitad servían como criterio (el resto eran diseño, dependencias o repetían los non-goals). Diagnóstico: el rango "10-15" empujaba a rellenar, las categorías invitaban a preguntas de diseño y leía la arquitectura del README. Se rehízo con un filtro de observabilidad ("¿lo notaría el maker o el DJ sin mirar el código?"), máximo 8 criterios + 3 notas con destino, y comprobación contra non-goals antes de devolver. Segunda medición (`MOO-14`, `MOO-15`): 8 candidatos, todos observables. Antes, el caso feliz había pasado a describirse en lenguaje natural y la IA lo traduce a Gherkin sin añadir comportamiento (cambio en `/refine-story`).*
+
 **Prompt 3:**
+
+> 3- vale, el a, pero creo que es importante que suene porque si no en el simulador no vas a ver si el efecto está funcionando correctamente, creo que esto tiene que entrar en el MVP, tenemos que ver donde encaja. Si necesita un play, necesita un play
+> 1- b
+> 2- abrir el panel
+
+*Al traducir el caso feliz de `MOO-14`, la IA señaló que "suena" era ambiguo (usar el fichero como fuente frente a oírlo). Oírlo no estaba en el PRD, pero sin audio no se puede juzgar E2 en el simulador. Entra en el MVP como historia nueva de H1 (`MOO-22`, sin refinar hasta después de la entrega); PRD actualizado (H1, E7) y ficha D36. El PRD pasa a ser documento vivo.*
 
 ---
 
@@ -336,9 +350,21 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Prompt 1:**
 
+> No, dejamos deliberadamente el ticket de la bd aparte. En nuestro caso el uso de BD es mas residual, tiene sentido que no haya de primeras. Ese requerimiento está pensado para aplicaciones mas de CRUD puro. Seria forzarlo mucho. Lo dejamos apuntado en el README pero seguimos haciendo solo el H1
+
+*Claude Code (`claude-opus-5-5`). La IA proponía añadir una historia de H5 para tener un ticket de BD y avisó del riesgo: el mentor condicionó SQLite a que "README y ticket" documenten la persistencia. Decisión humana: sin ticket de BD, porque inventarlo en H1 sería forzar la plantilla (pensada para CRUD). El README lo explica y remite al modelo de datos (§3).*
+
 **Prompt 2:**
 
+> Creo que hay que hacer dos cosas diferentes importantes, una meter el layout que va a gobernar el dashboard y otra lo que se busca en si
+
+*Motivo de la carta 13 en el planning poker de `MOO-13` frente al 8 del subagente `estimator` (Sonnet, a ciegas). La discrepancia destapó un trabajo que no estaba escrito: el layout del panel. Se saca a la futura épica de enablers (con el montaje del repo), la historia gana un non-goal y se reestima a 8. Antes, la escala pasó de 1-8 a 1-13 (13 = dividir) para ganar resolución, con el significado de cada carta en `linear.md` §4.*
+
 **Prompt 3:**
+
+> No podemos montar eso en el CI, sería una locura de tiempo invertido, es un test interesante, pero se queda como deuda técnica
+
+*En `MOO-15` el subagente estimaba 5 contando montar el loopback de ALSA en CI para probar la tarjeta de sonido. Queda como deuda técnica explícita (`MOO-24`) y una excepción escrita al DoD: el retraso se verifica a mano en la mesa. Estimación final: 3.*
 
 ---
 

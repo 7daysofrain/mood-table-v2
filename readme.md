@@ -153,6 +153,8 @@ pnpm dev
 
 `pnpm dev` arranca el motor con la configuración de ejemplo (`deploy/config/demo.json`: fuente = pista de ejemplo incluida en el repo, dos tiras virtuales) y el panel con recarga en caliente. Abre `http://localhost:8080`.
 
+**Fuente de audio:** el simulador usa un fichero de audio en cualquier sistema. La tarjeta de sonido como fuente solo funciona en Linux (ALSA): en macOS y Windows se usa el fichero.
+
 **Base de datos:** no hay que instalar nada. SQLite es un fichero que el motor crea al arrancar; **las migraciones se aplican solas** al arrancar y **no hay semillas**: la reconciliación crea el estado inicial de cada tira declarada con los valores por defecto de cada efecto (§3).
 
 **Probar el arranque en el último estado (H5):** cambia el efecto y algún control, para el motor (`Ctrl+C`), vuelve a lanzar `pnpm dev` y recarga el panel: cada tira vuelve como la dejaste.
