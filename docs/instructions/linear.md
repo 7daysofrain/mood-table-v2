@@ -89,6 +89,10 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia.
 
 - Integración nativa con `7daysofrain/mood-table-v2`; **sin** sincronización con GitHub Issues.
 - Una rama por tarea, con su ID (Linear la copia con `Cmd+Shift+.`): `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`.
+- **Rama de entrega como integración** (LIDR pide una rama por entrega: `course.md` §3). La de la entrega
+  (`feature/entrega-2-JA`) sale de `main`; cada tarea sale de ella y vuelve por PR; al cerrar la entrega,
+  se integra en `main`. Consecuencia: la tarea pasa a *Done* al integrarse en la rama de entrega, no en
+  `main`.
 - PR: `Fixes MOO-n` con el ID de la **tarea**. Commits: `Refs MOO-n` (nunca `Fixes`).
 - *Linkbacks* activados también en **repos públicos**, con descripción: la PR muestra la historia de la
   que sale (trazabilidad pública para la evaluación). *Link commits to issues* desactivado (no hace falta).
