@@ -69,7 +69,8 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - **`docs/instructions/` = the what** (cross-cutting conventions and flow); **skills = the how**
   (protocol, templates, DoD).
 - **What only one skill uses lives in its folder** (`references/` or `assets/`), not in `docs/`.
-- One `AGENTS.md` at the root for now; per-package files are considered with the monorepo (`MOO-28`).
+- One `AGENTS.md` at the root: no package has rules of its own yet. Add a per-package file only when
+  one does.
 
 ## Tools
 
