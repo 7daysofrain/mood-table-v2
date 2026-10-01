@@ -1,7 +1,9 @@
+import { PanelLayout } from './layout/PanelLayout.tsx';
+
 /**
- * Componente raíz del panel. Vacío a propósito: las zonas del panel llegan con `MOO-29` y el visor
- * con `MOO-18`.
+ * Componente raíz del panel. Las zonas llegan vacías; el visor lo rellena `MOO-18` y el resto, las
+ * historias de H2 y H4.
  */
 export function App() {
-  return <main />;
+  return <PanelLayout />;
 }

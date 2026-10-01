@@ -26,7 +26,7 @@
   «Visor»; el orden en el documento es cabecera, visor, tiras, efectos, controles; cada zona solo
   contiene su título; renderizar no escribe nada en `console.error`. Verificar: los tests fallan
   porque `PanelLayout` aún no existe o no tiene las zonas.
-- [ ] 1.4 **(verde)** Implementar `src/layout/Zone.tsx` (`<section>` con título y `aria-labelledby`)
+- [x] 1.4 **(verde)** Implementar `src/layout/Zone.tsx` (`<section>` con título y `aria-labelledby`)
   y `src/layout/PanelLayout.tsx` (`AppShell` con la cabecera «Mood Table», el visor a todo el ancho y
   `SimpleGrid` de tres columnas con tiras, efectos y controles), y montarlo desde `App.tsx`
   (decisiones 2 y 4). Verificar: los tests de 1.3 pasan y `pnpm lint`, `pnpm typecheck` y
