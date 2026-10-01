@@ -31,7 +31,7 @@
   `SimpleGrid` de tres columnas con tiras, efectos y controles), y montarlo desde `App.tsx`
   (decisiones 2 y 4). Verificar: los tests de 1.3 pasan y `pnpm lint`, `pnpm typecheck` y
   `pnpm test:coverage` siguen en verde.
-- [ ] 1.5 Comprobación manual en el build (decisión 6): `pnpm --filter @moodtable/panel build` y
+- [x] 1.5 Comprobación manual en el build (decisión 6): `pnpm --filter @moodtable/panel build` y
   `vite preview`; en una ventana de escritorio, el visor ocupa el ancho bajo la cabecera y las tres
   zonas aparecen en columnas debajo; en la pestaña de red de DevTools no hay peticiones a dominios
   distintos de `localhost`, y con la red en *offline* tras la primera carga la página se repinta igual.
