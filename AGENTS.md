@@ -55,7 +55,7 @@ Read a file **when its "When" column applies**, not all of them up front.
 | File | Contents | When |
 |---|---|---|
 | [`workflow.md`](docs/instructions/workflow.md) | PRD → epic → story → task → OpenSpec → PR chain; task = PR, step = commit; source of truth for each thing | Before creating or touching epics, stories, tasks or specs, and before opening a PR |
-| [`linear.md`](docs/instructions/linear.md) | Linear conventions: single project, epic = parent issue, states, labels, estimation, branches, MCP permissions | Before creating or editing anything in Linear, and before creating a branch |
+| [`linear.md`](docs/instructions/linear.md) | Linear conventions: single project, epic = parent issue, states, labels, estimation, branches and the PR base branch, MCP permissions | Before creating or editing anything in Linear, before creating a branch, and before opening a PR |
 | [`course.md`](docs/instructions/course.md) | Master's requirements: scope, evaluation axes, deliveries and their mechanics, methodology, `prompts.md` format | When preparing or checking a delivery, deciding scope, or recording prompts |
 
 Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.md`](docs/umbrales-para-specs.md).
@@ -89,28 +89,12 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - Don't mix two tasks in one PR or two steps in one commit.
 - Don't write to Linear outside the `ask` gate (`linear.md` §8).
 
-## Current state
+## Where the work stands
 
-*Rewrite this section when it changes; history lives in git.*
+Not in this file: it is loaded in every session and would go stale.
 
-- **Delivery 1** sent on 24-sep-2026 (branch `feature/entrega-1-JA`, merged into `main`).
-- **Delivery 2** due **23-oct-2026** on `feature/entrega-2-JA`: scaffolds front + back + DB connected,
-  main flow nearly complete, README §4 (OpenAPI).
-- **Next steps, in order:**
-  1. `MOO-28`: monorepo, lint, tests and CI (in progress, PR #4; change `setup-monorepo-quality-gates`).
-     Pending on the user: SonarQube Cloud project + `SONAR_TOKEN`, and the branch ruleset.
-  2. `MOO-12`: performance spike on the Pi 3 B+ (ms/frame at 200/300/600 LEDs). It gates the engine
-     spec (D8, D13) and the MVP LED count (≤ 200-300 via Adalight, D12). Needs the Pi, strip and Light Box.
-  3. `MOO-29`: panel layout.
-  4. `MOO-13`: first OpenSpec change → tasks `MOO-16`/`MOO-17`/`MOO-18`; README §4 with the code.
-  5. Refine `MOO-22` (hear the file) and `MOO-25` (H5) just in time.
-- **Open items:**
-  - User: invite the evaluator to the Linear workspace (README links to it) · fix the claude.ai Project
-    instructions ("7 numbered docs" → `readme.md` with 8 sections + `prompts.md`) · check that Cowork
-    resolves `@AGENTS.md` · archive the old fork on GitHub (optional).
-  - Docs: `HARDWARE_SETUP.md` at the root, promised in README §1.4 (the user reviews it carefully: wiring
-    mistakes burn hardware) · the wireframe (`docs/img/panel-wireframe.png`) still says "Tira virtual"
-    where the PRD says *visor*.
-  - Harness: `validate-ac` hook · skill-creator evals for the three story skills · review `workflow.md` §4
-    against the what/how rule · decide whether `save_issue` moves from `ask` to `allow` · migrate
-    `docs/instructions/` to English.
+- **Status, order and blockers:** Linear, project *Mood Table* (priority and *blocks* relations). Read
+  it through the Linear MCP before choosing what to work on.
+- **Current delivery, its deadline and its branch:** `docs/instructions/course.md` §3. Task PRs
+  target the delivery branch, not `main` (`linear.md` §7).
+- **Pending items** (docs, harness, the user's own): issues in Linear, not lists here.
