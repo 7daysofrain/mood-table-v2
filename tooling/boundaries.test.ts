@@ -21,16 +21,12 @@ const eslint = new ESLint({
   ],
 });
 
-const BOUNDARY_RULES = new Set([
-  'boundaries/dependencies',
-  'boundaries/entry-point',
-  'no-restricted-imports',
-]);
+const BOUNDARY_RULE = 'boundaries/dependencies';
 
 async function boundaryErrors(filePath: string, code: string) {
   const [result] = await eslint.lintText(code, { filePath: `${repoRoot}${filePath}` });
   return (result?.messages ?? []).filter(
-    (message) => message.severity === 2 && BOUNDARY_RULES.has(message.ruleId ?? ''),
+    (message) => message.severity === 2 && message.ruleId === BOUNDARY_RULE,
   );
 }
 
@@ -41,7 +37,6 @@ describe('el núcleo del motor no depende de los adaptadores', () => {
       "import { ADAPTERS_NAME } from '../adapters/index.ts';\nexport const x = ADAPTERS_NAME;\n",
     );
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.ruleId).toMatch(/^boundaries\//);
   });
 
   it('permite que un adaptador importe del núcleo', async () => {
@@ -84,7 +79,6 @@ describe('el panel solo importa de shared entre los paquetes del repo', () => {
       "import { CORE_NAME } from '../../engine/src/core/index.ts';\nexport const x = CORE_NAME;\n",
     );
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.ruleId).toMatch(/^boundaries\//);
   });
 
   it('permite que el panel importe lo que shared exporta', async () => {
@@ -119,6 +113,5 @@ describe('shared no depende de los otros paquetes', () => {
       "import { CORE_NAME } from '../../engine/src/core/index.ts';\nexport const x = CORE_NAME;\n",
     );
     expect(errors).toHaveLength(1);
-    expect(errors[0]?.ruleId).toMatch(/^boundaries\//);
   });
 });

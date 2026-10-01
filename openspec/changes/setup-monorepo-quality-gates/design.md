@@ -73,6 +73,10 @@ raíz `pnpm typecheck` ejecuta `tsc --noEmit` en cada paquete (`pnpm -r`).
   engine-core, shared`; `engine-main → todo lo de engine, shared`; `panel → panel, shared`;
   `shared → shared`. Lo no listado falla, así que una carpeta nueva sin clasificar también falla en
   lugar de pasar por omisión.
+- Con **`checkAllOrigins: true`** la regla evalúa también los imports externos: se permiten los de npm
+  y Node, y se rechaza cualquier `@moodtable/*` que no resuelva. Así se cubren el import de un paquete
+  que no es dependencia declarada (p. ej. `panel → @moodtable/engine`) y la entrada por una ruta que
+  `exports` no publica, que el plugin, por defecto, trataría como externos y dejaría pasar.
 - *Alternativas consideradas:*
   - `import/no-restricted-paths` (eslint-plugin-import): sirve, pero es una lista de prohibiciones;
     con *default allow*, una carpeta nueva queda sin protección.

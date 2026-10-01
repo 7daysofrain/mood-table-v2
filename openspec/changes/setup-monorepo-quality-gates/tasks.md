@@ -34,7 +34,7 @@
   `main.ts` → ambos pasa; panel → engine falla por nombre de paquete y por ruta relativa; panel →
   `shared` pasa; panel → fichero interno de `shared` falla; `shared` → engine falla), ejecutando
   ESLint por su API. Verificar: los casos que esperan error fallan porque la regla aún no existe.
-- [ ] 1.7 **(verde)** Configurar `eslint-plugin-boundaries` en *default disallow* con los tipos de
+- [x] 1.7 **(verde)** Configurar `eslint-plugin-boundaries` en *default disallow* con los tipos de
   elemento y la política de la decisión 3 de `design.md`. Verificar: los tests de 1.6 pasan y
   `pnpm lint` sigue en verde sobre el código real.
 - [ ] 1.8 Añadir `.github/workflows/ci.yml` con los jobs `lint`, `typecheck` y `test` (instalación
