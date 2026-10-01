@@ -97,7 +97,8 @@ fuera de los paquetes) junto con sus ejemplos.
   `vitest.config.ts` con su entorno (`node` hoy en los tres).
 - Cobertura con `@vitest/coverage-v8`, reporteros `text` y `lcov`, en `coverage/lcov.info` en la raíz:
   es el único informe que lee SonarQube.
-- **Exclusiones de cobertura por convención de nombre:** `packages/engine/src/main.ts` y
+- **Exclusiones de cobertura por convención de nombre:** las dos raíces de composición
+  (`packages/engine/src/main.ts` y `packages/panel/src/main.tsx`, que solo monta React en el DOM) y
   `**/*.hardware.ts`. Un adaptador de hardware separa la parte pura (p. ej. codificar el protocolo
   Adalight, que sí tiene tests unitarios, README §2.6) de la E/S real (abrir el puerto serie, lanzar
   `arecord`), que va en un fichero `*.hardware.ts`. *Alternativa descartada:* una carpeta

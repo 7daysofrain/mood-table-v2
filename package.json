@@ -7,9 +7,13 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@fission-ai/openspec": "1.14.0"
+    "@fission-ai/openspec": "1.14.0",
+    "@vitest/coverage-v8": "catalog:",
+    "vitest": "catalog:"
   }
 }

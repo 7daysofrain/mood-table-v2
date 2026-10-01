@@ -19,8 +19,9 @@
 - [x] 1.3 Crear `@moodtable/panel` como cáscara de Vite + React sin UI (`index.html`, componente raíz
   vacío, `tsconfig` con DOM y `react-jsx`), dependiente de `shared`. Verificar: `pnpm typecheck` pasa
   en los tres paquetes y `pnpm --filter @moodtable/panel build` genera el bundle.
-- [ ] 1.4 Configurar Vitest 4 en la raíz con `test.projects` (`packages/*`, `tooling`), cobertura v8
-  con reporteros `text` y `lcov` en `coverage/`, exclusiones `packages/engine/src/main.ts` y
+- [x] 1.4 Configurar Vitest 5 en la raíz con `test.projects` (`packages/*`; `tooling` se añade en 1.6,
+  cuando existe), cobertura v8 con reporteros `text` y `lcov` en `coverage/`, exclusiones
+  `packages/engine/src/main.ts`, `packages/panel/src/main.tsx` (raíz de composición del panel) y
   `**/*.hardware.ts`, y un test mínimo del punto de entrada de cada paquete; scripts `pnpm test` y
   `pnpm test:coverage`. Verificar: `pnpm test:coverage` ejecuta los tests de los tres paquetes en una
   pasada y genera un único `coverage/lcov.info` con ficheros de los tres y sin `main.ts`

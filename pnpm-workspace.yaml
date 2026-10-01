@@ -7,6 +7,10 @@ engineStrict: true
 
 minimumReleaseAgeExclude:
   - '@fission-ai/openspec@1.14.0'
+  - '@vitest/coverage-v8@5.0.3'
+  - '@vitest/mocker@5.0.3'
+  - '@vitest/spy@5.0.3'
+  - vitest@5.0.3
 
 # Versiones compartidas por los paquetes (`"catalog:"` en su package.json).
 catalog:
@@ -16,5 +20,7 @@ catalog:
   '@vitejs/plugin-react': 6.1.1
   react: 19.3.0
   react-dom: 19.3.0
+  '@vitest/coverage-v8': 5.0.3
   typescript: 6.0.3
   vite: 8.3.1
+  vitest: 5.0.3
