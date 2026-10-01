@@ -4,7 +4,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ## Índice
 
-0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia)
+0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés)
 1. [Descripción general del producto](#1-descripción-general-del-producto)
 2. [Arquitectura del sistema](#2-arquitectura-del-sistema)
 3. [Modelo de datos](#3-modelo-de-datos)
@@ -34,7 +34,7 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 
 **Skills, subagentes, rules y comandos personalizados:**
 
-- **`AGENTS.md`** (estándar abierto) con el contexto y las 4 bases de trabajo; `CLAUDE.md` solo lo importa (`@AGENTS.md`). Un **índice** apunta a `docs/instructions/` (`workflow.md`, `linear.md`), que el agente lee *cuando toca*, no siempre.
+- **`AGENTS.md`** (estándar abierto) con el contexto y las 4 bases de trabajo; `CLAUDE.md` solo lo importa (`@AGENTS.md`). Un **índice** apunta a `docs/instructions/` (`workflow.md`, `linear.md`, `course.md`), que el agente lee *cuando toca*, no siempre. Solo contiene lo que hace falta en cada sesión; el resto se lee bajo demanda (§0.1).
 - **Tres skills de invocación manual** (`.claude/skills/`), una por estado de Linear: `/create-story` → `/refine-story` → `/estimate-story`. Son manuales a propósito: cada paso empieza con una decisión humana. Escritas con la guía de la *skill-creator*, en inglés; el contenido que generan (Linear) va en español.
 - **Subagentes** (`.claude/agents/`): **`poke-holes`** (Opus, solo lectura) busca huecos en una historia **sin ver la conversación**, para no compartir los puntos ciegos del autor; **`estimator`** (Sonnet) estima **a ciegas** en el planning poker. Además, un subagente de exploración contrastó el protocolo de las skills con los documentos del curso (módulo 4 y 11.2).
 - **MCP de Linear** como configuración del proyecto (`.mcp.json`), con **reglas de permisos** versionadas (`.claude/settings.json`): lecturas permitidas, `save_issue`/`save_comment` piden confirmación, el resto (borrados, etiquetas, proyectos…) denegado. Conector de **Google Drive** para el material del curso.
@@ -53,6 +53,24 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 - **Producto:** el PRD es un documento de negocio, no de requisitos (§5.0); la demo pública es una exigencia de la entrega y va al README, no al PRD; LedFx cubre casi todo el MVP, así que el porqué pasa a ser propiedad y aprendizaje; oír el fichero de audio entra en el MVP (§5.2).
 - **Arquitectura:** hexagonal ligera sin contenedor de DI; tiras en fichero y SQLite solo para el estado; Fly.io → EC2 `t4g` para que la demo corra en arm64 como la Pi; SonarQube Cloud + Dependabot porque Sonar gratis no analiza dependencias.
 - **Proceso:** Linear en un solo proyecto y tarea = PR, paso = commit (§6.0); tres skills separadas y en inglés (§5.1); backlog refinado justo a tiempo, solo H1 (§5.2); ticket de BD en H5 tras una auditoría, no forzado en H1 (§6.1); escala de estimación 1-13 y layout del panel sacado a *enablers* tras el planning poker (§6.1); el *loopback* de ALSA en CI queda como deuda técnica explícita (§6.1).
+
+### 0.1 Mantenimiento del arnés
+
+**Prompt 1:**
+
+> ok, pasamos a restructurar el AGENTS.md. ¿Que pasos aconsejas?
+
+*Claude Code (`claude-opus-5-5`, 30-sep, tarea `MOO-30`). Tras la E1, `AGENTS.md` tenía 412 líneas que cada sesión cargaba enteras: reglas, requisitos del máster, decisiones ya cerradas y el diario de sesiones. La IA propuso un criterio ("en `AGENTS.md` solo lo que un agente necesita en cada sesión y cambia poco"), un inventario bloque a bloque con su destino para que el humano lo validara, y comprobar antes de borrar que cada decisión cerrada ya estaba en la ficha, el PRD o el README.*
+
+**Prompt 2:**
+
+> Idioma: Si, pasamos a inglés
+> Diario: borramos
+> Agents.md por paquete: De momento no
+>
+> Empezemos
+
+*Tres decisiones humanas sobre las que la IA había planteado pros y contras. Resultado: `AGENTS.md` en inglés con 88 líneas (reglas, índice, convenciones, "Don't" y un "Current state" que se reescribe en vez de acumularse); requisitos del máster en `docs/instructions/course.md`; diario borrado (queda en git). También se resolvió un conflicto que había pasado desapercibido: LIDR pide una rama por entrega y `linear.md` una rama por tarea. Ahora la rama de entrega hace de rama de integración de las tareas. **Verificación:** una sesión nueva de `claude -p`, sin la conversación, respondió 8 preguntas de control (entrega, Typeform, crear historia, git en Cowork, siguiente tarea, `prompts.md`, ramas, idiomas) citando el fichero y la sección correctos.*
 
 ---
 
