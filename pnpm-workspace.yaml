@@ -17,6 +17,9 @@ catalog:
   '@eslint/js': 10.0.1
   '@mantine/core': 9.6.3
   '@mantine/hooks': 9.6.3
+  '@testing-library/dom': 10.4.2
+  '@testing-library/jest-dom': 7.0.1
+  '@testing-library/react': 16.3.3
   '@types/node': 24.19.0
   '@types/react': 19.3.0
   '@types/react-dom': 19.3.0
@@ -27,6 +30,7 @@ catalog:
   eslint-import-resolver-typescript: 4.4.5
   eslint-plugin-boundaries: 7.2.0
   globals: 17.12.0
+  jsdom: 30.1.1
   react-dom: 19.3.0
   react: 19.3.0
   typescript-eslint: 8.71.0

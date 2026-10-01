@@ -12,7 +12,7 @@
   `data-mantine-color-scheme="dark"` en `<html>` (decisión 3). Si una versión tiene menos de un día,
   fijar la anterior, sin nuevas excepciones de antigüedad. Verificar: `pnpm install`, `pnpm lint`,
   `pnpm typecheck` y `pnpm --filter @moodtable/panel build` pasan, y el test actual sigue en verde.
-- [ ] 1.2 Montar los tests del DOM (decisión 5): `jsdom`, `@testing-library/react`,
+- [x] 1.2 Montar los tests del DOM (decisión 5): `jsdom`, `@testing-library/react`,
   `@testing-library/dom` y `@testing-library/jest-dom` en el catálogo y en `panel`; entorno `jsdom` y
   `setupFiles` en el proyecto de Vitest del panel; `packages/panel/test/setup.ts` (jest-dom y
   simulación de `matchMedia` y `ResizeObserver`) y `packages/panel/test/render.tsx` (render envuelto
