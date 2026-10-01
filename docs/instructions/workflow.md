@@ -58,12 +58,20 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
    - **INVEST** como filtro: si falla 2 o más criterios, vuelve a refinamiento.
    - Estimación con la IA como *peer*; **non-goals** explícitos; **DoD** según el tipo de trabajo.
    - Planificar sus **tareas** (sub-issues), una por área y por PR.
-2. **Especificar** (estado *Spec*). La historia se especifica en un **OpenSpec change**
-   (`/opsx:propose`), con un `tasks.md` que tiene una sección por tarea. Joseba lo revisa antes de
-   implementar; las correcciones de la revisión (p. ej. un escenario *(asumido)* que se cae) se hacen
-   con `/opsx:update`.
-3. **Implementar** (`/opsx:apply`). El agente trabaja **sobre la OpenSpec**, no sobre el ticket: una rama por tarea
-   con su ID de Linear (la que propone Linear, p. ej. `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`) y **un commit por paso** del `tasks.md`.
+2. **Especificar** (estado *Todo* → *Spec*). Se crea la rama con su ID de Linear (la que propone
+   Linear, p. ej. `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`) y la historia
+   se especifica en un **OpenSpec change** (`/opsx:explore`, `/opsx:propose`), con un `tasks.md` que
+   tiene una sección por tarea.
+   - **Mientras se define, sigue en *Todo*:** no hay nada en el repo que otra persona pueda ver. Si venía
+     de *Backlog* (un *enabler* sin refinar), el agente la pasa a *Todo* al crear la rama.
+   - **Joseba revisa el change antes de commitearlo**; las correcciones (p. ej. un escenario
+     *(asumido)* que se cae) se hacen con `/opsx:update`.
+   - **El commit del change es la aprobación.** Al subirlo, el agente pasa la historia (o la tarea, si es
+     un *enabler*) a *Spec*: desde ahí se puede implementar sin más puertas humanas.
+3. **Implementar** (`/opsx:apply`). El agente trabaja **sobre la OpenSpec**, no sobre el ticket, en la
+   rama de la tarea y con **un commit por paso** del `tasks.md`. Con el primer commit de
+   implementación abre la **PR en borrador**, que pasa la tarea a *In Progress* (Linear no reacciona a
+   la rama ni al push, solo a la PR).
 4. **PR** (una por tarea). En la descripción, `Fixes MOO-n` con el ID de la tarea. Puertas: lint,
    tipos, tests, E2E y SonarQube.
 5. **Integrar.** Cada tarea pasa sola a *Done* al integrar su PR. Con la última, la historia queda
