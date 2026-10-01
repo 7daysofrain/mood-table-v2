@@ -53,7 +53,7 @@
   de Vitest, con un comentario cruzado) y el paso de análisis en el job `test` con `fetch-depth: 0`.
   Verificar: la PR muestra la comprobación de SonarQube Cloud con el resultado del *quality gate* y
   la cobertura que informa coincide con la de `coverage/lcov.info`.
-- [ ] 1.11 Añadir `.github/dependabot.yml` para `npm` y `github-actions`, semanal, agrupando
+- [x] 1.11 Añadir `.github/dependabot.yml` para `npm` y `github-actions`, semanal, agrupando
   *minor/patch* por ecosistema (sus PR van a `main`, la rama por defecto). Verificar: el fichero es
   válido según el esquema de Dependabot. Que GitHub lo muestre activo en *Insights → Dependency graph →
   Dependabot* solo se puede comprobar al integrar la entrega en `main` (riesgo en `design.md`).

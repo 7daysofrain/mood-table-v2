@@ -1,0 +1,21 @@
+# Vigilancia de dependencias (specs/quality-gates, design.md §8). GitHub solo lee este fichero en la
+# rama por defecto: se activa cuando la entrega que lo trae llega a `main`, y sus PR van a `main`.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # Una sola PR semanal con todo lo minor/patch; los cambios de major van cada uno en la suya.
+      npm-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directories: [/, /.github/actions/*]
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
