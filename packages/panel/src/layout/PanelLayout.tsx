@@ -19,12 +19,13 @@ export function PanelLayout() {
       </AppShell.Header>
 
       <AppShell.Main>
-        <Stack>
+        {/* Ocupa el alto de la ventana bajo la cabecera; las tres columnas se llevan lo que deja el visor. */}
+        <Stack h="calc(100dvh - var(--app-shell-header-offset) - 2 * var(--app-shell-padding))">
           <Zone title="Visor" minHeight={200} />
-          <SimpleGrid cols={3}>
-            <Zone title="Tiras" minHeight={400} />
-            <Zone title="Efectos" minHeight={400} />
-            <Zone title="Controles" minHeight={400} />
+          <SimpleGrid cols={3} flex={1}>
+            <Zone title="Tiras" />
+            <Zone title="Efectos" />
+            <Zone title="Controles" />
           </SimpleGrid>
         </Stack>
       </AppShell.Main>
