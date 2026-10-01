@@ -47,7 +47,7 @@
   guardar
   `SONAR_TOKEN` como secreto de Actions y de Dependabot. Verificar: el proyecto existe y los dos
   secretos aparecen en la configuración del repo.
-- [ ] 1.10 Añadir `sonar-project.properties` (organización, clave, fuentes, tests,
+- [x] 1.10 Añadir `sonar-project.properties` (organización, clave, fuentes, tests,
   `sonar.javascript.lcov.reportPaths=coverage/lcov.info` y `sonar.coverage.exclusions` iguales a los
   de Vitest, con un comentario cruzado) y el paso de análisis en el job `test` con `fetch-depth: 0`.
   Verificar: la PR muestra la comprobación de SonarQube Cloud con el resultado del *quality gate* y
