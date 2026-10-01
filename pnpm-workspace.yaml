@@ -1,0 +1,9 @@
+packages:
+  - packages/*
+  - tooling
+
+# Falla la instalación si Node no cumple `engines` (Node 24, design.md §7).
+engineStrict: true
+
+minimumReleaseAgeExclude:
+  - '@fission-ai/openspec@1.14.0'

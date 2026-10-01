@@ -138,7 +138,8 @@ el `push` a esas ramas hace que SonarQube las analice y puedan servir de destino
 
 ### 7. Versiones fijadas
 
-- **Node.js 24 LTS** en `.nvmrc` y en `engines` (`>=24 <25`), con `engine-strict=true` en `.npmrc`.
+- **Node.js 24 LTS** en `.nvmrc` y en `engines` (`>=24 <25`), con `engineStrict: true` en
+  `pnpm-workspace.yaml` (desde pnpm 11, `.npmrc` solo guarda registro y autenticación).
   Es la LTS activa (soporte hasta abril de 2028, con binarios arm64); Node 22, la que hay hoy en
   local, sale de soporte en abril de 2027, cerca del final del máster.
   **Propuesta de D#:** como **D39** (concreta el "Node.js LTS" de README §2.4).

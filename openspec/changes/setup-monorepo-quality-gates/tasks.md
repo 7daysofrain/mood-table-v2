@@ -7,9 +7,9 @@
 
 ## 1. MOO-28 · infra
 
-- [ ] 1.1 Fijar la cadena de herramientas: `package.json` raíz (`private`, `packageManager` con pnpm
-  exacto, `engines.node` `>=24 <25`), `.nvmrc` (24), `.npmrc` (`engine-strict=true`),
-  `pnpm-workspace.yaml` (`packages/*`, `tooling`), `@fission-ai/openspec` `1.14.0` exacto en
+- [x] 1.1 Fijar la cadena de herramientas: `package.json` raíz (`private`, `packageManager` con pnpm
+  exacto, `engines.node` `>=24 <25`), `.nvmrc` (24),
+  `pnpm-workspace.yaml` (`packages/*`, `tooling`, `engineStrict: true`; pnpm ≥ 11 no lee `.npmrc`), `@fission-ai/openspec` `1.14.0` exacto en
   `devDependencies` y `.gitignore` (`node_modules/`, `coverage/`, `dist/`). Verificar: con Node 24,
   `pnpm install` termina sin errores y `pnpm exec openspec --version` imprime `1.14.0`.
 - [ ] 1.2 Crear `tsconfig.base.json` estricto (decisión 2 de `design.md`) y los paquetes
