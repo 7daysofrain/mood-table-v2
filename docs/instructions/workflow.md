@@ -74,8 +74,11 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
    la rama ni al push, solo a la PR).
 4. **PR** (una por tarea). En la descripción, `Fixes MOO-n` con el ID de la tarea. Puertas: lint,
    tipos, tests, E2E y SonarQube.
-5. **Integrar.** Cada tarea pasa sola a *Done* al integrar su PR. Con la última, la historia queda
-   completa: `/opsx:verify` comprueba la implementación contra el change y se archiva (`/opsx:archive`).
+5. **Integrar.** Joseba integra cada PR con el botón de GitHub y la tarea pasa sola a *Done*. Con la
+   última, la historia queda completa: `/opsx:verify` comprueba la implementación contra el change y
+   `/opsx:archive` la archiva. Como el *ruleset* no deja subir directo a la rama de la entrega, el
+   archivado va en una rama `…-archivar-change` que sale de ella, con `Refs MOO-n` y una PR pequeña
+   que también integra Joseba.
 
 ## 5. Reglas para agentes
 
