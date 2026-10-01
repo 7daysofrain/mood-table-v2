@@ -7,13 +7,21 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit && pnpm -r typecheck",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
+    "@eslint/js": "catalog:",
     "@fission-ai/openspec": "1.14.0",
+    "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "globals": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
     "vitest": "catalog:"
   }
 }

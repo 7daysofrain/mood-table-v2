@@ -26,7 +26,7 @@
   `pnpm test:coverage`. Verificar: `pnpm test:coverage` ejecuta los tests de los tres paquetes en una
   pasada y genera un único `coverage/lcov.info` con ficheros de los tres y sin `main.ts`
   (escenarios de «Un único runner de tests…» en `specs/quality-gates`).
-- [ ] 1.5 Configurar ESLint (flat config en la raíz) con typescript-eslint con información de tipos y
+- [x] 1.5 Configurar ESLint (flat config en la raíz) con typescript-eslint con información de tipos y
   `eslint-plugin-react-hooks` en `panel`, sin reglas de fronteras todavía; script `pnpm lint`.
   Verificar: `pnpm lint` pasa sobre el esqueleto.
 - [ ] 1.6 **(TDD, rojo)** Añadir en `tooling/` los tests de la regla de fronteras: un caso por
