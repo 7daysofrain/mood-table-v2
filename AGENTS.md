@@ -13,6 +13,29 @@ Stack (rationale in README §2.1): pnpm workspaces monorepo (`packages/shared`, 
 TypeScript strict · Fastify + TypeBox (OpenAPI from schemas) · React + Vite · SQLite for instrument
 state · Vitest · Playwright · GitHub Actions + SonarQube Cloud · OpenSpec for SDD.
 
+## Commands (from the repo root)
+
+Node 24 (`.nvmrc`; `nvm use`) and pnpm from `packageManager` (`corepack enable`, or `corepack pnpm`).
+CI runs these same scripts, so a green run locally predicts a green PR.
+
+| Command | Does |
+|---|---|
+| `pnpm install` | Installs everything; fails on a Node version other than 24 (`engineStrict`) |
+| `pnpm lint` | ESLint with type information, including the **boundary rule** (`specs/module-boundaries`) |
+| `pnpm typecheck` | `tsc --noEmit` in the root and in every package |
+| `pnpm test` / `pnpm test:coverage` | Vitest across all packages; coverage goes to a single `coverage/lcov.info` |
+| `pnpm exec openspec …` | The pinned OpenSpec CLI (1.14.0), not the global one |
+
+Code conventions the tooling enforces or relies on:
+
+- **Boundaries:** `engine/src/core` never imports `engine/src/adapters`; only `engine/src/main.ts` sees
+  both. `panel` imports only `@moodtable/shared`, and only through its entry point. Lint fails otherwise.
+- **Hardware I/O goes in `*.hardware.ts`** (opening the serial port, spawning `arecord`); keep the pure
+  part (e.g. Adalight encoding) in a normal, tested file. `*.hardware.ts` and both `main` files are
+  excluded from coverage.
+- Shared dependency versions live in the pnpm **catalog** (`pnpm-workspace.yaml`); packages use
+  `"catalog:"`.
+
 ## Working rules (non-negotiable)
 
 1. **Near-production product, not a PoC.** Complete before extensive: one closed, excellent flow beats
@@ -74,14 +97,13 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - **Delivery 2** due **23-oct-2026** on `feature/entrega-2-JA`: scaffolds front + back + DB connected,
   main flow nearly complete, README §4 (OpenAPI).
 - **Next steps, in order:**
-  1. `MOO-31`: initialise and configure OpenSpec (in progress).
-  2. `MOO-28`: monorepo, lint, tests and CI; first change through the full OpenSpec flow. Pin the
-     OpenSpec CLI as a dev dependency there.
-  3. `MOO-12`: performance spike on the Pi 3 B+ (ms/frame at 200/300/600 LEDs). It gates the engine
+  1. `MOO-28`: monorepo, lint, tests and CI (in progress, PR #4; change `setup-monorepo-quality-gates`).
+     Pending on the user: SonarQube Cloud project + `SONAR_TOKEN`, and the branch ruleset.
+  2. `MOO-12`: performance spike on the Pi 3 B+ (ms/frame at 200/300/600 LEDs). It gates the engine
      spec (D8, D13) and the MVP LED count (≤ 200-300 via Adalight, D12). Needs the Pi, strip and Light Box.
-  4. `MOO-29`: panel layout.
-  5. `MOO-13`: first OpenSpec change → tasks `MOO-16`/`MOO-17`/`MOO-18`; README §4 with the code.
-  6. Refine `MOO-22` (hear the file) and `MOO-25` (H5) just in time.
+  3. `MOO-29`: panel layout.
+  4. `MOO-13`: first OpenSpec change → tasks `MOO-16`/`MOO-17`/`MOO-18`; README §4 with the code.
+  5. Refine `MOO-22` (hear the file) and `MOO-25` (H5) just in time.
 - **Open items:**
   - User: invite the evaluator to the Linear workspace (README links to it) · fix the claude.ai Project
     instructions ("7 numbered docs" → `readme.md` with 8 sections + `prompts.md`) · check that Cowork
