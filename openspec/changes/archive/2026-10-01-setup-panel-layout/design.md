@@ -120,8 +120,9 @@ Los tests buscan por **rol y nombre accesible** (`getByRole('region', { name: 'V
 `getByRole('banner')`), los mismos selectores que usarán los E2E de Playwright de las historias.
 
 `packages/panel/test/` queda fuera de `src/`, así que la cobertura de Vitest no lo cuenta (su
-`include` es `packages/*/src/**`). En `sonar-project.properties` se añade a `sonar.tests` y a
-`sonar.exclusions`, con el comentario cruzado de siempre.
+`include` es `packages/*/src/**`). En `sonar-project.properties` se saca de las fuentes
+(`sonar.exclusions`) y se cuenta como test (`sonar.test.inclusions`; `sonar.tests` ya cubre
+`packages`), con un comentario que explica por qué.
 
 **Alternativa:** seguir con `renderToStaticMarkup` y comparar HTML. Descartada: ata los tests al
 marcado interno de Mantine y no permite buscar por rol.
