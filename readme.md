@@ -304,7 +304,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 | Pieza | Tecnología | Por qué |
 |---|---|---|
 | Motor | TypeScript sobre Node.js (arm64) | El autor puede leer y corregir lo que genera el agente; tipos compartidos con el front. Condicionado a un spike de rendimiento en la Pi. |
-| Panel y visor | React + Vite + TypeScript | Stack conocido; comparte tipos (esquemas de parámetros) con el motor. El motor sirve el build estático: no hay servidor aparte. |
+| Panel y visor | React + Vite + TypeScript + **Mantine 9** (solo tema oscuro) | Stack conocido; comparte tipos (esquemas de parámetros) con el motor. El motor sirve el build estático: no hay servidor aparte. Mantine trae los controles que se generan del esquema (slider, desplegable y selector de color) con estilos estáticos y sin recursos de internet ([D40](docs/idea-mood-table.md)). |
 | API | Fastify + TypeBox | Un solo esquema da el tipo de TypeScript, la validación y el OpenAPI (§4). El mismo esquema describe los parámetros de cada efecto y el fichero de configuración. |
 | Transporte | HTTP para comandos · WebSocket (motor → navegador) para frames binarios y estado | HTTP se documenta en OpenAPI; el WebSocket lleva el flujo continuo (300 LEDs × 3 bytes × 60 fps ≈ 54 KB/s por tira). |
 | Persistencia | SQLite tras el puerto `StateStore` | Transacciones seguras ante cortes de luz (§3). |
