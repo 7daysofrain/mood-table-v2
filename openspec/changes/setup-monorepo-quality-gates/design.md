@@ -132,9 +132,11 @@ el `push` a esas ramas hace que SonarQube las analice y puedan servir de destino
 - Análisis con la acción oficial de SonarSource y `fetch-depth: 0` (necesita el historial para
   distinguir código nuevo). El análisis automático de SonarQube Cloud se desactiva: no importa
   cobertura.
-- En SonarQube, ramas de larga duración `main|feature/entrega-.*` y **rama de referencia del código
-  nuevo = `main`**: `main` es lo ya entregado, así que una rama de entrega se mide por lo que añade a la
-  entrega, y una PR, por lo que añade a su rama destino.
+- En SonarQube, ramas de larga duración `(main|feature/entrega-.*)` (*Project → Branches*), fijado
+  **antes del primer análisis**: el tipo de una rama se decide entonces y no se puede cambiar. En una
+  PR, el código nuevo es siempre su diff respecto a la rama destino. En las ramas de larga duración se
+  usa la definición del proyecto: **últimos 30 días**. SonarQube Cloud no ofrece *reference branch* a
+  nivel de proyecto, y *previous version* exigiría versionar `sonar.projectVersion`.
 - *Quality gate* "Sonar way" por defecto, que ya exige ≥ 80 % de cobertura en código nuevo (README
   §2.6). Sin *quality gate* propio mientras el por defecto encaje.
 - Las acciones se fijan por versión mayor y las actualiza Dependabot.

@@ -43,8 +43,8 @@
   ejecuta `pnpm test:coverage`. Verificar: la PR muestra las tres comprobaciones en verde, y cada job
   ejecuta el mismo script que se usa en local.
 - [ ] 1.9 **(usuario)** Crear el proyecto en SonarQube Cloud enlazado a `7daysofrain/mood-table-v2`,
-  desactivar el análisis automático, declarar `main|feature/entrega-.*` como ramas de larga duración
-  con `main` como rama de referencia del código nuevo, comprobar que el *quality gate* es «Sonar way» y
+  desactivar el análisis automático, declarar `(main|feature/entrega-.*)` como ramas de larga duración
+  (*Project → Branches*, antes del primer análisis), código nuevo = últimos 30 días, comprobar que el *quality gate* es «Sonar way» y
   guardar
   `SONAR_TOKEN` como secreto de Actions y de Dependabot. Verificar: el proyecto existe y los dos
   secretos aparecen en la configuración del repo.
