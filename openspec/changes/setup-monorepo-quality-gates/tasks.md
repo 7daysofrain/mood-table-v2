@@ -16,7 +16,7 @@
   `@moodtable/shared` (solo `exports` de `.`) y `@moodtable/engine` (`src/core/`, `src/adapters/`,
   `src/main.ts`, dependiente de `shared` por `workspace:*`), cada uno con un módulo mínimo; script
   raíz `pnpm typecheck`. Verificar: `pnpm typecheck` pasa.
-- [ ] 1.3 Crear `@moodtable/panel` como cáscara de Vite + React sin UI (`index.html`, componente raíz
+- [x] 1.3 Crear `@moodtable/panel` como cáscara de Vite + React sin UI (`index.html`, componente raíz
   vacío, `tsconfig` con DOM y `react-jsx`), dependiente de `shared`. Verificar: `pnpm typecheck` pasa
   en los tres paquetes y `pnpm --filter @moodtable/panel build` genera el bundle.
 - [ ] 1.4 Configurar Vitest 4 en la raíz con `test.projects` (`packages/*`, `tooling`), cobertura v8
