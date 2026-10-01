@@ -9,6 +9,10 @@ Read before working on product or design questions: [`docs/PRD.md`](docs/PRD.md)
 *what* and *why*; glossary in §8), [`readme.md`](readme.md) (architecture, data model, stories, tickets)
 and [`docs/idea-mood-table.md`](docs/idea-mood-table.md) §10 (decisions D1-D36 with their rationale).
 
+Stack (rationale in README §2.1): pnpm workspaces monorepo (`packages/shared`, `engine`, `panel`) ·
+TypeScript strict · Fastify + TypeBox (OpenAPI from schemas) · React + Vite · SQLite for instrument
+state · Vitest · Playwright · GitHub Actions + SonarQube Cloud · OpenSpec for SDD.
+
 ## Working rules (non-negotiable)
 
 1. **Near-production product, not a PoC.** Complete before extensive: one closed, excellent flow beats
@@ -37,6 +41,8 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 
 - **Harness in English** (skills, subagents, names, this file); **product documents and Linear content
   in Spanish**, bridged by the PRD glossary (§8). Skills address "the user", not a specific person.
+  The dividing line: **what the user reviews and approves is in Spanish, even when an agent writes or
+  consumes it** (OpenSpec artifacts included); instructions that only an agent reads are in English.
 - **`docs/instructions/` = the what** (cross-cutting conventions and flow); **skills = the how**
   (protocol, templates, DoD).
 - **What only one skill uses lives in its folder** (`references/` or `assets/`), not in `docs/`.
@@ -68,11 +74,11 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - **Delivery 2** due **23-oct-2026** on `feature/entrega-2-JA`: scaffolds front + back + DB connected,
   main flow nearly complete, README §4 (OpenAPI).
 - **Next steps, in order:**
-  1. `MOO-30`: this restructuring.
-  2. `MOO-12`: performance spike on the Pi 3 B+ (ms/frame at 200/300/600 LEDs). It gates the engine
+  1. `MOO-31`: initialise and configure OpenSpec (in progress).
+  2. `MOO-28`: monorepo, lint, tests and CI; first change through the full OpenSpec flow. Pin the
+     OpenSpec CLI as a dev dependency there.
+  3. `MOO-12`: performance spike on the Pi 3 B+ (ms/frame at 200/300/600 LEDs). It gates the engine
      spec (D8, D13) and the MVP LED count (≤ 200-300 via Adalight, D12). Needs the Pi, strip and Light Box.
-  3. `MOO-28`: monorepo, lint, tests and CI, plus **initialising OpenSpec** (no `openspec/` yet). Can go
-     before the spike if the hardware is not at hand.
   4. `MOO-29`: panel layout.
   5. `MOO-13`: first OpenSpec change → tasks `MOO-16`/`MOO-17`/`MOO-18`; README §4 with the code.
   6. Refine `MOO-22` (hear the file) and `MOO-25` (H5) just in time.

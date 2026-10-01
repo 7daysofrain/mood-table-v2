@@ -59,14 +59,15 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
    - Estimación con la IA como *peer*; **non-goals** explícitos; **DoD** según el tipo de trabajo.
    - Planificar sus **tareas** (sub-issues), una por área y por PR.
 2. **Especificar** (estado *Spec*). La historia se especifica en un **OpenSpec change**
-   (`openspec propose`), con un `tasks.md` que tiene una sección por tarea. Joseba lo revisa antes de
-   implementar.
-3. **Implementar.** El agente trabaja **sobre la OpenSpec**, no sobre el ticket: una rama por tarea
+   (`/opsx:propose`), con un `tasks.md` que tiene una sección por tarea. Joseba lo revisa antes de
+   implementar; las correcciones de la revisión (p. ej. un escenario *(asumido)* que se cae) se hacen
+   con `/opsx:update`.
+3. **Implementar** (`/opsx:apply`). El agente trabaja **sobre la OpenSpec**, no sobre el ticket: una rama por tarea
    con su ID de Linear (la que propone Linear, p. ej. `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`) y **un commit por paso** del `tasks.md`.
 4. **PR** (una por tarea). En la descripción, `Fixes MOO-n` con el ID de la tarea. Puertas: lint,
    tipos, tests, E2E y SonarQube.
 5. **Integrar.** Cada tarea pasa sola a *Done* al integrar su PR. Con la última, la historia queda
-   completa y se archiva el change (`openspec archive`).
+   completa: `/opsx:verify` comprueba la implementación contra el change y se archiva (`/opsx:archive`).
 
 ## 5. Reglas para agentes
 
@@ -76,3 +77,17 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
 - **Vocabulario del glosario** (PRD §8). Un término nuevo se añade al glosario antes de usarlo.
 - **No duplicar:** si algo ya está en otro sitio de la tabla del §3, enlázalo.
 - **Tarea → PR, paso → commit:** no mezclar dos tareas en una PR ni dos pasos en un commit.
+
+## 6. OpenSpec en este repo
+
+- **Comandos instalados** (perfil global de OpenSpec): `/opsx:propose`, `explore`, `apply`, `update`,
+  `verify`, `sync` y `archive`. Solo como comandos (`.claude/commands/opsx/`), no como skills.
+- **Solo se lanzan a mano.** Claude Code deja que el modelo invoque comandos por su cuenta; una regla
+  `ask` en `.claude/settings.json` (`Skill(opsx:*)` y una por comando) le obliga a pedir confirmación.
+- **Los comandos son generados:** no se editan a mano. `openspec update` los regenera con la versión
+  instalada del CLI (al hacerlo, revisar el diff y si aparecen flujos nuevos).
+- **Las convenciones viven en `openspec/config.yaml`** (`rules` por artefacto y guía de `apply`): idioma,
+  trazabilidad con Linear, `(asumido)`, una sección por tarea, un paso por commit. Sin `context`: el
+  contexto del proyecto está en `AGENTS.md`.
+- **Los *enablers* pueden tener su propio change** (sin historia): sus escenarios se trazan contra la
+  descripción de la tarea en Linear.

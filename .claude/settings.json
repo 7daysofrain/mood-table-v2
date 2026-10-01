@@ -45,7 +45,15 @@
     ],
     "ask": [
       "mcp__linear__save_issue",
-      "mcp__linear__save_comment"
+      "mcp__linear__save_comment",
+      "Skill(opsx:*)",
+      "Skill(skill:opsx:propose)",
+      "Skill(skill:opsx:explore)",
+      "Skill(skill:opsx:apply)",
+      "Skill(skill:opsx:update)",
+      "Skill(skill:opsx:verify)",
+      "Skill(skill:opsx:sync)",
+      "Skill(skill:opsx:archive)"
     ],
     "deny": [
       "mcp__linear__delete_attachment",

@@ -4,7 +4,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ## Índice
 
-0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés)
+0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés) · [0.2 OpenSpec](#02-openspec-inicialización-y-configuración)
 1. [Descripción general del producto](#1-descripción-general-del-producto)
 2. [Arquitectura del sistema](#2-arquitectura-del-sistema)
 3. [Modelo de datos](#3-modelo-de-datos)
@@ -71,6 +71,26 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 > Empezemos
 
 *Tres decisiones humanas sobre las que la IA había planteado pros y contras. Resultado: `AGENTS.md` en inglés con 88 líneas (reglas, índice, convenciones, "Don't" y un "Current state" que se reescribe en vez de acumularse); requisitos del máster en `docs/instructions/course.md`; diario borrado (queda en git). También se resolvió un conflicto que había pasado desapercibido: LIDR pide una rama por entrega y `linear.md` una rama por tarea. Ahora la rama de entrega hace de rama de integración de las tareas. **Verificación:** una sesión nueva de `claude -p`, sin la conversación, respondió 8 preguntas de control (entrega, Typeform, crear historia, git en Cowork, siguiente tarea, `prompts.md`, ramas, idiomas) citando el fichero y la sección correctos.*
+
+### 0.2 OpenSpec: inicialización y configuración
+
+**Prompt 1:**
+
+> quizas antes de empezar con esta historia podemos inicializar OpenSpec de manera separada. Es trivial y nos permitiría tener el flujo completo con el resto de puntos. Es decir, sacamos OpenSpec como parte de la historia, lo inicializamos y volvemos a empezar ya con openspec listo
+
+*Claude Code (`claude-opus-5-5`, 1-oct, tarea `MOO-31`). La IA había metido la inicialización de OpenSpec dentro de `MOO-28`, cuyo change tenía que escribirse con OpenSpec. Se sacó a un chore propio. Luego el humano propuso dejar la configuración dentro de `MOO-28`, y la IA lo desaconsejó: la primera propuesta se habría generado sin las reglas que debían guiarla. Se quedaron juntas.*
+
+**Prompt 2:**
+
+> no estás acelerando? Todavia no hemos decidido lo de FF y ya estas ejecutando la moo 31?
+
+*La IA respondió una duda del humano (si usar `/opsx:ff`), decidió por su cuenta, lanzó `openspec init` y escribió un borrador de `config.yaml`. Se deshizo todo y se rehízo con una decisión cada vez: perfil sin `ff` (`propose` ya genera todo de una vez), solo comandos y no skills, y una regla `ask` en `.claude/settings.json` (la IA corrigió su propia afirmación de que los comandos solo se lanzan a mano; se probó que la regla la frena). Al revisar el `config.yaml`, el humano preguntó por la versión: el CLI global era la 1.4.1 y la última la 1.14.0. Se actualizó, se leyó el changelog y apareció `/opsx:update`, que se incorporó al perfil. El `context` de `config.yaml` se eliminó, porque duplicaba `AGENTS.md`.*
+
+**Prompt 3:**
+
+> Estoy pensandome lo del español. Todo lo que tiene que ver con openspec, al ser ejecutable por los agentes mas que dirigidos a humanos, no tendrias sentido tenerlo en ingles en vez de en español igual que el resto del arnes?
+
+*La IA defendió el español: la spec es un contrato que el humano revisa en una puerta, sus escenarios salen de criterios de Linear en español y la lee el evaluador. Queda como criterio del arnés en `AGENTS.md`: lo que el humano revisa y aprueba va en español, aunque lo escriba o lo consuma un agente; lo que solo lee un agente, en inglés.*
 
 ---
 
