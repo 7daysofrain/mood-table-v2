@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.vite.json"
   },
   "dependencies": {
+    "@mantine/core": "catalog:",
+    "@mantine/hooks": "catalog:",
     "@moodtable/shared": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:"

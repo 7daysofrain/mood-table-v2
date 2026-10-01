@@ -5,7 +5,7 @@
 
 ## 1. MOO-29 · panel
 
-- [ ] 1.1 Instalar Mantine (decisión 1 de `design.md`): `@mantine/core` y `@mantine/hooks` 9.x en el
+- [x] 1.1 Instalar Mantine (decisión 1 de `design.md`): `@mantine/core` y `@mantine/hooks` 9.x en el
   catálogo de `pnpm-workspace.yaml` y en `packages/panel` (`"catalog:"`); `src/theme.ts` con el tema;
   `main.tsx` importa `@mantine/core/styles.css` y envuelve `<App />` en
   `MantineProvider` con `forceColorScheme="dark"`; `index.html` con
