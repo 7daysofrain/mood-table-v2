@@ -42,7 +42,7 @@
   `pnpm install --frozen-lockfile`), disparado en `pull_request` y `push` a `main` y `feature/entrega-*`; el job `test`
   ejecuta `pnpm test:coverage`. Verificar: la PR muestra las tres comprobaciones en verde, y cada job
   ejecuta el mismo script que se usa en local.
-- [ ] 1.9 **(usuario)** Crear el proyecto en SonarQube Cloud enlazado a `7daysofrain/mood-table-v2`,
+- [x] 1.9 **(usuario)** Crear el proyecto en SonarQube Cloud enlazado a `7daysofrain/mood-table-v2`,
   desactivar el análisis automático, código nuevo = últimos 30 días, comprobar que el *quality gate* es «Sonar way» y
   guardar
   `SONAR_TOKEN` como secreto de Actions y de Dependabot. Verificar: el proyecto existe y los dos
@@ -56,7 +56,7 @@
   *minor/patch* por ecosistema (sus PR van a `main`, la rama por defecto). Verificar: el fichero es
   válido según el esquema de Dependabot. Que GitHub lo muestre activo en *Insights → Dependency graph →
   Dependabot* solo se puede comprobar al integrar la entrega en `main` (riesgo en `design.md`).
-- [ ] 1.12 Actualizar `AGENTS.md`: comandos reales (`pnpm lint`, `pnpm typecheck`, `pnpm test`,
+- [x] 1.12 Actualizar `AGENTS.md`: comandos reales (`pnpm lint`, `pnpm typecheck`, `pnpm test`,
   `pnpm test:coverage`, `pnpm exec openspec`), convención `*.hardware.ts` y estado actual; y registrar
   las propuestas D37-D39 de `design.md` en `docs/idea-mood-table.md` §10 si el usuario las aprueba.
   Verificar: cada comando documentado se ejecuta tal como está escrito.
