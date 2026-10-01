@@ -1,0 +1,17 @@
+name: Preparar el entorno
+description: Instala pnpm y Node.js en las versiones fijadas en el repositorio y las dependencias.
+
+runs:
+  using: composite
+  steps:
+    # Sin `version`: usa la de `packageManager` en package.json.
+    - uses: pnpm/action-setup@v6
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+
+    - name: Instalar dependencias
+      shell: bash
+      run: pnpm install --frozen-lockfile

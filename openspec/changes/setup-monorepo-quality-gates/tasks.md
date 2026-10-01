@@ -37,7 +37,7 @@
 - [x] 1.7 **(verde)** Configurar `eslint-plugin-boundaries` en *default disallow* con los tipos de
   elemento y la política de la decisión 3 de `design.md`. Verificar: los tests de 1.6 pasan y
   `pnpm lint` sigue en verde sobre el código real.
-- [ ] 1.8 Añadir `.github/workflows/ci.yml` con los jobs `lint`, `typecheck` y `test` (instalación
+- [x] 1.8 Añadir `.github/workflows/ci.yml` con los jobs `lint`, `typecheck` y `test` (instalación
   común con `pnpm/action-setup`, `setup-node` desde `.nvmrc` con caché y
   `pnpm install --frozen-lockfile`), disparado en `pull_request` y `push` a `main` y `feature/entrega-*`; el job `test`
   ejecuta `pnpm test:coverage`. Verificar: la PR muestra las tres comprobaciones en verde, y cada job
