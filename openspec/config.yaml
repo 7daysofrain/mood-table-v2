@@ -1,0 +1,28 @@
+schema: spec-driven
+
+# No `context`: project context lives in AGENTS.md, which every session loads.
+# Only OpenSpec-specific rules here.
+
+rules:
+  proposal:
+    - Write in Spanish; code identifiers, file paths and validator keywords (SHALL/MUST, GIVEN/WHEN/THEN) stay in English
+    - Name the Linear story the change comes from, its PRD epic (H#/S#) and expectations (E#); an enabler change (epic MOO-27) names its task instead
+    - State non-goals explicitly; take them from the story when it has them
+  specs:
+    - Write in Spanish; code identifiers, file paths and validator keywords (SHALL/MUST, GIVEN/WHEN/THEN) stay in English
+    - Every scenario traces to an acceptance criterion of the Linear story (for enablers, to the task description); one without it is marked "(asumido)" and raised with the user at the spec review
+    - Scenarios describe behaviour observable from outside the module (API, panel, strip, persisted state), not implementation details
+    - Turn qualitative expectations into numbers only with a source (docs/umbrales-para-specs.md or the performance spike)
+  design:
+    - Write in Spanish
+    - Respect the dependency rule - the core never imports adapters; only the composition root knows both
+    - Record a new decision with its rationale and say whether it should become a D# in docs/idea-mood-table.md
+  tasks:
+    - Write in Spanish
+    - One section per Linear task, headed "## N. MOO-n · <area>" (engine, panel, shared, db, infra, firmware); one task = one PR
+    - Each step is commit-sized - makes sense on its own and leaves the code compiling and tests green; with TDD, the red test is its own step, marked as such
+
+operations:
+  apply:
+    guidance:
+      - Before marking a section complete, run lint, type check and tests; do not open the PR with any of them failing
