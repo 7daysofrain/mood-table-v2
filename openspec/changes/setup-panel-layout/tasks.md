@@ -20,7 +20,7 @@
   `sonar.tests` y `sonar.exclusions` con comentario cruzado. Pasar el test de `App` de
   `renderToStaticMarkup` a Testing Library. Verificar: `pnpm test:coverage` en verde, y
   `coverage/lcov.info` no incluye ficheros de `packages/panel/test/`.
-- [ ] 1.3 **(TDD, rojo)** Escribir los tests de `specs/panel-layout` en
+- [x] 1.3 **(TDD, rojo)** Escribir los tests de `specs/panel-layout` en
   `src/layout/PanelLayout.test.tsx`: hay exactamente una región con cada nombre («Visor», «Tiras»,
   «Efectos», «Controles») y una cabecera (*banner*) y ninguna región más; el título del visor es
   «Visor»; el orden en el documento es cabecera, visor, tiras, efectos, controles; cada zona solo
