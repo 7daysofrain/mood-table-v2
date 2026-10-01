@@ -36,7 +36,7 @@
   zonas aparecen en columnas debajo; en la pestaña de red de DevTools no hay peticiones a dominios
   distintos de `localhost`, y con la red en *offline* tras la primera carga la página se repinta igual.
   Verificar: captura de la página y de la pestaña de red, para adjuntar a la PR.
-- [ ] 1.6 Documentar: en README §2.1, la fila del panel en la tabla del stack incluye Mantine y el
+- [x] 1.6 Documentar: en README §2.1, la fila del panel en la tabla del stack incluye Mantine y el
   tema oscuro; en `docs/idea-mood-table.md` §10, la decisión D40 (Mantine como librería de UI, layout
   con sus componentes y solo tema oscuro, con las alternativas de `design.md`) si el usuario la
   aprueba; entrada en `prompts.md` sobre la elección de la librería (exploración, comparativa y

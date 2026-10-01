@@ -449,6 +449,35 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *La IA proponía mover la tarea a "Spec" al empezar a definirla. Ajuste humano: "Spec" significa "change revisado, commiteado y subido, ejecutable sin más puertas humanas"; mientras se define, "Todo". El commit del change pasa a ser la aprobación (`workflow.md` §4, `linear.md` §2).*
 
+#### 6.3 Librería de UI y layout del panel (`MOO-29`)
+
+**Prompt 1:**
+
+> /opsx:explore quiero afrontar la tarea M00-27 pero antes de empezarla creo que deberiamos de buscar una libreria de UI e instalarla. Necesito que investigues las librerias que hay y cual crees que se adaptarái mejor al proyecto
+
+*Claude Code (`claude-opus-5-5`) en modo explore. Antes de comparar, la IA corrigió el punto de partida: `MOO-27` es la épica de enablers y la tarea es `MOO-29`. Además, instalar la librería en una PR propia dejaría una dependencia sin uso, así que la decisión iría al `design.md` del change de `MOO-29`. Al leer la tarea vio que "el build servido por el motor" mezclaba dos áreas y duplicaba `MOO-17`, que ya lo incluía. Se quitó de `MOO-29` (opción C1) en vez de crear una tarea nueva, que habría dejado tres sitios prometiendo lo mismo.*
+
+**Prompt 2:**
+
+> Quiero primero distinguir 3 tipos de librerias que vamos a utilizar:
+> 1- Librería de UI. Para componentes UI
+> 2- Libreria de layout, que nos permita tener un grid y manejar los layouts de la página
+> 3- Librería de canvas, que nos facilite manejar <canvas> para las visualizaciones
+>
+> Empezemos con la de UI y luego vamos con las siguientes. Tengo las siguientes candidatas, quiero que bajo los criterios que necesita esta aplicación me hagas una comparativa y una recomendación:
+> https://react-aria.adobe.com/
+> https://mui.com/material-ui/all-components/
+> https://ui.shadcn.com/
+> https://mantine.dev/
+> https://chakra-ui.com/
+
+*La IA sacó siete criterios de los documentos (controles que genera el esquema, slider fluido de E1, propiedad del código de D33, sin internet, táctil futuro, afinidad con agentes, encaje con el repo) y descartó MUI y Chakra por usar Emotion en tiempo de ejecución. Recomendó shadcn/ui; el usuario eligió **Mantine 9** por velocidad y por traer el selector de color (D40). Con Mantine, la IA argumentó que una librería de layout aparte sobraba (`AppShell` y `SimpleGrid`) y que para el visor bastaba Canvas 2D nativo.*
+
+**Prompt 3:**
+
+> nada, posponemos esta decision porque no está relacionada
+
+*Ajuste humano: la librería de canvas no se decide en este change, porque el visor lo dibuja `MOO-18` (change de `MOO-13`). El change quedó solo con la librería de UI, el layout y el tema oscuro. Al implementar, la spec se escribió primero como tests en rojo (zonas localizables por su nombre accesible) y una previsualización en el navegador integrado llevó a un ajuste más: que las columnas ocupen el alto que queda de la ventana.*
 
 ---
 
