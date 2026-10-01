@@ -20,8 +20,9 @@ arquitectura hexagonal pasa a depender de la disciplina de quien escriba, sea pe
 - **Lint con la regla de fronteras**: el núcleo de `engine` no importa de sus adaptadores, y `panel`
   solo importa de `shared` entre los paquetes del repo.
 - **Vitest como único runner**, con un informe de cobertura único en formato que lee SonarQube.
-- **CI en GitHub Actions** en cada PR a `main`: lint, tipos, tests con cobertura y análisis de
-  SonarQube Cloud con su *quality gate*.
+- **CI en GitHub Actions** en cada PR a una **rama de integración** (`main` o la rama de la entrega,
+  `feature/entrega-*`): lint, tipos, tests con cobertura y análisis de SonarQube Cloud con su
+  *quality gate*.
 - **Dependabot** para las dependencias de npm y de GitHub Actions.
 - **Versiones de la cadena de herramientas fijadas**: Node.js, pnpm y el CLI de OpenSpec (`1.14.0`,
   hoy instalado en global desde `MOO-31`) como dependencia de desarrollo del repo, para que local y CI
@@ -34,8 +35,8 @@ arquitectura hexagonal pasa a depender de la disciplina de quien escriba, sea pe
 
 - `module-boundaries`: qué puede importar cada parte del código (núcleo, adaptadores, panel, `shared`) y
   cómo se rechaza una importación que cruza una frontera prohibida.
-- `quality-gates`: las comprobaciones que debe superar todo cambio antes de integrarse en `main` (lint,
-  tipos, tests, cobertura y *quality gate* de SonarQube) y la reproducibilidad de la cadena de
+- `quality-gates`: las comprobaciones que debe superar todo cambio antes de integrarse en una rama de
+  integración (lint, tipos, tests, cobertura y *quality gate* de SonarQube) y la reproducibilidad de la cadena de
   herramientas entre el entorno local y la CI.
 
 ### Modified Capabilities
@@ -65,6 +66,6 @@ reparto con otras tareas:
   cobertura, `@fission-ai/openspec`.
 - **Servicios externos**: proyecto en SonarQube Cloud enlazado a `7daysofrain/mood-table-v2` y el
   secreto `SONAR_TOKEN` en GitHub (lo configura el usuario); Dependabot activado en el repo.
-- **Proceso**: tras esta tarea, una PR a `main` con lint, tipos, tests o *quality gate* en rojo no se
-  integra (protección de rama, la activa el usuario).
+- **Proceso**: tras esta tarea, una PR a una rama de integración con lint, tipos, tests o *quality
+  gate* en rojo no se integra (protección de rama, la activa el usuario).
 - **Documentación**: `AGENTS.md` (comandos); `.gitignore` (`node_modules/`, `coverage/`, `dist/`).

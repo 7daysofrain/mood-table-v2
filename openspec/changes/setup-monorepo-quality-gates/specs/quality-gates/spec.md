@@ -2,36 +2,39 @@
 
 ## Purpose
 
-Define las comprobaciones automáticas que todo cambio debe superar antes de integrarse en `main`
-(lint, tipos, tests, cobertura y *quality gate* de SonarQube) y garantiza que el entorno local y la CI
-usan las mismas herramientas en las mismas versiones.
+Define las comprobaciones automáticas que todo cambio debe superar antes de integrarse en una **rama
+de integración** (lint, tipos, tests, cobertura y *quality gate* de SonarQube) y garantiza que el
+entorno local y la CI usan las mismas herramientas en las mismas versiones. Son ramas de integración
+`main` y las ramas de entrega `feature/entrega-*`, adonde van las PR de las tareas (`linear.md` §7).
 
 ## ADDED Requirements
 
-### Requirement: Cada PR a main pasa lint, tipos y tests
-Cada PR contra `main`, y cada nuevo push a ella, SHALL disparar en GitHub Actions el lint (con la
+### Requirement: Cada PR a una rama de integración pasa lint, tipos y tests
+Cada PR contra una rama de integración, cada nuevo push a esa PR y cada push a una rama de integración
+SHALL disparar en GitHub Actions el lint (con la
 regla de fronteras), la comprobación de tipos estricta de los tres paquetes y los tests. Si cualquiera
 falla, la comprobación de la PR MUST quedar en rojo.
 
-> Traza: `MOO-28` («CI en GitHub Actions en cada PR: lint, tipos, tests…», README §2.4).
+> Traza: `MOO-28` («CI en GitHub Actions en cada PR: lint, tipos, tests…», README §2.4); ramas de
+> integración según `linear.md` §7.
 
 #### Scenario: Una PR introduce un error de tipos
-- **GIVEN** una PR a `main` con un error de tipos en cualquiera de los paquetes
+- **GIVEN** una PR a una rama de integración con un error de tipos en cualquiera de los paquetes
 - **WHEN** termina la CI
 - **THEN** la comprobación de la PR está en rojo e indica que ha fallado la comprobación de tipos
 
 #### Scenario: Una PR rompe un test
-- **GIVEN** una PR a `main` con un test que falla
+- **GIVEN** una PR a una rama de integración con un test que falla
 - **WHEN** termina la CI
 - **THEN** la comprobación de la PR está en rojo e indica qué test ha fallado
 
 #### Scenario: Una PR cruza una frontera prohibida
-- **GIVEN** una PR a `main` que incumple una regla de `module-boundaries`
+- **GIVEN** una PR a una rama de integración que incumple una regla de `module-boundaries`
 - **WHEN** termina la CI
 - **THEN** la comprobación de la PR está en rojo e indica que ha fallado el lint
 
 #### Scenario: Una PR correcta
-- **GIVEN** una PR a `main` sin errores de lint, tipos ni tests
+- **GIVEN** una PR a una rama de integración sin errores de lint, tipos ni tests
 - **WHEN** termina la CI
 - **THEN** las comprobaciones de lint, tipos y tests están en verde
 
@@ -68,32 +71,37 @@ composición MUST quedar fuera del cálculo de cobertura.
 - **THEN** esos ficheros no aparecen en el informe ni bajan el porcentaje
 
 ### Requirement: El quality gate de SonarQube Cloud bloquea la PR
-Cada PR a `main` SHALL analizarse en SonarQube Cloud con el informe de cobertura de los tests. Si el
-código nuevo de la PR no supera el *quality gate* (que exige ≥ 80 % de cobertura en código nuevo), la
+Cada PR a una rama de integración SHALL analizarse en SonarQube Cloud con el informe de cobertura de
+los tests, tomando como código nuevo lo que la PR añade respecto a su rama destino. Si no supera el *quality gate* (que exige ≥ 80 % de cobertura en código nuevo), la
 comprobación de la PR MUST quedar en rojo.
 
 > Traza: `MOO-28` («análisis de SonarQube Cloud con su *quality gate*»); umbral de README §2.6.
 
 #### Scenario: Código nuevo con cobertura insuficiente
-- **GIVEN** una PR a `main` cuyo código nuevo tiene menos del 80 % de cobertura
+- **GIVEN** una PR a una rama de integración cuyo código nuevo tiene menos del 80 % de cobertura
 - **WHEN** termina el análisis de SonarQube Cloud
 - **THEN** la comprobación del *quality gate* de la PR está en rojo
 
 #### Scenario: Código nuevo que supera el quality gate
-- **GIVEN** una PR a `main` cuyo código nuevo cumple todas las condiciones del *quality gate*
+- **GIVEN** una PR a una rama de integración cuyo código nuevo cumple todas las condiciones del *quality gate*
 - **WHEN** termina el análisis de SonarQube Cloud
 - **THEN** la comprobación del *quality gate* de la PR está en verde
 - **AND** la cobertura que muestra SonarQube coincide con la del informe de los tests
 
+#### Scenario: PR de una tarea contra la rama de entrega
+- **GIVEN** una PR de una tarea contra `feature/entrega-*`
+- **WHEN** termina el análisis de SonarQube Cloud
+- **THEN** la PR muestra el resultado del *quality gate* calculado solo sobre el código que añade
+
 ### Requirement: Una PR con comprobaciones en rojo no se integra
-La rama `main` MUST exigir que las comprobaciones de lint, tipos, tests y *quality gate* estén en verde
+Cada rama de integración MUST exigir que las comprobaciones de lint, tipos, tests y *quality gate* estén en verde
 para integrar una PR.
 
 > Traza: README §2.4 («si algo falla o no se supera el *quality gate*, el PR no se integra»),
-> referenciado por `MOO-28`.
+> referenciado por `MOO-28`; ramas de integración según `linear.md` §7.
 
 #### Scenario: Intento de integrar una PR en rojo
-- **GIVEN** una PR a `main` con alguna comprobación obligatoria en rojo
+- **GIVEN** una PR a una rama de integración con alguna comprobación obligatoria en rojo
 - **WHEN** se intenta integrar
 - **THEN** GitHub no permite la integración
 
@@ -116,10 +124,11 @@ mismas versiones. El CLI de OpenSpec MUST poder ejecutarse desde el repositorio 
 
 ### Requirement: Las dependencias se vigilan automáticamente
 El repositorio SHALL tener Dependabot activo para las dependencias de npm y las acciones de GitHub
-Actions, de modo que abra PRs de actualización que pasen por las mismas comprobaciones que cualquier
-otra PR.
+Actions, de modo que abra PRs de actualización contra `main` (la rama por defecto) que pasen por las
+mismas comprobaciones que cualquier otra PR.
 
-> Traza: `MOO-28` («Dependabot activado», README §2.5).
+> Traza: `MOO-28` («Dependabot activado», README §2.5). GitHub solo lee la configuración de
+> Dependabot en la rama por defecto: se activa cuando la entrega que la contiene llega a `main`.
 
 #### Scenario: Una dependencia queda desactualizada
 - **GIVEN** una dependencia de npm o una acción de GitHub con una versión nueva publicada

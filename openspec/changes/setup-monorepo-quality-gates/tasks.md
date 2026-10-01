@@ -38,11 +38,13 @@
   `pnpm lint` sigue en verde sobre el código real.
 - [ ] 1.8 Añadir `.github/workflows/ci.yml` con los jobs `lint`, `typecheck` y `test` (instalación
   común con `pnpm/action-setup`, `setup-node` desde `.nvmrc` con caché y
-  `pnpm install --frozen-lockfile`), disparado en `pull_request` y `push` a `main`; el job `test`
+  `pnpm install --frozen-lockfile`), disparado en `pull_request` y `push` a `main` y `feature/entrega-*`; el job `test`
   ejecuta `pnpm test:coverage`. Verificar: la PR muestra las tres comprobaciones en verde, y cada job
   ejecuta el mismo script que se usa en local.
 - [ ] 1.9 **(usuario)** Crear el proyecto en SonarQube Cloud enlazado a `7daysofrain/mood-table-v2`,
-  desactivar el análisis automático, comprobar que el *quality gate* es «Sonar way» y guardar
+  desactivar el análisis automático, declarar `main|feature/entrega-.*` como ramas de larga duración
+  con `main` como rama de referencia del código nuevo, comprobar que el *quality gate* es «Sonar way» y
+  guardar
   `SONAR_TOKEN` como secreto de Actions y de Dependabot. Verificar: el proyecto existe y los dos
   secretos aparecen en la configuración del repo.
 - [ ] 1.10 Añadir `sonar-project.properties` (organización, clave, fuentes, tests,
@@ -51,13 +53,14 @@
   Verificar: la PR muestra la comprobación de SonarQube Cloud con el resultado del *quality gate* y
   la cobertura que informa coincide con la de `coverage/lcov.info`.
 - [ ] 1.11 Añadir `.github/dependabot.yml` para `npm` y `github-actions`, semanal, agrupando
-  *minor/patch* por ecosistema. Verificar: GitHub muestra Dependabot activo para los dos ecosistemas
-  en *Insights → Dependency graph → Dependabot*.
+  *minor/patch* por ecosistema (sus PR van a `main`, la rama por defecto). Verificar: el fichero es
+  válido según el esquema de Dependabot. Que GitHub lo muestre activo en *Insights → Dependency graph →
+  Dependabot* solo se puede comprobar al integrar la entrega en `main` (riesgo en `design.md`).
 - [ ] 1.12 Actualizar `AGENTS.md`: comandos reales (`pnpm lint`, `pnpm typecheck`, `pnpm test`,
   `pnpm test:coverage`, `pnpm exec openspec`), convención `*.hardware.ts` y estado actual; y registrar
   las propuestas D37-D39 de `design.md` en `docs/idea-mood-table.md` §10 si el usuario las aprueba.
   Verificar: cada comando documentado se ejecuta tal como está escrito.
-- [ ] 1.13 **(usuario)** Crear un *ruleset* de GitHub para `main` que exija las comprobaciones `lint`,
+- [ ] 1.13 **(usuario)** Crear un *ruleset* de GitHub para `main` y `feature/entrega-*` que exija las comprobaciones `lint`,
   `typecheck`, `test` y la de SonarQube Cloud. Verificar: con alguna en rojo, GitHub no deja integrar
   la PR (escenario «Intento de integrar una PR en rojo»).
 - [ ] 1.14 Comprobación de integración en la PR de esta tarea: empujar un commit temporal que importe

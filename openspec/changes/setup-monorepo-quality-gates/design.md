@@ -108,8 +108,9 @@ fuera de los paquetes) junto con sus ejemplos.
 
 ### 6. CI: un workflow, tres jobs más el análisis
 
-`.github/workflows/ci.yml`, disparado en `pull_request` a `main` y en `push` a `main` (SonarQube
-necesita analizar `main` para tener la línea base de "código nuevo").
+`.github/workflows/ci.yml`, disparado en `pull_request` y en `push` a las **ramas de integración**:
+`main` y `feature/entrega-*`. Las PR de las tareas van contra la rama de la entrega (`linear.md` §7), y
+el `push` a esas ramas hace que SonarQube las analice y puedan servir de destino a las PR.
 
 | Job | Pasos | Comprobación requerida |
 |---|---|---|
@@ -125,10 +126,13 @@ necesita analizar `main` para tener la línea base de "código nuevo").
 - Análisis con la acción oficial de SonarSource y `fetch-depth: 0` (necesita el historial para
   distinguir código nuevo). El análisis automático de SonarQube Cloud se desactiva: no importa
   cobertura.
+- En SonarQube, ramas de larga duración `main|feature/entrega-.*` y **rama de referencia del código
+  nuevo = `main`**: `main` es lo ya entregado, así que una rama de entrega se mide por lo que añade a la
+  entrega, y una PR, por lo que añade a su rama destino.
 - *Quality gate* "Sonar way" por defecto, que ya exige ≥ 80 % de cobertura en código nuevo (README
   §2.6). Sin *quality gate* propio mientras el por defecto encaje.
 - Las acciones se fijan por versión mayor y las actualiza Dependabot.
-- La protección de `main` (comprobaciones requeridas) la configura el usuario con un *ruleset* de
+- La protección de `main` y `feature/entrega-*` (comprobaciones requeridas) la configura el usuario con un *ruleset* de
   GitHub: es un cambio de configuración de la cuenta, no del repositorio.
 
 ### 7. Versiones fijadas
@@ -165,6 +169,13 @@ ecosistema para no saturar la cola. Las alertas de seguridad se activan en la co
 - **[Secretos en PRs de Dependabot y de forks]** GitHub no pasa `SONAR_TOKEN` a esas PRs → para
   Dependabot se crea el mismo secreto en *Dependabot secrets*; las PRs de forks se quedan sin análisis
   (repo de un solo autor: riesgo aceptado).
+- **[Dependabot inactivo hasta el cierre de la entrega]** GitHub solo lee `.github/dependabot.yml`
+  en la rama por defecto, y esta tarea se integra en `feature/entrega-2-JA` → se acepta: la
+  configuración se valida en la PR y Dependabot se activa al integrar la entrega en `main`
+  (23-oct-2026). Sus PR van contra `main` y llegan a la entrega siguiente, que sale de `main`.
+- **[Primera PR contra una rama de entrega aún no analizada]** SonarQube no tiene análisis previo de
+  `feature/entrega-2-JA` cuando llega la PR de esta tarea → el resultado puede compararse con `main`;
+  tras integrarla, el `push` genera el análisis de la rama y las PR siguientes ya tienen destino.
 - **[Node 24 en local]** el entorno actual tiene Node 22 → `engine-strict` falla la instalación con un
   mensaje claro; el usuario instala Node 24 (nvm/fnm leen `.nvmrc`).
 - **[Esqueleto casi vacío frente al *quality gate*]** con muy poco código, un fichero sin test baja
