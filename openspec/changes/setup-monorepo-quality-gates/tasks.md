@@ -43,8 +43,7 @@
   ejecuta `pnpm test:coverage`. Verificar: la PR muestra las tres comprobaciones en verde, y cada job
   ejecuta el mismo script que se usa en local.
 - [ ] 1.9 **(usuario)** Crear el proyecto en SonarQube Cloud enlazado a `7daysofrain/mood-table-v2`,
-  desactivar el análisis automático, declarar `(main|feature/entrega-.*)` como ramas de larga duración
-  (*Project → Branches*, antes del primer análisis), código nuevo = últimos 30 días, comprobar que el *quality gate* es «Sonar way» y
+  desactivar el análisis automático, código nuevo = últimos 30 días, comprobar que el *quality gate* es «Sonar way» y
   guardar
   `SONAR_TOKEN` como secreto de Actions y de Dependabot. Verificar: el proyecto existe y los dos
   secretos aparecen en la configuración del repo.
@@ -61,7 +60,10 @@
   `pnpm test:coverage`, `pnpm exec openspec`), convención `*.hardware.ts` y estado actual; y registrar
   las propuestas D37-D39 de `design.md` en `docs/idea-mood-table.md` §10 si el usuario las aprueba.
   Verificar: cada comando documentado se ejecuta tal como está escrito.
-- [ ] 1.13 **(usuario)** Crear un *ruleset* de GitHub para `main` y `feature/entrega-*` que exija las comprobaciones `lint`,
+- [ ] 1.13 **(usuario)** Antes de integrar la PR: declarar `(main|feature/entrega-.*)` como ramas de
+  larga duración en SonarQube (*Project → Branches*, que aparece tras el primer análisis; el tipo de
+  una rama se fija en su primer análisis y el *push* de la integración es el primero de
+  `feature/entrega-2-JA`). Crear un *ruleset* de GitHub para `main` y `feature/entrega-*` que exija las comprobaciones `lint`,
   `typecheck`, `test` y la de SonarQube Cloud. Verificar: con alguna en rojo, GitHub no deja integrar
   la PR (escenario «Intento de integrar una PR en rojo»).
 - [ ] 1.14 Comprobación de integración en la PR de esta tarea: empujar un commit temporal que importe
