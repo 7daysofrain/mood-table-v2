@@ -29,7 +29,7 @@
 - [x] 1.5 Configurar ESLint (flat config en la raíz) con typescript-eslint con información de tipos y
   `eslint-plugin-react-hooks` en `panel`, sin reglas de fronteras todavía; script `pnpm lint`.
   Verificar: `pnpm lint` pasa sobre el esqueleto.
-- [ ] 1.6 **(TDD, rojo)** Añadir en `tooling/` los tests de la regla de fronteras: un caso por
+- [x] 1.6 **(TDD, rojo)** Añadir en `tooling/` los tests de la regla de fronteras: un caso por
   escenario de `specs/module-boundaries` (núcleo → adaptador falla; adaptador → núcleo pasa;
   `main.ts` → ambos pasa; panel → engine falla por nombre de paquete y por ruta relativa; panel →
   `shared` pasa; panel → fichero interno de `shared` falla; `shared` → engine falla), ejecutando
