@@ -60,13 +60,13 @@
   `pnpm test:coverage`, `pnpm exec openspec`), convención `*.hardware.ts` y estado actual; y registrar
   las propuestas D37-D39 de `design.md` en `docs/idea-mood-table.md` §10 si el usuario las aprueba.
   Verificar: cada comando documentado se ejecuta tal como está escrito.
-- [ ] 1.13 **(usuario)** Antes de integrar la PR: declarar `(main|feature/entrega-.*)` como ramas de
+- [x] 1.13 **(usuario)** Antes de integrar la PR: declarar `(main|feature/entrega-.*)` como ramas de
   larga duración en SonarQube (*Project → Branches*, que aparece tras el primer análisis; el tipo de
   una rama se fija en su primer análisis y el *push* de la integración es el primero de
   `feature/entrega-2-JA`). Crear un *ruleset* de GitHub para `main` y `feature/entrega-*` que exija las comprobaciones `lint`,
   `typecheck`, `test` y la de SonarQube Cloud. Verificar: con alguna en rojo, GitHub no deja integrar
   la PR (escenario «Intento de integrar una PR en rojo»).
-- [ ] 1.14 Comprobación de integración en la PR de esta tarea: empujar un commit temporal que importe
+- [x] 1.14 Comprobación de integración en la PR de esta tarea: empujar un commit temporal que importe
   un adaptador desde el núcleo y comprobar que el job `lint` queda en rojo; revertirlo y comprobar que
   todo vuelve a verde. Añadir la entrada correspondiente en `prompts.md`. Verificar: el historial de
   la PR muestra el fallo y la recuperación.
