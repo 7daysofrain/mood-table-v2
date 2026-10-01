@@ -27,9 +27,9 @@
 | Estado | Significa | Quién lo mueve |
 |---|---|---|
 | Backlog | Idea o historia sin refinar | Manual |
-| Todo | Refinada: pasa INVEST, tiene criterios, non-goals y estimación | Manual |
-| Spec | Su OpenSpec change está en redacción o revisión | Manual |
-| In Progress | Implementándose (rama creada o PR en borrador) | GitHub (automático) |
+| Todo | Refinada (pasa INVEST, tiene criterios, non-goals y estimación) **o en definición**: rama local creada y OpenSpec change en exploración, redacción o revisión, todavía sin commit | Manual; el agente, al crear la rama, si venía de `Backlog` (*enablers*) |
+| Spec | Su OpenSpec change está **revisado por Joseba, commiteado y subido**: se puede implementar sin más puertas humanas (incluso por un agente autónomo) | El agente, al subir el commit del change |
+| In Progress | Implementándose (PR en borrador) | GitHub (automático) |
 | In Review | PR abierta, esperando revisión y puertas | GitHub (automático) |
 | Done | PR integrada | GitHub (automático) |
 

@@ -435,6 +435,21 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *En `MOO-15` el subagente estimaba 5 contando montar el loopback de ALSA en CI para probar la tarjeta de sonido. Queda como deuda técnica explícita (`MOO-24`) y una excepción escrita al DoD: el retraso se verifica a mano en la mesa. Estimación final: 3.*
 
+#### 6.2 Primer change de OpenSpec (`MOO-28`: monorepo, lint, tests y CI)
+
+**Prompt 1:**
+
+> /opsx:propose MOO-28
+
+*Claude Code (`claude-opus-5-5`), primer recorrido completo de OpenSpec (propose → update → apply). La tarea pedía valorar `skip_specs` frente a una spec; la IA lo preguntó en vez de decidir y se eligió spec con escenarios (`module-boundaries`, `quality-gates`). Al comprobar que `MOO-31` estaba integrada, la IA vio que todo el change decía "PR a `main`" cuando las tareas van contra la rama de la entrega; se corrigió con `/opsx:update` antes de implementar. Al aplicar, los tests escritos en rojo antes de la regla (TDD) destaparon que `eslint-plugin-boundaries` dejaba pasar en silencio `panel → @moodtable/engine` (lo trata como externo); se cerró con `checkAllOrigins` (ficha D37). Resultado: CI con `lint`, `typecheck`, `test` y el quality gate de SonarQube, todas requeridas por un ruleset de GitHub; un commit que rompía la frontera núcleo → adaptadores dejó `lint` en rojo y la PR bloqueada.*
+
+**Prompt 2:**
+
+> No, creo que sería "todo" hasta que hagamos un commit con el "spec". Para mi una tarea en el estado "spec" es una tarea que ya tiene los specs listos y comiteado y que podriía ser ejecutado por ejemplo por un agente autónomo porque ya no necesita gates humanos. Sin embargo aqui estamos todavia en fase de definicion y al no haber nada en el repo que otra persona pueda ver es mas un "todo"
+
+*La IA proponía mover la tarea a "Spec" al empezar a definirla. Ajuste humano: "Spec" significa "change revisado, commiteado y subido, ejecutable sin más puertas humanas"; mientras se define, "Todo". El commit del change pasa a ser la aprobación (`workflow.md` §4, `linear.md` §2).*
+
+
 ---
 
 ### 7. Pull Requests

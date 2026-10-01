@@ -3,3 +3,8 @@
 
 # Borradores de trabajo (Cowork)
 docs/borradores/
+
+# Node / pnpm
+node_modules/
+coverage/
+dist/
