@@ -7,3 +7,8 @@ engineStrict: true
 
 minimumReleaseAgeExclude:
   - '@fission-ai/openspec@1.14.0'
+
+# Versiones compartidas por los paquetes (`"catalog:"` en su package.json).
+catalog:
+  '@types/node': 24.19.0
+  typescript: 6.0.3

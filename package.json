@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=24 <25"
   },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck"
+  },
   "devDependencies": {
     "@fission-ai/openspec": "1.14.0"
   }

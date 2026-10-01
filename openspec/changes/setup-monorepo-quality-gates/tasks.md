@@ -12,7 +12,7 @@
   `pnpm-workspace.yaml` (`packages/*`, `tooling`, `engineStrict: true`; pnpm ≥ 11 no lee `.npmrc`), `@fission-ai/openspec` `1.14.0` exacto en
   `devDependencies` y `.gitignore` (`node_modules/`, `coverage/`, `dist/`). Verificar: con Node 24,
   `pnpm install` termina sin errores y `pnpm exec openspec --version` imprime `1.14.0`.
-- [ ] 1.2 Crear `tsconfig.base.json` estricto (decisión 2 de `design.md`) y los paquetes
+- [x] 1.2 Crear `tsconfig.base.json` estricto (decisión 2 de `design.md`) y los paquetes
   `@moodtable/shared` (solo `exports` de `.`) y `@moodtable/engine` (`src/core/`, `src/adapters/`,
   `src/main.ts`, dependiente de `shared` por `workspace:*`), cada uno con un módulo mínimo; script
   raíz `pnpm typecheck`. Verificar: `pnpm typecheck` pasa.
