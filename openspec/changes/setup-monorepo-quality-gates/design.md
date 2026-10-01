@@ -54,7 +54,8 @@ Restricciones que condicionan el enfoque:
 
 ### 2. TypeScript estricto compartido
 
-`tsconfig.base.json` en la raíz con `strict`, `noUncheckedIndexedAccess`,
+TypeScript **6.0.x**: la 7 (compilador nativo) aún no la soporta typescript-eslint (`<6.1`); se sube
+cuando lo haga. `tsconfig.base.json` en la raíz con `strict`, `noUncheckedIndexedAccess`,
 `noImplicitOverride`, `verbatimModuleSyntax` e `isolatedModules`. Cada paquete lo extiende:
 `engine` y `shared` con `lib` ES y tipos de Node; `panel` con `lib` DOM y `jsx: react-jsx`. El comando
 raíz `pnpm typecheck` ejecuta `tsc --noEmit` en cada paquete (`pnpm -r`).
@@ -90,7 +91,7 @@ API sobre un fichero de ejemplo situado en la carpeta que toca y comprueba el re
 `boundaries/dependencies` o ninguno). Los tests viven en `tooling/` (proyecto de Vitest propio,
 fuera de los paquetes) junto con sus ejemplos.
 
-### 5. Tests: Vitest 4 con `projects` y un único informe
+### 5. Tests: Vitest 5 con `projects` y un único informe
 
 - `vitest.config.ts` raíz con `test.projects: ["packages/*", "tooling"]`; cada paquete puede tener su
   `vitest.config.ts` con su entorno (`node` hoy en los tres).
@@ -141,7 +142,7 @@ el `push` a esas ramas hace que SonarQube las analice y puedan servir de destino
   Es la LTS activa (soporte hasta abril de 2028, con binarios arm64); Node 22, la que hay hoy en
   local, sale de soporte en abril de 2027, cerca del final del máster.
   **Propuesta de D#:** como **D39** (concreta el "Node.js LTS" de README §2.4).
-- **pnpm** fijado exacto en `packageManager` (última 10.x al implementar); corepack y
+- **pnpm** `12.8.1` fijado exacto en `packageManager` (última estable al implementar); corepack y
   `pnpm/action-setup` lo respetan.
 - **OpenSpec** `@fission-ai/openspec` `1.14.0` exacto en `devDependencies` de la raíz; se ejecuta con
   `pnpm exec openspec`. La instalación global de `MOO-31` puede quedarse, pero la del repo es la de
