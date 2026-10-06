@@ -68,6 +68,8 @@ jobs:
     needs: test
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
     runs-on: ubuntu-latest
+    # Red de seguridad: el script ya corta la espera a los 5 minutos.
+    timeout-minutes: 10
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:

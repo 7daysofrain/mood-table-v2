@@ -24,6 +24,7 @@ import {
 
 const POLL_INTERVAL_MS = 5_000;
 const TIMEOUT_MS = 5 * 60_000;
+const ISSUES_TIMEOUT_MS = 30_000;
 /** Máximo que devuelve `api/issues/search` por página; si hay más, el informe lo dice. */
 const PAGE_SIZE = 100;
 
@@ -33,28 +34,44 @@ function requiredEnv(name: string): string {
   return value;
 }
 
-/** Una respuesta que no sea 2xx es un error, nunca «0 incidencias». */
-async function getJson<T>(url: string, token: string): Promise<T> {
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) {
-    throw new Error(`SonarQube ha respondido ${response.status} ${response.statusText} a ${url}`);
+/**
+ * Una respuesta que no sea 2xx es un error, nunca «0 incidencias». `signal` corta la petición y la
+ * lectura del cuerpo, para que una respuesta colgada no deje la comprobación pendiente.
+ */
+async function getJson<T>(url: string, token: string, signal: AbortSignal): Promise<T> {
+  try {
+    const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal });
+    if (!response.ok) {
+      throw new Error(`SonarQube ha respondido ${response.status} ${response.statusText} a ${url}`);
+    }
+    return (await response.json()) as T;
+  } catch (error) {
+    if (signal.aborted) {
+      throw new Error(`SonarQube no ha respondido a tiempo a ${url}`, { cause: error });
+    }
+    throw error;
   }
-  return (await response.json()) as T;
 }
 
+/** Un único plazo para toda la espera: cubre las peticiones y las pausas entre ellas. */
 async function waitForAnalysis(ceTaskUrl: string, token: string): Promise<void> {
-  const deadline = Date.now() + TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    const { task } = await getJson<{ task: { status: string } }>(ceTaskUrl, token);
-    const step = nextStepForCeTask(task.status);
-    if (step.kind === 'continue') return;
-    if (step.kind === 'fail') throw new Error(step.message);
-    await sleep(POLL_INTERVAL_MS);
+  const signal = AbortSignal.timeout(TIMEOUT_MS);
+  try {
+    for (;;) {
+      const { task } = await getJson<{ task: { status: string } }>(ceTaskUrl, token, signal);
+      const step = nextStepForCeTask(task.status);
+      if (step.kind === 'continue') return;
+      if (step.kind === 'fail') throw new Error(step.message);
+      await sleep(POLL_INTERVAL_MS, undefined, { signal });
+    }
+  } catch (error) {
+    if (!signal.aborted) throw error;
+    throw new Error(
+      `El análisis de SonarQube no ha terminado en ${TIMEOUT_MS / 60_000} minutos. ` +
+        'No significa que no haya incidencias: relanza el job.',
+      { cause: error },
+    );
   }
-  throw new Error(
-    `El análisis de SonarQube no ha terminado en ${TIMEOUT_MS / 60_000} minutos. ` +
-      'No significa que no haya incidencias: relanza el job.',
-  );
 }
 
 async function fetchIssues(report: ReportTask, pullRequest: string, token: string) {
@@ -66,7 +83,7 @@ async function fetchIssues(report: ReportTask, pullRequest: string, token: strin
     ps: String(PAGE_SIZE),
   });
   const url = `${report.serverUrl}/api/issues/search?${query.toString()}`;
-  return getJson<IssuesSearchResponse>(url, token);
+  return getJson<IssuesSearchResponse>(url, token, AbortSignal.timeout(ISSUES_TIMEOUT_MS));
 }
 
 /**
