@@ -12,6 +12,8 @@ const LIST_MARKER = /^[-*+]\s+/;
 // Huecos de la plantilla: `<…>` en cualquier punto, o un texto hecho solo de puntos suspensivos.
 const TEMPLATE_HOLE = /<[^>]*>/;
 const ONLY_ELLIPSIS = /^[.…\s]*$/;
+// Marca que deja `/create-story` (`assets/story.md`) hasta que `/refine-story` escribe los escenarios.
+const PENDING_REFINEMENT = /^_?Pendiente de refinar\b/i;
 
 type Keyword = 'Given' | 'When' | 'Then';
 
@@ -39,6 +41,8 @@ export function extractCriteriaSection(description: string): string[] | undefine
 export function validateAcceptanceCriteria(description: string): string[] {
   const section = extractCriteriaSection(description);
   if (section === undefined) return [];
+  // Historia sin refinar: la sección existe pero solo con la marca de pendiente, sin escenarios.
+  if (isPendingRefinement(section)) return [];
 
   const errors: string[] = [];
   let current: Scenario | undefined;
@@ -89,6 +93,11 @@ export function validateAcceptanceCriteria(description: string): string[] {
     errors.unshift('La sección «Criterios de aceptación» no tiene ningún «Scenario:».');
   }
   return errors;
+}
+
+function isPendingRefinement(section: string[]): boolean {
+  const content = section.map((line) => line.trim()).filter(Boolean);
+  return content.length === 1 && PENDING_REFINEMENT.test(content[0] ?? '');
 }
 
 function isPlaceholder(text: string): boolean {

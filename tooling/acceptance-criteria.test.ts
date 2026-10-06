@@ -2,6 +2,9 @@
  * Escenarios de MOO-36 (hook validate-ac): la validación del formato de los criterios de aceptación
  * que hace el hook antes de que una historia se escriba en Linear.
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -33,6 +36,21 @@ describe('validateAcceptanceCriteria', () => {
     expect(validateAcceptanceCriteria('Tarea: cambiar el wireframe.\n\n## Non-goals\n\n- Nada')).toEqual([]);
   });
 
+  it('deja pasar una historia recién creada con la marca de pendiente de /create-story', () => {
+    const template = readFileSync(
+      fileURLToPath(new URL('../.claude/skills/create-story/assets/story.md', import.meta.url)),
+      'utf8',
+    );
+    expect(validateAcceptanceCriteria(template)).toEqual([]);
+  });
+
+  it('bloquea la marca de pendiente si la sección ya tiene escenarios', () => {
+    const errors = validateAcceptanceCriteria(
+      story('_Pendiente de refinar (/refine-story)._\n\nScenario: A medias\n  Given algo'),
+    );
+    expect(errors).toEqual(['Escenario «A medias»: falta el paso When, Then.']);
+  });
+
   it('bloquea un escenario sin Then y dice cuál y qué falta', () => {
     const errors = validateAcceptanceCriteria(
       story('Scenario: Sin cierre\n  Given algo\n  When pasa algo'),
@@ -61,7 +79,7 @@ describe('validateAcceptanceCriteria', () => {
   });
 
   it('bloquea una sección sin escenarios', () => {
-    expect(validateAcceptanceCriteria(story('Pendiente de refinar.'))).toEqual([
+    expect(validateAcceptanceCriteria(story('Aquí irán los escenarios.'))).toEqual([
       'La sección «Criterios de aceptación» no tiene ningún «Scenario:».',
     ]);
   });

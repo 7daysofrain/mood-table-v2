@@ -111,7 +111,7 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 
 > si, sigue, pero prepara un worktree
 
-*La IA creó el worktree a mano desde la rama de la entrega (la herramienta de worktrees partía de `main`). Resultado: validador como función pura con 14 tests en `tooling/`, dentro de la cobertura y de Sonar, y una entrada de 25 líneas que lee la llamada y sale con código 2 si hay errores. Se probó a mano con Node 22 y 24: sin descripción pasa, bien formada pasa, sin `Then` bloquea con el escenario y el paso que falta. La IA no podía probarlo en su propia sesión (los hooks se cargan al arrancar), así que preparó un prompt autónomo para una sesión nueva de `claude -p` en el worktree: dos llamadas a `save_issue` contra una issue inexistente, sin riesgo de escribir porque en ese modo el `ask` se deniega solo. Salida: `RESULTADO: OK`.*
+*La IA creó el worktree a mano desde la rama de la entrega (la herramienta de worktrees partía de `main`). Resultado: validador como función pura con 16 tests en `tooling/`, dentro de la cobertura y de Sonar, y una entrada de 25 líneas que lee la llamada y sale con código 2 si hay errores. Se probó a mano con Node 22 y 24: sin descripción pasa, bien formada pasa, sin `Then` bloquea con el escenario y el paso que falta. La IA no podía probarlo en su propia sesión (los hooks se cargan al arrancar), así que preparó un prompt autónomo para una sesión nueva de `claude -p` en el worktree: dos llamadas a `save_issue` contra una issue inexistente, sin riesgo de escribir porque en ese modo el `ask` se deniega solo. Salida: `RESULTADO: OK`.*
 
 ---
 
