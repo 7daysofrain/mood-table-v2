@@ -531,7 +531,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *`/refine-story` cargaba §4 como contexto, así que la referencia era circular;*
 - *la tarea no cambiaba ningún comportamiento observable, así que un delta de spec sería artificial.*
 
-*Le dio a elegir al usuario entre un change con `skip_specs`, ningún change o una spec nueva. El usuario eligió **ningún change**, con el alcance limitado a §4.1. §4.4 también es* cómo*, pero ninguna skill lo recoge, así que queda para otra tarea.*
+*Le dio a elegir al usuario entre un change con `skip_specs`, ningún change o una spec nueva. El usuario eligió **ningún change**, con el alcance limitado a §4.1. §4.4 también es «cómo», pero ninguna skill lo recoge, así que queda para otra tarea.*
 
 **Prompt 2:**
 
