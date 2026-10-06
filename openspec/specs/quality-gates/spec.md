@@ -5,7 +5,9 @@
 Define las comprobaciones automáticas que todo cambio debe superar antes de integrarse en una **rama
 de integración** (lint, tipos, tests, cobertura y *quality gate* de SonarQube) y garantiza que el
 entorno local y la CI usan las mismas herramientas en las mismas versiones. Son ramas de integración
-`main` y las ramas de entrega `feature/entrega-*`, adonde van las PR de las tareas (`linear.md` §7).
+`main`, adonde van las PR de las tareas, y las ramas de entrega `feature/entrega-*`, que solo reciben
+la foto de `main` al cerrar cada entrega (`linear.md` §7). Incluye también las puertas de revisión:
+la de Copilot y los hilos sin resolver.
 
 ## Requirements
 

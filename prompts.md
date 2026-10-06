@@ -500,6 +500,26 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Ajuste humano: la librería de canvas no se decide en este change, porque el visor lo dibuja `MOO-18` (change de `MOO-13`). El change quedó solo con la librería de UI, el layout y el tema oscuro. Al implementar, la spec se escribió primero como tests en rojo (zonas localizables por su nombre accesible) y una previsualización en el navegador integrado llevó a un ajuste más: que las columnas ocupen el alto que queda de la ventana.*
 
+#### 6.4 Puertas de la PR e integración en `main` (`MOO-42`)
+
+**Prompt 1:**
+
+> /opsx:propose MOO-42 Para la sesión nueva, la rama es 7daysofrain/moo-42-integrar-las-tareas-en-main-y-endurecer-las-puertas-de-la-pr.
+
+*Claude Code (`claude-opus-5-5`). Antes de escribir el change, la IA comprobó dos premisas de la tarea. La primera: `main` aún no tenía la E2 (ni las specs), así que el change no podía salir de ahí. El usuario prefirió integrar antes la entrega en `main` (PR #11). La segunda: la documentación de SonarQube Cloud confirmó que los* quality gates *propios son de pago. Por eso el gate con «New issues > 0» que pedía la tarea se convirtió en un job de la CI (`sonar-issues`), y el change pasó a llevar `design.md`.*
+
+**Prompt 2:**
+
+> hay una cosa que no veo claro. ¿Estamos usando openspec? Es que parece que se está ejecutando directamente lo que pone en linear
+
+*La IA separó lo que eran pasos previos de la tarea (la PR de la entrega a `main`, la rama y el estado en Linear) del change, que aún no se había escrito, y explicó dónde se apartaba del ticket. La spec se escribió con los criterios de la tarea como traza; el criterio «el quality gate está en rojo» quedó como «la comprobación de incidencias está en rojo», marcado en la revisión.*
+
+**Prompt 3:**
+
+> acuerdate de poner la task in progress al empezar
+
+*Ajuste humano: la IA había empezado a implementar sin abrir la PR en borrador, que es lo que pasa la tarea a* In Progress *(`workflow.md` §4.3). Al abrirla, la propia comprobación nueva falló con 3 incidencias de su código: dos inyecciones en el log, que eran reales y se corrigieron, y un `await` dentro de un bucle de espera, que el usuario aceptó en Sonar con el motivo. Fue la primera prueba en rojo y en verde de la puerta.*
+
 ---
 
 ### 7. Pull Requests

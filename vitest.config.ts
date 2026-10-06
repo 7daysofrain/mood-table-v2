@@ -11,7 +11,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       reportsDirectory: 'coverage',
-      include: ['packages/*/src/**/*.{ts,tsx}', '.claude/hooks/**/*.ts'],
+      include: ['packages/*/src/**/*.{ts,tsx}', '.claude/hooks/**/*.ts', 'tooling/ci/**/*.ts'],
       // Mantener igual que `sonar.coverage.exclusions` en sonar-project.properties.
       exclude: [
         // Raíces de composición: montan piezas, sin lógica propia (design.md §5).
@@ -21,6 +21,8 @@ export default defineConfig({
         '.claude/hooks/validate-ac.ts',
         // E/S real de los adaptadores de hardware: se prueba a mano (README §2.6).
         '**/*.hardware.ts',
+        // E/S de la comprobación de incidencias de Sonar; su lógica está en `sonar-issues.ts`.
+        'tooling/ci/check-sonar-issues.ts',
       ],
     },
   },
