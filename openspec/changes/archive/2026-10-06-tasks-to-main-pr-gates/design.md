@@ -108,6 +108,13 @@ El script va en `tooling/ci/`, con el mismo patrón que D38:
   - `check-sonar-issues.ts` queda excluido de la cobertura en los dos sitios, con el comentario
     cruzado que ya existe (como las raíces de composición).
   - Así el código que decide si una PR entra cumple el mismo ≥ 80 %.
+- **Ajustes tras la revisión de Copilot (PR #14):**
+  - el informe se imprime entre `::stop-commands::<uuid>` y `::<uuid>::`, todo por stdout, porque el
+    runner reconoce los comandos `##[…]` en cualquier punto de la línea; cada línea se limpia antes de
+    caracteres de control (`toLogLine`, `withoutRunnerCommands`);
+  - un único `AbortSignal.timeout` de 5 minutos cubre las peticiones, la lectura del cuerpo y las
+    pausas al esperar el análisis; la consulta de incidencias tiene 30 s; el job, `timeout-minutes: 10`
+    de respaldo.
 - **Alternativa:** `curl` + `jq` en el YAML. Son menos líneas, pero lógica sin tests en la puerta que
   juzga a los demás, y la espera con reintentos en bash es frágil.
 - **Ficha:** no hace falta una D# nueva, porque aplica D38 a la CI.

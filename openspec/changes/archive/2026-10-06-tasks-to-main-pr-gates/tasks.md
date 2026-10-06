@@ -75,7 +75,7 @@
     y el cambio de flujo, con el formato de `course.md` §5.
 
   Verificar: la entrada de `prompts.md` tiene como mucho 3 prompts literales y la línea en cursiva.
-- [ ] 1.8 **Verificación en GitHub** (sin commit; decisión 5). Pasos de configuración, que hace el
+- [x] 1.8 **Verificación en GitHub** (sin commit; decisión 5). Pasos de configuración, que hace el
   usuario:
   1. Antes de marcar la PR como lista para revisar: `copilot_code_review` (`review_on_push`, sin
      borradores) y `required_review_thread_resolution: true` en el *ruleset*.
@@ -95,3 +95,7 @@
 
   «Cierre de una entrega» se verifica al cerrar la E2 (23-oct; non-goal de esta tarea). Verificar:
   capturas o enlaces de cada comprobación en la descripción de la PR.
+
+  *Hecho (6-oct): todo lo anterior verificado en las PR #14 y #10 (ver la descripción de #14). Pendiente
+  al cerrar la E2: en la PR de foto, comprobar que `sonar-issues` sale saltado y no deja la PR
+  esperando ese check.*
