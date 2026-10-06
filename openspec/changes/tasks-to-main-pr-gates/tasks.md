@@ -33,7 +33,7 @@
     `check-sonar-issues.ts`;
   - `node tooling/ci/check-sonar-issues.ts` sin variables de entorno sale con código ≠ 0 y dice qué
     variable falta.
-- [ ] 1.4 CI (decisión 2):
+- [x] 1.4 CI (decisión 2):
   - en el job `test`, subir `.scannerwork/report-task.txt` como artefacto, solo si hay análisis;
   - job `sonar-issues` con `needs: test`, `if` para PR contra `main` con `SONAR_TOKEN`, instalación
     común, descarga del artefacto y `node tooling/ci/check-sonar-issues.ts`;
