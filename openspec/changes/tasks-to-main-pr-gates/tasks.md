@@ -16,7 +16,7 @@
     enlace).
 
   Verificar: `pnpm test` falla porque el módulo aún no existe.
-- [ ] 1.2 **(verde)** Implementar `tooling/ci/sonar-issues.ts`, solo funciones puras y sin E/S.
+- [x] 1.2 **(verde)** Implementar `tooling/ci/sonar-issues.ts`, solo funciones puras y sin E/S.
   Verificar: los tests de 1.1 pasan, y `pnpm lint` y `pnpm typecheck` siguen en verde.
 - [ ] 1.3 Implementar `tooling/ci/check-sonar-issues.ts` (E/S, decisión 3):
   - entradas: `SONAR_TOKEN`, `PR_NUMBER`, `SONAR_REPORT_TASK` y `GITHUB_STEP_SUMMARY`;
