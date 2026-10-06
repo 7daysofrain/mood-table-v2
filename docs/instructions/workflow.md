@@ -51,13 +51,12 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
 
 ## 4. Vida de una historia
 
-1. **Refinar (Linear).**
-   - Como / Quiero / Para.
-   - **Caso feliz descrito por Joseba en lenguaje natural**; la IA lo traduce a GIVEN/WHEN/THEN sin añadir comportamiento.
-   - **Poke-holes:** la IA lista casos límite, supuestos y riesgos; Joseba se queda con los 3-5 reales.
-   - **INVEST** como filtro: si falla 2 o más criterios, vuelve a refinamiento.
-   - Estimación con la IA como *peer*; **non-goals** explícitos; **DoD** según el tipo de trabajo.
-   - Planificar sus **tareas** (sub-issues), una por área y por PR.
+1. **Refinar (Linear):** crear, refinar y estimar la historia. Cada paso es una skill (`linear.md` §5); el
+   protocolo vive en ella.
+   - **Reparto:** Joseba escribe el caso feliz y elige los criterios; la IA lo traduce a
+     GIVEN/WHEN/THEN sin añadir comportamiento y busca huecos.
+   - **Sale a *Todo*** cuando pasa INVEST y tiene criterios, non-goals, DoD, estimación y sus
+     **tareas** (una por área y por PR, §2).
 2. **Especificar** (estado *Todo* → *Spec*). Se crea **desde `main`** la rama con su ID de Linear (la
    que propone Linear, p. ej. `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`) y la historia
    se especifica en un **OpenSpec change** (`/opsx:explore`, `/opsx:propose`), con un `tasks.md` que
