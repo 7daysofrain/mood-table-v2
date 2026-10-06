@@ -89,10 +89,23 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia.
 
 - Integración nativa con `7daysofrain/mood-table-v2`; **sin** sincronización con GitHub Issues.
 - Una rama por tarea, con su ID (Linear la copia con `Cmd+Shift+.`): `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`.
-- **Rama de entrega como integración** (LIDR pide una rama por entrega: `course.md` §3). La de la entrega
-  (`feature/entrega-2-JA`) sale de `main`; cada tarea sale de ella y vuelve por PR; al cerrar la entrega,
-  se integra en `main`. Consecuencia: la tarea pasa a *Done* al integrarse en la rama de entrega, no en
-  `main`.
+- **Las tareas se integran en `main`.** Cada rama de tarea sale de `main` y vuelve a `main` por PR; la
+  tarea pasa a *Done* al integrarse. Es la única base sobre la que SonarQube Cloud gratis enseña los datos
+  de la PR (incidencias y cobertura). La rama `…-archivar-change` también sale de `main`.
+- **Rama de entrega como foto** (LIDR pide una rama por entrega: `course.md` §3). `feature/entrega-N-JA`
+  no recibe tareas: al cerrar la entrega se abre una PR `main` → `feature/entrega-N-JA`, que el usuario
+  integra con **merge commit** (no *squash* ni *rebase*), y después su contenido coincide con `main`.
+  Su enlace `…/tree/` es el del Typeform.
+- **Puertas de la PR**, en el *ruleset* «ramas de integración» (`main` y `feature/entrega-*`), que
+  configura el usuario:
+  - comprobaciones requeridas: `lint`, `typecheck`, `test`, *SonarCloud Code Analysis* y `sonar-issues`
+    (incidencias nuevas de SonarQube; solo se ejecuta en las PR contra `main`, y saltada cuenta como
+    superada);
+  - **revisión automática de Copilot** (`copilot_code_review`) en cada PR que no es borrador y en cada
+    push. Si el plan de GitHub no la permite, se pide al abrir la PR con
+    `gh pr edit <n> --add-reviewer @copilot`;
+  - **conversaciones resueltas** (`required_review_thread_resolution`): no se integra con un hilo
+    abierto, incluidos los de Copilot. Qué hace el agente con cada hallazgo: `workflow.md` §4.4.
 - PR: `Fixes MOO-n` con el ID de la **tarea**. Commits: `Refs MOO-n` (nunca `Fixes`).
 - *Linkbacks* activados también en **repos públicos**, con descripción: la PR muestra la historia de la
   que sale (trazabilidad pública para la evaluación). *Link commits to issues* desactivado (no hace falta).

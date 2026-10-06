@@ -97,5 +97,6 @@ Not in this file: it is loaded in every session and would go stale.
 - **Status, order and blockers:** Linear, project *Mood Table* (priority and *blocks* relations). Read
   it through the Linear MCP before choosing what to work on.
 - **Current delivery, its deadline and its branch:** `docs/instructions/course.md` §3. Task PRs
-  target the delivery branch, not `main` (`linear.md` §7).
+  target `main`; the delivery branch is only a snapshot of `main`, taken when the delivery closes
+  (`linear.md` §7).
 - **Pending items** (docs, harness, the user's own): issues in Linear, not lists here.

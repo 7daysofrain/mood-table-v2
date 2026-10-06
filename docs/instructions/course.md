@@ -44,7 +44,12 @@ Ejemplo 1 no son un requisito.)*
 **Mecánica de cada entrega:**
 - **Repo propio, no fork.** `LIDR-academy/AI4Devs-finalproject` solo es la plantilla.
 - **Rama por entrega** con iniciales: `feature/entrega-1-JA`, `feature/entrega-2-JA`, `final-project-JA`.
-  Cómo convive con las ramas por tarea: `linear.md` §7.
+  Es una **foto de `main`**: las tareas se integran en `main` (`linear.md` §7).
+- **Al cerrar la entrega, antes del Typeform:**
+  1. PR `main` → rama de la entrega, con las mismas comprobaciones que cualquier PR. Si la rama aún no
+     existe, se crea desde `main`.
+  2. Integrarla con **merge commit** (no *squash* ni *rebase*).
+  3. Comprobar que `git diff origin/main origin/<rama>` está vacío.
 - **Typeform** (`lidr.typeform.com/proyectoai4devs`) tras cada entrega, con **solo el enlace de la
   rama** (`…/tree/<rama>`, no el de la PR). Sin formulario, la entrega "no existe".
 - Repo privado → invitar a `LIDR-AI4Devs` (el nuestro es público).

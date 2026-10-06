@@ -58,8 +58,8 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
    - **INVEST** como filtro: si falla 2 o más criterios, vuelve a refinamiento.
    - Estimación con la IA como *peer*; **non-goals** explícitos; **DoD** según el tipo de trabajo.
    - Planificar sus **tareas** (sub-issues), una por área y por PR.
-2. **Especificar** (estado *Todo* → *Spec*). Se crea la rama con su ID de Linear (la que propone
-   Linear, p. ej. `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`) y la historia
+2. **Especificar** (estado *Todo* → *Spec*). Se crea **desde `main`** la rama con su ID de Linear (la
+   que propone Linear, p. ej. `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`) y la historia
    se especifica en un **OpenSpec change** (`/opsx:explore`, `/opsx:propose`), con un `tasks.md` que
    tiene una sección por tarea.
    - **Mientras se define, sigue en *Todo*:** no hay nada en el repo que otra persona pueda ver. Si venía
@@ -72,13 +72,22 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
    rama de la tarea y con **un commit por paso** del `tasks.md`. Con el primer commit de
    implementación abre la **PR en borrador**, que pasa la tarea a *In Progress* (Linear no reacciona a
    la rama ni al push, solo a la PR).
-4. **PR** (una por tarea). En la descripción, `Fixes MOO-n` con el ID de la tarea. Puertas: lint,
-   tipos, tests, E2E y SonarQube.
+4. **PR** (una por tarea), **contra `main`**. En la descripción, `Fixes MOO-n` con el ID de la tarea.
+   Puertas (`linear.md` §7): lint, tipos, tests, E2E, *quality gate* de SonarQube, incidencias nuevas
+   de SonarQube (`sonar-issues`), revisión de Copilot y todos los hilos resueltos. Se pasa a *lista
+   para revisar* cuando el `tasks.md` está completo: Copilot no revisa borradores.
+   - **Cada hallazgo de Copilot o de SonarQube**, el agente lo **verifica** contra el código (no lo da
+     por bueno). Si es real, lo arregla con un commit y contesta en el hilo con el commit; si no aplica,
+     contesta por qué. Luego resuelve el hilo. En SonarQube, lo que no aplica lo marca como aceptado
+     el usuario, con el motivo.
+   - Lo que exige criterio (cambiar el diseño o aceptar una incidencia) se le pregunta al usuario.
+   - Antes de integrar, el agente comprueba que hay una revisión de Copilot del último push. Si se ha
+     agotado la cuota, Copilot no revisa ni avisa: se pide a mano o se le dice al usuario.
 5. **Integrar.** Joseba integra cada PR con el botón de GitHub y la tarea pasa sola a *Done*. Con la
    última, la historia queda completa: `/opsx:verify` comprueba la implementación contra el change y
-   `/opsx:archive` la archiva. Como el *ruleset* no deja subir directo a la rama de la entrega, el
-   archivado va en una rama `…-archivar-change` que sale de ella, con `Refs MOO-n` y una PR pequeña
-   que también integra Joseba.
+   `/opsx:archive` la archiva. Como el *ruleset* no deja subir directo a `main`, el archivado va en
+   una rama `…-archivar-change` que sale de `main`, con `Refs MOO-n` y una PR pequeña que también
+   integra Joseba.
 
 ## 5. Reglas para agentes
 
