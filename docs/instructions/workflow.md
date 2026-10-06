@@ -58,15 +58,27 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
    - **INVEST** como filtro: si falla 2 o más criterios, vuelve a refinamiento.
    - Estimación con la IA como *peer*; **non-goals** explícitos; **DoD** según el tipo de trabajo.
    - Planificar sus **tareas** (sub-issues), una por área y por PR.
-2. **Especificar** (estado *Spec*). La historia se especifica en un **OpenSpec change**
-   (`openspec propose`), con un `tasks.md` que tiene una sección por tarea. Joseba lo revisa antes de
-   implementar.
-3. **Implementar.** El agente trabaja **sobre la OpenSpec**, no sobre el ticket: una rama por tarea
-   con su ID de Linear (la que propone Linear, p. ej. `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`) y **un commit por paso** del `tasks.md`.
+2. **Especificar** (estado *Todo* → *Spec*). Se crea la rama con su ID de Linear (la que propone
+   Linear, p. ej. `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`) y la historia
+   se especifica en un **OpenSpec change** (`/opsx:explore`, `/opsx:propose`), con un `tasks.md` que
+   tiene una sección por tarea.
+   - **Mientras se define, sigue en *Todo*:** no hay nada en el repo que otra persona pueda ver. Si venía
+     de *Backlog* (un *enabler* sin refinar), el agente la pasa a *Todo* al crear la rama.
+   - **Joseba revisa el change antes de commitearlo**; las correcciones (p. ej. un escenario
+     *(asumido)* que se cae) se hacen con `/opsx:update`.
+   - **El commit del change es la aprobación.** Al subirlo, el agente pasa la historia (o la tarea, si es
+     un *enabler*) a *Spec*: desde ahí se puede implementar sin más puertas humanas.
+3. **Implementar** (`/opsx:apply`). El agente trabaja **sobre la OpenSpec**, no sobre el ticket, en la
+   rama de la tarea y con **un commit por paso** del `tasks.md`. Con el primer commit de
+   implementación abre la **PR en borrador**, que pasa la tarea a *In Progress* (Linear no reacciona a
+   la rama ni al push, solo a la PR).
 4. **PR** (una por tarea). En la descripción, `Fixes MOO-n` con el ID de la tarea. Puertas: lint,
    tipos, tests, E2E y SonarQube.
-5. **Integrar.** Cada tarea pasa sola a *Done* al integrar su PR. Con la última, la historia queda
-   completa y se archiva el change (`openspec archive`).
+5. **Integrar.** Joseba integra cada PR con el botón de GitHub y la tarea pasa sola a *Done*. Con la
+   última, la historia queda completa: `/opsx:verify` comprueba la implementación contra el change y
+   `/opsx:archive` la archiva. Como el *ruleset* no deja subir directo a la rama de la entrega, el
+   archivado va en una rama `…-archivar-change` que sale de ella, con `Refs MOO-n` y una PR pequeña
+   que también integra Joseba.
 
 ## 5. Reglas para agentes
 
@@ -76,3 +88,17 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
 - **Vocabulario del glosario** (PRD §8). Un término nuevo se añade al glosario antes de usarlo.
 - **No duplicar:** si algo ya está en otro sitio de la tabla del §3, enlázalo.
 - **Tarea → PR, paso → commit:** no mezclar dos tareas en una PR ni dos pasos en un commit.
+
+## 6. OpenSpec en este repo
+
+- **Comandos instalados** (perfil global de OpenSpec): `/opsx:propose`, `explore`, `apply`, `update`,
+  `verify`, `sync` y `archive`. Solo como comandos (`.claude/commands/opsx/`), no como skills.
+- **Solo se lanzan a mano.** Claude Code deja que el modelo invoque comandos por su cuenta; una regla
+  `ask` en `.claude/settings.json` (`Skill(opsx:*)` y una por comando) le obliga a pedir confirmación.
+- **Los comandos son generados:** no se editan a mano. `openspec update` los regenera con la versión
+  instalada del CLI (al hacerlo, revisar el diff y si aparecen flujos nuevos).
+- **Las convenciones viven en `openspec/config.yaml`** (`rules` por artefacto y guía de `apply`): idioma,
+  trazabilidad con Linear, `(asumido)`, una sección por tarea, un paso por commit. Sin `context`: el
+  contexto del proyecto está en `AGENTS.md`.
+- **Los *enablers* pueden tener su propio change** (sin historia): sus escenarios se trazan contra la
+  descripción de la tarea en Linear.

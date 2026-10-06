@@ -4,7 +4,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ## Índice
 
-0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia)
+0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés) · [0.2 OpenSpec](#02-openspec-inicialización-y-configuración)
 1. [Descripción general del producto](#1-descripción-general-del-producto)
 2. [Arquitectura del sistema](#2-arquitectura-del-sistema)
 3. [Modelo de datos](#3-modelo-de-datos)
@@ -34,7 +34,7 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 
 **Skills, subagentes, rules y comandos personalizados:**
 
-- **`AGENTS.md`** (estándar abierto) con el contexto y las 4 bases de trabajo; `CLAUDE.md` solo lo importa (`@AGENTS.md`). Un **índice** apunta a `docs/instructions/` (`workflow.md`, `linear.md`), que el agente lee *cuando toca*, no siempre.
+- **`AGENTS.md`** (estándar abierto) con el contexto y las 4 bases de trabajo; `CLAUDE.md` solo lo importa (`@AGENTS.md`). Un **índice** apunta a `docs/instructions/` (`workflow.md`, `linear.md`, `course.md`), que el agente lee *cuando toca*, no siempre. Solo contiene lo que hace falta en cada sesión; el resto se lee bajo demanda (§0.1).
 - **Tres skills de invocación manual** (`.claude/skills/`), una por estado de Linear: `/create-story` → `/refine-story` → `/estimate-story`. Son manuales a propósito: cada paso empieza con una decisión humana. Escritas con la guía de la *skill-creator*, en inglés; el contenido que generan (Linear) va en español.
 - **Subagentes** (`.claude/agents/`): **`poke-holes`** (Opus, solo lectura) busca huecos en una historia **sin ver la conversación**, para no compartir los puntos ciegos del autor; **`estimator`** (Sonnet) estima **a ciegas** en el planning poker. Además, un subagente de exploración contrastó el protocolo de las skills con los documentos del curso (módulo 4 y 11.2).
 - **MCP de Linear** como configuración del proyecto (`.mcp.json`), con **reglas de permisos** versionadas (`.claude/settings.json`): lecturas permitidas, `save_issue`/`save_comment` piden confirmación, el resto (borrados, etiquetas, proyectos…) denegado. Conector de **Google Drive** para el material del curso.
@@ -53,6 +53,44 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 - **Producto:** el PRD es un documento de negocio, no de requisitos (§5.0); la demo pública es una exigencia de la entrega y va al README, no al PRD; LedFx cubre casi todo el MVP, así que el porqué pasa a ser propiedad y aprendizaje; oír el fichero de audio entra en el MVP (§5.2).
 - **Arquitectura:** hexagonal ligera sin contenedor de DI; tiras en fichero y SQLite solo para el estado; Fly.io → EC2 `t4g` para que la demo corra en arm64 como la Pi; SonarQube Cloud + Dependabot porque Sonar gratis no analiza dependencias.
 - **Proceso:** Linear en un solo proyecto y tarea = PR, paso = commit (§6.0); tres skills separadas y en inglés (§5.1); backlog refinado justo a tiempo, solo H1 (§5.2); ticket de BD en H5 tras una auditoría, no forzado en H1 (§6.1); escala de estimación 1-13 y layout del panel sacado a *enablers* tras el planning poker (§6.1); el *loopback* de ALSA en CI queda como deuda técnica explícita (§6.1).
+
+### 0.1 Mantenimiento del arnés
+
+**Prompt 1:**
+
+> ok, pasamos a restructurar el AGENTS.md. ¿Que pasos aconsejas?
+
+*Claude Code (`claude-opus-5-5`, 30-sep, tarea `MOO-30`). Tras la E1, `AGENTS.md` tenía 412 líneas que cada sesión cargaba enteras: reglas, requisitos del máster, decisiones ya cerradas y el diario de sesiones. La IA propuso un criterio ("en `AGENTS.md` solo lo que un agente necesita en cada sesión y cambia poco"), un inventario bloque a bloque con su destino para que el humano lo validara, y comprobar antes de borrar que cada decisión cerrada ya estaba en la ficha, el PRD o el README.*
+
+**Prompt 2:**
+
+> Idioma: Si, pasamos a inglés
+> Diario: borramos
+> Agents.md por paquete: De momento no
+>
+> Empezemos
+
+*Tres decisiones humanas sobre las que la IA había planteado pros y contras. Resultado: `AGENTS.md` en inglés con 88 líneas (reglas, índice, convenciones, "Don't" y un "Current state" que se reescribe en vez de acumularse); requisitos del máster en `docs/instructions/course.md`; diario borrado (queda en git). También se resolvió un conflicto que había pasado desapercibido: LIDR pide una rama por entrega y `linear.md` una rama por tarea. Ahora la rama de entrega hace de rama de integración de las tareas. **Verificación:** una sesión nueva de `claude -p`, sin la conversación, respondió 8 preguntas de control (entrega, Typeform, crear historia, git en Cowork, siguiente tarea, `prompts.md`, ramas, idiomas) citando el fichero y la sección correctos.*
+
+### 0.2 OpenSpec: inicialización y configuración
+
+**Prompt 1:**
+
+> quizas antes de empezar con esta historia podemos inicializar OpenSpec de manera separada. Es trivial y nos permitiría tener el flujo completo con el resto de puntos. Es decir, sacamos OpenSpec como parte de la historia, lo inicializamos y volvemos a empezar ya con openspec listo
+
+*Claude Code (`claude-opus-5-5`, 1-oct, tarea `MOO-31`). La IA había metido la inicialización de OpenSpec dentro de `MOO-28`, cuyo change tenía que escribirse con OpenSpec. Se sacó a un chore propio. Luego el humano propuso dejar la configuración dentro de `MOO-28`, y la IA lo desaconsejó: la primera propuesta se habría generado sin las reglas que debían guiarla. Se quedaron juntas.*
+
+**Prompt 2:**
+
+> no estás acelerando? Todavia no hemos decidido lo de FF y ya estas ejecutando la moo 31?
+
+*La IA respondió una duda del humano (si usar `/opsx:ff`), decidió por su cuenta, lanzó `openspec init` y escribió un borrador de `config.yaml`. Se deshizo todo y se rehízo con una decisión cada vez: perfil sin `ff` (`propose` ya genera todo de una vez), solo comandos y no skills, y una regla `ask` en `.claude/settings.json` (la IA corrigió su propia afirmación de que los comandos solo se lanzan a mano; se probó que la regla la frena). Al revisar el `config.yaml`, el humano preguntó por la versión: el CLI global era la 1.4.1 y la última la 1.14.0. Se actualizó, se leyó el changelog y apareció `/opsx:update`, que se incorporó al perfil. El `context` de `config.yaml` se eliminó, porque duplicaba `AGENTS.md`.*
+
+**Prompt 3:**
+
+> Estoy pensandome lo del español. Todo lo que tiene que ver con openspec, al ser ejecutable por los agentes mas que dirigidos a humanos, no tendrias sentido tenerlo en ingles en vez de en español igual que el resto del arnes?
+
+*La IA defendió el español: la spec es un contrato que el humano revisa en una puerta, sus escenarios salen de criterios de Linear en español y la lee el evaluador. Queda como criterio del arnés en `AGENTS.md`: lo que el humano revisa y aprueba va en español, aunque lo escriba o lo consuma un agente; lo que solo lee un agente, en inglés.*
 
 ---
 
@@ -396,6 +434,50 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 > No podemos montar eso en el CI, sería una locura de tiempo invertido, es un test interesante, pero se queda como deuda técnica
 
 *En `MOO-15` el subagente estimaba 5 contando montar el loopback de ALSA en CI para probar la tarjeta de sonido. Queda como deuda técnica explícita (`MOO-24`) y una excepción escrita al DoD: el retraso se verifica a mano en la mesa. Estimación final: 3.*
+
+#### 6.2 Primer change de OpenSpec (`MOO-28`: monorepo, lint, tests y CI)
+
+**Prompt 1:**
+
+> /opsx:propose MOO-28
+
+*Claude Code (`claude-opus-5-5`), primer recorrido completo de OpenSpec (propose → update → apply). La tarea pedía valorar `skip_specs` frente a una spec; la IA lo preguntó en vez de decidir y se eligió spec con escenarios (`module-boundaries`, `quality-gates`). Al comprobar que `MOO-31` estaba integrada, la IA vio que todo el change decía "PR a `main`" cuando las tareas van contra la rama de la entrega; se corrigió con `/opsx:update` antes de implementar. Al aplicar, los tests escritos en rojo antes de la regla (TDD) destaparon que `eslint-plugin-boundaries` dejaba pasar en silencio `panel → @moodtable/engine` (lo trata como externo); se cerró con `checkAllOrigins` (ficha D37). Resultado: CI con `lint`, `typecheck`, `test` y el quality gate de SonarQube, todas requeridas por un ruleset de GitHub; un commit que rompía la frontera núcleo → adaptadores dejó `lint` en rojo y la PR bloqueada.*
+
+**Prompt 2:**
+
+> No, creo que sería "todo" hasta que hagamos un commit con el "spec". Para mi una tarea en el estado "spec" es una tarea que ya tiene los specs listos y comiteado y que podriía ser ejecutado por ejemplo por un agente autónomo porque ya no necesita gates humanos. Sin embargo aqui estamos todavia en fase de definicion y al no haber nada en el repo que otra persona pueda ver es mas un "todo"
+
+*La IA proponía mover la tarea a "Spec" al empezar a definirla. Ajuste humano: "Spec" significa "change revisado, commiteado y subido, ejecutable sin más puertas humanas"; mientras se define, "Todo". El commit del change pasa a ser la aprobación (`workflow.md` §4, `linear.md` §2).*
+
+#### 6.3 Librería de UI y layout del panel (`MOO-29`)
+
+**Prompt 1:**
+
+> /opsx:explore quiero afrontar la tarea M00-27 pero antes de empezarla creo que deberiamos de buscar una libreria de UI e instalarla. Necesito que investigues las librerias que hay y cual crees que se adaptarái mejor al proyecto
+
+*Claude Code (`claude-opus-5-5`) en modo explore. Antes de comparar, la IA corrigió el punto de partida: `MOO-27` es la épica de enablers y la tarea es `MOO-29`. Además, instalar la librería en una PR propia dejaría una dependencia sin uso, así que la decisión iría al `design.md` del change de `MOO-29`. Al leer la tarea vio que "el build servido por el motor" mezclaba dos áreas y duplicaba `MOO-17`, que ya lo incluía. Se quitó de `MOO-29` (opción C1) en vez de crear una tarea nueva, que habría dejado tres sitios prometiendo lo mismo.*
+
+**Prompt 2:**
+
+> Quiero primero distinguir 3 tipos de librerias que vamos a utilizar:
+> 1- Librería de UI. Para componentes UI
+> 2- Libreria de layout, que nos permita tener un grid y manejar los layouts de la página
+> 3- Librería de canvas, que nos facilite manejar <canvas> para las visualizaciones
+>
+> Empezemos con la de UI y luego vamos con las siguientes. Tengo las siguientes candidatas, quiero que bajo los criterios que necesita esta aplicación me hagas una comparativa y una recomendación:
+> https://react-aria.adobe.com/
+> https://mui.com/material-ui/all-components/
+> https://ui.shadcn.com/
+> https://mantine.dev/
+> https://chakra-ui.com/
+
+*La IA sacó siete criterios de los documentos (controles que genera el esquema, slider fluido de E1, propiedad del código de D33, sin internet, táctil futuro, afinidad con agentes, encaje con el repo) y descartó MUI y Chakra por usar Emotion en tiempo de ejecución. Recomendó shadcn/ui; el usuario eligió **Mantine 9** por velocidad y por traer el selector de color (D40). Con Mantine, la IA argumentó que una librería de layout aparte sobraba (`AppShell` y `SimpleGrid`) y que para el visor bastaba Canvas 2D nativo.*
+
+**Prompt 3:**
+
+> nada, posponemos esta decision porque no está relacionada
+
+*Ajuste humano: la librería de canvas no se decide en este change, porque el visor lo dibuja `MOO-18` (change de `MOO-13`). El change quedó solo con la librería de UI, el layout y el tema oscuro. Al implementar, la spec se escribió primero como tests en rojo (zonas localizables por su nombre accesible) y una previsualización en el navegador integrado llevó a un ajuste más: que las columnas ocupen el alto que queda de la ventana.*
 
 ---
 

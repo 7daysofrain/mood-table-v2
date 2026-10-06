@@ -27,9 +27,9 @@
 | Estado | Significa | Quién lo mueve |
 |---|---|---|
 | Backlog | Idea o historia sin refinar | Manual |
-| Todo | Refinada: pasa INVEST, tiene criterios, non-goals y estimación | Manual |
-| Spec | Su OpenSpec change está en redacción o revisión | Manual |
-| In Progress | Implementándose (rama creada o PR en borrador) | GitHub (automático) |
+| Todo | Refinada (pasa INVEST, tiene criterios, non-goals y estimación) **o en definición**: rama local creada y OpenSpec change en exploración, redacción o revisión, todavía sin commit | Manual; el agente, al crear la rama, si venía de `Backlog` (*enablers*) |
+| Spec | Su OpenSpec change está **revisado por Joseba, commiteado y subido**: se puede implementar sin más puertas humanas (incluso por un agente autónomo) | El agente, al subir el commit del change |
+| In Progress | Implementándose (PR en borrador) | GitHub (automático) |
 | In Review | PR abierta, esperando revisión y puertas | GitHub (automático) |
 | Done | PR integrada | GitHub (automático) |
 
@@ -89,6 +89,10 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia.
 
 - Integración nativa con `7daysofrain/mood-table-v2`; **sin** sincronización con GitHub Issues.
 - Una rama por tarea, con su ID (Linear la copia con `Cmd+Shift+.`): `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`.
+- **Rama de entrega como integración** (LIDR pide una rama por entrega: `course.md` §3). La de la entrega
+  (`feature/entrega-2-JA`) sale de `main`; cada tarea sale de ella y vuelve por PR; al cerrar la entrega,
+  se integra en `main`. Consecuencia: la tarea pasa a *Done* al integrarse en la rama de entrega, no en
+  `main`.
 - PR: `Fixes MOO-n` con el ID de la **tarea**. Commits: `Refs MOO-n` (nunca `Fixes`).
 - *Linkbacks* activados también en **repos públicos**, con descripción: la PR muestra la historia de la
   que sale (trazabilidad pública para la evaluación). *Link commits to issues* desactivado (no hace falta).

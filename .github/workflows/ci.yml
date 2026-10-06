@@ -1,0 +1,49 @@
+# Puertas de cada cambio (specs/quality-gates, design.md §6): lint, tipos y tests en jobs
+# separados, para que la PR diga qué ha fallado y cada uno pueda ser una comprobación requerida.
+name: CI
+
+on:
+  pull_request:
+    branches: [main, 'feature/entrega-*']
+  push:
+    branches: [main, 'feature/entrega-*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # SonarQube necesita el historial para saber qué es código nuevo.
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: pnpm test:coverage
+
+      # El resultado del quality gate lo publica SonarQube Cloud en la PR como su propia comprobación.
+      # Sin el secreto (PR desde un fork) no se analiza.
+      - name: Análisis de SonarQube Cloud
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v8
