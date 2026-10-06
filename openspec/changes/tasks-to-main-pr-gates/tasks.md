@@ -6,7 +6,7 @@
 
 ## 1. MOO-42 · infra
 
-- [ ] 1.1 **(TDD, rojo)** Escribir `tooling/ci/sonar-issues.test.ts` con los casos de la parte pura
+- [x] 1.1 **(TDD, rojo)** Escribir `tooling/ci/sonar-issues.test.ts` con los casos de la parte pura
   (decisión 3 de `design.md`), usando respuestas de ejemplo de la API:
   - leer `ceTaskUrl` de un `report-task.txt`, y error claro si no está;
   - un estado de la tarea de cálculo: `PENDING`/`IN_PROGRESS` → seguir esperando · `SUCCESS` →
