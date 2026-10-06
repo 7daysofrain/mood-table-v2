@@ -20,6 +20,7 @@ if (typeof description === 'string') {
     process.stderr.write(
       `Criterios de aceptación mal formados; corrígelos antes de guardar en Linear:\n${errors.map((e) => `- ${e}`).join('\n')}\n`,
     );
-    process.exit(2);
+    // `exitCode` y no `exit()`: así Node vacía stderr antes de salir y el agente recibe los errores.
+    process.exitCode = 2;
   }
 }

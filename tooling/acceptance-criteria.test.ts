@@ -51,6 +51,18 @@ describe('validateAcceptanceCriteria', () => {
     expect(errors).toEqual(['Escenario «A medias»: falta el paso When, Then.']);
   });
 
+  it('valida la marca de pendiente si lleva algo más en la misma línea', () => {
+    const errors = validateAcceptanceCriteria(
+      story('_Pendiente de refinar (/refine-story)._ Scenario: incompleto'),
+    );
+    expect(errors).toEqual(['La sección «Criterios de aceptación» no tiene ningún «Scenario:».']);
+  });
+
+  it('no cuenta como paso una palabra clave seguida de dos puntos', () => {
+    const errors = validateAcceptanceCriteria(story('Scenario: Con dos puntos\n  Given:\n  When:\n  Then:'));
+    expect(errors).toEqual(['Escenario «Con dos puntos»: falta el paso Given, When, Then.']);
+  });
+
   it('bloquea un escenario sin Then y dice cuál y qué falta', () => {
     const errors = validateAcceptanceCriteria(
       story('Scenario: Sin cierre\n  Given algo\n  When pasa algo'),

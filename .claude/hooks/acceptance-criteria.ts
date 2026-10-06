@@ -7,13 +7,14 @@
 const SECTION_HEADING = /^##\s+Criterios de aceptación\s*$/i;
 const NEXT_SECTION = /^#{1,2}\s/;
 const SCENARIO = /^Scenario:\s*(.*)$/;
-const STEP = /^(Given|When|Then|And|But)\b\s*(.*)$/;
+// La palabra clave va seguida de espacio o de fin de línea: `Given:` no es un paso.
+const STEP = /^(Given|When|Then|And|But)(?:\s+(.*))?$/;
 const LIST_MARKER = /^[-*+]\s+/;
 // Huecos de la plantilla: `<…>` en cualquier punto, o un texto hecho solo de puntos suspensivos.
 const TEMPLATE_HOLE = /<[^>]*>/;
 const ONLY_ELLIPSIS = /^[.…\s]*$/;
 // Marca que deja `/create-story` (`assets/story.md`) hasta que `/refine-story` escribe los escenarios.
-const PENDING_REFINEMENT = /^_?Pendiente de refinar\b/i;
+const PENDING_REFINEMENT = /^_Pendiente de refinar \(\/refine-story\)\._$/;
 
 type Keyword = 'Given' | 'When' | 'Then';
 
