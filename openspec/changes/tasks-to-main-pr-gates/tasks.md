@@ -66,7 +66,7 @@
 
   Verificar: los enlaces entre `workflow.md`, `linear.md` y `course.md` apuntan a secciones que
   existen.
-- [ ] 1.7 Registrar las decisiones:
+- [x] 1.7 Registrar las decisiones:
   - en `docs/idea-mood-table.md` §10, la decisión D41 (decisión 1 de `design.md`), si el usuario la
     aprueba;
   - en README §2.4, la comprobación de incidencias nuevas entre las puertas de la CI, si §2.4 las
