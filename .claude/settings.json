@@ -85,5 +85,18 @@
       "mcp__linear__unshare_issue",
       "mcp__linear__mark_notification"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__linear__save_issue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node --no-warnings \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-ac.ts"
+          }
+        ]
+      }
+    ]
   }
 }
