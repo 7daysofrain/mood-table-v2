@@ -19,6 +19,9 @@
 > En el PRD, H1-H5 se llaman "historias" porque son historias *de producto*. En el backlog son
 > **épicas**: se descomponen en historias de 1-2 días.
 
+> Excepción a la cadena: las *chores* que no tocan requisitos van de la tarea a la PR sin OpenSpec
+> change (§6).
+
 ## 2. Granularidad: tarea → PR, paso → commit
 
 | | Tarea (sub-issue de Linear) | Paso del `tasks.md` (OpenSpec) |
@@ -110,3 +113,8 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
   contexto del proyecto está en `AGENTS.md`.
 - **Los *enablers* pueden tener su propio change** (sin historia): sus escenarios se trazan contra la
   descripción de la tarea en Linear.
+- **Una tarea `Chore` no lleva change** si no añade ni cambia ningún requisito de `openspec/specs/`
+  (documentación, arnés, dependencias o configuración que deja las specs como están).
+  - El criterio es tocar requisitos, no el tamaño ni si tiene efecto observable.
+  - Su plan va en la descripción de la tarea en Linear, y la PR explica por qué no lleva change.
+  - **Si hay duda, lleva change.** Un `Refactor` lleva change siempre.

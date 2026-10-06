@@ -83,7 +83,8 @@ Toda escritura en Linear pasa por la puerta humana de la skill y por la regla `a
 
 **Una tarea = una PR** (ver `workflow.md` §2). Título en imperativo, **una etiqueta de área** y una o
 dos líneas de qué se integra. El detalle paso a paso vive en su sección del `tasks.md` del OpenSpec
-change (**un paso = un commit**), y la tarea lo enlaza; no lo copia.
+change (**un paso = un commit**), y la tarea lo enlaza; no lo copia. Una *chore* sin change
+(`workflow.md` §6) lleva ese plan en su propia descripción.
 
 ## 7. Enlace con GitHub
 
