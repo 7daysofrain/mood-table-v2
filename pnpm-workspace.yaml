@@ -5,12 +5,11 @@ packages:
 # Falla la instalación si Node no cumple `engines` (Node 24, design.md §7).
 engineStrict: true
 
-minimumReleaseAgeExclude:
-  - '@fission-ai/openspec@1.14.0'
-  - '@vitest/coverage-v8@5.0.3'
-  - '@vitest/mocker@5.0.3'
-  - '@vitest/spy@5.0.3'
-  - vitest@5.0.3
+# Cadena de suministro: no se instala nada publicado hace menos de un día (en minutos). Declararlo
+# activa el modo estricto: si no hay versión con esa antigüedad, la instalación falla en lugar de
+# saltarse la regla. Dependabot espera más (`cooldown` en .github/dependabot.yml).
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
 
 # Versiones compartidas por los paquetes (`"catalog:"` en su package.json).
 catalog:
