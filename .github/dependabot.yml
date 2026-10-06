@@ -7,6 +7,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Solo propone versiones con más de dos días: pnpm rechaza las de menos de uno
+    # (`minimumReleaseAge` en pnpm-workspace.yaml) y así la PR no choca con esa regla.
+    cooldown:
+      default-days: 2
     groups:
       # Una sola PR semanal con todo lo minor/patch; los cambios de major van cada uno en la suya.
       npm-minor-patch:
