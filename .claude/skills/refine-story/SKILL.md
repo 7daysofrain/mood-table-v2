@@ -25,7 +25,7 @@ Spanish**, using the PRD glossary (§8).
 
 1. **Load context.**
    - The story and its epic (`get_issue`).
-   - `docs/instructions/workflow.md` §4-§5.
+   - `docs/instructions/workflow.md` §2 (task = PR) and §5 (rules for agents).
    - In `docs/PRD.md`: the H#/S#, its E#, §6 (assumptions and constraints), §7 (open questions) and
      §8 (glossary).
 

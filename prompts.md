@@ -520,6 +520,34 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Ajuste humano: la IA había empezado a implementar sin abrir la PR en borrador, que es lo que pasa la tarea a* In Progress *(`workflow.md` §4.3). Al abrirla, la propia comprobación nueva falló con 3 incidencias de su código: dos inyecciones en el log, que eran reales y se corrigieron, y un `await` dentro de un bucle de espera, que el usuario aceptó en Sonar con el motivo. Fue la primera prueba en rojo y en verde de la puerta.*
 
+#### 6.5 Regla qué/cómo en `workflow.md` y *chores* sin change (`MOO-38`)
+
+**Prompt 1:**
+
+> /opsx:propose MOO-38
+
+*Claude Code (`claude-opus-5-5`). Antes de crear el change, la IA vio tres cosas:*
+- *§4.1 repetía paso a paso las skills `/create-story`, `/refine-story` y `/estimate-story`;*
+- *`/refine-story` cargaba §4 como contexto, así que la referencia era circular;*
+- *la tarea no cambiaba ningún comportamiento observable, así que un delta de spec sería artificial.*
+
+*Le dio a elegir al usuario entre un change con `skip_specs`, ningún change o una spec nueva. El usuario eligió **ningún change**, con el alcance limitado a §4.1. §4.4 también es «cómo», pero ninguna skill lo recoge, así que queda para otra tarea.*
+
+**Prompt 2:**
+
+> ok, prepara un plan y escribelo en Linear antes de ejecutarlo
+
+*Sin change, la descripción de la tarea en Linear pasó a ser la fuente de verdad del plan: diagnóstico, decisiones y pasos, cada uno con su verificación. La IA dejó abierta una pregunta: ¿hacía falta una regla que dijera cuándo una tarea no lleva change? Sin ella, la excepción parecería un salto en la cadena.*
+
+**Prompt 3:**
+
+> si, añadiria la regla, de hecho la podemos expandir a cosas de chore también que no son funcionales y son pequeñas? como la que hemos hecho de pnpm recientemente?
+
+*Ajuste de la IA a la propuesta: «pequeña» y «no funcional» no sirven como criterio. La propia `MOO-32` tiene efecto observable: la instalación falla con versiones demasiado nuevas. La regla que quedó en `workflow.md` §6 es esta:*
+- *una `Chore` no lleva change si no añade ni cambia ningún requisito de `openspec/specs/`;*
+- *si hay duda, lleva change;*
+- *un `Refactor` lleva change siempre.*
+
 ---
 
 ### 7. Pull Requests
