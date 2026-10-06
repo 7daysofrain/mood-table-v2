@@ -10,6 +10,7 @@ import {
   nextStepForCeTask,
   parseReportTask,
   summarizeIssues,
+  toLogLine,
 } from './sonar-issues.ts';
 
 const REPORT_TASK = `organization=7daysofrain
@@ -120,5 +121,23 @@ describe('resultado a partir de las incidencias de la PR', () => {
     const result = summarizeIssues(response, PR);
     expect(result.passed).toBe(false);
     expect(result.lines.join('\n')).toMatch(/2 más/);
+  });
+});
+
+describe('líneas seguras para el log', () => {
+  it('no deja que un dato de SonarQube abra una línea nueva en el log', () => {
+    const line = toLogLine('packages/a.ts\n::error::inyectado\r\nfin');
+    expect(line).not.toMatch(/[\r\n]/);
+    expect(line).toBe('packages/a.ts ::error::inyectado fin');
+  });
+
+  it('sustituye cualquier carácter de control', () => {
+    expect(toLogLine('a\u0000b\u001bc\u007fd\te')).toBe('a b c d e');
+  });
+
+  it('deja igual una línea normal', () => {
+    expect(toLogLine('- typescript:S1854 · a.ts:42 · Remove this «x».')).toBe(
+      '- typescript:S1854 · a.ts:42 · Remove this «x».',
+    );
   });
 });

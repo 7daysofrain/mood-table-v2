@@ -99,6 +99,15 @@ export function summarizeIssues(response: IssuesSearchResponse, pr: PullRequestR
   return { passed: false, lines };
 }
 
+/**
+ * Deja una línea segura para el log de GitHub Actions. Los mensajes y las rutas vienen de SonarQube
+ * (y las rutas, de la PR): un salto de línea permitiría inyectar líneas, incluidos los comandos `::`
+ * del runner. Se sustituye cualquier carácter de control por un espacio.
+ */
+export function toLogLine(text: string): string {
+  return text.replace(/\p{Cc}+/gu, ' ');
+}
+
 function location(issue: SonarIssue): string {
   const separator = issue.component.indexOf(':');
   const path = separator === -1 ? issue.component : issue.component.slice(separator + 1);

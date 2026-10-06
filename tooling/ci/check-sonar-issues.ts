@@ -17,6 +17,7 @@ import {
   parseReportTask,
   type ReportTask,
   summarizeIssues,
+  toLogLine,
 } from './sonar-issues.ts';
 
 const POLL_INTERVAL_MS = 5_000;
@@ -67,7 +68,7 @@ async function fetchIssues(report: ReportTask, pullRequest: string, token: strin
 }
 
 function publish(result: CheckResult): void {
-  const report = result.lines.join('\n');
+  const report = result.lines.map(toLogLine).join('\n');
   if (result.passed) console.log(report);
   else console.error(report);
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
