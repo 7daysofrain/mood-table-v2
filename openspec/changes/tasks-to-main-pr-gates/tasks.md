@@ -55,7 +55,7 @@
 
   Verificar: `grep -rn "entrega" AGENTS.md docs/instructions/linear.md` ya no dice que las tareas
   vayan a la rama de entrega, y `pnpm exec openspec validate --specs` pasa.
-- [ ] 1.6 Documentar el flujo:
+- [x] 1.6 Documentar el flujo:
   - **`workflow.md`:**
     - §4.2: la rama sale de `main`;
     - §4.4: puertas de la PR (lint, tipos, tests, *quality gate*, incidencias nuevas, Copilot e hilos
