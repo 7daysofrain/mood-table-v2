@@ -17,9 +17,8 @@ const description = input.tool_input?.description;
 if (typeof description === 'string') {
   const errors = validateAcceptanceCriteria(description);
   if (errors.length > 0) {
-    process.stderr.write(
-      `Criterios de aceptación mal formados; corrígelos antes de guardar en Linear:\n${errors.map((e) => `- ${e}`).join('\n')}\n`,
-    );
+    const list = errors.map((error) => '- ' + error).join('\n');
+    process.stderr.write(`Criterios de aceptación mal formados; corrígelos antes de guardar en Linear:\n${list}\n`);
     // `exitCode` y no `exit()`: así Node vacía stderr antes de salir y el agente recibe los errores.
     process.exitCode = 2;
   }
