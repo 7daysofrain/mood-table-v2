@@ -42,7 +42,7 @@
   Verificar: en la PR de esta tarea, `sonar-issues` se ejecuta tras `test`, espera al análisis y está
   en verde, con el resumen «0 incidencias nuevas». Si Sonar encuentra alguna en este mismo código, se
   corrige: también es la prueba en rojo.
-- [ ] 1.5 Documentar a qué rama va cada PR (requisito «Las PR de las tareas van contra main…»):
+- [x] 1.5 Documentar a qué rama va cada PR (requisito «Las PR de las tareas van contra main…»):
   - **`linear.md` §7:**
     - tareas desde y hacia `main`;
     - la rama de entrega es una foto que se integra con merge commit al cerrar;
