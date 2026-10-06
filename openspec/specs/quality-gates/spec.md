@@ -78,9 +78,7 @@ los tests, tomando como código nuevo lo que la PR añade respecto a su rama des
 comprobación de la PR MUST quedar en rojo.
 
 > Traza: `MOO-28` («análisis de SonarQube Cloud con su *quality gate*»); umbral de README §2.6.
-> PR de una tarea contra `main`: `MOO-42` («PR limpia contra main»). Sustituye al requisito «El
-> quality gate de SonarQube Cloud bloquea la PR», sin el escenario de las PR de las tareas contra la
-> rama de entrega.
+> PR de una tarea contra `main`: `MOO-42` («PR limpia contra main»).
 
 #### Scenario: Código nuevo con cobertura insuficiente
 - **GIVEN** una PR a una rama de integración cuyo código nuevo tiene menos del 80 % de cobertura
