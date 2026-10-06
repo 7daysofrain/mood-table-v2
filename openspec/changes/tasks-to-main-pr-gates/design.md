@@ -148,6 +148,10 @@ Es configuración de la cuenta, no del repo, como el *ruleset* original. Queda d
   revisión al abrir la PR con `gh pr edit <n> --add-reviewer @copilot`, documentado en
   `workflow.md` §4.4. El escenario «sin que nadie lo pida» dejaría de cumplirse y se cambiaría con
   `/opsx:update`. Se comprueba en el paso 1 de la puesta en marcha.
+- **[Copilot no revisa sin avisar]** La regla solo pide la revisión si el autor tiene acceso a Copilot
+  code review y le quedan peticiones *premium* del mes. Sin revisión no hay hilos, así que ninguna
+  puerta lo detecta → antes de integrar, el agente comprueba que la PR tiene una revisión de Copilot
+  del último push. Si no la tiene, la pide a mano o se lo dice al usuario.
 - **[Una PR antigua sin el job `sonar-issues`]** Una PR cuya rama no lo tiene se queda esperando ese
   check requerido → se actualiza la rama desde `main`. Hoy solo afecta a la #10, que se actualiza de
   todos modos.

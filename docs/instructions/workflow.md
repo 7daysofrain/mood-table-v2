@@ -81,6 +81,8 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
      contesta por qué. Luego resuelve el hilo. En SonarQube, lo que no aplica lo marca como aceptado
      el usuario, con el motivo.
    - Lo que exige criterio (cambiar el diseño o aceptar una incidencia) se le pregunta al usuario.
+   - Antes de integrar, el agente comprueba que hay una revisión de Copilot del último push. Si se ha
+     agotado la cuota, Copilot no revisa ni avisa: se pide a mano o se le dice al usuario.
 5. **Integrar.** Joseba integra cada PR con el botón de GitHub y la tarea pasa sola a *Done*. Con la
    última, la historia queda completa: `/opsx:verify` comprueba la implementación contra el change y
    `/opsx:archive` la archiva. Como el *ruleset* no deja subir directo a `main`, el archivado va en
