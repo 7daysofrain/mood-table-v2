@@ -4,7 +4,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ## Índice
 
-0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés) · [0.2 OpenSpec](#02-openspec-inicialización-y-configuración)
+0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés) · [0.2 OpenSpec](#02-openspec-inicialización-y-configuración) · [0.3 Hook `validate-ac`](#03-hook-validate-ac-moo-36)
 1. [Descripción general del producto](#1-descripción-general-del-producto)
 2. [Arquitectura del sistema](#2-arquitectura-del-sistema)
 3. [Modelo de datos](#3-modelo-de-datos)
@@ -37,6 +37,7 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 - **`AGENTS.md`** (estándar abierto) con el contexto y las 4 bases de trabajo; `CLAUDE.md` solo lo importa (`@AGENTS.md`). Un **índice** apunta a `docs/instructions/` (`workflow.md`, `linear.md`, `course.md`), que el agente lee *cuando toca*, no siempre. Solo contiene lo que hace falta en cada sesión; el resto se lee bajo demanda (§0.1).
 - **Tres skills de invocación manual** (`.claude/skills/`), una por estado de Linear: `/create-story` → `/refine-story` → `/estimate-story`. Son manuales a propósito: cada paso empieza con una decisión humana. Escritas con la guía de la *skill-creator*, en inglés; el contenido que generan (Linear) va en español.
 - **Subagentes** (`.claude/agents/`): **`poke-holes`** (Opus, solo lectura) busca huecos en una historia **sin ver la conversación**, para no compartir los puntos ciegos del autor; **`estimator`** (Sonnet) estima **a ciegas** en el planning poker. Además, un subagente de exploración contrastó el protocolo de las skills con los documentos del curso (módulo 4 y 11.2).
+- **Hook `validate-ac`** (`.claude/hooks/`, `PreToolUse` sobre `save_issue`): bloquea una historia con criterios GIVEN/WHEN/THEN mal formados antes de que llegue a la confirmación humana (§0.3).
 - **MCP de Linear** como configuración del proyecto (`.mcp.json`), con **reglas de permisos** versionadas (`.claude/settings.json`): lecturas permitidas, `save_issue`/`save_comment` piden confirmación, el resto (borrados, etiquetas, proyectos…) denegado. Conector de **Google Drive** para el material del curso.
 
 **Cómo se trabaja con la IA (método):**
@@ -91,6 +92,26 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 > Estoy pensandome lo del español. Todo lo que tiene que ver con openspec, al ser ejecutable por los agentes mas que dirigidos a humanos, no tendrias sentido tenerlo en ingles en vez de en español igual que el resto del arnes?
 
 *La IA defendió el español: la spec es un contrato que el humano revisa en una puerta, sus escenarios salen de criterios de Linear en español y la lee el evaluador. Queda como criterio del arnés en `AGENTS.md`: lo que el humano revisa y aprueba va en español, aunque lo escriba o lo consuma un agente; lo que solo lee un agente, en inglés.*
+
+### 0.3 Hook `validate-ac` (`MOO-36`)
+
+**Prompt 1:**
+
+> Vamos con la MOO-36, dime si necesita spec o puedes ir por tu cuenta
+
+*Claude Code (`claude-opus-5-5`, 6-oct). La IA desaconsejó el OpenSpec change: es arnés, no producto, y las skills y subagentes entraron sin spec. Pero no empezó: la tarea tenía una línea y dejaba abiertas cuatro decisiones (qué llamada intercepta y cómo distingue una historia, bloquear o avisar, qué cuenta como válido, lenguaje y tests), que planteó con su recomendación.*
+
+**Prompt 2:**
+
+> si, me parece bien. Expande la historia primero en Linear
+
+*Ajuste humano: sin spec, el alcance tenía que quedar escrito antes del código. La IA lo llevó a la tarea de Linear (diseño acordado, cuatro escenarios GIVEN/WHEN/THEN, non-goals y DoD de Chore), que pasa a ser su fuente de verdad. Al empezar propuso cambiar el `.mjs` acordado por `.ts`, que Node 24 ejecuta sin build y entra en tipos y lint con el resto del repo; el humano lo aceptó.*
+
+**Prompt 3:**
+
+> si, sigue, pero prepara un worktree
+
+*La IA creó el worktree a mano desde la rama de la entrega (la herramienta de worktrees partía de `main`). Resultado: validador como función pura con 18 tests en `tooling/`, dentro de la cobertura y de Sonar, y una entrada de 25 líneas que lee la llamada y sale con código 2 si hay errores. Se probó a mano con Node 22 y 24: sin descripción pasa, bien formada pasa, sin `Then` bloquea con el escenario y el paso que falta. La IA no podía probarlo en su propia sesión (los hooks se cargan al arrancar), así que preparó un prompt autónomo para una sesión nueva de `claude -p` en el worktree: dos llamadas a `save_issue` contra una issue inexistente, sin riesgo de escribir porque en ese modo el `ask` se deniega solo. Salida: `RESULTADO: OK`.*
 
 ---
 

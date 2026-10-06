@@ -131,5 +131,9 @@ escritura completa, y en el MCP crear y editar son la misma herramienta (`save_i
     estados también.
   - `deny`: borrados, etiquetas, proyectos, hitos, documentos, *releases*, diffs y adjuntos. Si hace falta
     alguno, se mueve a `ask` a propósito.
+- **Hook `validate-ac`** (`.claude/hooks/validate-ac.ts`, `PreToolUse` sobre `save_issue`): antes de la
+  confirmación `ask`, revisa el formato de la sección `## Criterios de aceptación` (escenarios con Given,
+  When y Then en orden, sin huecos de la plantilla) y, si está mal, bloquea la llamada y le dice al
+  agente qué corregir. Sin esa sección no valida nada. Solo mira la forma, no el contenido.
 - Las herramientas nuevas que publique Linear no quedan cubiertas: caen en el modo de permisos por
   defecto. Hay que revisar la lista si aparece alguna.
