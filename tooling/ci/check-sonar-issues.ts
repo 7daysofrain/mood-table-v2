@@ -7,6 +7,7 @@
  * Espera a que termine el análisis que lanzó el job `test` y falla si la PR tiene incidencias
  * abiertas. Solo E/S: la lógica está en `sonar-issues.ts`, con tests. Fuera de la cobertura.
  */
+import { randomUUID } from 'node:crypto';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
@@ -18,6 +19,7 @@ import {
   type ReportTask,
   summarizeIssues,
   toLogLine,
+  withoutRunnerCommands,
 } from './sonar-issues.ts';
 
 const POLL_INTERVAL_MS = 5_000;
@@ -67,12 +69,15 @@ async function fetchIssues(report: ReportTask, pullRequest: string, token: strin
   return getJson<IssuesSearchResponse>(url, token);
 }
 
+/**
+ * Todo por stdout, para que el orden se mantenga; el fallo lo marca el código de salida. El resumen
+ * del job es Markdown y el runner no busca comandos en él.
+ */
 function publish(result: CheckResult): void {
-  const report = result.lines.map(toLogLine).join('\n');
-  if (result.passed) console.log(report);
-  else console.error(report);
+  console.log(withoutRunnerCommands(result.lines, randomUUID()));
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (summaryPath) {
+    const report = result.lines.map(toLogLine).join('\n');
     appendFileSync(summaryPath, `### Incidencias nuevas de SonarQube\n\n${report}\n`);
   }
 }

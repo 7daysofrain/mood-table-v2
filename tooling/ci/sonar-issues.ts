@@ -108,6 +108,15 @@ export function toLogLine(text: string): string {
   return text.replace(/\p{Cc}+/gu, ' ');
 }
 
+/**
+ * Envuelve el informe para que el runner de GitHub Actions no interprete nada de él como un comando:
+ * además de los `::` a principio de línea, reconoce la sintaxis antigua `##[…]` en cualquier punto de
+ * la línea. `token` debe ser impredecible, para que el propio informe no pueda reactivarlos.
+ */
+export function withoutRunnerCommands(lines: string[], token: string): string {
+  return [`::stop-commands::${token}`, ...lines.map(toLogLine), `::${token}::`].join('\n');
+}
+
 function location(issue: SonarIssue): string {
   const separator = issue.component.indexOf(':');
   const path = separator === -1 ? issue.component : issue.component.slice(separator + 1);

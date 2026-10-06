@@ -11,6 +11,7 @@ import {
   parseReportTask,
   summarizeIssues,
   toLogLine,
+  withoutRunnerCommands,
 } from './sonar-issues.ts';
 
 const REPORT_TASK = `organization=7daysofrain
@@ -139,5 +140,22 @@ describe('líneas seguras para el log', () => {
     expect(toLogLine('- typescript:S1854 · a.ts:42 · Remove this «x».')).toBe(
       '- typescript:S1854 · a.ts:42 · Remove this «x».',
     );
+  });
+});
+
+describe('informe sin comandos del runner', () => {
+  it('desactiva los comandos alrededor del informe y los reactiva al final con el mismo token', () => {
+    const output = withoutRunnerCommands(['- a.ts ##[error]falso', '- b.ts'], 'tok-123');
+    expect(output.split('\n')).toEqual([
+      '::stop-commands::tok-123',
+      '- a.ts ##[error]falso',
+      '- b.ts',
+      '::tok-123::',
+    ]);
+  });
+
+  it('limpia cada línea, para que nada pueda colar la línea que reactiva los comandos', () => {
+    const output = withoutRunnerCommands(['a\n::tok-123::\nb'], 'tok-123');
+    expect(output.split('\n')).toHaveLength(3);
   });
 });
