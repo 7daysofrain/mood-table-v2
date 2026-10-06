@@ -36,16 +36,34 @@ export interface CheckResult {
   lines: string[];
 }
 
-/** Devuelve `ceTaskUrl` del `report-task.txt` que escribe el escáner. */
-export function parseCeTaskUrl(reportTask: string): string {
+/** Lo que se usa del `report-task.txt` que escribe el escáner al terminar. */
+export interface ReportTask {
+  ceTaskUrl: string;
+  serverUrl: string;
+  projectKey: string;
+}
+
+const REPORT_TASK_KEYS = ['ceTaskUrl', 'serverUrl', 'projectKey'] as const;
+
+/** Lee el `report-task.txt` del escáner (`clave=valor`, una por línea). */
+export function parseReportTask(reportTask: string): ReportTask {
+  const values = new Map<string, string>();
   for (const line of reportTask.split(/\r?\n/)) {
     const separator = line.indexOf('=');
-    if (separator > 0 && line.slice(0, separator).trim() === 'ceTaskUrl') {
-      const url = line.slice(separator + 1).trim();
-      if (url) return url;
+    if (separator > 0) {
+      values.set(line.slice(0, separator).trim(), line.slice(separator + 1).trim());
     }
   }
-  throw new Error('El informe del escáner no trae ceTaskUrl: no se sabe qué análisis esperar.');
+  const ceTaskUrl = values.get('ceTaskUrl');
+  const serverUrl = values.get('serverUrl');
+  const projectKey = values.get('projectKey');
+  if (!ceTaskUrl || !serverUrl || !projectKey) {
+    const missing = REPORT_TASK_KEYS.filter((key) => !values.get(key));
+    throw new Error(
+      `El informe del escáner no trae ${missing.join(', ')}: no se sabe qué análisis esperar.`,
+    );
+  }
+  return { ceTaskUrl, serverUrl, projectKey };
 }
 
 export function nextStepForCeTask(status: string): CeTaskStep {

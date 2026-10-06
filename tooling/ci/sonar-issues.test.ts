@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type IssuesSearchResponse,
   nextStepForCeTask,
-  parseCeTaskUrl,
+  parseReportTask,
   summarizeIssues,
 } from './sonar-issues.ts';
 
@@ -23,12 +23,22 @@ ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZm1
 const PR = { serverUrl: 'https://sonarcloud.io', projectKey: '7daysofrain_mood-table-v2', pullRequest: '12' };
 
 describe('leer el informe del escáner', () => {
-  it('devuelve la URL de la tarea de análisis', () => {
-    expect(parseCeTaskUrl(REPORT_TASK)).toBe('https://sonarcloud.io/api/ce/task?id=AZm1');
+  it('devuelve la URL de la tarea de análisis, el servidor y el proyecto', () => {
+    expect(parseReportTask(REPORT_TASK)).toEqual({
+      ceTaskUrl: 'https://sonarcloud.io/api/ce/task?id=AZm1',
+      serverUrl: 'https://sonarcloud.io',
+      projectKey: '7daysofrain_mood-table-v2',
+    });
+  });
+
+  it('acepta finales de línea de Windows', () => {
+    expect(parseReportTask(REPORT_TASK.replaceAll('\n', '\r\n')).ceTaskUrl).toBe(
+      'https://sonarcloud.io/api/ce/task?id=AZm1',
+    );
   });
 
   it('falla con un mensaje claro si el informe no trae la URL', () => {
-    expect(() => parseCeTaskUrl('projectKey=x\nserverUrl=https://sonarcloud.io\n')).toThrow(
+    expect(() => parseReportTask('projectKey=x\nserverUrl=https://sonarcloud.io\n')).toThrow(
       /ceTaskUrl/,
     );
   });
