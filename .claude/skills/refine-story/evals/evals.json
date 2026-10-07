@@ -1,0 +1,62 @@
+{
+  "skill_name": "refine-story",
+  "evals": [
+    {
+      "id": 1,
+      "name": "refinado-completo-aprobado",
+      "prompt": "/refine-story MOO-22\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Con el instrumento funcionando con un fichero de audio como fuente, el maker abre el panel y pide oírlo; oye el fichero y, a la vez, ve la tira virtual reaccionando a lo que suena.\n2. La traducción está bien.\n3. Me quedo con los candidatos 1, 2 y 3. Las notas fuera de criterio, llévalas a su destino.\n4. Redacción aprobada.\n5. Aprobado: guarda la historia y crea las tareas.",
+      "expected_output": "Pide el caso feliz sin borrador, lo traduce a GIVEN/WHEN/THEN sin añadir comportamiento, lanza poke-holes solo con lo necesario, se queda con los candidatos elegidos, añade el DoD de Feature literal, el contexto técnico, el INVEST y las tareas; tras la aprobación actualiza la historia (sigue en Backlog) y crea una tarea por área.",
+      "files": [],
+      "expectations": [
+        "El primer turno pide al usuario el caso feliz en lenguaje natural y no ofrece ningún borrador, ejemplo de escenario ni punto de partida",
+        "La traducción a GIVEN/WHEN/THEN del caso feliz no añade comportamiento que no esté en la respuesta 1; lo que haya tenido que completar va marcado (asumido) o preguntado",
+        "subagent-prompts.md tiene una sola llamada, a poke-holes, y su prompt solo contiene el ID MOO-22, el como/quiero/para, los non-goals, el caso feliz del usuario y la línea de entorno: ni la conversación, ni la traducción, ni opiniones propias",
+        "poke-holes se lanza después de que el usuario valide la traducción (respuesta 2), no antes",
+        "Los candidatos de poke-holes se muestran numerados antes de la respuesta 3",
+        "La descripción guardada tiene entre 3 y 5 escenarios en Criterios de aceptación (el caso feliz más los candidatos 1, 2 y 3)",
+        "Cada escenario tiene un solo When, usa términos del glosario del PRD y no menciona clics, botones, endpoints ni tablas",
+        "Los criterios guardados pasan validateAcceptanceCriteria de .claude/hooks/acceptance-criteria.ts sin errores (el hook validate-ac no corre en la eval porque no hay llamada real a save_issue)",
+        "La sección '## Definition of Done (Feature)' es, carácter a carácter, el bloque Feature de .claude/skills/refine-story/assets/dod.md",
+        "Las secciones de la descripción van en este orden: Historia · Criterios de aceptación · Non-goals · Definition of Done · Contexto técnico",
+        "El texto de la sección Historia es idéntico al del fixture MOO-22; los non-goals originales siguen todos, y solo se añaden los que vengan de notas fuera de criterio",
+        "El contexto técnico cita secciones de readme.md y termina con el marcador 'OpenSpec change: openspec/changes/<id> (pendiente)' o equivalente",
+        "Antes de la respuesta 5 se muestra el INVEST con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌ con su motivo",
+        "linear-writes.json tiene primero la actualización de la historia (id MOO-22, state Backlog, sin estimate) y después las creaciones de tareas",
+        "Cada tarea creada tiene parentId MOO-22, exactamente una etiqueta de área y ninguna de tipo, state Backlog y sin estimate",
+        "Las descripciones de las tareas tienen 1-2 líneas de qué se integra y ningún paso a paso",
+        "No hay ninguna escritura en linear-writes.json antes de la respuesta 5",
+        "Al cerrar, indica /estimate-story MOO-22 como siguiente paso"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "caso-feliz-con-pasos-de-interfaz",
+      "prompt": "/refine-story MOO-22\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. El maker hace clic en el botón de play de la cabecera y luego sube el volumen con el slider; entonces oye el fichero y el endpoint /api/v1/audio devuelve 200.\n2. Vale, lo dejo aquí por hoy.",
+      "expected_output": "Señala los problemas de la descripción (pasos de interfaz, dos acciones, un detalle técnico como resultado) en vez de corregirlos en silencio, y no avanza ni escribe nada.",
+      "files": [],
+      "expectations": [
+        "Señala que la descripción usa pasos de interfaz (clic, botón, slider) que no sobrevivirían a un rediseño del panel",
+        "Señala que hay dos acciones (play y subir el volumen) y que un escenario solo admite un When",
+        "Señala que 'el endpoint devuelve 200' es un detalle técnico y no un resultado que el maker observe",
+        "No presenta como definitiva una traducción que corrija esos problemas en silencio: si propone una versión corregida, dice qué ha cambiado y pide validarla",
+        "No lanza poke-holes (no existe subagent-prompts.md o no tiene ninguna llamada)",
+        "No existe linear-writes.json o es un array vacío"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "historia-demasiado-grande-falla-invest",
+      "prompt": "/refine-story MOO-901\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Con el instrumento funcionando sin hardware, el maker elige como fuente el fichero de audio o la tarjeta de sonido, ve varias tiras virtuales con efectos distintos, oye el fichero en el panel y, mientras suena, cambia el efecto de una tira y mueve sus controles; la luz responde al momento.\n2. La traducción está bien.\n3. Me quedo con los candidatos 1, 2 y 3.\n4. Redacción aprobada.\n5. De acuerdo.",
+      "expected_output": "Al llegar al INVEST, la historia falla dos o más criterios; la skill propone dividirla en 2-3 historias y se para sin guardar nada ni crear tareas.",
+      "files": [],
+      "expectations": [
+        "Señala, en la traducción o antes, que la respuesta 1 describe varias acciones (elegir fuente, cambiar efecto, mover controles) que no caben en un solo When",
+        "El INVEST marca al menos dos criterios con ❌, entre ellos Small",
+        "Propone dividir la historia en 2 o 3 historias, cada una con su comportamiento observable",
+        "Al menos una de las historias propuestas, o un comentario, señala que cambiar de efecto y mover controles en vivo es de H2, no de H1",
+        "Se para tras proponer la división: no muestra DoD, contexto técnico ni tareas como si la historia siguiera adelante",
+        "No existe linear-writes.json o es un array vacío: ni actualiza MOO-901 ni crea tareas"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "MOO-901",
+  "title": "Probar todo el instrumento en el simulador",
+  "description": "## Historia\n\nComo maker, quiero probar en el simulador el instrumento entero: el fichero de audio y la tarjeta de sonido como fuentes, varias tiras virtuales con los efectos espectro, energía, scroll y respiración, oír el fichero en el panel y cambiar de efecto y mover sus controles mientras suena, para tenerlo todo probado antes de montar nada.\n**Épica:** H1 · **Expectativas:** E7, E2\n**Talla (IA):** XL · dos fuentes de audio, cuatro efectos, varias tiras, reproducción en el panel y controles en vivo\n\n## Criterios de aceptación\n\n*Pendiente de refinar (/refine-story).*\n\n## Non-goals\n\n* Sin hardware: ni Light Box ni tira física.\n* Sin escenas ni presets (PRD §5.4).",
+  "priority": { "value": 2, "name": "High" },
+  "estimate": null,
+  "status": "Backlog",
+  "labels": ["panel", "engine", "Feature"],
+  "parentId": "MOO-5",
+  "project": "Mood Table",
+  "team": "Mood Table"
+}

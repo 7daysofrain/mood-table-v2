@@ -1,0 +1,55 @@
+{
+  "skill_name": "create-story",
+  "evals": [
+    {
+      "id": 1,
+      "name": "historia-nueva-aprobada",
+      "prompt": "/create-story MOO-5 Quiero arrancar el simulador con un solo comando, sin tocar ningún fichero, y ver ya una tira virtual reaccionando a un audio de ejemplo.\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Aprobada tal cual, créala.",
+      "expected_output": "Una propuesta con título, como/quiero/para (maker), non-goals, talla, etiquetas y prioridad; tras la aprobación, una sola creación en Linear con la plantilla de la skill, en Backlog y sin estimación.",
+      "files": [],
+      "expectations": [
+        "La propuesta se muestra al usuario antes de cualquier escritura en Linear (transcript.md: la propuesta va antes de la respuesta 1, y linear-writes.json solo tiene escrituras posteriores)",
+        "linear-writes.json contiene exactamente una llamada, sin campo id (es una creación)",
+        "La creación tiene parentId MOO-5, team y project Mood Table, y state Backlog",
+        "La creación no lleva estimate (ausente o null)",
+        "labels tiene exactamente una etiqueta de tipo (Feature, Bug, Refactor, Spike o Chore) y al menos una de área (engine, panel, shared, db, infra, firmware), y ninguna otra",
+        "La descripción tiene los encabezados de assets/story.md, en este orden y sin cambiar su texto: '## Historia', '## Criterios de aceptación', '## Non-goals'",
+        "La sección Criterios de aceptación solo contiene el marcador de pendiente de refinar, sin criterios GIVEN/WHEN/THEN",
+        "La historia empieza por 'Como maker' (H1 es una historia del maker, PRD §2)",
+        "La línea de épica dice H1 y las expectativas E7 y E2",
+        "La línea Talla (IA) tiene una talla XS, S, M, L o XL seguida de un motivo",
+        "La sección Non-goals tiene entre 2 y 4 puntos",
+        "Ningún non-goal contradice el PRD: lo que se excluye está en PRD §5.3/§5.4, en otra historia hermana de MOO-5 o va marcado (asumido)",
+        "Al cerrar, enumera el ID creado e indica /refine-story como siguiente paso"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "duplicada-y-demasiado-grande-sin-aprobar",
+      "prompt": "/create-story MOO-5 Dos ideas: 1) oír en el panel el fichero de audio mientras la tira reacciona; 2) un simulador completo: fichero y tarjeta de sonido, varias tiras virtuales, los efectos espectro y scroll, y poder mover sus controles mientras suena.\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Vale, no crees nada todavía: me lo pienso.",
+      "expected_output": "La propuesta detecta que la idea 1 ya existe (MOO-22) y que la idea 2 es demasiado grande y en parte de otras épicas, y propone dividirla; como el usuario no aprueba, no escribe nada en Linear.",
+      "files": [],
+      "expectations": [
+        "Señala que la idea 1 ya existe como MOO-22 y no la propone como historia nueva",
+        "Dice que la idea 2 es demasiado grande para una historia de 1-2 días y propone dividirla",
+        "Indica que mover los controles en vivo (y cambiar de efecto) pertenece a H2, no a H1: no lo propone como historia de MOO-5",
+        "No propone de nuevo lo que ya cubren MOO-13, MOO-14 o MOO-15 (efecto respiración, fichero de audio con energía, tarjeta de sonido)",
+        "No existe linear-writes.json o es un array vacío: no se escribe nada sin aprobación"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "el-usuario-edita-antes-de-aprobar",
+      "prompt": "/create-story MOO-5 Quiero ver en el visor el nombre de cada tira virtual junto a ella, para saber cuál es cuál cuando haya varias.\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Bájale la prioridad a Low y añade el non-goal «Sin renombrar tiras desde el panel: el nombre se declara en el fichero». Con eso, créala.",
+      "expected_output": "Aplica las dos ediciones del usuario y crea la historia con ellas.",
+      "files": [],
+      "expectations": [
+        "linear-writes.json contiene exactamente una creación, posterior a la respuesta 1",
+        "La creación lleva priority Low (valor 4), no la prioridad propuesta inicialmente si era otra",
+        "La sección Non-goals incluye el non-goal añadido por el usuario, sin cambiarle el sentido",
+        "La sección Non-goals sigue teniendo como mucho 4 puntos, o la skill avisa al usuario de que se pasa del rango",
+        "La creación tiene parentId MOO-5, state Backlog y no lleva estimate"
+      ]
+    }
+  ]
+}
