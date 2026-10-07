@@ -8,3 +8,6 @@ docs/borradores/
 node_modules/
 coverage/
 dist/
+
+# Ejecuciones de las evals de skill-creator (.claude/evals/README.md)
+.claude/evals/workspace/

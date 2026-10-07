@@ -1,0 +1,10 @@
+{
+  "issues": [
+    { "id": "MOO-12", "title": "Medir si la Pi aguanta el motor en tiempo real", "status": "Backlog", "labels": ["engine", "Spike"], "parentId": "MOO-5", "estimate": null },
+    { "id": "MOO-13", "title": "Ver una tira virtual respirando en el visor", "status": "Todo", "labels": ["panel", "engine", "Feature"], "parentId": "MOO-5", "estimate": { "value": 8, "name": "8 Points" } },
+    { "id": "MOO-14", "title": "La tira virtual reacciona a un fichero de audio", "status": "Todo", "labels": ["engine", "Feature"], "parentId": "MOO-5", "estimate": { "value": 8, "name": "8 Points" } },
+    { "id": "MOO-15", "title": "Usar la tarjeta de sonido como fuente de audio", "status": "Todo", "labels": ["engine", "Feature"], "parentId": "MOO-5", "estimate": { "value": 3, "name": "3 Points" } },
+    { "id": "MOO-22", "title": "Oír el fichero de audio en el panel mientras la tira reacciona", "status": "Backlog", "labels": ["panel", "engine", "Feature"], "parentId": "MOO-5", "estimate": null }
+  ],
+  "hasNextPage": false
+}

@@ -1,0 +1,8 @@
+{
+  "issues": [
+    { "id": "MOO-19", "title": "Leer un fichero WAV como fuente de audio", "description": "Adaptador *Fichero WAV* (entrega las muestras al ritmo real, en bucle) y, en el fichero de configuración, la fuente de audio y el efecto inicial de cada tira.\n\nPasos: sección de esta tarea en el `tasks.md` del OpenSpec change de MOO-14 (pendiente).", "status": "Backlog", "labels": ["engine"], "parentId": "MOO-14" },
+    { "id": "MOO-20", "title": "Analizar el audio y pintar el efecto energía", "description": "Análisis del audio (rasgos por frame), efecto *energía* (se apaga en silencio) y envío de la fuente de audio y su nivel al panel.\n\nPasos: sección de esta tarea en el `tasks.md` del OpenSpec change de MOO-14 (pendiente).", "status": "Backlog", "labels": ["engine"], "parentId": "MOO-14" },
+    { "id": "MOO-21", "title": "Mostrar la fuente de audio y su nivel en el panel", "description": "Cabecera del panel con el tipo de fuente de audio, el nombre del fichero y el nivel en tiempo real.\n\nPasos: sección de esta tarea en el `tasks.md` del OpenSpec change de MOO-14 (pendiente).", "status": "Backlog", "labels": ["panel"], "parentId": "MOO-14" }
+  ],
+  "hasNextPage": false
+}
