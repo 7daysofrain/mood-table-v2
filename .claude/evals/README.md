@@ -42,6 +42,10 @@ input every time, and the real issues keep changing.
 | `MOO-22.json` | Story in Backlog, not refined | refine-story, estimate-story |
 | `MOO-14.json` | Refined story, **before** estimation (see below) | estimate-story |
 | `MOO-14.children.json` | Its tasks MOO-19, MOO-20, MOO-21 | estimate-story |
+| `MOO-901.json` | **Synthetic**: a story under H1 that is far too big (fails INVEST) | refine-story |
+
+IDs from `MOO-900` up are synthetic: no real issue has them, so a fixture can never be mistaken for a
+snapshot.
 
 `MOO-14.json` is the real issue rolled back to the moment before `/estimate-story`: state Backlog, no
 `estimate`, and without the `**Estimación:**` line.
