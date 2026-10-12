@@ -154,7 +154,7 @@ function readExamples(walk: Walk): void {
     return;
   }
   const where = current ? `Escenario «${current.name}»: ` : '';
-  walk.errors.push(`${where}solo un esquema («Scenario Outline:» o «Esquema del escenario:») lleva ejemplos.`);
+  walk.errors.push(`${where}solo un esquema («Scenario Outline:», «Scenario Template:» o «Esquema del escenario:») lleva ejemplos.`);
 }
 
 /** Una fila de tabla solo cuenta en los ejemplos de un esquema; las tablas de datos de un paso se ignoran. */

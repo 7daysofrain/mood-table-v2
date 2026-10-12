@@ -180,6 +180,7 @@ Escenario: Variantes de Dado y de Y
     | efecto  | comportamiento |
     | energía | se apaga       |`;
     expect(validateAcceptanceCriteria(story(outline))).toEqual([]);
+    expect(validateAcceptanceCriteria(story(outline.replace('Scenario Outline:', 'Scenario Template:')))).toEqual([]);
   });
 
   it('bloquea en un esquema un parámetro que no es columna de los ejemplos (MOO-44)', () => {
@@ -230,7 +231,7 @@ Escenario: Variantes de Dado y de Y
     | efecto  |
     | energía |`;
     expect(validateAcceptanceCriteria(story(scenario))).toEqual([
-      'Escenario «Ejemplos sin esquema»: solo un esquema («Scenario Outline:» o «Esquema del escenario:») lleva ejemplos.',
+      'Escenario «Ejemplos sin esquema»: solo un esquema («Scenario Outline:», «Scenario Template:» o «Esquema del escenario:») lleva ejemplos.',
     ]);
   });
 
