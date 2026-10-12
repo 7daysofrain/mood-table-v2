@@ -1,6 +1,7 @@
 /**
  * Escenarios de MOO-36 (hook validate-ac): la validación del formato de los criterios de aceptación
- * que hace el hook antes de que una historia se escriba en Linear.
+ * que hace el hook antes de que una historia se escriba en Linear. Los fallos de MOO-44 se reproducen
+ * con las descripciones congeladas en los fixtures de las evals (`.claude/evals/linear/`).
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -138,6 +139,29 @@ describe('validateAcceptanceCriteria', () => {
 
   it('acepta saltos de línea de Windows', () => {
     expect(validateAcceptanceCriteria(story(VALID).replaceAll('\n', '\r\n'))).toEqual([]);
+  });
+
+  it('acepta las palabras clave de Gherkin en español, como en MOO-13, MOO-14 y MOO-15 (MOO-44)', () => {
+    const spanish = `Escenario: Caso feliz
+  Dado que el motor está arrancado
+    Y el visor está abierto
+  Cuando el DJ mueve el fader
+  Entonces la tira cambia de brillo
+    Pero el visor no parpadea
+
+Escenario: Variantes de Dado y de Y
+  Dadas dos tiras declaradas
+    E iluminadas
+  Cuando el DJ baja el máster
+  Entonces las dos se apagan`;
+    expect(validateAcceptanceCriteria(story(spanish))).toEqual([]);
+  });
+
+  it('valida el orden de los pasos también en español, nombrándolos como en inglés (MOO-44)', () => {
+    const errors = validateAcceptanceCriteria(
+      story('Escenario: Al revés\n  Cuando pasa algo\n  Dado algo\n  Entonces resultado'),
+    );
+    expect(errors).toEqual(['Escenario «Al revés»: Given fuera de orden: va antes que When.']);
   });
 });
 
