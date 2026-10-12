@@ -11,6 +11,7 @@ Do not call any `mcp__linear__*` tool. Use the fixtures in `.claude/evals/linear
 |---|---|
 | `get_issue <ID>` | Read `.claude/evals/linear/<ID>.json` |
 | `list_issues` with `parentId = <ID>` | Read `.claude/evals/linear/<ID>.children.json` |
+| `list_issues` for the team or project (no `parentId`) | Read `.claude/evals/linear/team.json` and apply any other filter yourself |
 | `save_issue` (create or update) | Append the exact arguments you would pass, as one JSON object, to the array in `<outputs>/linear-writes.json` (create the file with `[]` if it does not exist) |
 
 If a fixture is missing, say so and stop: do not invent the issue.
@@ -25,7 +26,8 @@ you would ask.
 ## Subagents
 
 When the skill launches a subagent (`poke-holes`, `estimator`), pass it exactly what the skill says,
-followed by one last line: `Linear is offline: read the issues from .claude/evals/linear/<ID>.json`.
+followed by one last line: `Linear is offline: follow the "Linear is offline" section of
+.claude/evals/environment.md`.
 Nothing else. Save each prompt you pass to `<outputs>/subagent-prompts.md`, with the subagent's name.
 
 ## What to save in `<outputs>/`

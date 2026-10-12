@@ -38,7 +38,8 @@ input every time, and the real issues keep changing.
 | File | Issue | Used by |
 |---|---|---|
 | `MOO-5.json` | Epic H1 | create-story, refine-story |
-| `MOO-5.children.json` | Sub-issues of MOO-5 (`list_issues` with `parentId`) | create-story |
+| `MOO-5.children.json` | Sub-issues of MOO-5 (`list_issues` with `parentId`) | create-story, poke-holes |
+| `team.json` | The team's stories (`list_issues` without `parentId`); the same ones as above | estimator |
 | `MOO-22.json` | Story in Backlog, not refined | refine-story, estimate-story |
 | `MOO-14.json` | Refined story, **before** estimation (see below) | estimate-story |
 | `MOO-14.children.json` | Its tasks MOO-19, MOO-20, MOO-21 | estimate-story |
@@ -48,7 +49,9 @@ IDs from `MOO-900` up are synthetic: no real issue has them, so a fixture can ne
 snapshot.
 
 `MOO-14.json` is the real issue rolled back to the moment before `/estimate-story`: state Backlog, no
-`estimate`, and without the `**Estimación:**` line.
+`estimate`, and without the `**Estimación:**` line. It appears unestimated in the lists too
+(`MOO-5.children.json`, `team.json`): the `estimator` calibrates against the estimated stories, and
+would otherwise read the real card.
 
 In every fixture, the MCP's `<issue id=… href=…>MOO-n</issue>` links are flattened to the plain
 `MOO-n`, and fields the skills do not read (UUIDs, URLs, timestamps, state history) are left out.
