@@ -1,0 +1,12 @@
+{
+  "id": "MOO-22",
+  "title": "Oír el fichero de audio en el panel mientras la tira reacciona",
+  "description": "## Historia\n\nComo maker, quiero oír en el panel el fichero de audio que usa el instrumento, a la vez que la tira reacciona, para juzgar si la luz sigue a la música sin tener la mesa.\n**Épica:** H1 · **Expectativas:** E7, E2\n**Talla (IA):** M · reproducción en el navegador sincronizada con el motor, con un play (los navegadores no reproducen sin un gesto del usuario); la incertidumbre está en la sincronía\n\n## Criterios de aceptación\n\n*Pendiente de refinar (/refine-story).*\n\n## Non-goals\n\n* Sin más control de reproducción que el play: nada de pausar ni saltar a otro punto de la pista.\n* No se oye la tarjeta de sonido: en la mesa la música ya suena por el mixer *(asumido)*.\n* El fichero no se elige desde el panel: se declara en la configuración.",
+  "priority": { "value": 2, "name": "High" },
+  "estimate": null,
+  "status": "Backlog",
+  "labels": ["panel", "engine", "Feature"],
+  "parentId": "MOO-5",
+  "project": "Mood Table",
+  "team": "Mood Table"
+}
