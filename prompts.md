@@ -580,6 +580,23 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Respuesta a tres cierres que propuso la IA: actualizar `linear.md` §8, registrar esta entrada y volver a pasar las evals de `refine-story`. En el punto 3 no relanzó los subagentes: volvió a calificar con el validador nuevo las salidas ya guardadas. Con la skill, todo pasa; sin ella, falla por una segunda acción tras el `Cuando`. Es el mismo defecto que el grader había anotado a mano en la aserción del When único, y que antes quedaba tapado por el «no tiene ningún Scenario».*
 
+#### 6.8 INVEST rápido en `/refine-story` y poke-holes con las palabras del usuario (`MOO-46`)
+
+**Prompt 1:**
+
+> vamos con la MOO-46
+
+*Claude Code (`claude-opus-5-5`, 12-oct). Los dos fallos venían de la línea base de `MOO-37`. Antes de tocar la skill, la IA vio que «antes de poke-holes» admitía tres sitios para el INVEST rápido y los planteó con su coste: tras el caso feliz y antes de traducirlo, tras validar la traducción (la lectura literal del ticket) o al cargar el contexto, antes de pedir el caso feliz. El humano eligió el primero, para no validar una traducción de una historia que se va a dividir, y aceptó también una aserción nueva en la eval de `MOO-22` que comprueba que el paso se ejecuta cuando la historia pasa.*
+
+*Resultado de la iteración 2 (skill-creator, `new_skill` frente a `old_skill`, tres ejecuciones por caso): 100 % frente a 87 %.*
+- *`MOO-22`: 19/19 frente a 17/19 en las tres. La versión antigua pasó la traducción GWT a poke-holes en las tres ejecuciones, e incluso la etiquetó como «escrito por el usuario».*
+- *`MOO-901`: 8/8 frente a 3, 7 y 7 sobre 8. La versión nueva propone dividir sin traducir, sin lanzar poke-holes y sin escribir nada.*
+- *El caso de pasos de interfaz: 6/6 en las dos, sin regresión.*
+
+*Ajustes durante la medición:*
+- *Dos ejecuciones se quedaron sin poke-holes por el límite de subagentes concurrentes. Pararon sin inventar candidatos y se repitieron.*
+- *Con la respuesta guionizada nueva («De acuerdo, la divido»), dos ejecuciones antiguas también se pararon antes de poke-holes, pero después de traducir. Por eso la aserción que discrimina es la de proponer la división antes de traducir.*
+
 ---
 
 ### 7. Pull Requests
