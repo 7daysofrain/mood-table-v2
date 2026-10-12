@@ -69,6 +69,10 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - **`docs/instructions/` = the what** (cross-cutting conventions and flow); **skills = the how**
   (protocol, templates, DoD).
 - **What only one skill uses lives in its folder** (`references/` or `assets/`), not in `docs/`.
+- **The story skills have evals** (`create-story`, `refine-story`, `estimate-story`: each in its
+  `evals/`, shared fixtures in `.claude/evals/`). Before changing one of them or its subagent, run its
+  evals against the current version (skill-creator's improve loop), so a regression shows up before
+  the PR. How: [`.claude/evals/README.md`](.claude/evals/README.md).
 - One `AGENTS.md` at the root: no package has rules of its own yet. Add a per-package file only when
   one does.
 
