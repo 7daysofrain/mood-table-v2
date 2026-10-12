@@ -28,7 +28,9 @@ you would ask.
 When the skill launches a subagent (`poke-holes`, `estimator`), pass it exactly what the skill says,
 followed by one last line: `Linear is offline: follow the "Linear is offline" section of
 .claude/evals/environment.md`.
-Nothing else. Save each prompt you pass to `<outputs>/subagent-prompts.md`, with the subagent's name.
+Nothing else. Save each call to `<outputs>/subagent-prompts.md`: the subagent's name, the exact prompt
+you passed and, below it, its full response, verbatim. The response is what lets a grader check, for
+example, the card the `estimator` actually played.
 
 ## What to save in `<outputs>/`
 
