@@ -18,7 +18,9 @@ const LIST_MARKER = /^[-*+]\s+/;
 // suspensivos.
 const ONLY_ELLIPSIS = /^[.…\s]*$/;
 // Marca que deja `/create-story` (`assets/story.md`) hasta que `/refine-story` escribe los escenarios.
-const PENDING_REFINEMENT = /^_Pendiente de refinar \(\/refine-story\)\._$/;
+// La plantilla la escribe en cursiva con `_…_`, pero Linear la devuelve con `*…*`, y así llega al
+// editar una historia sin refinar. La cursiva cierra con el mismo carácter con el que abre.
+const PENDING_REFINEMENT = /^([_*])Pendiente de refinar \(\/refine-story\)\.\1$/;
 
 type Keyword = 'Given' | 'When' | 'Then';
 type StepKeyword = Keyword | 'And' | 'But';
