@@ -10,7 +10,7 @@
       "expectations": [
         "El primer turno pide al usuario el caso feliz en lenguaje natural y no ofrece ningún borrador, ejemplo de escenario ni punto de partida",
         "La traducción a GIVEN/WHEN/THEN del caso feliz no añade comportamiento que no esté en la respuesta 1; lo que haya tenido que completar va marcado (asumido) o preguntado",
-        "subagent-prompts.md tiene una sola llamada, a poke-holes, y su prompt solo contiene el ID MOO-22, el como/quiero/para, los non-goals, el caso feliz del usuario y la línea de entorno: ni la conversación, ni la traducción, ni opiniones propias",
+        "subagent-prompts.md tiene una sola llamada, a poke-holes, y su prompt solo contiene el ID MOO-22, el como/quiero/para, los non-goals, el caso feliz con las palabras del usuario (la respuesta 1, no la traducción GWT) y la línea de entorno: ni la conversación ni opiniones propias",
         "poke-holes se lanza después de que el usuario valide la traducción (respuesta 2), no antes",
         "Los candidatos de poke-holes se muestran numerados antes de la respuesta 3",
         "La descripción guardada tiene entre 3 y 5 escenarios en Criterios de aceptación (el caso feliz más los candidatos 1, 2 y 3)",
