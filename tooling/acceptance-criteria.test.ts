@@ -167,6 +167,59 @@ Escenario: Variantes de Dado y de Y
     expect(validateAcceptanceCriteria(story(spanish))).toEqual([]);
   });
 
+  it('acepta un Esquema del escenario con su tabla de Ejemplos, como en MOO-14 (MOO-44)', () => {
+    expect(validateAcceptanceCriteria(fixture('MOO-14'))).toEqual([]);
+  });
+
+  it('acepta un Scenario Outline cuyos parámetros, también en el nombre, son columnas de Examples (MOO-44)', () => {
+    const outline = `Scenario Outline: El efecto <efecto> en silencio
+  Given la tira con el efecto <efecto>
+  When llega un tramo en silencio
+  Then la tira <comportamiento>
+  Examples:
+    | efecto  | comportamiento |
+    | energía | se apaga       |`;
+    expect(validateAcceptanceCriteria(story(outline))).toEqual([]);
+  });
+
+  it('bloquea en un esquema un parámetro que no es columna de los ejemplos (MOO-44)', () => {
+    const outline = `Esquema del escenario: Parámetro sin columna
+  Dado el efecto <efecto>
+  Cuando llega un tramo en silencio
+  Entonces la tira <comportamiento>
+  Ejemplos:
+    | efecto  |
+    | energía |`;
+    expect(validateAcceptanceCriteria(story(outline))).toEqual([
+      'Escenario «Parámetro sin columna»: el paso Then usa <comportamiento>, que no es una columna de los ejemplos.',
+    ]);
+  });
+
+  it('bloquea un esquema sin tabla de ejemplos o sin filas (MOO-44)', () => {
+    const steps = '  Dado el efecto <efecto>\n  Cuando llega un tramo en silencio\n  Entonces la tira se apaga';
+    const error = (name: string) =>
+      `Escenario «${name}»: el esquema necesita una tabla «Examples:» o «Ejemplos:» con cabecera y al menos una fila.`;
+    expect(validateAcceptanceCriteria(story(`Esquema del escenario: Sin tabla\n${steps}`))).toEqual([
+      error('Sin tabla'),
+    ]);
+    expect(
+      validateAcceptanceCriteria(story(`Esquema del escenario: Sin filas\n${steps}\n  Ejemplos:\n    | efecto |`)),
+    ).toEqual([error('Sin filas')]);
+  });
+
+  it('bloquea una tabla de ejemplos en un escenario que no es un esquema (MOO-44)', () => {
+    const scenario = `Escenario: Ejemplos sin esquema
+  Dado el efecto energía
+  Cuando llega un tramo en silencio
+  Entonces la tira se apaga
+  Ejemplos:
+    | efecto  |
+    | energía |`;
+    expect(validateAcceptanceCriteria(story(scenario))).toEqual([
+      'Escenario «Ejemplos sin esquema»: solo un esquema («Scenario Outline:» o «Esquema del escenario:») lleva ejemplos.',
+    ]);
+  });
+
   it('valida el orden de los pasos también en español, nombrándolos como en inglés (MOO-44)', () => {
     const errors = validateAcceptanceCriteria(
       story('Escenario: Al revés\n  Cuando pasa algo\n  Dado algo\n  Entonces resultado'),
