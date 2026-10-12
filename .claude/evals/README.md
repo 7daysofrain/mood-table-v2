@@ -12,6 +12,32 @@ keeps its own cases in `.claude/skills/<skill>/evals/evals.json`; this folder ho
 The workspace lives here and not next to the skill (skill-creator's default) because a run may copy
 the skill, `SKILL.md` included, into it; under `.claude/skills/` that copy could be loaded as a skill.
 
+## Running the evals
+
+Follow skill-creator's "Running and evaluating test cases", with two adjustments for this repo:
+
+- **Runs:** one subagent per case and configuration (`with_skill` reads `.claude/skills/<skill>/SKILL.md`;
+  `without_skill` must not read `.claude/skills/` or `.claude/agents/`). Both read `environment.md`,
+  and their outputs directory is the `<outputs>` it mentions.
+- **Layout:** skill-creator's two scripts expect different shapes, so use one that satisfies both:
+
+  ```
+  workspace/<skill>/iteration-N/
+  ├── benchmark.json · benchmark.md · review.html
+  └── eval-<id>-<name>/
+      ├── eval_metadata.json
+      └── with_skill/ · without_skill/
+          ├── eval_metadata.json      # copy: the viewer only looks here or in run-1/
+          └── run-1/
+              ├── outputs/            # transcript.md, linear-writes.json, subagent-prompts.md
+              ├── grading.json        # expectations[]: text, passed, evidence
+              └── timing.json
+  ```
+
+  `aggregate_benchmark` needs `eval-*/<config>/run-*/`; `generate_review.py` shows "No prompt found"
+  unless `eval_metadata.json` sits in `<config>/` or `run-1/`.
+- **Viewer:** `generate_review.py … --static <workspace>/iteration-N/review.html`, so no server stays up.
+
 ## Validating the skills' form
 
 skill-creator's `scripts/quick_validate.py` checks the portable Agent Skills spec (what claude.ai and
