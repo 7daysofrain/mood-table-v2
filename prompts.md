@@ -597,6 +597,14 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Dos ejecuciones se quedaron sin poke-holes por el límite de subagentes concurrentes. Pararon sin inventar candidatos y se repitieron.*
 - *Con la respuesta guionizada nueva («De acuerdo, la divido»), dos ejecuciones antiguas también se pararon antes de poke-holes, pero después de traducir. Por eso la aserción que discrimina es la de proponer la división antes de traducir.*
 
+**Prompt 2:**
+
+> copilot ya ha revisado
+
+*Copilot encontró un hueco en la regla nueva: si el usuario corrige su caso feliz al validar la traducción, poke-holes recibía solo la primera respuesta y podía reabrir huecos ya cerrados. La IA lo comprobó contra la skill antes de darlo por bueno. El arreglo del texto no tenía dudas: la respuesta más las correcciones, siempre con las palabras del usuario. Para medirlo, la IA ofreció tres opciones (solo el texto, ampliar la eval de `MOO-22` o un caso nuevo y corto) y el humano eligió el caso nuevo.*
+
+*En el caso nuevo, el usuario corrige su caso feliz y el guion se acaba tras lanzar poke-holes. Iteración 3: 6/6 en las tres ejecuciones nuevas frente a 5/6 en las tres de la versión anterior de la PR. Las tres anteriores incorporaron la corrección a la traducción, pero a poke-holes le pasaron solo la primera respuesta.*
+
 ---
 
 ### 7. Pull Requests
