@@ -222,7 +222,9 @@ function templateParams(text: string): string[] {
 /** Aplica un paso al escenario y devuelve el error de orden, si lo hay. Los que faltan los dice `close`. */
 function checkOrder(scenario: Scenario, keyword: StepKeyword): string | undefined {
   if (keyword === 'And' || keyword === 'But') {
-    return scenario.last ? undefined : `${keyword} no puede abrir el escenario: continúa un paso anterior.`;
+    if (!scenario.last) return `${keyword} no puede abrir el escenario: continúa un paso anterior.`;
+    // Given y Then se pueden continuar; el When no: dos acciones son dos escenarios (refine-story).
+    return scenario.last === 'When' ? `${keyword} tras When: un escenario solo tiene una acción.` : undefined;
   }
   if (scenario.seen.has(keyword)) {
     return `${keyword} repetido: usa And para continuarlo.`;
