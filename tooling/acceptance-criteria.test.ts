@@ -220,6 +220,24 @@ Escenario: Variantes de Dado y de Y
     ]);
   });
 
+  it('bloquea una segunda acción encadenada tras el When: un escenario solo tiene una (MOO-44)', () => {
+    const chained = `Scenario: Dos acciones
+  Given el motor arrancado
+  When el DJ mueve el fader
+  And pulsa el botón de efecto
+  Then la tira cambia
+
+Escenario: Dos acciones en español
+  Dado el motor arrancado
+  Cuando el DJ mueve el fader
+    Pero no suelta el botón
+  Entonces la tira cambia`;
+    expect(validateAcceptanceCriteria(story(chained))).toEqual([
+      'Escenario «Dos acciones»: And tras When: un escenario solo tiene una acción.',
+      'Escenario «Dos acciones en español»: But tras When: un escenario solo tiene una acción.',
+    ]);
+  });
+
   it('valida el orden de los pasos también en español, nombrándolos como en inglés (MOO-44)', () => {
     const errors = validateAcceptanceCriteria(
       story('Escenario: Al revés\n  Cuando pasa algo\n  Dado algo\n  Entonces resultado'),
