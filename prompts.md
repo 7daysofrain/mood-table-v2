@@ -548,6 +548,17 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *si hay duda, lleva change;*
 - *un `Refactor` lleva change siempre.*
 
+#### 6.6 Evals de las skills de historias con skill-creator (`MOO-37`)
+
+**Prompt 1:**
+
+> Riesgo 1: En realidad la integración MCP real sobre linear está mas que probada. La hemos venido usando mucho. Asi que usemos Fixtures
+> Riesgo 2:  Ok, los evals a lo que lleguen
+>
+> No sería necesario también reescribir las skills usando el skill-creator? Me suena que impone un formato y unas reglas que serían interesantes
+
+*Ajuste de la IA: primero las evals y después los cambios, para poder medirlos. El validador de skill-creator rechaza `disable-model-invocation`, pero esa clave es la que impide que el modelo escriba en Linear por su cuenta. Por eso no se tocó y quedó documentada como un falso positivo.*
+
 ---
 
 ### 7. Pull Requests
