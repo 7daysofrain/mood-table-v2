@@ -31,7 +31,8 @@ Spanish**, using the PRD glossary (§8).
 
 2. **Happy path (the user writes it).** Ask the user to describe the happy path **in natural
    language**. Do not offer a draft, not even as a starting point: a draft anchors the user and the
-   scenario stops being theirs. Keep their answer word for word: steps 3, 4 and 5 all need it.
+   scenario stops being theirs. Keep their answer word for word, and later any correction they make
+   to it: steps 3, 4 and 5 all need it.
 
 3. **Quick INVEST (before anything else is built on the story).** With the Como/quiero/para, the
    non-goals and the user's description, give one line per criterion (Independent, Negotiable,
@@ -57,9 +58,11 @@ Spanish**, using the PRD glossary (§8).
 
 5. **Poke-holes (subagent).** Once the user has validated the translation, launch the
    **`poke-holes`** subagent and give it only the story ID, the Como/quiero/para, the non-goals and the
-   happy path **in the user's own words** (their answer from step 2, not your GWT translation). Do not
-   pass this conversation. The value of the subagent is that it has not seen what was already
-   decided, so it does not share the author's blind spots. Your translation is already an
+   happy path **in the user's own words**: their answer from step 2, plus any correction or
+   clarification they wrote while validating the translation in step 4, so the subagent does not
+   reopen gaps the user already closed. Never your GWT translation. Do not pass this conversation.
+   The value of the subagent is that it has not seen what was already decided, so it does not share
+   the author's blind spots. Your translation is already an
    interpretation, with its *(asumido)* gaps filled in your way; passing it would hand the subagent
    your blind spots too. It returns up to 8 candidate criteria and up to 3 out-of-criteria notes, each
    tagged with its destination.
