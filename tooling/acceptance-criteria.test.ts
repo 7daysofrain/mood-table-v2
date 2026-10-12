@@ -13,6 +13,12 @@ import {
   validateAcceptanceCriteria,
 } from '../.claude/hooks/acceptance-criteria.ts';
 
+/** Descripción de una issue congelada en los fixtures de las evals, tal como la devuelve Linear. */
+const fixture = (id: string): string => {
+  const path = fileURLToPath(new URL(`../.claude/evals/linear/${id}.json`, import.meta.url));
+  return (JSON.parse(readFileSync(path, 'utf8')) as { description: string }).description;
+};
+
 const story = (criteria: string) =>
   `Como DJ quiero algo para algo.\n\n## Criterios de aceptación\n\n${criteria}\n\n## Definition of Done (Feature)\n\n- [ ] Algo`;
 
@@ -43,6 +49,10 @@ describe('validateAcceptanceCriteria', () => {
       'utf8',
     );
     expect(validateAcceptanceCriteria(template)).toEqual([]);
+  });
+
+  it('deja pasar la marca de pendiente tal como la devuelve Linear, en cursiva con asteriscos (MOO-22, MOO-44)', () => {
+    expect(validateAcceptanceCriteria(fixture('MOO-22'))).toEqual([]);
   });
 
   it('bloquea la marca de pendiente si la sección ya tiene escenarios', () => {
