@@ -1,0 +1,61 @@
+{
+  "skill_name": "estimate-story",
+  "evals": [
+    {
+      "id": 1,
+      "name": "estimacion-completa",
+      "prompt": "/estimate-story MOO-14\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. 8. Lo incierto es ajustar el análisis del audio hasta que la tira marque bien los golpes.\n2. Me quedo con 8. Guárdalo.",
+      "expected_output": "Pide primero la carta del usuario sin dar pistas, lanza el estimator solo con el ID, revela las dos cartas, deja decidir al usuario y guarda la estimación, el estado Todo y la línea de registro al final de la descripción.",
+      "files": [],
+      "expectations": [
+        "El primer turno pide la carta del usuario (1, 2, 3, 5, 8 o 13) y un motivo, sin opinar, sin mencionar tamaños ni la Talla (IA) y sin comparar con otras historias",
+        "El estimator se lanza después de la respuesta 1, nunca antes",
+        "subagent-prompts.md tiene una sola llamada, al estimator, y su prompt solo contiene el ID MOO-14 y la línea de entorno: ni la carta del usuario, ni su motivo, ni la Talla (IA)",
+        "Muestra las dos cartas a la vez, cada una con su motivo",
+        "Si las cartas difieren, resume qué supuesto hace cada una; en ningún caso propone la media ni elige el número por el usuario",
+        "linear-writes.json tiene exactamente una actualización, posterior a la respuesta 2, con id MOO-14, estimate 8 y state Todo",
+        "La descripción guardada es la del fixture MOO-14 sin cambios más una última línea añadida al final",
+        "La última línea sigue el formato '**Estimación:** 8 · humano 8 / IA <carta del estimator> · <fecha> · <motivo si hubo discrepancia>', con la carta real que devolvió el estimator"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "historia-sin-refinar",
+      "prompt": "/estimate-story MOO-22\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. 5.",
+      "expected_output": "Detecta que MOO-22 no está refinada (sin criterios GIVEN/WHEN/THEN ni DoD), se para y remite a /refine-story; no pide la carta ni lanza el estimator.",
+      "files": [],
+      "expectations": [
+        "Dice que MOO-22 no está refinada y nombra lo que falta: criterios de aceptación y DoD",
+        "Remite a /refine-story MOO-22",
+        "No pide la carta del usuario (la respuesta 1 queda sin usar)",
+        "No lanza el estimator (no existe subagent-prompts.md o no tiene ninguna llamada)",
+        "No existe linear-writes.json o es un array vacío"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "carta-13",
+      "prompt": "/estimate-story MOO-14\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. 13. Fichero, análisis del audio, efecto y panel: me parece demasiado para una historia.\n2. Vale.",
+      "expected_output": "Trata el 13 como señal de dividir, no como estimación: devuelve la historia a /refine-story y no guarda nada.",
+      "files": [],
+      "expectations": [
+        "Explica que 13 no es una estimación válida sino la señal de dividir la historia",
+        "Remite a /refine-story MOO-14 para dividirla",
+        "No guarda un 13: no existe linear-writes.json, está vacío o ninguna escritura lleva estimate 13",
+        "No mueve MOO-14 a Todo: ninguna escritura lleva state Todo"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "desacuerdo-y-el-usuario-pide-desempatar",
+      "prompt": "/estimate-story MOO-14\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. 3. Al final es leer un WAV y pintar un efecto.\n2. No sé. ¿Cuál pondrías tú?\n3. Vale, 5. Guárdalo.",
+      "expected_output": "Ante la pregunta del usuario no elige el número: vuelve a poner sobre la mesa los supuestos de cada carta y le devuelve la decisión. Guarda el número final del usuario con el registro de las dos cartas.",
+      "files": [],
+      "expectations": [
+        "Tras la respuesta 2 no da un número como decisión propia ni propone la media; devuelve la decisión al usuario, apoyándose en los supuestos de cada carta",
+        "linear-writes.json tiene exactamente una actualización, posterior a la respuesta 3, con id MOO-14, estimate 5 y state Todo",
+        "La última línea de la descripción es '**Estimación:** 5 · humano 3 / IA <carta del estimator> · <fecha> · <motivo>', con un motivo de la discrepancia si la carta del estimator no es 3"
+      ]
+    }
+  ]
+}
