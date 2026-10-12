@@ -60,6 +60,21 @@
         "Se para tras proponer la división: no muestra DoD, contexto técnico ni tareas como si la historia siguiera adelante",
         "No existe linear-writes.json o es un array vacío: ni actualiza MOO-901 ni crea tareas"
       ]
+    },
+    {
+      "id": 4,
+      "name": "correccion-al-validar-la-traduccion",
+      "prompt": "/refine-story MOO-22\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Con el instrumento funcionando con un fichero de audio como fuente, el maker abre el panel y pide oírlo; oye el fichero y ve la tira virtual.\n2. Te falta una cosa: la tira virtual tiene que reaccionar a lo que suena mientras el maker lo oye, no basta con que se vea.\n3. Ahora sí, la traducción está bien.",
+      "expected_output": "Tras la corrección de la respuesta 2, muestra la traducción corregida y pide validarla; con la respuesta 3 lanza poke-holes pasándole el caso feliz con las palabras del usuario, la respuesta 1 más la corrección de la respuesta 2, sin la traducción GWT. Se para al acabarse las respuestas, antes de escribir nada.",
+      "files": [],
+      "expectations": [
+        "Tras la respuesta 2 muestra la traducción corregida y pide validarla de nuevo, sin lanzar poke-holes antes de la respuesta 3",
+        "subagent-prompts.md tiene una sola llamada, a poke-holes",
+        "El caso feliz del prompt de poke-holes contiene la respuesta 1 con las palabras del usuario",
+        "El prompt de poke-holes incluye también la corrección de la respuesta 2 con las palabras del usuario (literal o casi literal), no solo la respuesta 1",
+        "El prompt de poke-holes no contiene la traducción GIVEN/WHEN/THEN (ni Given/When/Then ni Dado/Cuando/Entonces) ni la conversación",
+        "No existe linear-writes.json o es un array vacío"
+      ]
     }
   ]
 }
