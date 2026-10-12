@@ -53,8 +53,11 @@ interface Outline {
   columns: Set<string>;
   /** Filas de datos de esas tablas. */
   rows: number;
-  /** Tras `Examples:`, la siguiente fila de tabla es la cabecera. */
-  expectingHeader: boolean;
+  /**
+   * Tabla de ejemplos abierta: tras `Examples:` la siguiente fila es la cabecera, y las que siguen sin
+   * interrupción, filas. Cualquier otra línea la cierra: una tabla posterior es de un paso.
+   */
+  table: 'header' | 'rows' | undefined;
   /** Parámetros `<…>` del nombre y de cada paso, y dónde aparecen. */
   uses: { where: string; params: string[] }[];
 }
@@ -97,6 +100,8 @@ export function validateAcceptanceCriteria(description: string): string[] {
 }
 
 function readLine(walk: Walk, line: string): void {
+  const current = walk.current?.outline;
+  if (current && line && !line.startsWith('|')) current.table = undefined;
   const outline = SCENARIO_OUTLINE.exec(line);
   const scenario = outline ?? SCENARIO.exec(line);
   if (scenario) openScenario(walk, (scenario[1] ?? '').trim(), outline !== null);
@@ -109,7 +114,7 @@ function openScenario(walk: Walk, name: string, isOutline: boolean): void {
   closeScenario(walk);
   walk.scenarios += 1;
   const outline: Outline | undefined = isOutline
-    ? { columns: new Set(), rows: 0, expectingHeader: false, uses: [] }
+    ? { columns: new Set(), rows: 0, table: undefined, uses: [] }
     : undefined;
   walk.current = { name: name || `#${walk.scenarios}`, last: undefined, seen: new Set(), outline };
   if (isPlaceholder(walk.current, 'el nombre', name)) {
@@ -145,7 +150,7 @@ function checkOutline(walk: Walk, name: string, outline: Outline): void {
 function readExamples(walk: Walk): void {
   const current = walk.current;
   if (current?.outline) {
-    current.outline.expectingHeader = true;
+    current.outline.table = 'header';
     return;
   }
   const where = current ? `Escenario «${current.name}»: ` : '';
@@ -155,11 +160,10 @@ function readExamples(walk: Walk): void {
 /** Una fila de tabla solo cuenta en los ejemplos de un esquema; las tablas de datos de un paso se ignoran. */
 function readTableRow(walk: Walk, line: string): void {
   const outline = walk.current?.outline;
-  if (!outline) return;
-  if (outline.expectingHeader) {
+  if (outline?.table === 'header') {
     for (const cell of tableCells(line)) outline.columns.add(cell);
-    outline.expectingHeader = false;
-  } else if (outline.columns.size > 0) {
+    outline.table = 'rows';
+  } else if (outline?.table === 'rows') {
     outline.rows += 1;
   }
 }

@@ -207,6 +207,20 @@ Escenario: Variantes de Dado y de Y
     ).toEqual([error('Sin filas')]);
   });
 
+  it('no cuenta como fila de los ejemplos la tabla de un paso posterior (MOO-44, revisión de Copilot)', () => {
+    const outline = `Esquema del escenario: Tabla de un paso
+  Dado el efecto <efecto>
+  Cuando llega un tramo en silencio
+  Entonces la tira se apaga
+  Ejemplos:
+    | efecto |
+    Y el panel muestra
+    | energía |`;
+    expect(validateAcceptanceCriteria(story(outline))).toEqual([
+      'Escenario «Tabla de un paso»: el esquema necesita una tabla «Examples:» o «Ejemplos:» con cabecera y al menos una fila.',
+    ]);
+  });
+
   it('bloquea una tabla de ejemplos en un escenario que no es un esquema (MOO-44)', () => {
     const scenario = `Escenario: Ejemplos sin esquema
   Dado el efecto energía
