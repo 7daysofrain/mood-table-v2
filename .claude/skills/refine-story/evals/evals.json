@@ -9,6 +9,7 @@
       "files": [],
       "expectations": [
         "El primer turno pide al usuario el caso feliz en lenguaje natural y no ofrece ningún borrador, ejemplo de escenario ni punto de partida",
+        "Después de la respuesta 1 y antes de traducir el caso feliz y de lanzar poke-holes, muestra un INVEST rápido con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌, que no falla dos o más criterios",
         "La traducción a GIVEN/WHEN/THEN del caso feliz no añade comportamiento que no esté en la respuesta 1; lo que haya tenido que completar va marcado (asumido) o preguntado",
         "subagent-prompts.md tiene una sola llamada, a poke-holes, y su prompt solo contiene el ID MOO-22, el como/quiero/para, los non-goals, el caso feliz con las palabras del usuario (la respuesta 1, no la traducción GWT) y la línea de entorno: ni la conversación ni opiniones propias",
         "poke-holes se lanza después de que el usuario valide la traducción (respuesta 2), no antes",
@@ -46,14 +47,16 @@
     {
       "id": 3,
       "name": "historia-demasiado-grande-falla-invest",
-      "prompt": "/refine-story MOO-901\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Con el instrumento funcionando sin hardware, el maker elige como fuente el fichero de audio o la tarjeta de sonido, ve varias tiras virtuales con efectos distintos, oye el fichero en el panel y, mientras suena, cambia el efecto de una tira y mueve sus controles; la luz responde al momento.\n2. La traducción está bien.\n3. Me quedo con los candidatos 1, 2 y 3.\n4. Redacción aprobada.\n5. De acuerdo.",
-      "expected_output": "Al llegar al INVEST, la historia falla dos o más criterios; la skill propone dividirla en 2-3 historias y se para sin guardar nada ni crear tareas.",
+      "prompt": "/refine-story MOO-901\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Con el instrumento funcionando sin hardware, el maker elige como fuente el fichero de audio o la tarjeta de sonido, ve varias tiras virtuales con efectos distintos, oye el fichero en el panel y, mientras suena, cambia el efecto de una tira y mueve sus controles; la luz responde al momento.\n2. De acuerdo, la divido.",
+      "expected_output": "Nada más recibir el caso feliz, el INVEST rápido falla dos o más criterios; la skill propone dividir la historia en 2-3 historias y se para sin traducir el caso feliz, sin lanzar poke-holes, sin guardar nada y sin crear tareas.",
       "files": [],
       "expectations": [
-        "Señala, en la traducción o antes, que la respuesta 1 describe varias acciones (elegir fuente, cambiar efecto, mover controles) que no caben en un solo When",
+        "Señala que la respuesta 1 describe varias acciones (elegir fuente, cambiar efecto, mover controles), como motivo para dividir la historia o porque no caben en un solo When",
         "El INVEST marca al menos dos criterios con ❌, entre ellos Small",
         "Propone dividir la historia en 2 o 3 historias, cada una con su comportamiento observable",
         "Al menos una de las historias propuestas, o un comentario, señala que cambiar de efecto y mover controles en vivo es de H2, no de H1",
+        "Propone dividir antes de traducir el caso feliz a GIVEN/WHEN/THEN: no pide validar ninguna traducción",
+        "Se para antes de lanzar poke-holes: no existe subagent-prompts.md o no tiene ninguna llamada",
         "Se para tras proponer la división: no muestra DoD, contexto técnico ni tareas como si la historia siguiera adelante",
         "No existe linear-writes.json o es un array vacío: ni actualiza MOO-901 ni crea tareas"
       ]
