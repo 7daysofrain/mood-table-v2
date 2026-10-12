@@ -56,7 +56,7 @@ describe('validateAcceptanceCriteria', () => {
     const errors = validateAcceptanceCriteria(
       story('_Pendiente de refinar (/refine-story)._ Scenario: incompleto'),
     );
-    expect(errors).toEqual(['La sección «Criterios de aceptación» no tiene ningún «Scenario:».']);
+    expect(errors).toEqual(['La sección «Criterios de aceptación» no tiene ningún «Scenario:» ni «Escenario:».']);
   });
 
   it('no cuenta como paso una palabra clave seguida de dos puntos', () => {
@@ -93,7 +93,7 @@ describe('validateAcceptanceCriteria', () => {
 
   it('bloquea una sección sin escenarios', () => {
     expect(validateAcceptanceCriteria(story('Aquí irán los escenarios.'))).toEqual([
-      'La sección «Criterios de aceptación» no tiene ningún «Scenario:».',
+      'La sección «Criterios de aceptación» no tiene ningún «Scenario:» ni «Escenario:».',
     ]);
   });
 
@@ -127,7 +127,7 @@ describe('validateAcceptanceCriteria', () => {
 
   it('bloquea pasos antes del primer escenario', () => {
     const errors = validateAcceptanceCriteria(story(`Given algo suelto\n\n${VALID}`));
-    expect(errors).toEqual(['Paso «Given algo suelto» fuera de un escenario: falta la línea «Scenario:» antes.']);
+    expect(errors).toEqual(['Paso «Given algo suelto» fuera de un escenario: falta la línea «Scenario:» o «Escenario:» antes.']);
   });
 
   it('acepta escenarios en lista o en un bloque de código, como los puede enviar el agente', () => {

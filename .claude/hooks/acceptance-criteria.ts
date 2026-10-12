@@ -6,10 +6,13 @@
 
 const SECTION_HEADING = /^##\s+Criterios de aceptación\s*$/i;
 const NEXT_SECTION = /^#{1,2}\s/;
-const SCENARIO = /^Scenario:(.*)$/;
+// Palabras clave de Gherkin en inglés y en español (`# language: es`, `gherkin-languages.json` de
+// Cucumber). Se dejan fuera `Example:`/`Ejemplo:` como sinónimos de escenario, porque una nota que
+// empiece así abriría uno, y `*` como paso, porque es una viñeta de Markdown.
+const SCENARIO = /^(?:Scenario|Escenario):(.*)$/;
 // La palabra clave va seguida de espacio o de fin de línea: `Given:` no es un paso. El texto se recorta
 // después, para que la expresión no tenga que dar marcha atrás entre espacios.
-const STEP = /^(Given|When|Then|And|But)(?:\s(.*))?$/;
+const STEP = /^(Given|When|Then|And|But|Dado|Dada|Dados|Dadas|Cuando|Entonces|Y|E|Pero)(?:\s(.*))?$/;
 const LIST_MARKER = /^[-*+]\s+/;
 // Huecos de la plantilla: `<…>` en cualquier punto (`hasTemplateHole`), o un texto hecho solo de puntos
 // suspensivos.
@@ -18,8 +21,18 @@ const ONLY_ELLIPSIS = /^[.…\s]*$/;
 const PENDING_REFINEMENT = /^_Pendiente de refinar \(\/refine-story\)\._$/;
 
 type Keyword = 'Given' | 'When' | 'Then';
+type StepKeyword = Keyword | 'And' | 'But';
 
 const ORDER: readonly Keyword[] = ['Given', 'When', 'Then'];
+
+/** Cada palabra clave de paso, en el nombre inglés con el que la nombran los errores. */
+const STEP_KEYWORDS: Readonly<Record<string, StepKeyword>> = {
+  Given: 'Given', Dado: 'Given', Dada: 'Given', Dados: 'Given', Dadas: 'Given',
+  When: 'When', Cuando: 'When',
+  Then: 'Then', Entonces: 'Then',
+  And: 'And', Y: 'And', E: 'And',
+  But: 'But', Pero: 'But',
+};
 
 interface Scenario {
   name: string;
@@ -65,7 +78,7 @@ export function validateAcceptanceCriteria(description: string): string[] {
   closeScenario(walk);
 
   if (walk.scenarios === 0) {
-    walk.errors.unshift('La sección «Criterios de aceptación» no tiene ningún «Scenario:».');
+    walk.errors.unshift('La sección «Criterios de aceptación» no tiene ningún «Scenario:» ni «Escenario:».');
   }
   return walk.errors;
 }
@@ -92,11 +105,12 @@ function readStep(walk: Walk, line: string): void {
   const step = STEP.exec(line);
   if (!step) return; // Texto libre (notas, `(asumido)`, vallas de código): no es un paso.
 
-  const keyword = step[1] as Keyword | 'And' | 'But';
+  const keyword = STEP_KEYWORDS[step[1] ?? ''];
+  if (!keyword) return;
   const text = (step[2] ?? '').trim();
   const current = walk.current;
   if (!current) {
-    walk.errors.push(`Paso «${line}» fuera de un escenario: falta la línea «Scenario:» antes.`);
+    walk.errors.push(`Paso «${line}» fuera de un escenario: falta la línea «Scenario:» o «Escenario:» antes.`);
     return;
   }
   if (isPlaceholder(text)) {
@@ -122,7 +136,7 @@ function hasTemplateHole(text: string): boolean {
 }
 
 /** Aplica un paso al escenario y devuelve el error de orden, si lo hay. Los que faltan los dice `close`. */
-function checkOrder(scenario: Scenario, keyword: Keyword | 'And' | 'But'): string | undefined {
+function checkOrder(scenario: Scenario, keyword: StepKeyword): string | undefined {
   if (keyword === 'And' || keyword === 'But') {
     return scenario.last ? undefined : `${keyword} no puede abrir el escenario: continúa un paso anterior.`;
   }
