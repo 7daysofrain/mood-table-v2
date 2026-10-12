@@ -49,8 +49,8 @@ Linear on its own). The validator rejects both; that is expected, and they must 
 To check everything else, validate a copy without those two lines:
 
 ```bash
-cp -r .claude/skills/<skill> /tmp/qv-<skill>
-sed -i '' '/^argument-hint:/d;/^disable-model-invocation:/d' /tmp/qv-<skill>/SKILL.md
+rm -rf /tmp/qv-<skill> && cp -R .claude/skills/<skill> /tmp/qv-<skill>   # fresh copy, never nested
+sed -i.bak '/^argument-hint:/d;/^disable-model-invocation:/d' /tmp/qv-<skill>/SKILL.md   # BSD and GNU sed
 python -m scripts.quick_validate /tmp/qv-<skill>   # from the skill-creator folder; needs PyYAML
 ```
 
