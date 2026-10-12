@@ -1,6 +1,7 @@
 /**
  * Escenarios de MOO-36 (hook validate-ac): la validación del formato de los criterios de aceptación
- * que hace el hook antes de que una historia se escriba en Linear.
+ * que hace el hook antes de que una historia se escriba en Linear. Los fallos de MOO-44 se reproducen
+ * con las descripciones congeladas en los fixtures de las evals (`.claude/evals/linear/`).
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +12,12 @@ import {
   extractCriteriaSection,
   validateAcceptanceCriteria,
 } from '../.claude/hooks/acceptance-criteria.ts';
+
+/** Descripción de una issue congelada en los fixtures de las evals, tal como la devuelve Linear. */
+const fixture = (id: string): string => {
+  const path = fileURLToPath(new URL(`../.claude/evals/linear/${id}.json`, import.meta.url));
+  return (JSON.parse(readFileSync(path, 'utf8')) as { description: string }).description;
+};
 
 const story = (criteria: string) =>
   `Como DJ quiero algo para algo.\n\n## Criterios de aceptación\n\n${criteria}\n\n## Definition of Done (Feature)\n\n- [ ] Algo`;
@@ -44,6 +51,10 @@ describe('validateAcceptanceCriteria', () => {
     expect(validateAcceptanceCriteria(template)).toEqual([]);
   });
 
+  it('deja pasar la marca de pendiente tal como la devuelve Linear, en cursiva con asteriscos (MOO-22, MOO-44)', () => {
+    expect(validateAcceptanceCriteria(fixture('MOO-22'))).toEqual([]);
+  });
+
   it('bloquea la marca de pendiente si la sección ya tiene escenarios', () => {
     const errors = validateAcceptanceCriteria(
       story('_Pendiente de refinar (/refine-story)._\n\nScenario: A medias\n  Given algo'),
@@ -55,7 +66,7 @@ describe('validateAcceptanceCriteria', () => {
     const errors = validateAcceptanceCriteria(
       story('_Pendiente de refinar (/refine-story)._ Scenario: incompleto'),
     );
-    expect(errors).toEqual(['La sección «Criterios de aceptación» no tiene ningún «Scenario:».']);
+    expect(errors).toEqual(['La sección «Criterios de aceptación» no tiene ningún «Scenario:» ni «Escenario:».']);
   });
 
   it('no cuenta como paso una palabra clave seguida de dos puntos', () => {
@@ -92,7 +103,7 @@ describe('validateAcceptanceCriteria', () => {
 
   it('bloquea una sección sin escenarios', () => {
     expect(validateAcceptanceCriteria(story('Aquí irán los escenarios.'))).toEqual([
-      'La sección «Criterios de aceptación» no tiene ningún «Scenario:».',
+      'La sección «Criterios de aceptación» no tiene ningún «Scenario:» ni «Escenario:».',
     ]);
   });
 
@@ -126,7 +137,7 @@ describe('validateAcceptanceCriteria', () => {
 
   it('bloquea pasos antes del primer escenario', () => {
     const errors = validateAcceptanceCriteria(story(`Given algo suelto\n\n${VALID}`));
-    expect(errors).toEqual(['Paso «Given algo suelto» fuera de un escenario: falta la línea «Scenario:» antes.']);
+    expect(errors).toEqual(['Paso «Given algo suelto» fuera de un escenario: falta la línea «Scenario:» o «Escenario:» antes.']);
   });
 
   it('acepta escenarios en lista o en un bloque de código, como los puede enviar el agente', () => {
@@ -138,6 +149,115 @@ describe('validateAcceptanceCriteria', () => {
 
   it('acepta saltos de línea de Windows', () => {
     expect(validateAcceptanceCriteria(story(VALID).replaceAll('\n', '\r\n'))).toEqual([]);
+  });
+
+  it('acepta las palabras clave de Gherkin en español, como en MOO-13, MOO-14 y MOO-15 (MOO-44)', () => {
+    const spanish = `Escenario: Caso feliz
+  Dado que el motor está arrancado
+    Y el visor está abierto
+  Cuando el DJ mueve el fader
+  Entonces la tira cambia de brillo
+    Pero el visor no parpadea
+
+Escenario: Variantes de Dado y de Y
+  Dadas dos tiras declaradas
+    E iluminadas
+  Cuando el DJ baja el máster
+  Entonces las dos se apagan`;
+    expect(validateAcceptanceCriteria(story(spanish))).toEqual([]);
+  });
+
+  it('acepta un Esquema del escenario con su tabla de Ejemplos, como en MOO-14 (MOO-44)', () => {
+    expect(validateAcceptanceCriteria(fixture('MOO-14'))).toEqual([]);
+  });
+
+  it('acepta un Scenario Outline cuyos parámetros, también en el nombre, son columnas de Examples (MOO-44)', () => {
+    const outline = `Scenario Outline: El efecto <efecto> en silencio
+  Given la tira con el efecto <efecto>
+  When llega un tramo en silencio
+  Then la tira <comportamiento>
+  Examples:
+    | efecto  | comportamiento |
+    | energía | se apaga       |`;
+    expect(validateAcceptanceCriteria(story(outline))).toEqual([]);
+    expect(validateAcceptanceCriteria(story(outline.replace('Scenario Outline:', 'Scenario Template:')))).toEqual([]);
+  });
+
+  it('bloquea en un esquema un parámetro que no es columna de los ejemplos (MOO-44)', () => {
+    const outline = `Esquema del escenario: Parámetro sin columna
+  Dado el efecto <efecto>
+  Cuando llega un tramo en silencio
+  Entonces la tira <comportamiento>
+  Ejemplos:
+    | efecto  |
+    | energía |`;
+    expect(validateAcceptanceCriteria(story(outline))).toEqual([
+      'Escenario «Parámetro sin columna»: el paso Then usa <comportamiento>, que no es una columna de los ejemplos.',
+    ]);
+  });
+
+  it('bloquea un esquema sin tabla de ejemplos o sin filas (MOO-44)', () => {
+    const steps = '  Dado el efecto <efecto>\n  Cuando llega un tramo en silencio\n  Entonces la tira se apaga';
+    const error = (name: string) =>
+      `Escenario «${name}»: el esquema necesita una tabla «Examples:» o «Ejemplos:» con cabecera y al menos una fila.`;
+    expect(validateAcceptanceCriteria(story(`Esquema del escenario: Sin tabla\n${steps}`))).toEqual([
+      error('Sin tabla'),
+    ]);
+    expect(
+      validateAcceptanceCriteria(story(`Esquema del escenario: Sin filas\n${steps}\n  Ejemplos:\n    | efecto |`)),
+    ).toEqual([error('Sin filas')]);
+  });
+
+  it('no cuenta como fila de los ejemplos la tabla de un paso posterior (MOO-44, revisión de Copilot)', () => {
+    const outline = `Esquema del escenario: Tabla de un paso
+  Dado el efecto <efecto>
+  Cuando llega un tramo en silencio
+  Entonces la tira se apaga
+  Ejemplos:
+    | efecto |
+    Y el panel muestra
+    | energía |`;
+    expect(validateAcceptanceCriteria(story(outline))).toEqual([
+      'Escenario «Tabla de un paso»: el esquema necesita una tabla «Examples:» o «Ejemplos:» con cabecera y al menos una fila.',
+    ]);
+  });
+
+  it('bloquea una tabla de ejemplos en un escenario que no es un esquema (MOO-44)', () => {
+    const scenario = `Escenario: Ejemplos sin esquema
+  Dado el efecto energía
+  Cuando llega un tramo en silencio
+  Entonces la tira se apaga
+  Ejemplos:
+    | efecto  |
+    | energía |`;
+    expect(validateAcceptanceCriteria(story(scenario))).toEqual([
+      'Escenario «Ejemplos sin esquema»: solo un esquema («Scenario Outline:», «Scenario Template:» o «Esquema del escenario:») lleva ejemplos.',
+    ]);
+  });
+
+  it('bloquea una segunda acción encadenada tras el When: un escenario solo tiene una (MOO-44)', () => {
+    const chained = `Scenario: Dos acciones
+  Given el motor arrancado
+  When el DJ mueve el fader
+  And pulsa el botón de efecto
+  Then la tira cambia
+
+Escenario: Dos acciones en español
+  Dado el motor arrancado
+  Cuando el DJ mueve el fader
+    Pero no suelta el botón
+  Entonces la tira cambia`;
+    expect(validateAcceptanceCriteria(story(chained))).toEqual([
+      'Escenario «Dos acciones»: And tras When: un escenario solo tiene una acción.',
+      'Escenario «Dos acciones en español»: But tras When: un escenario solo tiene una acción.',
+    ]);
+  });
+
+  it('valida el orden de los pasos también en español, nombrándolos como en inglés (MOO-44)', () => {
+    const errors = validateAcceptanceCriteria(
+      story('Escenario: Al revés\n  Cuando pasa algo\n  Dado algo\n  Entonces resultado'),
+    );
+    expect(errors).toEqual(['Escenario «Al revés»: Given fuera de orden: va antes que When.']);
   });
 });
 

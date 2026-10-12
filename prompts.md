@@ -559,6 +559,27 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Ajuste de la IA: primero las evals y después los cambios, para poder medirlos. El validador de skill-creator rechaza `disable-model-invocation`, pero esa clave es la que impide que el modelo escriba en Linear por su cuenta. Por eso no se tocó y quedó documentada como un falso positivo.*
 
+#### 6.7 Arreglo del hook `validate-ac` (`MOO-44`)
+
+**Prompt 1:**
+
+> vamos con la tarea MOO-44
+
+*Claude Code (`claude-opus-5-5`, 12-oct). Los cuatro fallos los habían encontrado las evals de `MOO-37`: al pasar el validador por los fixtures y, uno de ellos, el grader. La IA sacó las palabras clave en español de `gherkin-languages.json` de Cucumber y, antes de escribir código, planteó tres decisiones con su recomendación. El humano aceptó las tres:*
+- *cómo repartir los commits: un par rojo/verde por fallo;*
+- *qué sinónimos dejar fuera: `Ejemplo:` y `*` chocarían con notas y viñetas de Markdown;*
+- *qué exigir a un esquema: una tabla de ejemplos con filas.*
+
+*Para no copiar descripciones, los tests leen las de `MOO-14` y `MOO-22` de los fixtures de las evals. La prueba de punta a punta con el hook real sobre `MOO-13` y `MOO-15`: en `main` bloquea y en la rama deja pasar.*
+
+**Prompt 2:**
+
+> 1. ok
+> 2. vale
+> 3. ejecuta
+
+*Respuesta a tres cierres que propuso la IA: actualizar `linear.md` §8, registrar esta entrada y volver a pasar las evals de `refine-story`. En el punto 3 no relanzó los subagentes: volvió a calificar con el validador nuevo las salidas ya guardadas. Con la skill, todo pasa; sin ella, falla por una segunda acción tras el `Cuando`. Es el mismo defecto que el grader había anotado a mano en la aserción del When único, y que antes quedaba tapado por el «no tiene ningún Scenario».*
+
 ---
 
 ### 7. Pull Requests
