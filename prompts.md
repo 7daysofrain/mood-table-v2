@@ -619,6 +619,12 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Opción a: chore aparte (`MOO-47`), porque la ficha es la fuente de verdad de las decisiones y una PR no mezcla dos tareas. Al buscar referencias, la IA vio que la decisión también contradecía el supuesto A1 del PRD y tres frases del README, y las corrigió en la misma chore. D13 queda tachada con fecha (como D11), y el porqué y lo descartado van en D42.*
 
+**Prompt 3:**
+
+> Mira la PR que tenemos revision de copilot
+
+*Copilot encontró dos frases de la ficha que seguían poniendo el spike antes del motor: la tabla de riesgos (§6) y los primeros pasos (§14). La comprobación de la IA buscaba con `grep` los identificadores (`MOO-12`, `D13`) y la frase literal del PRD, y no pilló las mismas ideas dichas con otras palabras. La IA lo verificó contra la ficha, lo corrigió con un commit, contestó en el hilo con ese commit y lo resolvió. Lección: cuando cambia una decisión, hay que buscar el concepto («spike», «spec del motor»), no solo los identificadores.*
+
 ---
 
 ### 7. Pull Requests
