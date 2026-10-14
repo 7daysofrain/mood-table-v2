@@ -605,6 +605,20 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *En el caso nuevo, el usuario corrige su caso feliz y el guion se acaba tras lanzar poke-holes. Iteración 3: 6/6 en las tres ejecuciones nuevas frente a 5/6 en las tres de la versión anterior de la PR. Las tres anteriores incorporaron la corrección a la traducción, pero a poke-holes le pasaron solo la primera respuesta.*
 
+#### 6.9 El spike de rendimiento pasa a bloquear el audio (`MOO-47`)
+
+**Prompt 1:**
+
+> Ahora mismo todavia no he podido arreglar el hardware, igual podriamos empezar por la MOO-13 que puede correr solo con codigo en mi ordenador?
+
+*Claude Code (`claude-opus-5-5`, 14-oct). Al pedir empezar la H1, la IA había señalado el spike `MOO-12` como primera historia, porque D13 lo ponía antes de la spec del motor. Ante la propuesta del humano no dijo que sí sin más: explicó el riesgo (si TypeScript no llega en la Pi, se rehacen `MOO-16` y `MOO-17`) y por qué es bajo (la respiración apenas gasta CPU; el coste está en la FFT de `MOO-14`). Propuso mover el bloqueo al audio en vez de quitarlo, y dio dos formas de registrar la decisión: una chore aparte o el `design.md` del change.*
+
+**Prompt 2:**
+
+> Si, hacemos el cambio de bloqueo y vamos por opción a
+
+*Opción a: chore aparte (`MOO-47`), porque la ficha es la fuente de verdad de las decisiones y una PR no mezcla dos tareas. Al buscar referencias, la IA vio que la decisión también contradecía el supuesto A1 del PRD y tres frases del README, y las corrigió en la misma chore. D13 queda tachada con fecha (como D11), y el porqué y lo descartado van en D42.*
+
 ---
 
 ### 7. Pull Requests
