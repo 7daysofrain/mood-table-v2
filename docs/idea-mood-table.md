@@ -107,7 +107,7 @@ escenas guardadas, sincronía por tempo, más de dos tiras o segmentos, GPIO dir
   lenguaje que Joseba no domina: el experimento controlado, con radio de daño mínimo y protocolo
   definido byte a byte), subagente de **revisión contra spec**.
 - **Decisiones validadas por spike** (material de `prompts.md`): rendimiento de Node en la Pi 3
-  B+ antes de cerrar la spec del motor.
+  B+ antes de construir el análisis de audio (D42).
 - **Ajustes humanos ya registrables:** el pivote desde Sutegi (post-mortem), la corrección
   "escenas guardadas → estado del instrumento" (el aparato es de *performance*, no de repertorio),
   la corrección "dos motores peleándose → dos tiras legítimas", la elección TypeScript vs Python,
