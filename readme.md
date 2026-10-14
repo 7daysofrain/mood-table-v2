@@ -824,7 +824,7 @@ Escenario: Dos paneles ven lo mismo
 
 **Tareas** (una PR cada una): `MOO-16` Arrancar el motor con una tira virtual y el efecto respiración (`engine`, **Ticket 1**) · `MOO-17` Enviar los frames de las tiras al visor (`engine`) · `MOO-18` Dibujar las tiras en el visor y mostrar la conexión con el motor (`panel`, **Ticket 2**).
 
-**Estimación.** Primera ronda: humano 13 / IA 8. El humano contaba el layout de todo el panel, que la historia no pedía; se sacó a la épica de *enablers* (`MOO-29`) y ambos votaron 8. **Bloqueada por** `MOO-12` (spike de rendimiento en la Pi, D13), `MOO-28` y `MOO-29`.
+**Estimación.** Primera ronda: humano 13 / IA 8. El humano contaba el layout de todo el panel, que la historia no pedía; se sacó a la épica de *enablers* (`MOO-29`) y ambos votaron 8. **Bloqueada por** `MOO-28` y `MOO-29`. El spike de rendimiento en la Pi (`MOO-12`) bloquea a HU2, no a esta (D42).
 
 **Historia de Usuario 2**
 
@@ -884,7 +884,7 @@ Escenario: El fichero de audio vuelve a empezar al acabarse
 
 **Tareas:** `MOO-19` Leer un fichero WAV como fuente de audio (`engine`) · `MOO-20` Analizar el audio y pintar el efecto energía (`engine`, **ticket adicional** del §6) · `MOO-21` Mostrar la fuente de audio y su nivel en el panel (`panel`).
 
-**Estimación.** Humano 8 / IA 5. La IA usaba HU1 como techo (menos piezas nuevas); el humano pesó el ajuste iterativo del análisis (detectar golpes, umbrales). Decide el humano: 8. **Bloqueada por** `MOO-13`.
+**Estimación.** Humano 8 / IA 5. La IA usaba HU1 como techo (menos piezas nuevas); el humano pesó el ajuste iterativo del análisis (detectar golpes, umbrales). Decide el humano: 8. **Bloqueada por** `MOO-13` y por el spike de rendimiento en la Pi (`MOO-12`, D42).
 
 **Historia de Usuario 3**
 
@@ -998,14 +998,14 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 **Dependencias**
 
-- **Bloqueada por:** `MOO-12` (spike de rendimiento: librería FFT, fps alcanzables, si hace falta un *worker thread*) y por `MOO-28` (monorepo, lint, CI; épica de *enablers*).
+- **Bloqueada por:** `MOO-28` (monorepo, lint, CI; épica de *enablers*). El spike de rendimiento (`MOO-12`: librería FFT, fps alcanzables, si hace falta un *worker thread*) bloquea al audio, no a esta tarea (D42).
 - **Desbloquea:** `MOO-17` (visor), `MOO-19` y `MOO-20` (audio).
 
 **Riesgos y mitigaciones**
 
 | Riesgo | Mitigación |
 |---|---|
-| Node no llega a tiempo real en la Pi (supuesto A1) | El spike `MOO-12` va antes; el bucle salta frames en vez de acumular retraso |
+| Node no llega a tiempo real en la Pi (supuesto A1) | El spike `MOO-12` va antes del audio, donde está el coste de CPU (D42); el bucle salta frames en vez de acumular retraso |
 | Pausas del recolector de basura | Búferes preasignados; nada se crea dentro del bucle |
 | El contrato `Effect` queda hecho a la medida de *respiración* | Se diseña con `usesAudio` y `FrameContext.audio` desde el principio; la spec lo revisa pensando en *energía* |
 | El fichero mínimo se queda corto para H4 | Esquema TypeBox extensible; los campos nuevos se añaden sin romper los existentes |
