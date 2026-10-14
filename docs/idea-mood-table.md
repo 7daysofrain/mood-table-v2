@@ -118,7 +118,7 @@ escenas guardadas, sincronía por tempo, más de dos tiras o segmentos, GPIO dir
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| **Rendimiento de Node en la Pi 3 B+** (dev) | Alto si el bucle no cabe en 16 ms | Spike obligatorio antes de la spec del motor (audio sintético → FFT → efecto → mezcla → salida nula; medir ms/frame). Objetivo: <8 ms a 300 LEDs. |
+| **Rendimiento de Node en la Pi 3 B+** (dev) | Alto si el bucle no cabe en 16 ms | Spike obligatorio antes del análisis de audio; el esqueleto del motor no lo espera (D42) (audio sintético → FFT → efecto → mezcla → salida nula; medir ms/frame). Objetivo: <8 ms a 300 LEDs. |
 | **Tirones por recolector de basura** | Medio (jitter visible) | Regla de spec: búferes preasignados, cero asignaciones en el bucle caliente. |
 | **Techo de fps por Adalight a 115.200 baudios** | Medio (~19 fps a 200 LEDs; ~6 fps a 600) | Fijar LEDs del MVP ≤ 200-300; firmware propio a 921.600 baudios como should-have. |
 | **Hardware no montado ahora mismo** | Medio | Todo se desarrolla contra la tira virtual; la tira real entra al final. El Light Box evita firmware nuevo. |
@@ -264,7 +264,10 @@ Sin ella, todo lo demás la suplía con sockets y `spawn`. El repo v1 se conserv
 ## 14. Primeros pasos técnicos (antes de la E2)
 
 1. **Spike de rendimiento** en la Pi 3 B+ (D13). Salida: ms/frame a 200/300/600 LEDs, 30/60 fps.
+   **Corregido el 14-oct (D42):** ya no va primero; el esqueleto del motor (`MOO-13`) se especifica
+   antes, y el spike bloquea el audio (`MOO-14`).
 2. **Adalight con el Light Box**: script mínimo que manda un frame fijo y otro animado; confirma
    baudios, orden de color y LEDs reales.
 3. **Captura de audio**: `arecord -l`, latencia y formato con la tarjeta USB en la Pi.
-4. Con los tres datos, cerrar la spec del motor (OpenSpec) y la config de la tira.
+4. Con los tres datos, cerrar la spec del análisis de audio (OpenSpec) y la config de la tira física
+   (D42: el esqueleto del motor no los espera).
