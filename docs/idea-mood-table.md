@@ -107,7 +107,7 @@ escenas guardadas, sincronía por tempo, más de dos tiras o segmentos, GPIO dir
   lenguaje que Joseba no domina: el experimento controlado, con radio de daño mínimo y protocolo
   definido byte a byte), subagente de **revisión contra spec**.
 - **Decisiones validadas por spike** (material de `prompts.md`): rendimiento de Node en la Pi 3
-  B+ antes de cerrar la spec del motor.
+  B+ antes de construir el análisis de audio (D42).
 - **Ajustes humanos ya registrables:** el pivote desde Sutegi (post-mortem), la corrección
   "escenas guardadas → estado del instrumento" (el aparato es de *performance*, no de repertorio),
   la corrección "dos motores peleándose → dos tiras legítimas", la elección TypeScript vs Python,
@@ -118,7 +118,7 @@ escenas guardadas, sincronía por tempo, más de dos tiras o segmentos, GPIO dir
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| **Rendimiento de Node en la Pi 3 B+** (dev) | Alto si el bucle no cabe en 16 ms | Spike obligatorio antes de la spec del motor (audio sintético → FFT → efecto → mezcla → salida nula; medir ms/frame). Objetivo: <8 ms a 300 LEDs. |
+| **Rendimiento de Node en la Pi 3 B+** (dev) | Alto si el bucle no cabe en 16 ms | Spike obligatorio antes del análisis de audio; el esqueleto del motor no lo espera (D42) (audio sintético → FFT → efecto → mezcla → salida nula; medir ms/frame). Objetivo: <8 ms a 300 LEDs. |
 | **Tirones por recolector de basura** | Medio (jitter visible) | Regla de spec: búferes preasignados, cero asignaciones en el bucle caliente. |
 | **Techo de fps por Adalight a 115.200 baudios** | Medio (~19 fps a 200 LEDs; ~6 fps a 600) | Fijar LEDs del MVP ≤ 200-300; firmware propio a 921.600 baudios como should-have. |
 | **Hardware no montado ahora mismo** | Medio | Todo se desarrolla contra la tira virtual; la tira real entra al final. El Light Box evita firmware nuevo. |
@@ -186,7 +186,7 @@ must-have de primera, lenguaje decidido con argumentos (hecho: TS), alcance reco
 | D10 | **Tira física vía Adalight + Light Box como must-have**; firmware propio como should-have | El Light Box ya es un driver Adalight (era lo que usaba Hyperion): cierra H3 sin firmware ni compras. |
 | D11 | ~~Una sola capa (reactiva) en el MVP; capa ambiente mezclada como should-have~~ → **corregida el 22-sep:** el ambiente es una **segunda tira física** con su propio efecto; **no hay mezcla de capas** (ver D26) | Error de redacción arrastrado al README: la v1 ya tenía dos tiras legítimas (§5, "dos motores peleándose → dos tiras legítimas"). Desaparece la mezcla, que era la parte compleja del should-have. |
 | D12 | **Número de LEDs del MVP ≤ 200-300**, definido en la config de la tira | Techo de Adalight a 115.200 baudios y fuente de 18 A. La cifra exacta se fija en el spike. |
-| D13 | **Spike de rendimiento en la Pi 3 B+** antes de cerrar la spec del motor | La 3 B+ va a la mitad que la 4; si va bien en la 3, sobra en la 4. Decisión validada con datos → `prompts.md`. |
+| D13 | **Spike de rendimiento en la Pi 3 B+** ~~antes de cerrar la spec del motor~~ → **corregida el 14-oct:** antes de construir el análisis de audio (ver D42) | La 3 B+ va a la mitad que la 4; si va bien en la 3, sobra en la 4. Decisión validada con datos → `prompts.md`. |
 | D14 | **Límite de potencia en el motor** | Lo hacían Hyperion/dancyPi por debajo; ahora es código propio y evita quemar fuente/tira. |
 
 ### Decisiones de la sesión de README (22-sep-2026)
@@ -225,6 +225,7 @@ must-have de primera, lenguaje decidido con argumentos (hecho: TS), alcance reco
 | D39 | **Node.js 24 LTS** (`.nvmrc`, `engines` y `engineStrict`), **pnpm 12** y **TypeScript 6.0** fijados en el repo; el CLI de OpenSpec, como dependencia de desarrollo (1.14.0) | MOO-28. Concreta el "Node.js LTS" de README §2.4: la 24 es la LTS activa (hasta abril de 2028, binarios arm64); la 22 sale de soporte en abril de 2027. TypeScript 7 (compilador nativo) aún no lo soporta typescript-eslint. Local y CI usan las mismas versiones. |
 | D40 | **Mantine 9** como librería de UI del panel, con sus componentes de layout (`AppShell`, `SimpleGrid`), y **solo tema oscuro** | MOO-29, `design.md` §1-§3 del change `setup-panel-layout`. Trae ya hechos el slider, el desplegable y el selector de color que generan los esquemas. Sus estilos son estáticos, sin CSS-in-JS en tiempo de ejecución (E1), y usa la fuente del sistema, sin internet. Se acepta depender de una librería en lugar de tener código propio (D33) a cambio de velocidad. Descartadas: shadcn/ui (sin selector de color; añade Tailwind y código generado que cuenta en Sonar), React Aria (más trabajo de estilos), MUI y Chakra (Emotion en tiempo de ejecución; MUI además por peso y estética Material, Chakra porque los agentes mezclan las APIs de v2 y v3). Oscuro porque la mesa tiene poca luz y los LEDs resaltan. La librería de canvas del visor se decide en el change de MOO-13. |
 | D41 | **Las tareas se integran en `main`; la rama de entrega es una foto de `main`** (PR `main` → `feature/entrega-N-JA` con merge commit al cerrar cada entrega). Puertas de la PR añadidas: **`sonar-issues`** (job de la CI que falla si SonarQube encuentra incidencias nuevas en la PR), **revisión automática de Copilot** e **hilos resueltos** para integrar | MOO-42, change `tasks-to-main-pr-gates` (`design.md` decisiones 1-4). SonarQube Cloud gratis solo enseña los datos de las PR contra `main`: contra la rama de entrega, el *quality gate* salía en verde con incidencias que nadie podía leer (PR #10). Los *quality gates* propios son de pago, por eso la comprobación es un job con su parte pura probada (aplica D38). Copilot no puede aprobar, así que la puerta es «todos los hilos resueltos». Descartados: pagar Sonar y revisar las incidencias después de integrar. |
+| D42 | **El spike de rendimiento (`MOO-12`) bloquea el audio (`MOO-14`), no el esqueleto del motor (`MOO-13`)**: se especifica y construye primero el motor con una tira virtual y la *respiración*, en el portátil | `MOO-47`. El spike necesita la Pi con el sistema de 64 bits (Node 24 no tiene binarios armv7), y no se reinstala hasta arreglar la tira (`MOO-34`); `MOO-13` no necesita hardware. El coste de CPU está en la FFT, que llega con `MOO-14`; la *respiración* en una tira apenas gasta (D8: 2-6 ms por frame frente a 16-33 ms de presupuesto). Riesgo aceptado: si TypeScript no llega en la Pi, se rehacen `MOO-16` y `MOO-17`; `MOO-18` se salva si se mantiene el contrato del WebSocket. A cambio, el spike puede medir el motor real en vez de un prototipo (se decide al refinarlo). Descartado: medir con Node 22 en el sistema de 32 bits (otro V8 y otra arquitectura: el dato no valdría para la mesa). |
 
 ## 11. Fuera del MVP (visión, por orden de deseo)
 
@@ -263,7 +264,10 @@ Sin ella, todo lo demás la suplía con sockets y `spawn`. El repo v1 se conserv
 ## 14. Primeros pasos técnicos (antes de la E2)
 
 1. **Spike de rendimiento** en la Pi 3 B+ (D13). Salida: ms/frame a 200/300/600 LEDs, 30/60 fps.
+   **Corregido el 14-oct (D42):** ya no va primero; el esqueleto del motor (`MOO-13`) se especifica
+   antes, y el spike bloquea el audio (`MOO-14`).
 2. **Adalight con el Light Box**: script mínimo que manda un frame fijo y otro animado; confirma
    baudios, orden de color y LEDs reales.
 3. **Captura de audio**: `arecord -l`, latencia y formato con la tarjeta USB en la Pi.
-4. Con los tres datos, cerrar la spec del motor (OpenSpec) y la config de la tira.
+4. Con los tres datos, cerrar la spec del análisis de audio (OpenSpec) y la config de la tira física
+   (D42: el esqueleto del motor no los espera).
