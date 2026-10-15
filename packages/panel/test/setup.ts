@@ -34,3 +34,7 @@ class ResizeObserver {
 window.ResizeObserver = ResizeObserver;
 
 window.HTMLElement.prototype.scrollIntoView = () => {};
+
+// jsdom no dibuja: sin esto, cada canvas escribe «Not implemented» en la consola. Los tests del visor
+// le dan un contexto falso que apunta lo que se dibuja.
+window.HTMLCanvasElement.prototype.getContext = () => null;

@@ -131,7 +131,7 @@
   cabecera dice «Conectado» o «Sin conexión con el motor». El test de `PanelLayout` *deja cada zona
   vacía* se ajusta al visor con contenido (decisión 19).
   Verificar: los tests nuevos fallan porque el visor y el indicador no existen.
-- [ ] 3.4 Visor en `<canvas>` sin librería que dibuja el último frame de cada tira en cada
+- [x] 3.4 Visor en `<canvas>` sin librería que dibuja el último frame de cada tira en cada
   `requestAnimationFrame` (decisión 16), apagado sin conexión (decisión 14), e indicador de conexión
   en la cabecera.
   Verificar: los tests de 3.3 pasan y, con `pnpm dev`, la tira respira en `localhost:5173`.
