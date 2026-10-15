@@ -15,7 +15,7 @@ export type PanelConnection = Pick<
  * cabecera muestra el estado de la conexión y el visor dibuja sus frames. El resto de zonas las
  * rellenan las historias de H2 y H4.
  */
-export function App({ connection: provided }: { connection?: PanelConnection }) {
+export function App({ connection: provided }: Readonly<{ connection?: PanelConnection }>) {
   const [connection] = useState<PanelConnection>(
     () => provided ?? new EngineConnection(viewerUrl(window.location)),
   );

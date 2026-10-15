@@ -18,7 +18,7 @@ interface PanelLayoutProps {
  * debajo, tiras, efectos y controles en tres columnas. Cada historia pone su contenido en su zona; las
  * que aún no rellena ninguna, quedan vacías.
  */
-export function PanelLayout({ status, viewer }: PanelLayoutProps) {
+export function PanelLayout({ status, viewer }: Readonly<PanelLayoutProps>) {
   return (
     <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>

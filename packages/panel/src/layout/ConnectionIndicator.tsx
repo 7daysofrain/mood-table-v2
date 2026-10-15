@@ -6,7 +6,7 @@ import type { ConnectionStatus } from '../engine/connection.ts';
  * Indicador de conexión de la cabecera (specs/viewer, decisión 14): solo dos estados. «Reconectando»
  * sería lo mismo que «Sin conexión», porque el panel siempre está reintentando.
  */
-export function ConnectionIndicator({ status }: { status: ConnectionStatus }) {
+export function ConnectionIndicator({ status }: Readonly<{ status: ConnectionStatus }>) {
   const connected = status === 'connected';
 
   return (

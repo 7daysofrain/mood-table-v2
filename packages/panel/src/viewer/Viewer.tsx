@@ -15,7 +15,7 @@ const BACKGROUND = 'black';
  * retraso; sin conexión no hay frames y queda en negro (decisión 14). No calcula colores: los pinta
  * tal como llegan del motor.
  */
-export function Viewer({ source }: { source: FrameSource }) {
+export function Viewer({ source }: Readonly<{ source: FrameSource }>) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

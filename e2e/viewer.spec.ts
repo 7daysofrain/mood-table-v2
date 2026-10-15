@@ -32,17 +32,13 @@ async function viewerBrightness(page: Page): Promise<number> {
   });
 }
 
-/** Comprueba que el visor se anima: su brillo cambia entre tres muestras separadas medio segundo. */
+/** Comprueba que el visor se anima: está encendido y su brillo cambia. */
 async function expectViewerAnimating(page: Page): Promise<void> {
-  const samples: number[] = [];
-  for (let sample = 0; sample < 3; sample++) {
-    samples.push(await viewerBrightness(page));
-    await page.waitForTimeout(500);
-  }
-  expect(samples.some((brightness) => brightness > 0), `brillo del visor: ${samples.join(', ')}`).toBe(
-    true,
-  );
-  expect(new Set(samples).size, `brillo del visor: ${samples.join(', ')}`).toBeGreaterThan(1);
+  await expect.poll(() => viewerBrightness(page), { message: 'el visor se enciende' }).toBeGreaterThan(0);
+  const first = await viewerBrightness(page);
+  await expect
+    .poll(() => viewerBrightness(page), { message: 'el brillo del visor cambia' })
+    .not.toBe(first);
 }
 
 function connectionStatus(page: Page) {
@@ -75,8 +71,12 @@ test('el panel avisa si el motor no está en marcha', async ({ page }) => {
   await expect(connectionStatus(page)).toHaveText(DISCONNECTED);
   await expect.poll(() => viewerBrightness(page)).toBe(0);
   // Sin motor, el único error admitido es el del navegador al no poder conectar (specs/panel-layout).
-  await page.waitForTimeout(1500);
-  expect(errors.filter((error) => !/WebSocket connection to .* failed/.test(error))).toEqual([]);
+  // Se espera a que el panel haya reintentado al menos una vez, con sus errores en la consola.
+  const connectionError = /WebSocket connection to .* failed/;
+  await expect
+    .poll(() => errors.filter((error) => connectionError.test(error)).length)
+    .toBeGreaterThanOrEqual(2);
+  expect(errors.filter((error) => !connectionError.test(error))).toEqual([]);
 });
 
 test('el visor se recupera solo tras un reinicio del motor', async ({ page }) => {
