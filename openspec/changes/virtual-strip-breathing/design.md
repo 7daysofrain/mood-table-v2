@@ -87,6 +87,14 @@ actualizaciones igual que uno en `/etc`.
 
 **Impacto:** README §1.4 cambia las rutas. → **Proponer como D44** en `docs/idea-mood-table.md`.
 
+**Matiz para los tests (`MOO-18`):** los E2E necesitan su propio fichero, con una tira virtual y un
+puerto que no choque con un `pnpm dev` abierto, y no pueden depender de lo que tenga cada uno en
+`config/local.json`. Si existe la variable de entorno `MOODTABLE_CONFIG`, el motor carga ese fichero.
+Es solo para los tests, y la línea de log sigue diciendo qué fichero se ha cargado, que es lo que esta
+decisión quería proteger. Se descartaron una raíz de composición propia de los E2E (los E2E prueban el
+sistema desde fuera, sin importar código del motor, README §2.3) y que los E2E copien su fichero a
+`config/local.json` (pisaría el de cada uno).
+
 ### 4. Lo que declara el fichero mínimo y cuándo impide arrancar
 
 ```json

@@ -11,9 +11,13 @@ instalación), dónde lo busca el motor y cuándo le impide arrancar.
 Al arrancar, el motor SHALL leer la configuración de `config/local.json`, resuelto desde la raíz del
 repositorio y no desde el directorio de trabajo. Si la configuración es válida, MUST arrancar y
 escribir una línea de log que diga qué fichero ha cargado, cuántas tiras declara y a cuántos fps va.
+Solo para los tests, si existe la variable de entorno `MOODTABLE_CONFIG`, el motor SHALL cargar el
+fichero que indica en lugar de `config/local.json`.
 
 > Traza: precondición del caso feliz de `MOO-13` (*con una sola tira virtual declarada*). La ruta y la
 > línea de log son *(asumido)*: decididas en la exploración (`design.md`, decisiones 3 y Goals).
+> `MOODTABLE_CONFIG` es *(asumido)*: los E2E de `MOO-18` necesitan su propio fichero y su propio
+> puerto (`design.md`, decisión 3).
 
 #### Scenario: Arranque con una configuración válida
 - **GIVEN** un `config/local.json` que declara una tira virtual
@@ -25,6 +29,12 @@ escribir una línea de log que diga qué fichero ha cargado, cuántas tiras decl
 - **GIVEN** un `config/local.json` válido en la raíz del repositorio
 - **WHEN** el motor se arranca desde un directorio de trabajo distinto de la raíz
 - **THEN** el motor carga ese mismo `config/local.json` y queda en marcha
+
+#### Scenario: Los E2E cargan su propio fichero (asumido)
+- **GIVEN** la variable de entorno `MOODTABLE_CONFIG` con la ruta de un fichero de configuración
+- **WHEN** se arranca el motor
+- **THEN** el motor carga ese fichero en lugar de `config/local.json`
+- **AND** el log dice qué fichero ha cargado
 
 ### Requirement: El motor no arranca si el fichero de configuración no sirve
 Si el fichero de configuración no sirve, el motor MUST NOT arrancar: SHALL terminar con un código de
