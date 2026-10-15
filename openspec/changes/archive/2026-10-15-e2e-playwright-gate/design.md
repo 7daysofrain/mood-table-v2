@@ -163,10 +163,10 @@ del bundle o de `main.tsx` (excluido de la cobertura) pasaría todos los tests d
 
 ### Propuesta de D#
 
-**D43**: «E2E con Playwright Test, separado de Vitest, solo en Chromium y fuera de la cobertura de
-SonarQube; sin reintentos en la puerta». Recoge el porqué de las decisiones 1, 4, 5 y 6.
-
-*No se añade a la ficha (decisión del usuario, 15-oct): la decisión queda en este `design.md`.*
+~~**D43**: «E2E con Playwright Test, separado de Vitest, solo en Chromium y fuera de la cobertura de
+SonarQube; sin reintentos en la puerta». Recoge el porqué de las decisiones 1, 4, 5 y 6.~~
+**Obsoleto:** no se añadió a la ficha (decisión del usuario, 15-oct): la decisión queda en este
+`design.md`. El número lo usa la D43 del change `virtual-strip-breathing`.
 
 ## Risks / Trade-offs
 
