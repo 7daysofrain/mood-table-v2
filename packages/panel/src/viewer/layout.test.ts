@@ -16,6 +16,13 @@ describe('la geometría del visor', () => {
     expect(dots.filter((dot) => dot.y === ROW_HEIGHT * 1.5)).toHaveLength(2);
   });
 
+  it('cada tira va en la fila de su índice, aunque aún no haya llegado el frame de las anteriores', () => {
+    const { height, dots } = layoutStrips(new Map([[1, new Uint8Array(3)]]), 100);
+
+    expect(height).toBe(2 * ROW_HEIGHT);
+    expect(dots.map((dot) => dot.y)).toEqual([ROW_HEIGHT * 1.5]);
+  });
+
   it('reparte los puntos de cada tira a lo ancho del visor', () => {
     const { dots } = layoutStrips(new Map([[0, new Uint8Array(4 * 3)]]), 400);
 

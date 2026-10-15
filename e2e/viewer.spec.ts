@@ -1,3 +1,6 @@
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { type Page, expect, test } from '@playwright/test';
 
 import { createTestEngine } from './engine.ts';
@@ -7,6 +10,9 @@ import { createTestEngine } from './engine.ts';
  * Los escenarios que no paran el motor usan el del `webServer`; los que lo paran o lo arrancan
  * lanzan el suyo, en su propio puerto.
  */
+
+/** El build del panel, que construye el `webServer` antes de los tests. */
+const PANEL_BUILD = fileURLToPath(new URL('../packages/panel/dist', import.meta.url));
 
 const CONNECTED = 'Conectado';
 const DISCONNECTED = 'Sin conexión con el motor';
@@ -51,17 +57,20 @@ test('el maker ve la tira virtual respirando en el visor', async ({ page }) => {
 });
 
 test('el panel avisa si el motor no está en marcha', async ({ page }) => {
+  // Sin motor no hay quien sirva el panel: el test sirve el build en la dirección de un motor que no
+  // se arranca. El WebSocket no pasa por `page.route`, así que la conexión falla como sin motor.
   const engine = await createTestEngine();
-  await engine.start();
+  await page.route(`${engine.url}/**`, (route) => {
+    const { pathname } = new URL(route.request().url());
+    return route.fulfill({ path: join(PANEL_BUILD, pathname === '/' ? 'index.html' : pathname) });
+  });
   const errors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(engine.url);
-  await expect(connectionStatus(page)).toHaveText(CONNECTED);
 
-  await engine.stop();
+  await page.goto(engine.url);
 
   await expect(connectionStatus(page)).toHaveText(DISCONNECTED);
   await expect.poll(() => viewerBrightness(page)).toBe(0);

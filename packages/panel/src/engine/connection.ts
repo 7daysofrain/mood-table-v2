@@ -9,7 +9,13 @@ import { decodeFrame } from '@moodtable/shared';
 export type ConnectionStatus = 'connected' | 'disconnected';
 
 /** Lo que el panel usa de un WebSocket del navegador: así los tests pueden darle uno falso. */
-export type SocketLike = Pick<WebSocket, 'binaryType' | 'onopen' | 'onclose' | 'onmessage' | 'close'>;
+export type SocketLike = Pick<
+  WebSocket,
+  'binaryType' | 'readyState' | 'onopen' | 'onclose' | 'onmessage' | 'close'
+>;
+
+/** `WebSocket.CONNECTING`, sin depender de que exista `WebSocket` (en los tests no hay). */
+const CONNECTING = 0;
 
 /** La dirección del WebSocket del visor, en el mismo sitio que sirve el panel. */
 export function viewerUrl(location: { protocol: string; host: string }): string {
@@ -62,11 +68,21 @@ export class EngineConnection {
     const socket = this.socket;
     this.socket = undefined;
     if (socket) {
-      socket.onopen = socket.onclose = socket.onmessage = null;
-      socket.close();
+      socket.onclose = socket.onmessage = null;
+      // Cerrar una conexión que aún se está abriendo hace que el navegador escriba un error en la
+      // consola (pasa en cada carga en desarrollo, con el doble efecto de StrictMode): se cierra al
+      // abrirse.
+      if (socket.readyState === CONNECTING) {
+        socket.onopen = () => {
+          socket.close();
+        };
+      } else {
+        socket.onopen = null;
+        socket.close();
+      }
     }
     this.lastFrames.clear();
-    this.current = 'disconnected';
+    this.setStatus('disconnected');
   }
 
   private connect(): void {

@@ -5,11 +5,11 @@
  * del motor (README §2.3).
  */
 import { type ChildProcess, spawn } from 'node:child_process';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { test } from '@playwright/test';
 
 const MAIN = fileURLToPath(new URL('../packages/engine/src/main.ts', import.meta.url));
 
@@ -32,10 +32,13 @@ async function freePort(): Promise<number> {
   return address.port;
 }
 
-/** Prepara un motor con una tira virtual de 60 LEDs en un puerto libre, sin arrancarlo. */
+/**
+ * Prepara un motor con una tira virtual de 60 LEDs en un puerto libre, sin arrancarlo. Su fichero de
+ * configuración va en la carpeta de resultados del test, que Playwright vacía en cada ejecución.
+ */
 export async function createTestEngine(): Promise<TestEngine> {
   const port = await freePort();
-  const config = join(await mkdtemp(join(tmpdir(), 'moodtable-e2e-')), 'config.json');
+  const config = test.info().outputPath('config.json');
   await writeFile(
     config,
     JSON.stringify({

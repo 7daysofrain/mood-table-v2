@@ -1,5 +1,5 @@
 /**
- * Geometría del visor (decisión 16): una fila por tira, en el orden de su índice en el fichero de
+ * Geometría del visor (decisión 16): una fila por tira, la de su índice en el fichero de
  * configuración, con un punto por LED repartido a lo ancho del visor. Es una función pura, separada
  * del dibujo, para poder probarla sin un canvas.
  */
@@ -23,10 +23,13 @@ export function layoutStrips(
   frames: ReadonlyMap<number, Uint8Array>,
   width: number,
 ): { height: number; dots: Dot[] } {
-  const strips = [...frames.entries()].sort(([first], [second]) => first - second);
   const dots: Dot[] = [];
+  // La fila de cada tira es su índice: hasta que llega el frame de una tira, su fila queda en negro,
+  // y las demás no se mueven.
+  let rows = 0;
 
-  strips.forEach(([, colors], row) => {
+  for (const [row, colors] of frames) {
+    rows = Math.max(rows, row + 1);
     const ledCount = colors.length / 3;
     const spacing = width / ledCount;
     const radius = (Math.min(spacing, ROW_HEIGHT) * DOT_FILL) / 2;
@@ -35,8 +38,8 @@ export function layoutStrips(
       const [red, green, blue] = colors.subarray(led * 3, led * 3 + 3);
       dots.push({ x: spacing * (led + 0.5), y, radius, color: `rgb(${red} ${green} ${blue})` });
     }
-  });
+  }
 
   // Sin tiras (sin conexión), el visor no se encoge: conserva el alto de una fila, en negro.
-  return { height: Math.max(1, strips.length) * ROW_HEIGHT, dots };
+  return { height: Math.max(1, rows) * ROW_HEIGHT, dots };
 }

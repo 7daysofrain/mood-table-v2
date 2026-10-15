@@ -6,6 +6,7 @@ import { EngineConnection, type SocketLike, viewerUrl } from './connection.ts';
 /** Un WebSocket falso: el test decide cuándo se abre, se cierra o llega un mensaje. */
 class FakeSocket implements SocketLike {
   binaryType: BinaryType = 'blob';
+  readyState: SocketLike['readyState'] = WebSocket.CONNECTING;
   onopen: SocketLike['onopen'] = null;
   onclose: SocketLike['onclose'] = null;
   onmessage: SocketLike['onmessage'] = null;
@@ -13,9 +14,11 @@ class FakeSocket implements SocketLike {
 
   close(): void {
     this.closed = true;
+    this.readyState = WebSocket.CLOSED;
   }
 
   open(): void {
+    this.readyState = WebSocket.OPEN;
     this.onopen?.call(this as unknown as WebSocket, new Event('open'));
   }
 
@@ -172,13 +175,32 @@ describe('la conexión del panel con el motor', () => {
     const listener = vi.fn();
     connection.subscribe(listener);
     connection.start();
+    lastSocket().open();
+    listener.mockClear();
 
     connection.stop();
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(connection.status).toBe('disconnected');
+    listener.mockClear();
     lastSocket().drop();
     vi.advanceTimersByTime(5000);
 
     expect(lastSocket().closed).toBe(true);
     expect(sockets).toHaveLength(1);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('si se para mientras aún se está abriendo, la cierra cuando se abre y sigue sin conexión', () => {
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    connection.start();
+
+    connection.stop();
+    expect(lastSocket().closed).toBe(false);
+    lastSocket().open();
+
+    expect(lastSocket().closed).toBe(true);
+    expect(connection.status).toBe('disconnected');
     expect(listener).not.toHaveBeenCalled();
   });
 
