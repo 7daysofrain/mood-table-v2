@@ -17,7 +17,7 @@
   que no existe; `id` repetido; `fps` y `server` por defecto (60; `127.0.0.1:8080`) y declarados. Cada
   error comprueba que el mensaje nombra la tira y el campo (`specs/engine-config`).
   Verificar: los tests nuevos fallan porque la validación no existe; el resto sigue en verde.
-- [ ] 1.3 Esquema TypeBox del fichero de configuración y función pura que recibe el texto y devuelve
+- [x] 1.3 Esquema TypeBox del fichero de configuración y función pura que recibe el texto y devuelve
   la configuración o el error, publicados desde la entrada de `@moodtable/shared` (decisiones 4 y 8).
   Verificar: los tests de 1.2 pasan.
 - [ ] 1.4 **(test en rojo)** Tests de la respiración en `packages/engine/src/core`: todos los LEDs del

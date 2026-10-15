@@ -69,7 +69,7 @@ describe('un fichero de configuración que no sirve', () => {
     const error = errorOf('{ "strips": [ }');
 
     expect(error).toMatch(/no es JSON válido/);
-    expect(error).toMatch(/line 1 column \d+/);
+    expect(error).toMatch(/línea 1, columna 15/);
   });
 
   it('que no es un objeto, dice qué esperaba', () => {
@@ -111,5 +111,13 @@ describe('un fichero de configuración que no sirve', () => {
 
   it('con fps 0, nombra el campo', () => {
     expect(errorOf(text({ fps: 0, strips: [demoStrip] }))).toMatch(/`fps`/);
+  });
+
+  it.each([
+    [{ fps: '60', strips: [demoStrip] }, /campo `fps`: debe ser un número entero/],
+    [{ server: { port: 99999 }, strips: [demoStrip] }, /campo `server.port`: debe ser 65535 o menos/],
+    [{ strips: [{ ...demoStrip, name: '' }] }, /«demo», campo `name`: no puede estar vacío/],
+  ])('con %j, dice qué falla', (config, message) => {
+    expect(errorOf(text(config))).toMatch(message);
   });
 });

@@ -1,15 +1,38 @@
 /**
  * Fichero de configuración del instrumento (specs/engine-config): las tiras declaradas y los ajustes
- * de cada instalación. Sin implementar todavía: sus tests están en rojo.
+ * de cada instalación. El esquema vive aquí porque lo usarán también el panel y la API; la lectura
+ * del disco es cosa del motor. Crece con H3 y H4 añadiendo campos opcionales y tipos de `output`.
  */
+import Type, { type Static } from 'typebox';
+import Value from 'typebox/value';
 
-export interface StripConfig {
-  id: string;
-  name: string;
-  output: { type: 'virtual' };
-  ledCount: number;
-}
+import { findJsonError } from './json-error.ts';
 
+/** Salida de una tira, discriminada por `type`. En H1 solo existe `virtual`, sin más campos. */
+const OutputSchema = Type.Union([Type.Object({ type: Type.Literal('virtual') })]);
+
+export const StripConfigSchema = Type.Object({
+  id: Type.String({ minLength: 1 }),
+  name: Type.String({ minLength: 1 }),
+  output: OutputSchema,
+  ledCount: Type.Integer({ minimum: 1 }),
+});
+
+/** Por defecto, solo local: el panel no tiene contraseña (README §2.5, decisión 13). */
+const ServerSchema = Type.Object({
+  host: Type.Optional(Type.String({ minLength: 1, default: '127.0.0.1' })),
+  port: Type.Optional(Type.Integer({ minimum: 1, maximum: 65535, default: 8080 })),
+});
+
+export const ConfigFileSchema = Type.Object({
+  fps: Type.Optional(Type.Integer({ minimum: 1, default: 60 })),
+  server: Type.Optional(Type.Object(ServerSchema.properties, { default: {} })),
+  strips: Type.Array(StripConfigSchema, { minItems: 1 }),
+});
+
+export type StripConfig = Static<typeof StripConfigSchema>;
+
+/** La configuración ya validada, con los valores por defecto aplicados. */
 export interface Config {
   fps: number;
   server: { host: string; port: number };
@@ -18,6 +41,107 @@ export interface Config {
 
 export type ConfigResult = { ok: true; config: Config } | { ok: false; error: string };
 
+/**
+ * Valida el texto del fichero y devuelve la configuración o el primer problema, en una frase que
+ * nombra la tira y el campo. No sabe de qué fichero viene: quien lo lee añade la ruta.
+ */
 export function parseConfig(text: string): ConfigResult {
-  throw new Error(`Sin implementar (${text.length} caracteres)`);
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    const at = findJsonError(text);
+    return fail(`no es JSON válido: falla en la línea ${at?.line}, columna ${at?.column}`);
+  }
+
+  if (!isObject(data)) return fail('debe ser un objeto JSON con la lista `strips`');
+  if (data.strips === undefined || (Array.isArray(data.strips) && data.strips.length === 0)) {
+    return fail('no declara ninguna tira (la lista `strips` falta o está vacía)');
+  }
+
+  const withDefaults = Value.Default(ConfigFileSchema, structuredClone(data));
+  const [firstError] = Value.Errors(ConfigFileSchema, withDefaults);
+  if (firstError) return fail(describeError(firstError, data));
+
+  const config = withDefaults as Config;
+  const repeated = config.strips.find(
+    (strip, index) => config.strips.findIndex((other) => other.id === strip.id) !== index,
+  );
+  if (repeated) return fail(`el id «${repeated.id}» está repetido en más de una tira`);
+
+  return { ok: true, config };
+}
+
+function fail(error: string): ConfigResult {
+  return { ok: false, error };
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+interface SchemaError {
+  keyword: string;
+  instancePath: string;
+  params: object;
+  message: string;
+}
+
+/** `/strips/0/output/type` → «la tira «demo», campo `output.type`: …». */
+function describeError(error: SchemaError, data: Record<string, unknown>): string {
+  const segments = error.instancePath.split('/').slice(1);
+  const received = valueAt(data, segments);
+  const params = error.params as Record<string, unknown>;
+  // `required` señala al objeto padre; el campo que falta va en sus parámetros.
+  const missing = (params.requiredProperties as string[] | undefined)?.[0];
+  const where = segments[0] === 'strips' && segments[1] !== undefined ? 2 : 0;
+  const field = [...segments.slice(where), ...(missing ? [missing] : [])].join('.');
+  const problem = `campo \`${field}\`: ${describeProblem(error, received)}`;
+
+  if (where === 0) return problem;
+  const index = Number(segments[1]);
+  const strip = valueAt(data, ['strips', String(index)]);
+  const id = isObject(strip) && typeof strip.id === 'string' && strip.id ? strip.id : undefined;
+  const name = id ? `la tira «${id}»` : `la tira ${index + 1}`;
+  return `${name}, ${problem}`;
+}
+
+const TYPE_NAMES: Record<string, string> = {
+  array: 'una lista',
+  boolean: 'verdadero o falso',
+  integer: 'un número entero',
+  number: 'un número',
+  object: 'un objeto',
+  string: 'un texto',
+};
+
+/** El valor del fichero en una ruta (`['strips', '0', 'output']`), o `undefined` si no existe. */
+function valueAt(data: unknown, segments: string[]): unknown {
+  return segments.reduce<unknown>(
+    (value, segment) =>
+      typeof value === 'object' && value !== null
+        ? (value as Record<string, unknown>)[segment]
+        : undefined,
+    data,
+  );
+}
+
+function describeProblem(error: SchemaError, received: unknown): string {
+  const params = error.params as Record<string, unknown>;
+  switch (error.keyword) {
+    case 'required':
+      return 'falta y es obligatorio';
+    case 'type':
+      return `debe ser ${TYPE_NAMES[String(params.type)] ?? String(params.type)}`;
+    case 'minimum':
+      return `debe ser ${String(params.limit)} o más`;
+    case 'maximum':
+      return `debe ser ${String(params.limit)} o menos`;
+    case 'minLength':
+      return 'no puede estar vacío';
+    case 'const':
+      return `«${String(received)}» no es un valor válido (se admite «${String(params.allowedValue)}»)`;
+    default:
+      return error.message;
+  }
 }
