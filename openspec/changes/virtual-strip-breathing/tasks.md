@@ -104,7 +104,7 @@
   (`localhost:5173`), que reenvía `/ws` al motor.
   Verificar: con `pnpm dev`, un cliente WebSocket conectado a `localhost:5173/ws` recibe frames, y al
   cambiar un componente del panel la página se recarga sola.
-- [ ] 2.8 Documentación:
+- [x] 2.8 Documentación:
   - README §1.4: en desarrollo se abre `localhost:5173`; el motor sirve el build en `8080`;
   - README §2.2 (adaptador *Visor*), si cambia lo que describe;
   - `docs/idea-mood-table.md` §10: D45 (el protocolo del visor), si el usuario la aprueba.
