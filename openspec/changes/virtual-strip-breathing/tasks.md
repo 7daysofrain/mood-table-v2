@@ -146,7 +146,7 @@
   motor*; *Dos paneles ven lo mismo* (los dos visores se animan; la igualdad de frames ya la cubre
   2.4: decisión 18). El E2E de humo (`panel.spec.ts`) sigue pasando.
   Verificar: `pnpm test:e2e` pasa en local y en la CI.
-- [ ] 3.7 Documentación y cierre de la historia:
+- [x] 3.7 Documentación y cierre de la historia:
   - README §1.3 y §2.2 (*Panel y visor*), si cambia lo que describen;
   - `prompts.md`: entrada de la implementación de la historia, con el formato de `course.md` §5;
   - cada escenario de los criterios de `MOO-13` tiene su test (DoD de la historia).
