@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - tooling
+  - e2e
 
 # Falla la instalación si Node no cumple `engines` (Node 24, design.md §7).
 engineStrict: true
@@ -16,6 +17,7 @@ catalog:
   '@eslint/js': 10.0.1
   '@mantine/core': 9.6.3
   '@mantine/hooks': 9.6.3
+  '@playwright/test': 1.64.0
   '@testing-library/dom': 10.4.2
   '@testing-library/jest-dom': 7.0.1
   '@testing-library/react': 16.3.3

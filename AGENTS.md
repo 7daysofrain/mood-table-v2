@@ -15,7 +15,8 @@ state · Vitest · Playwright · GitHub Actions + SonarQube Cloud · OpenSpec fo
 
 ## Commands (from the repo root)
 
-Node 24 (`.nvmrc`; `nvm use`) and pnpm from `packageManager` (`corepack enable`, or `corepack pnpm`).
+Node 24 (`.nvmrc`; `nvm use`) and pnpm from `packageManager` via `corepack enable`. `corepack pnpm`
+alone is not enough: scripts call `pnpm` inside (`typecheck`, the E2E web server) and fail without it.
 CI runs these same scripts, so a green run locally predicts a green PR.
 
 | Command | Does |
@@ -24,6 +25,7 @@ CI runs these same scripts, so a green run locally predicts a green PR.
 | `pnpm lint` | ESLint with type information, including the **boundary rule** (`specs/module-boundaries`) |
 | `pnpm typecheck` | `tsc --noEmit` in the root and in every package |
 | `pnpm test` / `pnpm test:coverage` | Vitest across all packages; coverage goes to a single `coverage/lcov.info` |
+| `pnpm test:e2e` | Playwright E2E in Chromium against the panel build (not counted in coverage). First run `pnpm --filter @moodtable/e2e exec playwright install chromium` |
 | `pnpm exec openspec …` | The pinned OpenSpec CLI (1.14.0), not the global one |
 
 Code conventions the tooling enforces or relies on:
