@@ -73,7 +73,7 @@
 
 ## 2. MOO-17 · engine
 
-- [ ] 2.1 Fastify, `@fastify/websocket` y `@fastify/static` en el catálogo (la última estable que
+- [x] 2.1 Fastify, `@fastify/websocket` y `@fastify/static` en el catálogo (la última estable que
   cumpla `minimumReleaseAge`) y como dependencias de `@moodtable/engine`.
   Verificar: `pnpm install` sin avisos, y lint, tipos y tests siguen en verde.
 - [ ] 2.2 **(test en rojo)** Tests del codificador y el decodificador del protocolo del visor en
