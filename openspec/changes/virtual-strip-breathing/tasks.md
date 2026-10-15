@@ -9,7 +9,7 @@
 
 ## 1. MOO-16 · engine
 
-- [ ] 1.1 `typebox` 1.x en el catálogo de `pnpm-workspace.yaml` (la última estable que cumpla
+- [x] 1.1 `typebox` 1.x en el catálogo de `pnpm-workspace.yaml` (la última estable que cumpla
   `minimumReleaseAge`) y como dependencia de `@moodtable/shared` (decisión 9).
   Verificar: `pnpm install` sin avisos, y `pnpm lint`, `pnpm typecheck` y `pnpm test` siguen en verde.
 - [ ] 1.2 **(test en rojo)** Tests de la validación de la configuración en `packages/shared`: fichero
