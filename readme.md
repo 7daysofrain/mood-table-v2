@@ -151,7 +151,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` arranca el motor con la configuración de ejemplo (`deploy/config/demo.json`: fuente = pista de ejemplo incluida en el repo, dos tiras virtuales) y el panel con recarga en caliente. Abre `http://localhost:8080`.
+`pnpm dev` arranca el motor con la configuración de `config/local.json`. Si no existe, la crea copiando la de ejemplo (`config/demo.json`: una tira virtual), y si ya existe no la toca: es la de tu instalación, y git la ignora. Al arrancar, el motor escribe qué fichero ha cargado, cuántas tiras y a qué fps; si el fichero no sirve, no arranca y dice qué falla. `pnpm dev` arranca también el panel con recarga en caliente. Abre `http://localhost:8080`.
 
 **Fuente de audio:** el simulador usa un fichero de audio en cualquier sistema. La tarjeta de sonido como fuente solo funciona en Linux (ALSA): en macOS y Windows se usa el fichero.
 
@@ -179,7 +179,7 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 > **Montaje del hardware:** el cableado de la tira, su alimentación, la conexión al Light Box o al Arduino (con el sketch Adalight) y la tarjeta de sonido se documentarán paso a paso en [`HARDWARE_SETUP.md`](HARDWARE_SETUP.md), en la raíz del repositorio (*pendiente*). Los pasos siguientes dan por hecho que el hardware ya está montado.
 
 1. En la Pi, clona el repositorio y ejecuta `sudo deploy/install.sh`. Crea el usuario `moodtable`, instala Node.js y deja el motor como servicio `systemd` (§2.4).
-2. Copia `deploy/config/mesa.example.json` a `/etc/moodtable/config.json` y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Si algo está mal, el motor no arranca y dice qué campo falla.
+2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Si algo está mal, el motor no arranca y dice qué campo falla.
 3. `sudo systemctl start moodtable`.
 4. Desde cualquier dispositivo de la red local, abre `http://<ip-de-la-pi>:8080`. Lo que ves en el visor lo pinta la tira real (**H3**).
 5. Desenchufa la Pi y vuelve a enchufarla: arranca sola y vuelve al último estado (**H5**).
@@ -282,7 +282,7 @@ El núcleo define **cuatro puertos** (interfaces de TypeScript) y no sabe qué h
 | Puerto | Para qué | Adaptadores en el MVP | Adaptadores previstos |
 |---|---|---|---|
 | `AudioSource` | Entregar muestras de audio | Tarjeta de sonido (`arecord` → `stdin`) · Fichero WAV | — |
-| `LightOutput` | Recibir los frames de una tira | Adalight por serie (una instancia por tira) · Visor (WebSocket, todas las tiras) | Firmware propio ESP8266/ESP32 (should-have) |
+| `LightOutput` | Recibir los frames de una tira | Adalight por serie (una instancia por tira física) · Visor (WebSocket: una instancia por tira, todas por la misma conexión de cada navegador; D43) | Firmware propio ESP8266/ESP32 (should-have) |
 | `Commands` | Cambiar el efecto y los parámetros de una tira | API HTTP del panel | Traktor F1 (HID) · pantalla táctil |
 | `StateStore` | Guardar y recuperar el estado de cada tira | SQLite (ver §3) · En memoria (tests) | — |
 
@@ -387,7 +387,7 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 | **API HTTP** | `Commands` | Fastify + TypeBox | Rutas para listar las tiras (solo lectura) y los efectos con sus esquemas, y para cambiar el efecto y los parámetros de una tira. Valida cada petición y publica el OpenAPI. También sirve el build del panel. |
 | **Persistencia** | `StateStore` | SQLite (§3) · en memoria para tests | Guarda y carga el estado de cada tira: efecto activo y valores de cada efecto. Al arrancar, el motor recupera el último estado desde aquí. |
 
-**Raíz de composición (`main.ts`).** Carga la configuración, crea los adaptadores que indica (fuente de audio, una salida por tira, visor, API, persistencia), los conecta al núcleo y arranca el bucle. Es el único punto del código que conoce todas las piezas.
+**Raíz de composición (`main.ts`).** Carga la configuración (`config/local.json`), crea los adaptadores que indica (fuente de audio, las salidas de cada tira, API, persistencia), los conecta al núcleo y arranca el bucle con un temporizador. Cada tira tiene su lista de salidas: el visor siempre, más Adalight si es física (D43). Es el único punto del código que conoce todas las piezas.
 
 #### Panel y visor (front)
 
@@ -417,7 +417,8 @@ mood-table-v2/
 ├── e2e/            # Tests E2E (Playwright) del flujo principal
 ├── firmware/       # (should-have) Firmware C++ para ESP8266/ESP32
 ├── openspec/       # Specs de SDD: specs vivas y cambios propuestos
-├── deploy/         # Servicio systemd y ficheros de configuración de tiras (mesa y demo pública)
+├── config/         # Configuración de cada instalación: demo.json (ejemplo versionado) y local.json (ignorado por git)
+├── deploy/         # Servicio systemd y ejemplos de configuración de tiras (mesa y demo pública)
 ├── docs/           # PRD, instrucciones de trabajo (workflow, Linear), ficha y decisiones
 ├── .claude/        # Skills y subagentes de Claude Code
 └── AGENTS.md       # Instrucciones para agentes de código (estándar abierto)
@@ -997,7 +998,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 2. Contrato `Effect` y efecto *respiración*, con su test de frames dorados.
 3. Bucle de frames con reloj inyectable y salto de frames.
 4. Puerto `LightOutput`, adaptador en memoria y raíz de composición.
-5. Arranque con `pnpm dev` y `deploy/config/demo.json`.
+5. Arranque con `pnpm dev` y `config/demo.json`.
 
 **Criterios de aceptación** (de HU1, los que cubre esta tarea)
 

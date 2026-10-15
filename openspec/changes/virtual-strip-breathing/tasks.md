@@ -55,7 +55,7 @@
   `config/local.json` si no existe y arranca el motor.
   Verificar: en un clon limpio, `pnpm dev` crea `config/local.json` y escribe la línea de log con 1
   tira a 60 fps; con un `config/local.json` cambiado, no lo pisa y `git status` no lo muestra.
-- [ ] 1.11 Documentación:
+- [x] 1.11 Documentación:
   - README §1.4: `config/local.json` en lugar de `/etc/moodtable/config.json` (también en la mesa),
     `config/demo.json` en lugar de `deploy/config/demo.json`, y una tira virtual en la demo;
   - README §2.1 y §2.2, si el puerto `LightOutput` por tira cambia lo que describen;
