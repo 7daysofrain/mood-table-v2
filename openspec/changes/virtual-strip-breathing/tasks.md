@@ -25,7 +25,7 @@
   segundo 4 es igual al del 0); frames dorados de una tira de 60 LEDs en 0, 1, 2 y 3 s, guardados como
   fichero de referencia (`specs/effects`).
   Verificar: los tests nuevos fallan porque el efecto no existe.
-- [ ] 1.5 Contrato `Effect` de README §2.2 (decisión 1) y efecto *respiración* con `usesAudio: false`,
+- [x] 1.5 Contrato `Effect` de README §2.2 (decisión 1) y efecto *respiración* con `usesAudio: false`,
   `color` blanco cálido y `period` 4 por defecto (decisión 5). Al fijar el RGB del blanco cálido y el
   brillo mínimo se generan los frames dorados.
   Verificar: los tests de 1.4 pasan.

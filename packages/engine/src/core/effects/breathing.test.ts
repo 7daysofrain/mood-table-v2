@@ -53,13 +53,26 @@ describe('la respiración', () => {
     const levels = Array.from({ length: steps + 1 }, (_, step) =>
       brightness(frameAt((step * 4) / steps)),
     );
-    const peak = levels.indexOf(Math.max(...levels));
+    // El máximo, en la mitad (segundo 2). Con el redondeo, el brillo alcanza 255 un poco antes.
+    const peak = steps / 2;
 
     expect(Math.min(...levels)).toBeLessThanOrEqual(0.1 * 255);
-    expect(Math.max(...levels)).toBe(255);
-    expect(peak).toBe(steps / 2);
+    expect(levels[peak]).toBe(255);
     expect(isSorted(levels.slice(0, peak + 1), 'up')).toBe(true);
     expect(isSorted(levels.slice(peak), 'down')).toBe(true);
+  });
+
+  it('pinta el color de sus parámetros, también si cambia entre un frame y el siguiente', () => {
+    const out = new Uint8Array(3);
+    const memory = breathing.createMemory(strip);
+    const ctx = { time: 2, dt: 0, audio: null };
+
+    breathing.render(ctx, { color: '#FFA957', period: 4 }, memory, out);
+    breathing.render(ctx, { color: '#FFA957', period: 4 }, memory, out);
+    expect(colorsOf(out)).toEqual(['ffa957']);
+
+    breathing.render(ctx, { color: '#2040ff', period: 4 }, memory, out);
+    expect(colorsOf(out)).toEqual(['2040ff']);
   });
 
   it('el frame del segundo 4 es igual al del segundo 0', () => {
