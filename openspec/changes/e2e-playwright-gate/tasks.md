@@ -69,9 +69,9 @@
 
   Verificar: los comandos de README §1.4 y de `AGENTS.md` funcionan tal como están escritos en un
   clon limpio, y `pnpm exec openspec validate --specs` pasa.
-- [ ] 1.6 Registrar las decisiones:
+- [x] 1.6 Registrar las decisiones:
   - en `docs/idea-mood-table.md` §10, la decisión D43 (*Propuesta de D#* de `design.md`), si el
-    usuario la aprueba;
+    usuario la aprueba (*no la aprobó: queda solo en `design.md`*);
   - entrada en `prompts.md` sobre el análisis de si la tarea llevaba change, el conflicto con el
     requisito de runner único y la decisión de la cobertura, con el formato de `course.md` §5.
 

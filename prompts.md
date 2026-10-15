@@ -625,6 +625,28 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Copilot encontró dos frases de la ficha que seguían poniendo el spike antes del motor: la tabla de riesgos (§6) y los primeros pasos (§14). La comprobación de la IA buscaba con `grep` los identificadores (`MOO-12`, `D13`) y la frase literal del PRD, y no pilló las mismas ideas dichas con otras palabras. La IA lo verificó contra la ficha, lo corrigió con un commit, contestó en el hilo con ese commit y lo resolvió. Lección: cuando cambia una decisión, hay que buscar el concepto («spike», «spec del motor»), no solo los identificadores.*
 
+#### 6.10 Los E2E con Playwright y su puerta en la CI (`MOO-49`)
+
+**Prompt 1:**
+
+> analiza MOO-49 a ver si necesitamos openspec o lo abordamos directamente
+
+*Claude Code (`claude-opus-5-5`, 15-oct). La tarea es una `Chore` y el ticket ya decía que llevaba change, pero la IA no se fio de eso y lo comprobó contra la regla de `workflow.md` §6, que mira si se tocan requisitos y no el tamaño. Vio que cambiaban cuatro requisitos de `quality-gates`, y uno no lo citaba el ticket: «Un único runner de tests», que Playwright contradice. Lo planteó como decisión antes del `/opsx:propose`, junto con la de la cobertura, con su recomendación y su porqué.*
+
+**Prompt 2:**
+
+> 1- ¿Cual seria el segundo runnner?
+> 2- No, ahi solo metemos unitarios
+> 3- Si, claro, sin problema
+
+*La IA explicó que el segundo runner es Playwright Test y por qué no usar Playwright como librería dentro de Vitest: se pierden el servidor, el aislamiento por test y las trazas. También recordó que README §2.6 ya los separaba así. Sobre la cobertura, no dio por buena la respuesta: los tests de integración también corren en Vitest y entran en el mismo informe. Preguntó si «solo unitarios» quería decir eso, y el humano lo aclaró: unitarios más integración, sin los E2E.*
+
+*Ajustes durante el change y la implementación:*
+- *Al escribir la verificación en GitHub, la IA vio su propio fallo: quitar una zona del panel también rompe `PanelLayout.test.tsx`, así que no aislaba la puerta nueva. La PR de prueba rompe `main.tsx`, que solo ve el E2E.*
+- *La última versión de Playwright (1.64.1) tenía menos de un día y no cumplía `minimumReleaseAge`: se usó la 1.64.0.*
+- *Un paquete TypeScript sin ningún `.ts` no compila (TS18003). El `tsconfig` de `e2e/` pasó del paso 1.1 al 1.2, para que cada commit quedara en verde, y se dejó escrito en `tasks.md`.*
+- *ESLint analizaba el informe HTML de Playwright (3.719 errores en local): se añadió a sus ignorados.*
+
 ---
 
 ### 7. Pull Requests
