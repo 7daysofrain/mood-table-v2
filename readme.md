@@ -166,6 +166,12 @@ pnpm test        # unitarios e integración (Vitest)
 pnpm test:e2e    # flujo principal en el navegador (Playwright)
 ```
 
+Antes del primer `pnpm test:e2e`, instala el navegador de los E2E (una sola vez, y otra cuando suba la versión de Playwright):
+
+```bash
+pnpm --filter @moodtable/e2e exec playwright install chromium
+```
+
 #### 3. En la mesa (Raspberry Pi con tira real)
 
 **Hardware:** Raspberry Pi 4 (o 3 B+) con Raspberry Pi OS de 64 bits · tira LED direccionable conectada a un **Light Box** o a un **Arduino con el sketch Adalight** por USB · fuente de alimentación adecuada para la tira · tarjeta de sonido USB con la salida del mixer en su entrada.
@@ -425,9 +431,10 @@ mood-table-v2/
 
 **Por qué un efecto vive en dos paquetes:** su **esquema** de parámetros está en `shared`, porque lo necesitan el panel (para generar controles) y la API (para validar). Su **render** está en `engine`, porque es lógica de luces y el navegador no debe tenerla.
 
+**`e2e/` es un miembro del workspace, pero no un paquete del producto** (`@moodtable/e2e`): tiene sus propias dependencias (Playwright) y su `tsconfig`, y así el lint y la comprobación de tipos lo cubren como al resto. No importa código de los paquetes: prueba el sistema desde fuera, por el navegador. Los tests del flujo completo arrancan el motor con fuente = fichero y comprueban en el navegador que el visor reacciona y que mover un control cambia la luz.
+
 **Carpetas fuera de los workspaces:**
 
-- `e2e/`: los tests del flujo completo arrancan el motor con fuente = fichero y comprueban en el navegador que el visor reacciona y que mover un control cambia la luz.
 - `firmware/`: proyecto C++ independiente (should-have).
 - `openspec/`: las specs que guían cada cambio (Spec-Driven Development).
 - `.claude/` y `AGENTS.md`: la configuración del agente de código es parte de la evidencia del uso de IA (ver `prompts.md`). Donde existe un estándar se usa: las instrucciones del proyecto van en **`AGENTS.md`**, que leen distintas herramientas (Claude Code lo recibe a través de un `CLAUDE.md` que lo importa). Donde no existe, se usa la ubicación de la herramienta: las skills (por ejemplo, "nuevo efecto") y los subagentes (por ejemplo, revisión contra spec) van en `.claude/`, que es donde Claude Code los busca.
@@ -613,6 +620,7 @@ Todos los niveles automáticos se ejecutan en cada PR (§2.4).
 - **Quality gate de SonarQube:** ≥ 80 % de cobertura en el **código nuevo** de cada PR; si no se cumple, el PR no se integra.
 - **Núcleo** (bucle, análisis, efectos, límite de potencia): objetivo cercano al 100 %, por ser lógica pura y determinista.
 - **Adaptadores de hardware** (serie, `arecord`) y la raíz de composición: excluidos del cálculo; se prueban a mano (nivel "Hardware").
+- **E2E:** no cuentan. La cobertura es la de los tests unitarios y de integración (Vitest). Un E2E recorre mucho código sin comprobarlo en detalle, e inflaría la del código nuevo, que es la que juzga el *quality gate*. SonarQube los analiza como código de test.
 
 ---
 
