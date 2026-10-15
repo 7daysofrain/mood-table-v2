@@ -11,8 +11,14 @@ import tseslint from 'typescript-eslint';
  * información de tipos para el código TypeScript y reglas de hooks de React solo en el panel.
  */
 export default defineConfig(
-  // Informes y trazas que genera Playwright al ejecutar los E2E.
+  // Builds, cobertura e informes y trazas que genera Playwright al ejecutar los E2E.
   globalIgnores(['**/dist/', 'coverage/', 'e2e/playwright-report/', 'e2e/test-results/']),
+
+  // Las carpetas con punto son de herramientas, no código del repo: por ejemplo, los worktrees que
+  // crean las sesiones de Claude Code en `.claude/worktrees/` son copias enteras del repo. La
+  // excepción son los hooks de Claude Code, que sí son código nuestro. Hay que reabrir `.claude/`
+  // antes que `.claude/hooks/`: ESLint no reabre un fichero si su carpeta sigue ignorada.
+  globalIgnores(['.*/', '!.claude/', '.claude/*', '!.claude/hooks/']),
 
   js.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
