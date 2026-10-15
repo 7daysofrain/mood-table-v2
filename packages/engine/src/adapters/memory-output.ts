@@ -1,5 +1,6 @@
 /**
- * Salida en memoria (`LightOutput`). Sin implementar todavía: sus tests están en rojo.
+ * Salida en memoria (`LightOutput`): guarda una copia de cada frame que recibe. Sirve para los
+ * tests y para comprobar el motor sin visor ni hardware.
  */
 import type { LightOutput, Tick } from '../core/frame-loop.ts';
 
@@ -12,6 +13,7 @@ export class MemoryOutput implements LightOutput {
   readonly frames: RecordedFrame[] = [];
 
   write(frame: Uint8Array, tick: Tick): void {
-    throw new Error(`Sin implementar (${frame.length} bytes, seq ${tick.seq})`);
+    // El búfer es del bucle y cambia en el pulso siguiente: se guarda una copia.
+    this.frames.push({ seq: tick.seq, colors: frame.slice() });
   }
 }

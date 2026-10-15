@@ -34,7 +34,7 @@
   tardío salta `seq` sin calcular los intermedios; el frame de cada tira llega a todas sus salidas; una
   salida que guarda los frames ve dos frames distintos tras dos pulsos (`specs/frame-loop`).
   Verificar: los tests nuevos fallan porque el bucle no existe.
-- [ ] 1.7 Puerto `LightOutput` con `write(frame, tick)` (decisión 2), bucle `tick(now)` puro con
+- [x] 1.7 Puerto `LightOutput` con `write(frame, tick)` (decisión 2), bucle `tick(now)` puro con
   búfer preasignado por tira (decisión 7) y salida en memoria, que copia cada frame, en
   `packages/engine/src/adapters`. Se quitan los marcadores de `MOO-28` (`CORE_NAME`, `ADAPTERS_NAME`) y
   sus tests.
