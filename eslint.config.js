@@ -11,7 +11,8 @@ import tseslint from 'typescript-eslint';
  * información de tipos para el código TypeScript y reglas de hooks de React solo en el panel.
  */
 export default defineConfig(
-  globalIgnores(['**/dist/', 'coverage/']),
+  // Informes y trazas que genera Playwright al ejecutar los E2E.
+  globalIgnores(['**/dist/', 'coverage/', 'e2e/playwright-report/', 'e2e/test-results/']),
 
   js.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
@@ -23,6 +24,7 @@ export default defineConfig(
           './tsconfig.json',
           './packages/*/tsconfig.json',
           './tooling/tsconfig.json',
+          './e2e/tsconfig.json',
           './packages/panel/tsconfig.vite.json',
         ],
         tsconfigRootDir: import.meta.dirname,

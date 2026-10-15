@@ -19,9 +19,10 @@
 
   Verificar: `pnpm install` termina sin avisos de `minimumReleaseAge`, `pnpm lint` y `pnpm typecheck`
   siguen en verde, y `pnpm test` ejecuta los mismos tests que antes.
-- [ ] 1.2 Configuración de Playwright y E2E de humo (decisiones 3, 5, 6 y 8):
+- [x] 1.2 Configuración de Playwright y E2E de humo (decisiones 3, 5, 6 y 8):
   - `e2e/tsconfig.json`, que extiende `tsconfig.node.json`; el script `typecheck` en
-    `e2e/package.json`, y `./e2e/tsconfig.json` en `parserOptions.project` de `eslint.config.js`;
+    `e2e/package.json`, y `./e2e/tsconfig.json` en `parserOptions.project` de `eslint.config.js`,
+    que además ignora `e2e/playwright-report/` y `e2e/test-results/`;
   - `e2e/playwright.config.ts`:
     - `webServer` construye el panel y lo sirve con `preview` en `127.0.0.1:4173`, con
       `--strictPort` y `reuseExistingServer: false`;
