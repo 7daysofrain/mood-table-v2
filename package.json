@@ -7,7 +7,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "dev": "node tooling/dev/prepare-local-config.ts && node packages/engine/src/main.ts",
+    "dev": "node tooling/dev/prepare-local-config.ts && pnpm --parallel --filter @moodtable/engine --filter @moodtable/panel dev",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && pnpm -r typecheck",
     "test": "vitest run",

@@ -100,7 +100,7 @@
   incluye la dirección del panel.
   Verificar: con `pnpm --filter @moodtable/panel build` hecho, `pnpm dev` deja el panel en la dirección
   del log y un cliente WebSocket de prueba recibe frames.
-- [ ] 2.7 Desarrollo con Vite (decisión 12): `pnpm dev` arranca también el servidor de Vite del panel
+- [x] 2.7 Desarrollo con Vite (decisión 12): `pnpm dev` arranca también el servidor de Vite del panel
   (`localhost:5173`), que reenvía `/ws` al motor.
   Verificar: con `pnpm dev`, un cliente WebSocket conectado a `localhost:5173/ws` recibe frames, y al
   cambiar un componente del panel la página se recarga sola.
