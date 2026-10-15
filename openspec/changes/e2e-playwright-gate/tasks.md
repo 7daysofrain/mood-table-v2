@@ -76,7 +76,7 @@
     requisito de runner único y la decisión de la cobertura, con el formato de `course.md` §5.
 
   Verificar: la entrada de `prompts.md` tiene como mucho 3 prompts literales y la línea en cursiva.
-- [ ] 1.7 **Verificación en GitHub** (sin commit; *Migration Plan* de `design.md`). El usuario añade
+- [x] 1.7 **Verificación en GitHub** (sin commit; *Migration Plan* de `design.md`). El usuario añade
   `e2e` como comprobación requerida en el *ruleset* «ramas de integración» cuando el job ya se ha
   ejecutado en la PR.
 
@@ -92,3 +92,8 @@
 
   Después: cerrar la PR de prueba sin integrar y borrar su rama. Verificar: los enlaces a la ejecución
   y una captura del botón de integrar bloqueado están en la descripción de la PR de la tarea.
+
+  *Hecho (15-oct) en la PR de prueba #25, cerrada sin integrar: `e2e` en rojo y requerida, el resto en
+  verde y el botón de integrar bloqueado (captura del usuario). La traza del artefacto incluye el
+  `pageError` de `main.tsx`. El visor de trazas no se pudo abrir en el navegador del panel (no admite
+  *service workers*), así que se leyó la traza directamente. Detalle en la descripción de #24.*
