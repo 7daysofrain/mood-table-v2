@@ -7,6 +7,7 @@ import Type, { type Static } from 'typebox';
 import Value from 'typebox/value';
 
 import { findJsonError } from './json-error.ts';
+import { MAX_STRIPS } from './viewer-protocol.ts';
 
 /**
  * Ningún objeto del fichero admite campos que el esquema no declare: así una errata en un campo
@@ -41,7 +42,7 @@ export const ConfigFileSchema = Type.Object(
     // El pulso del motor: README §2.2 prevé 30-60 fps, y más satura la CPU sin decir por qué.
     fps: Type.Optional(Type.Integer({ minimum: 1, maximum: 60, default: 60 })),
     server: Type.Optional(ServerSchema),
-    strips: Type.Array(StripConfigSchema, { minItems: 1 }),
+    strips: Type.Array(StripConfigSchema, { minItems: 1, maxItems: MAX_STRIPS }),
   },
   CLOSED,
 );
@@ -174,6 +175,8 @@ function describeProblem(error: SchemaError, received: unknown): string {
       return `debe ser ${String(params.limit)} o más`;
     case 'maximum':
       return `debe ser ${String(params.limit)} o menos`;
+    case 'maxItems':
+      return `admite como mucho ${String(params.limit)} tiras`;
     case 'minLength':
       return 'no puede estar vacío';
     case 'const':

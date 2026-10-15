@@ -11,6 +11,9 @@ export const FRAME_MESSAGE_TYPE = 1;
 /** Tipo (1 byte) + `seq` (4 bytes, big-endian) + índice de la tira (1 byte). */
 export const FRAME_HEADER_BYTES = 6;
 
+/** El índice de la tira ocupa un byte: el fichero de configuración no admite más tiras. */
+export const MAX_STRIPS = 256;
+
 export interface FrameMessage {
   /** Número del pulso (módulo 2³²): el mismo en las tiras de un pulso y en todos los navegadores. */
   seq: number;
@@ -22,7 +25,7 @@ export interface FrameMessage {
 
 /** El mensaje binario de un frame. Es nuevo en cada llamada: se puede enviar sin copiarlo. */
 export function encodeFrame(seq: number, stripIndex: number, colors: Uint8Array): Uint8Array {
-  if (!Number.isInteger(stripIndex) || stripIndex < 0 || stripIndex > 255) {
+  if (!Number.isInteger(stripIndex) || stripIndex < 0 || stripIndex >= MAX_STRIPS) {
     throw new RangeError(`El índice de la tira no cabe en un byte: ${stripIndex}`);
   }
   const message = new Uint8Array(FRAME_HEADER_BYTES + colors.length);

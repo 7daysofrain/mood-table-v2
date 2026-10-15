@@ -22,4 +22,5 @@ export {
   FRAME_HEADER_BYTES,
   FRAME_MESSAGE_TYPE,
   type FrameMessage,
+  MAX_STRIPS,
 } from './viewer-protocol.ts';
