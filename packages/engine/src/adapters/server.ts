@@ -7,7 +7,10 @@
  * Sin contramedida para un navegador que no recibe (riesgo aceptado en el design): sus mensajes se
  * acumulan en su conexión hasta que se da por muerta.
  */
+import { existsSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
+import { networkInterfaces } from 'node:os';
+import { join } from 'node:path';
 
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
@@ -34,20 +37,41 @@ export interface EngineServer {
 /** Ruta del WebSocket del visor (`docs/instructions/viewer-protocol.md`). */
 export const VIEWER_PATH = '/ws';
 
+const PANEL_NOT_BUILT =
+  'El panel no está construido. Constrúyelo con `pnpm --filter @moodtable/panel build` y recarga, ' +
+  'o abre el panel de desarrollo que arranca `pnpm dev` en http://localhost:5173.';
+
+/**
+ * La dirección con la que se abre el panel. Si el motor escucha en toda la red (`0.0.0.0` o `::`),
+ * esa dirección no se puede abrir: se da la IP de esta máquina en la red local, como en la mesa.
+ */
+function panelHost({ address, family }: AddressInfo): string {
+  if (address === '0.0.0.0' || address === '::') {
+    const lan = Object.values(networkInterfaces())
+      .flat()
+      .find((network) => network?.family === 'IPv4' && !network.internal);
+    return lan?.address ?? '127.0.0.1';
+  }
+  return family === 'IPv6' ? `[${address}]` : address;
+}
+
 export async function startServer({ host, port, panelDir }: ServerOptions): Promise<EngineServer> {
   const app = Fastify();
   await app.register(fastifyWebsocket);
-  await app.register(fastifyStatic, { root: panelDir });
+  if (existsSync(join(panelDir, 'index.html'))) {
+    await app.register(fastifyStatic, { root: panelDir });
+  } else {
+    app.get('/', (_request, reply) => reply.code(503).type('text/plain').send(PANEL_NOT_BUILT));
+  }
   // El navegador solo recibe: los frames los envía la salida del visor de cada tira.
   app.get(VIEWER_PATH, { websocket: true }, () => undefined);
   await app.listen({ host, port });
 
   const browsers = app.websocketServer.clients;
   const address = app.server.address() as AddressInfo;
-  const hostname = address.family === 'IPv6' ? `[${address.address}]` : address.address;
 
   return {
-    url: `http://${hostname}:${address.port}`,
+    url: `http://${panelHost(address)}:${address.port}`,
     viewerOutput: (stripIndex) => ({
       write(frame, tick) {
         if (browsers.size === 0) return;

@@ -65,6 +65,22 @@ describe('el servidor del motor', () => {
     expect((await fetch(`${server.url}/`)).status).toBe(200);
   });
 
+  it('si escucha en toda la red, da la IP de esta máquina y no 0.0.0.0', async () => {
+    server = await startServer({ host: '0.0.0.0', port: 0, panelDir });
+
+    expect(server.url).not.toContain('0.0.0.0');
+    expect((await fetch(`${server.url}/`)).status).toBe(200);
+  });
+
+  it('sin el build del panel, explica cómo construirlo en lugar de dar un 404', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir: join(panelDir, 'no') });
+
+    const response = await fetch(`${server.url}/`);
+
+    expect(response.status).toBe(503);
+    expect(await response.text()).toContain('pnpm --filter @moodtable/panel build');
+  });
+
   it('sin navegadores conectados, la salida del visor no envía nada ni falla', async () => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
 
