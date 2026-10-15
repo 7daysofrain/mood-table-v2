@@ -50,7 +50,7 @@
   en memoria y comprueba que llegan frames de respiración.
   Verificar: el test pasa; `node packages/engine/src/main.ts` sin `config/local.json` termina con
   código 1 y dice qué falla.
-- [ ] 1.10 Simulador sin preparar nada (decisiones 3 y 6): `config/demo.json` con una tira virtual de
+- [x] 1.10 Simulador sin preparar nada (decisiones 3 y 6): `config/demo.json` con una tira virtual de
   60 LEDs; `config/local.json` en `.gitignore`; script `dev` en la raíz que copia `config/demo.json` a
   `config/local.json` si no existe y arranca el motor.
   Verificar: en un clon limpio, `pnpm dev` crea `config/local.json` y escribe la línea de log con 1

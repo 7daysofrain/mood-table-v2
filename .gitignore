@@ -1,6 +1,9 @@
 .DS_Store
 /.idea
 
+# Configuración de cada instalación: pnpm dev la crea a partir de config/demo.json
+config/local.json
+
 # Borradores de trabajo (Cowork)
 docs/borradores/
 
