@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@fission-ai/openspec": "1.14.0",
+    "@fission-ai/openspec": "1.14.1",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
