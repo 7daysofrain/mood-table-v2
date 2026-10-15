@@ -73,43 +73,49 @@
 
 ## 2. MOO-17 · engine
 
-- [ ] 2.1 Fastify, `@fastify/websocket` y `@fastify/static` en el catálogo (la última estable que
+- [x] 2.1 Fastify, `@fastify/websocket` y `@fastify/static` en el catálogo (la última estable que
   cumpla `minimumReleaseAge`) y como dependencias de `@moodtable/engine`.
   Verificar: `pnpm install` sin avisos, y lint, tipos y tests siguen en verde.
-- [ ] 2.2 **(test en rojo)** Tests del codificador y el decodificador del protocolo del visor en
+- [x] 2.2 **(test en rojo)** Tests del codificador y el decodificador del protocolo del visor en
   `packages/shared`: un frame se codifica en tipo, `seq`, índice y colores, y se decodifica igual;
   una tira de 60 LEDs da 180 bytes de color; un mensaje de otro tipo o demasiado corto se rechaza.
   Verificar: los tests nuevos fallan porque el protocolo no existe.
-- [ ] 2.3 Codificador y decodificador del protocolo en `packages/shared`, publicados desde su entrada
+- [x] 2.3 Codificador y decodificador del protocolo en `packages/shared`, publicados desde su entrada
   (decisión 10), y `docs/instructions/viewer-protocol.md` con el formato byte a byte, orden de los
   bytes de `seq` incluido, con su fila en el índice de `AGENTS.md` y un enlace desde README §4
   (decisión 11).
   Verificar: los tests de 2.2 pasan y el documento describe exactamente lo que hace el código.
-- [ ] 2.4 **(test en rojo)** Test de integración del servidor del motor, con dos clientes WebSocket y
+- [x] 2.4 **(test en rojo)** Test de integración del servidor del motor, con dos clientes WebSocket y
   una tira: los dos reciben los mismos mensajes (mismo `seq` y mismos colores), uno por frame y tira;
   `GET /` devuelve el `index.html` del build del panel; sin `server` en la configuración escucha en
   `127.0.0.1:8080` (`specs/viewer`, `specs/engine-config`).
   Verificar: el test falla porque el servidor no existe.
-- [ ] 2.5 Adaptador del servidor en `packages/engine/src/adapters`: Fastify con `host` y `port` de la
+- [x] 2.5 Adaptador del servidor en `packages/engine/src/adapters`: Fastify con `host` y `port` de la
   configuración (decisión 13), el build del panel servido (decisión 12) y un hub WebSocket con una
   única conexión por navegador; una salida del visor por tira que codifica cada frame y lo envía a
   todos los navegadores conectados (decisiones 2 y 10). Sin contramedida para un navegador atascado
   (riesgo aceptado).
   Verificar: los tests de 2.4 pasan.
-- [ ] 2.6 `main.ts` añade la salida del visor a todas las tiras y arranca el servidor; la línea de log
+- [x] 2.6 `main.ts` añade la salida del visor a todas las tiras y arranca el servidor; la línea de log
   incluye la dirección del panel.
   Verificar: con `pnpm --filter @moodtable/panel build` hecho, `pnpm dev` deja el panel en la dirección
   del log y un cliente WebSocket de prueba recibe frames.
-- [ ] 2.7 Desarrollo con Vite (decisión 12): `pnpm dev` arranca también el servidor de Vite del panel
+- [x] 2.7 Desarrollo con Vite (decisión 12): `pnpm dev` arranca también el servidor de Vite del panel
   (`localhost:5173`), que reenvía `/ws` al motor.
   Verificar: con `pnpm dev`, un cliente WebSocket conectado a `localhost:5173/ws` recibe frames, y al
   cambiar un componente del panel la página se recarga sola.
-- [ ] 2.8 Documentación:
+- [x] 2.8 Documentación:
   - README §1.4: en desarrollo se abre `localhost:5173`; el motor sirve el build en `8080`;
   - README §2.2 (adaptador *Visor*), si cambia lo que describe;
   - `docs/idea-mood-table.md` §10: D45 (el protocolo del visor), si el usuario la aprueba.
 
   Verificar: los comandos de README §1.4 funcionan tal como están escritos.
+- [x] 2.9 Revisión de la PR: el esquema limita `strips` a 256 tiras, con su test
+  (`specs/engine-config`).
+  Verificar: un fichero con 257 tiras no arranca y el mensaje dice el máximo.
+- [x] 2.10 Revisión de la PR: README §1.4 dice que en desarrollo el motor tiene que escuchar en el
+  `8080`, que es adonde Vite reenvía `/ws`.
+  Verificar: el README lo dice junto a `localhost:5173`.
 
 ## 3. MOO-18 · panel
 

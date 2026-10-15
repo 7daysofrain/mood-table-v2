@@ -110,7 +110,9 @@ actualizaciones igual que uno en `/etc`.
   (por ejemplo, una salida de un tipo no soportado), si tiene un campo que el esquema no declara
   *(asumido)* o si `fps` está fuera de 1-60. Los dos últimos salen de la revisión de la PR de
   `MOO-16`: sin ellos, una errata en un campo opcional se ignora sin avisar, y unos `fps` muy altos
-  saturan la CPU sin decir por qué.
+  saturan la CPU sin decir por qué. Y tampoco arranca si declara más de 256 tiras, porque el índice
+  de la tira ocupa un byte en el protocolo del visor (decisión 10); sale de la revisión de la PR de
+  `MOO-17`.
 
 ### 5. La *respiración*: blanco cálido que sube y baja cada 4 segundos
 
@@ -317,6 +319,12 @@ vacío. El requisito ya lo prevé (*mientras ninguna historia rellene una zona*)
   minutos. Con la demo (una tira de 60 LEDs) son unos 6 MB en 10 minutos; con la mesa real (dos tiras
   de 300 LEDs), unos 65 MB. Si aparece en uso real, la solución es un `if` en el adaptador del visor:
   no enviar un frame a un navegador que todavía tiene algo pendiente en su cola.
+- **[Cualquier web abierta en el navegador puede conectarse al WebSocket del visor]** → Los
+  navegadores no aplican CORS a WebSocket, así que una página de otro sitio puede abrir
+  `ws://127.0.0.1:8080/ws`. Hoy solo recibiría frames, que no son sensibles: **riesgo aceptado en
+  esta historia**. Deja de serlo con H2, cuando por la misma conexión viajen comandos: su spec tiene
+  que comprobar la cabecera `Origin` al conectar y rechazar las que no sean la del propio panel.
+  Sale de la revisión de la PR de `MOO-17`.
 - **[El fichero mínimo se queda corto para H4]** → El esquema crece añadiendo campos opcionales y
   nuevos tipos de `output`, sin romper los ficheros existentes. Como rechaza los campos que no
   declara, un fichero con campos de una versión posterior no arranca en un motor anterior: es

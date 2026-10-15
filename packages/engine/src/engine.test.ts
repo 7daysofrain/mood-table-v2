@@ -46,35 +46,35 @@ describe('el motor en marcha', () => {
     }
   });
 
-  it('pide las salidas de cada tira declarada', () => {
+  it('pide las salidas de cada tira declarada, con su posición en el fichero', () => {
     const second = { ...demoStrip, id: 'segunda', ledCount: 10 };
     const asked: string[] = [];
     const engine = startEngine({
       config: { ...config, strips: [demoStrip, second] },
-      createOutputs: (strip) => {
-        asked.push(strip.id);
+      createOutputs: (strip, index) => {
+        asked.push(`${index}:${strip.id}`);
         return [];
       },
       clock: Date.now,
     });
     engine.stop();
 
-    expect(asked).toEqual(['demo', 'segunda']);
+    expect(asked).toEqual(['0:demo', '1:segunda']);
   });
 });
 
 describe('la línea de log del arranque', () => {
-  it('dice qué fichero ha cargado, con 1 tira a 60 fps', () => {
-    expect(startupMessage('config/local.json', config)).toBe(
-      'Mood Table: cargado config/local.json · 1 tira a 60 fps',
+  it('dice qué fichero ha cargado, con 1 tira a 60 fps, y dónde se abre el panel', () => {
+    expect(startupMessage('config/local.json', config, 'http://127.0.0.1:8080')).toBe(
+      'Mood Table: cargado config/local.json · 1 tira a 60 fps · panel en http://127.0.0.1:8080',
     );
   });
 
   it('con varias tiras y otros fps', () => {
     const twoStrips = { ...config, fps: 30, strips: [demoStrip, { ...demoStrip, id: 'otra' }] };
 
-    expect(startupMessage('config/local.json', twoStrips)).toBe(
-      'Mood Table: cargado config/local.json · 2 tiras a 30 fps',
+    expect(startupMessage('config/local.json', twoStrips, 'http://127.0.0.1:8080')).toBe(
+      'Mood Table: cargado config/local.json · 2 tiras a 30 fps · panel en http://127.0.0.1:8080',
     );
   });
 });

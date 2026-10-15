@@ -4,14 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node src/main.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fastify/static": "catalog:",
+    "@fastify/websocket": "catalog:",
     "@moodtable/shared": "workspace:*",
+    "fastify": "catalog:",
     "typebox": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/ws": "catalog:",
     "typescript": "catalog:"
   }
 }

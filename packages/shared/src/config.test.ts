@@ -149,6 +149,18 @@ describe('un fichero de configuración que no sirve', () => {
     );
   });
 
+  it('con más de 256 tiras, dice cuántas admite como mucho', () => {
+    const strips = Array.from({ length: 257 }, (_, index) => ({ ...demoStrip, id: `tira-${index}` }));
+
+    expect(errorOf(text({ strips }))).toBe('campo `strips`: admite como mucho 256 tiras');
+  });
+
+  it('con 256 tiras, arranca', () => {
+    const strips = Array.from({ length: 256 }, (_, index) => ({ ...demoStrip, id: `tira-${index}` }));
+
+    expect(parseConfig(text({ strips })).ok).toBe(true);
+  });
+
   it('con fps por encima de 60, dice que debe ser 60 o menos', () => {
     expect(errorOf(text({ fps: 120, strips: [demoStrip] }))).toBe(
       'campo `fps`: debe ser 60 o menos',
