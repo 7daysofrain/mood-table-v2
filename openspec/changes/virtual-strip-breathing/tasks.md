@@ -12,7 +12,7 @@
 - [x] 1.1 `typebox` 1.x en el catálogo de `pnpm-workspace.yaml` (la última estable que cumpla
   `minimumReleaseAge`) y como dependencia de `@moodtable/shared` (decisión 9).
   Verificar: `pnpm install` sin avisos, y `pnpm lint`, `pnpm typecheck` y `pnpm test` siguen en verde.
-- [ ] 1.2 **(test en rojo)** Tests de la validación de la configuración en `packages/shared`: fichero
+- [x] 1.2 **(test en rojo)** Tests de la validación de la configuración en `packages/shared`: fichero
   válido mínimo; sin `strips` y con `strips` vacía; JSON mal escrito; `ledCount` 0; salida de un tipo
   que no existe; `id` repetido; `fps` y `server` por defecto (60; `127.0.0.1:8080`) y declarados. Cada
   error comprueba que el mensaje nombra la tira y el campo (`specs/engine-config`).
