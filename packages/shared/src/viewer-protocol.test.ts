@@ -14,6 +14,13 @@ describe('el mensaje de un frame', () => {
     expect(Array.from(message)).toEqual([1, 0x01, 0x02, 0x03, 0x04, 2, 10, 20, 30]);
   });
 
+  it('da los bytes del ejemplo de docs/instructions/viewer-protocol.md', () => {
+    const message = encodeFrame(260, 0, Uint8Array.of(0xff, 0, 0, 0, 0, 0xff));
+    const hex = Array.from(message, (byte) => byte.toString(16).padStart(2, '0')).join(' ');
+
+    expect(hex).toBe('01 00 00 01 04 00 ff 00 00 00 00 ff');
+  });
+
   it('con una tira de 60 LEDs, lleva 180 bytes de color tras la cabecera de 6', () => {
     expect(encodeFrame(7, 0, colorsOf(60))).toHaveLength(6 + 180);
   });

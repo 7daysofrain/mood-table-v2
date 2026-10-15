@@ -15,3 +15,11 @@ export {
 } from './config.ts';
 
 export { BreathingParamsSchema, type BreathingParams } from './effects.ts';
+
+export {
+  decodeFrame,
+  encodeFrame,
+  FRAME_HEADER_BYTES,
+  FRAME_MESSAGE_TYPE,
+  type FrameMessage,
+} from './viewer-protocol.ts';

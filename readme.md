@@ -738,6 +738,8 @@ Como las tiras viven en el fichero, la base de datos no puede tener una clave fo
 
 **No entra en la Entrega 1.** LIDR confirmó que la E1 no incluye la especificación de la API. Se documentará en OpenAPI en la Entrega 2, generada desde los esquemas TypeBox (§2.1) junto al código. El alcance de la API ya está descrito en el §2.2 (componente *API HTTP*).
 
+**Frames del visor (WebSocket).** Los frames que el motor envía al panel no van por la API HTTP, sino por un WebSocket con mensajes binarios. Su formato, byte a byte, está en [`docs/instructions/viewer-protocol.md`](docs/instructions/viewer-protocol.md).
+
 ---
 
 ## 5. Historias de Usuario

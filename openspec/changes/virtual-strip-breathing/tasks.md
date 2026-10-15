@@ -80,7 +80,7 @@
   `packages/shared`: un frame se codifica en tipo, `seq`, índice y colores, y se decodifica igual;
   una tira de 60 LEDs da 180 bytes de color; un mensaje de otro tipo o demasiado corto se rechaza.
   Verificar: los tests nuevos fallan porque el protocolo no existe.
-- [ ] 2.3 Codificador y decodificador del protocolo en `packages/shared`, publicados desde su entrada
+- [x] 2.3 Codificador y decodificador del protocolo en `packages/shared`, publicados desde su entrada
   (decisión 10), y `docs/instructions/viewer-protocol.md` con el formato byte a byte, orden de los
   bytes de `seq` incluido, con su fila en el índice de `AGENTS.md` y un enlace desde README §4
   (decisión 11).
