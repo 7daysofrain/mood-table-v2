@@ -24,6 +24,7 @@ CI runs these same scripts, so a green run locally predicts a green PR.
 | `pnpm lint` | ESLint with type information, including the **boundary rule** (`specs/module-boundaries`) |
 | `pnpm typecheck` | `tsc --noEmit` in the root and in every package |
 | `pnpm test` / `pnpm test:coverage` | Vitest across all packages; coverage goes to a single `coverage/lcov.info` |
+| `pnpm test:e2e` | Playwright E2E in Chromium against the panel build (not counted in coverage). First run `pnpm --filter @moodtable/e2e exec playwright install chromium` |
 | `pnpm exec openspec …` | The pinned OpenSpec CLI (1.14.0), not the global one |
 
 Code conventions the tooling enforces or relies on:

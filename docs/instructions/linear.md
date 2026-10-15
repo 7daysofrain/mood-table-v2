@@ -99,9 +99,9 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia. Una *chore*
   Su enlace `…/tree/` es el del Typeform.
 - **Puertas de la PR**, en el *ruleset* «ramas de integración» (`main` y `feature/entrega-*`), que
   configura el usuario:
-  - comprobaciones requeridas: `lint`, `typecheck`, `test`, *SonarCloud Code Analysis* y `sonar-issues`
-    (incidencias nuevas de SonarQube; solo se ejecuta en las PR contra `main`, y saltada cuenta como
-    superada);
+  - comprobaciones requeridas: `lint`, `typecheck`, `test`, `e2e`, *SonarCloud Code Analysis* y
+    `sonar-issues` (incidencias nuevas de SonarQube; solo se ejecuta en las PR contra `main`, y
+    saltada cuenta como superada);
   - **revisión automática de Copilot** (`copilot_code_review`) en cada PR que no es borrador y en cada
     push. Si el plan de GitHub no la permite, se pide al abrir la PR con
     `gh pr edit <n> --add-reviewer @copilot`;

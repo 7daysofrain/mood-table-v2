@@ -57,7 +57,7 @@
 
   Verificar: en la PR de esta tarea, `e2e` se ejecuta en paralelo con `lint`, `typecheck` y `test` y
   está en verde.
-- [ ] 1.5 Documentar el comando y la puerta:
+- [x] 1.5 Documentar el comando y la puerta:
   - **README §1.4**, en *Tests*: instalar Chromium una vez antes de `pnpm test:e2e`;
   - **README §2.3**: `e2e/` es un miembro del workspace (se quita de «Carpetas fuera de los
     workspaces»);
