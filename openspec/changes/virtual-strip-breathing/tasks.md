@@ -85,7 +85,7 @@
   bytes de `seq` incluido, con su fila en el índice de `AGENTS.md` y un enlace desde README §4
   (decisión 11).
   Verificar: los tests de 2.2 pasan y el documento describe exactamente lo que hace el código.
-- [ ] 2.4 **(test en rojo)** Test de integración del servidor del motor, con dos clientes WebSocket y
+- [x] 2.4 **(test en rojo)** Test de integración del servidor del motor, con dos clientes WebSocket y
   una tira: los dos reciben los mismos mensajes (mismo `seq` y mismos colores), uno por frame y tira;
   `GET /` devuelve el `index.html` del build del panel; sin `server` en la configuración escucha en
   `127.0.0.1:8080` (`specs/viewer`, `specs/engine-config`).
