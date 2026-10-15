@@ -1,24 +1,14 @@
 /**
  * Efecto *respiración* (specs/effects): toda la tira de un color que sube y baja de brillo, de
  * casi apagado al máximo, como una respiración. Es de ambiente y el efecto con el que arranca toda
- * tira. Color y periodo son la decisión del DJ sobre PRD Q2 (decisión 5).
+ * tira. El esquema de sus parámetros (color y periodo) está en `@moodtable/shared`.
  */
-import Type, { type Static } from 'typebox';
+import { type BreathingParams, BreathingParamsSchema } from '@moodtable/shared';
 
 import type { Effect } from './effect.ts';
 
-/** Blanco cálido: el de una bombilla incandescente (unos 2700 K). */
-const WARM_WHITE = '#FFA957';
-
 /** Brillo del punto más bajo: casi apagado, pero sin llegar a apagarse. */
 const MIN_LEVEL = 0.05;
-
-export const BreathingParamsSchema = Type.Object({
-  color: Type.String({ pattern: '^#[0-9A-Fa-f]{6}$', default: WARM_WHITE }),
-  period: Type.Number({ exclusiveMinimum: 0, default: 4 }),
-});
-
-export type BreathingParams = Static<typeof BreathingParamsSchema>;
 
 /** El color ya convertido a RGB: solo se vuelve a convertir si cambia. */
 export interface BreathingMemory {

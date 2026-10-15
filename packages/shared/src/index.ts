@@ -13,3 +13,5 @@ export {
   type ConfigResult,
   type StripConfig,
 } from './config.ts';
+
+export { BreathingParamsSchema, type BreathingParams } from './effects.ts';
