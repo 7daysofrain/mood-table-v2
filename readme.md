@@ -142,7 +142,7 @@ La demo comparte el estado entre todos los visitantes y lo reinicia cada cierto 
 
 #### 2. Simulador en local (sin hardware)
 
-**Requisitos:** Node.js LTS y pnpm (`corepack enable`). Linux, macOS o Windows.
+**Requisitos:** Node.js 24 (la versión de `.nvmrc`; con otra, `pnpm install` falla) y pnpm (`corepack enable`). Linux, macOS o Windows.
 
 ```bash
 git clone https://github.com/7daysofrain/mood-table-v2.git
