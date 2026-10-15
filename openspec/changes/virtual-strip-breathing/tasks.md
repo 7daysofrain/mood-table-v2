@@ -126,7 +126,7 @@
 - [x] 3.2 Cliente de conexión del panel: una única conexión, reintento cada segundo (decisión 15),
   decodificación con el protocolo de `@moodtable/shared` y último frame de cada tira guardado.
   Verificar: los tests de 3.1 pasan.
-- [ ] 3.3 **(test en rojo)** Tests del visor y de la cabecera con Testing Library: con frames, una fila
+- [x] 3.3 **(test en rojo)** Tests del visor y de la cabecera con Testing Library: con frames, una fila
   por tira y un punto por LED, en el orden del índice; sin conexión, ningún punto encendido; la
   cabecera dice «Conectado» o «Sin conexión con el motor». El test de `PanelLayout` *deja cada zona
   vacía* se ajusta al visor con contenido (decisión 19).

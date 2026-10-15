@@ -9,28 +9,28 @@ const ZONAS = ['Visor', 'Tiras', 'Efectos', 'Controles'];
 
 describe('PanelLayout', () => {
   it('tiene una cabecera y una región por cada zona, sin ninguna otra', () => {
-    render(<PanelLayout />);
+    render(<PanelLayout status="disconnected" />);
 
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getAllByRole('region').map(accessibleName)).toEqual(ZONAS);
   });
 
   it.each(ZONAS)('encuentra la zona «%s» por su nombre', (nombre) => {
-    render(<PanelLayout />);
+    render(<PanelLayout status="disconnected" />);
 
     const zona = screen.getByRole('region', { name: nombre });
     expect(within(zona).getByRole('heading', { name: nombre })).toBeInTheDocument();
   });
 
   it('titula el visor «Visor», no «Tira virtual»', () => {
-    render(<PanelLayout />);
+    render(<PanelLayout status="disconnected" />);
 
     expect(screen.queryByText('Tira virtual')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Visor' })).toBeInTheDocument();
   });
 
   it('ordena las zonas como el wireframe: cabecera, visor, tiras, efectos, controles', () => {
-    render(<PanelLayout />);
+    render(<PanelLayout status="disconnected" />);
 
     const enOrden = [screen.getByRole('banner'), ...ZONAS.map((nombre) => screen.getByRole('region', { name: nombre }))];
     for (let i = 1; i < enOrden.length; i++) {
@@ -40,18 +40,34 @@ describe('PanelLayout', () => {
     }
   });
 
-  it('deja cada zona vacía, solo con su título', () => {
-    render(<PanelLayout />);
+  it('deja vacías, solo con su título, las zonas que aún no rellena ninguna historia', () => {
+    render(<PanelLayout status="disconnected" />);
 
-    for (const nombre of ZONAS) {
+    for (const nombre of ['Tiras', 'Efectos', 'Controles']) {
       expect(screen.getByRole('region', { name: nombre })).toHaveTextContent(new RegExp(`^${nombre}$`));
     }
+  });
+
+  it('pone el contenido del visor en su zona', () => {
+    render(<PanelLayout status="disconnected" viewer={<canvas aria-label="Tiras del visor" />} />);
+
+    const visor = screen.getByRole('region', { name: 'Visor' });
+    expect(within(visor).getByLabelText('Tiras del visor')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['connected', 'Conectado'],
+    ['disconnected', 'Sin conexión con el motor'],
+  ] as const)('con la conexión «%s», la cabecera dice «%s»', (status, texto) => {
+    render(<PanelLayout status={status} />);
+
+    expect(within(screen.getByRole('banner')).getByRole('status')).toHaveTextContent(texto);
   });
 
   it('se abre sin escribir errores en la consola', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    render(<PanelLayout />);
+    render(<PanelLayout status="disconnected" />);
 
     expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();

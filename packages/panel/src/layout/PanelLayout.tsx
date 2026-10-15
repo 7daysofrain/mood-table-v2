@@ -1,4 +1,7 @@
 import { AppShell, Group, SimpleGrid, Stack, Title } from '@mantine/core';
+import type { ReactNode } from 'react';
+
+import type { ConnectionStatus } from '../engine/connection.ts';
 
 import { Zone } from './Zone.tsx';
 
@@ -7,7 +10,8 @@ import { Zone } from './Zone.tsx';
  * debajo, tiras, efectos y controles en tres columnas. Las zonas están vacías: cada historia pone su
  * contenido dentro de la suya.
  */
-export function PanelLayout() {
+export function PanelLayout({ status, viewer }: { status: ConnectionStatus; viewer?: ReactNode }) {
+  void [status, viewer];
   return (
     <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>
