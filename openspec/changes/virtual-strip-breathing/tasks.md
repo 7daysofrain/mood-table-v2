@@ -20,7 +20,7 @@
 - [x] 1.3 Esquema TypeBox del fichero de configuración y función pura que recibe el texto y devuelve
   la configuración o el error, publicados desde la entrada de `@moodtable/shared` (decisiones 4 y 8).
   Verificar: los tests de 1.2 pasan.
-- [ ] 1.4 **(test en rojo)** Tests de la respiración en `packages/engine/src/core`: todos los LEDs del
+- [x] 1.4 **(test en rojo)** Tests de la respiración en `packages/engine/src/core`: todos los LEDs del
   mismo color; una respiración completa en 4 s (pasa por casi apagado y por el máximo, y el frame del
   segundo 4 es igual al del 0); frames dorados de una tira de 60 LEDs en 0, 1, 2 y 3 s, guardados como
   fichero de referencia (`specs/effects`).

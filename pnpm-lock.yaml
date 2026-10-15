@@ -298,6 +298,9 @@ importers:
       '@moodtable/shared':
         specifier: workspace:*
         version: link:../shared
+      typebox:
+        specifier: 'catalog:'
+        version: 1.3.37
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
