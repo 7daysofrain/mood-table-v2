@@ -76,7 +76,7 @@
 - [x] 2.1 Fastify, `@fastify/websocket` y `@fastify/static` en el catálogo (la última estable que
   cumpla `minimumReleaseAge`) y como dependencias de `@moodtable/engine`.
   Verificar: `pnpm install` sin avisos, y lint, tipos y tests siguen en verde.
-- [ ] 2.2 **(test en rojo)** Tests del codificador y el decodificador del protocolo del visor en
+- [x] 2.2 **(test en rojo)** Tests del codificador y el decodificador del protocolo del visor en
   `packages/shared`: un frame se codifica en tipo, `seq`, índice y colores, y se decodifica igual;
   una tira de 60 LEDs da 180 bytes de color; un mensaje de otro tipo o demasiado corto se rechaza.
   Verificar: los tests nuevos fallan porque el protocolo no existe.
