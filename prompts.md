@@ -674,6 +674,32 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El test de una respiración completa falló por un error del propio test: con el redondeo, el brillo llega a 255 antes del segundo 2. Se corrigió el test, no el efecto.*
 - *La IA puso el esquema de la respiración en el motor y luego lo movió a `shared`, que es lo que dice README §2.3, en un commit aparte.*
 
+#### 6.12 La HU1 de punta a punta: motor, visor y panel (`MOO-16`, `MOO-17` y `MOO-18`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-13
+
+*Claude Code (`claude-opus-5-5`, 15-oct). La IA implementó el change tarea a tarea, una PR por tarea y un commit por paso, con los tests en rojo antes del código. Pidió aprobación antes de cada decisión que no estaba cerrada: D43, D44 y D45 en la ficha, y los valores de la respiración (#FFA957, unos 2700 K, y 5 % de brillo mínimo), que congelan los frames dorados. Para que cada commit en rojo compilara, los pasos de test declaran la firma del código y lanzan un error.*
+
+**Prompt 2:**
+
+> Run a local code review of the MOO-16 branch now as a stand-in, apply what holds up, and still request Copilot's review once the quota is back.
+
+*Copilot se quedó sin cuota y no revisó ninguna de las tres PR, así que la IA las revisó en local con `/code-review` y verificó cada hallazgo antes de tocar nada. Aplicó lo que era un arreglo claro, cada uno con su test: el mensaje de una tira que no es un objeto, el BOM de Windows, el temporizador desalineado con el bucle o la IP de la red en el log. Lo que cambiaba el comportamiento lo dejó al humano. Este eligió rechazar campos desconocidos, limitar los fps a 60 y las tiras a 256, siempre primero en la spec con `/opsx:update` y luego en el código. El riesgo de que cualquier web pueda conectarse al WebSocket quedó apuntado para H2.*
+
+**Prompt 3:**
+
+> 1
+
+*Al escribir los E2E, la IA vio que la tarea contradecía D44: «una configuración de test» frente a «el motor carga siempre `config/local.json`». Paró antes de escribir código y dio tres opciones con su recomendación. El humano eligió la primera: la variable `MOODTABLE_CONFIG`, solo para los tests. Quedó como un matiz de D44, sin borrarla, y como escenario (asumido) en la spec antes que en el código.*
+
+*Ajustes durante la implementación:*
+- *La IA no abrió la PR en borrador con el primer commit, como pide `workflow.md`. El humano preguntó para qué hacía falta la PR, la IA lo explicó y reconoció el fallo, y desde `MOO-17` la abrió con el primer commit.*
+- *La IA contestó en inglés aunque la memoria del proyecto pide español; el humano lo corrigió.*
+- *Otra sesión dejó un worktree en `.claude/worktrees/`, y ESLint lo analizaba desde la raíz (200 errores ajenos a la rama). La IA lo detectó y comprobó el código sin esa carpeta, sin tocar el worktree.*
+- *Los E2E pasan 15 de 15 con `--repeat-each=3` antes de subirlos, porque la puerta no tiene reintentos.*
+
 ---
 
 ### 7. Pull Requests

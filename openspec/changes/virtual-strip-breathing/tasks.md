@@ -119,31 +119,34 @@
 
 ## 3. MOO-18 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests de la conexión del panel con un WebSocket falso y temporizadores
+- [x] 3.1 **(test en rojo)** Tests de la conexión del panel con un WebSocket falso y temporizadores
   falsos: empieza «Sin conexión con el motor»; pasa a «Conectado» al abrirse; al cerrarse vuelve a
   «Sin conexión» y reintenta cada segundo; al reconectar vuelve a «Conectado» (`specs/viewer`).
   Verificar: los tests nuevos fallan porque la conexión no existe.
-- [ ] 3.2 Cliente de conexión del panel: una única conexión, reintento cada segundo (decisión 15),
+- [x] 3.2 Cliente de conexión del panel: una única conexión, reintento cada segundo (decisión 15),
   decodificación con el protocolo de `@moodtable/shared` y último frame de cada tira guardado.
   Verificar: los tests de 3.1 pasan.
-- [ ] 3.3 **(test en rojo)** Tests del visor y de la cabecera con Testing Library: con frames, una fila
+- [x] 3.3 **(test en rojo)** Tests del visor y de la cabecera con Testing Library: con frames, una fila
   por tira y un punto por LED, en el orden del índice; sin conexión, ningún punto encendido; la
   cabecera dice «Conectado» o «Sin conexión con el motor». El test de `PanelLayout` *deja cada zona
   vacía* se ajusta al visor con contenido (decisión 19).
   Verificar: los tests nuevos fallan porque el visor y el indicador no existen.
-- [ ] 3.4 Visor en `<canvas>` sin librería que dibuja el último frame de cada tira en cada
+- [x] 3.4 Visor en `<canvas>` sin librería que dibuja el último frame de cada tira en cada
   `requestAnimationFrame` (decisión 16), apagado sin conexión (decisión 14), e indicador de conexión
   en la cabecera.
   Verificar: los tests de 3.3 pasan y, con `pnpm dev`, la tira respira en `localhost:5173`.
-- [ ] 3.5 E2E de HU1 en `e2e/`: `webServer` arranca el motor, que sirve el build del panel (decisión
-  17), con una configuración de test de una tira virtual; los E2E que tienen que parar o arrancar el
+- [x] 3.5 `MOODTABLE_CONFIG`: si existe, el motor carga ese fichero en lugar de `config/local.json`, y
+  la línea de log dice cuál (decisión 3, matiz para los tests), con su test (`specs/engine-config`).
+  Verificar: el test pasa; sin la variable, el motor sigue cargando `config/local.json`.
+- [x] 3.6 E2E de HU1 en `e2e/`: `webServer` arranca el motor, que sirve el build del panel (decisión
+  17), con una configuración de test de una tira virtual (`MOODTABLE_CONFIG`); los E2E que tienen que parar o arrancar el
   motor lo lanzan ellos mismos. Escenarios: *El maker ve la tira virtual respirando en el visor*
   (los colores del canvas cambian); *El panel avisa si el motor no está en marcha* (la consola solo
   tiene el error de conexión: `specs/panel-layout`); *El visor se recupera solo tras un reinicio del
   motor*; *Dos paneles ven lo mismo* (los dos visores se animan; la igualdad de frames ya la cubre
   2.4: decisión 18). El E2E de humo (`panel.spec.ts`) sigue pasando.
   Verificar: `pnpm test:e2e` pasa en local y en la CI.
-- [ ] 3.6 Documentación y cierre de la historia:
+- [x] 3.7 Documentación y cierre de la historia:
   - README §1.3 y §2.2 (*Panel y visor*), si cambia lo que describen;
   - `prompts.md`: entrada de la implementación de la historia, con el formato de `course.md` §5;
   - cada escenario de los criterios de `MOO-13` tiene su test (DoD de la historia).

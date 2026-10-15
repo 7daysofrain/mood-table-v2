@@ -1,15 +1,21 @@
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig, devices } from '@playwright/test';
 
 const CI = Boolean(process.env.CI);
 
-/** Puerto fijo de la vista previa del panel: `--strictPort` falla si está ocupado (design.md, decisión 3). */
-const PORT = 4173;
-const BASE_URL = `http://127.0.0.1:${PORT}`;
+/**
+ * El motor de los E2E, con su propio fichero de configuración (`MOODTABLE_CONFIG`): una tira virtual
+ * en el puerto 4173, que no choca con un `pnpm dev` abierto (8080 y 5173). Si el puerto está ocupado,
+ * el motor no arranca y lo dice.
+ */
+const CONFIG = fileURLToPath(new URL('config.json', import.meta.url));
+const BASE_URL = 'http://127.0.0.1:4173';
 
 /**
  * E2E del repositorio (specs/quality-gates, change e2e-playwright-gate): Playwright Test, separado de
- * Vitest y fuera de la cobertura. Se prueba el build del panel, que es lo que se despliega, no el
- * servidor de desarrollo.
+ * Vitest y fuera de la cobertura. Se prueba el build del panel servido por el motor, que es lo que se
+ * despliega, no el servidor de desarrollo (change virtual-strip-breathing, decisión 17).
  */
 export default defineConfig({
   testDir: '.',
@@ -27,11 +33,13 @@ export default defineConfig({
   },
   // Solo Chromium, en una ventana de escritorio (decisión 5; specs/panel-layout).
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  // `MOO-18` cambia este bloque: arranca el motor, que sirve el mismo build.
+  // Construye el panel y arranca el motor, que lo sirve. Los E2E que paran o arrancan el motor lanzan
+  // el suyo (`engine.ts`).
   webServer: {
-    command: `pnpm --filter @moodtable/panel build && pnpm --filter @moodtable/panel preview --host 127.0.0.1 --port ${PORT} --strictPort`,
+    command: 'pnpm --filter @moodtable/panel build && node ../packages/engine/src/main.ts',
+    env: { MOODTABLE_CONFIG: CONFIG },
     url: BASE_URL,
-    // Nunca se reutiliza una vista previa ya abierta: podría servir un build anterior al código probado.
+    // Nunca se reutiliza un motor ya abierto: podría servir un build anterior al código probado.
     reuseExistingServer: false,
   },
 });

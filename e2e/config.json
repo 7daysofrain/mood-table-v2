@@ -1,0 +1,7 @@
+{
+  "fps": 60,
+  "server": { "host": "127.0.0.1", "port": 4173 },
+  "strips": [
+    { "id": "e2e", "name": "Tira de los E2E", "output": { "type": "virtual" }, "ledCount": 60 }
+  ]
+}
