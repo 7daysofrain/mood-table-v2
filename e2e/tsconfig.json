@@ -1,4 +1,6 @@
 {
   "extends": "../tsconfig.node.json",
+  // DOM: el código de `page.evaluate` se ejecuta en el navegador.
+  "compilerOptions": { "lib": ["ES2024", "DOM"] },
   "include": ["**/*.ts"]
 }

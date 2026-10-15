@@ -138,7 +138,7 @@
 - [x] 3.5 `MOODTABLE_CONFIG`: si existe, el motor carga ese fichero en lugar de `config/local.json`, y
   la línea de log dice cuál (decisión 3, matiz para los tests), con su test (`specs/engine-config`).
   Verificar: el test pasa; sin la variable, el motor sigue cargando `config/local.json`.
-- [ ] 3.6 E2E de HU1 en `e2e/`: `webServer` arranca el motor, que sirve el build del panel (decisión
+- [x] 3.6 E2E de HU1 en `e2e/`: `webServer` arranca el motor, que sirve el build del panel (decisión
   17), con una configuración de test de una tira virtual (`MOODTABLE_CONFIG`); los E2E que tienen que parar o arrancar el
   motor lo lanzan ellos mismos. Escenarios: *El maker ve la tira virtual respirando en el visor*
   (los colores del canvas cambian); *El panel avisa si el motor no está en marcha* (la consola solo
