@@ -34,7 +34,9 @@ falla en él.
 > Traza: esquema del escenario *El instrumento no arranca si el fichero de configuración no sirve* de
 > `MOO-13` (ejemplos *no existe* y *no declara ninguna tira*). El JSON mal escrito y el campo inválido
 > son *(asumido)*: `design.md`, decisión 4. El campo que no existe es *(asumido)*: revisión de la PR de
-> `MOO-16`. Sin él, una errata en un campo opcional se ignora sin avisar.
+> `MOO-16`. Sin él, una errata en un campo opcional se ignora sin avisar. El máximo de 256 tiras es
+> *(asumido)*: revisión de la PR de `MOO-17`; el índice de la tira ocupa un byte en el protocolo del
+> visor (D45), y sin el máximo el motor arrancaría y caería al conectar un navegador.
 
 #### Scenario: El fichero no existe
 - **GIVEN** que no existe `config/local.json`
@@ -67,6 +69,12 @@ falla en él.
 - **WHEN** el maker arranca el motor
 - **THEN** el motor no arranca
 - **AND** el mensaje nombra el campo que no existe (y la tira, si está en una)
+
+#### Scenario: El fichero declara más de 256 tiras (asumido)
+- **GIVEN** un `config/local.json` con 257 tiras
+- **WHEN** el maker arranca el motor
+- **THEN** el motor no arranca
+- **AND** el mensaje dice que `strips` admite como mucho 256 tiras
 
 ### Requirement: Cada tira declara su identificador, su nombre, su salida y sus LEDs
 Cada tira del fichero MUST declarar `id` (único en el fichero), `name`, `output` y `ledCount` (entero

@@ -110,6 +110,12 @@
   - `docs/idea-mood-table.md` §10: D45 (el protocolo del visor), si el usuario la aprueba.
 
   Verificar: los comandos de README §1.4 funcionan tal como están escritos.
+- [ ] 2.9 Revisión de la PR: el esquema limita `strips` a 256 tiras, con su test
+  (`specs/engine-config`).
+  Verificar: un fichero con 257 tiras no arranca y el mensaje dice el máximo.
+- [ ] 2.10 Revisión de la PR: README §1.4 dice que en desarrollo el motor tiene que escuchar en el
+  `8080`, que es adonde Vite reenvía `/ws`.
+  Verificar: el README lo dice junto a `localhost:5173`.
 
 ## 3. MOO-18 · panel
 
