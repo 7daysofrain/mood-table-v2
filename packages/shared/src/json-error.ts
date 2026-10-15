@@ -10,9 +10,18 @@ export interface TextPosition {
   column: number;
 }
 
-/** Posición del primer carácter que impide que `text` sea JSON, o `undefined` si es válido. */
+/**
+ * Posición del primer carácter que impide que `text` sea JSON, o `undefined` si es válido o si no se
+ * puede saber (un anidamiento tan profundo que el recorrido, que es recursivo, agota la pila).
+ */
 export function findJsonError(text: string): TextPosition | undefined {
-  const offset = new JsonScanner(text).firstErrorOffset();
+  let offset: number | undefined;
+  try {
+    offset = new JsonScanner(text).firstErrorOffset();
+  } catch (error) {
+    if (error instanceof RangeError) return undefined;
+    throw error;
+  }
   return offset === undefined ? undefined : toPosition(text, offset);
 }
 

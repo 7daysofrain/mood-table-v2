@@ -18,10 +18,17 @@ export function startTicker(
   let timer: NodeJS.Timeout | undefined;
 
   const run = () => {
-    onTick(clock());
-    // El siguiente pulso que aún no ha pasado: si esta vuelta tardó, los de en medio se saltan.
+    const tickedAt = clock();
+    onTick(tickedAt);
     const now = clock();
-    pulse = Math.max(pulse + 1, Math.floor((now - startedAt) / period) + 1);
+    pulse = Math.max(
+      pulse + 1,
+      // El bucle calcula el pulso más cercano al instante: si el temporizador llegó tarde, puede
+      // haber calculado ya el siguiente, y volver a despertar para ese no serviría de nada.
+      Math.round((tickedAt - startedAt) / period) + 1,
+      // Si esta vuelta tardó, los pulsos que ya han pasado se saltan.
+      Math.floor((now - startedAt) / period) + 1,
+    );
     timer = setTimeout(run, startedAt + pulse * period - now);
   };
   run();

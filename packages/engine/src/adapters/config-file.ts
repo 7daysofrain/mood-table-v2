@@ -13,8 +13,8 @@ import { type Config, parseConfig } from '@moodtable/shared';
 /** Raíz del repositorio, a partir de dónde está este fichero (`packages/engine/src/adapters`). */
 export const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
 
-/** Ruta del fichero, relativa a la raíz: es la que se ve en el log. */
-export const CONFIG_FILE = join('config', 'local.json');
+/** Ruta del fichero, relativa a la raíz: es la que se ve en el log, igual en todos los sistemas. */
+export const CONFIG_FILE = 'config/local.json';
 
 export type LoadedConfig =
   | { ok: true; config: Config; path: string }

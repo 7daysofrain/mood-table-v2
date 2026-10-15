@@ -36,4 +36,8 @@ describe('dónde falla un texto que no es JSON', () => {
     }).toThrow();
     expect(findJsonError(text)).toEqual({ line, column });
   });
+
+  it('si el anidamiento es tan profundo que agota la pila, no sabe dónde falla', () => {
+    expect(findJsonError('['.repeat(100_000))).toBeUndefined();
+  });
 });

@@ -43,6 +43,21 @@ describe('el temporizador del bucle', () => {
     expect(calls.map((now) => now - startedAt)).toEqual([0, 300, 400, 500]);
   });
 
+  it('si el temporizador llega más de medio pulso tarde, no despierta para el pulso ya calculado', () => {
+    const calls: number[] = [];
+    const ticker = startTicker(10, (now) => calls.push(now), Date.now);
+    const startedAt = calls[0] ?? 0;
+
+    // El reloj salta 55 ms sin disparar temporizadores: la vuelta del pulso de 100 ms llega a los
+    // 155 ms, y el bucle, que toma el pulso más cercano, ya calcula el de 200 ms.
+    vi.advanceTimersByTime(99);
+    vi.setSystemTime(Date.now() + 55);
+    vi.advanceTimersByTime(250);
+    ticker.stop();
+
+    expect(calls.map((now) => now - startedAt)).toEqual([0, 155, 300, 400]);
+  });
+
   it('al pararlo, deja de llamar', () => {
     const calls: number[] = [];
     const ticker = startTicker(60, (now) => calls.push(now), Date.now);

@@ -48,6 +48,10 @@ describe('un fichero de configuración válido', () => {
     expect(result.ok && result.config.server).toEqual({ host: '0.0.0.0', port: 9090 });
   });
 
+  it('acepta un fichero guardado con BOM', () => {
+    expect(parseConfig(`\uFEFF${text({ strips: [demoStrip] })}`).ok).toBe(true);
+  });
+
   it('acepta varias tiras, en el orden del fichero', () => {
     const second = { ...demoStrip, id: 'segunda', name: 'Segunda', ledCount: 30 };
     const result = parseConfig(text({ strips: [demoStrip, second] }));
@@ -70,6 +74,16 @@ describe('un fichero de configuración que no sirve', () => {
 
     expect(error).toMatch(/no es JSON válido/);
     expect(error).toMatch(/línea 1, columna 15/);
+  });
+
+  it('con un anidamiento tan profundo que no se puede localizar el error, dice que no es JSON', () => {
+    expect(errorOf('['.repeat(100_000))).toBe('no es JSON válido');
+  });
+
+  it('con una tira que no es un objeto, la nombra y dice qué esperaba', () => {
+    expect(errorOf(text({ strips: [demoStrip, null] }))).toBe(
+      'la tira 2, la entrada: debe ser un objeto',
+    );
   });
 
   it('que no es un objeto, dice qué esperaba', () => {

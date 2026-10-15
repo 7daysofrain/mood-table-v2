@@ -46,12 +46,18 @@ export type ConfigResult = { ok: true; config: Config } | { ok: false; error: st
  * nombra la tira y el campo. No sabe de qué fichero viene: quien lo lee añade la ruta.
  */
 export function parseConfig(text: string): ConfigResult {
+  // Algunos editores guardan el UTF-8 con BOM, y `JSON.parse` lo rechaza como si fuera un error.
+  const json = text.startsWith('\uFEFF') ? text.slice(1) : text;
   let data: unknown;
   try {
-    data = JSON.parse(text);
+    data = JSON.parse(json);
   } catch {
-    const at = findJsonError(text);
-    return fail(`no es JSON válido: falla en la línea ${at?.line}, columna ${at?.column}`);
+    const at = findJsonError(json);
+    return fail(
+      at
+        ? `no es JSON válido: falla en la línea ${at.line}, columna ${at.column}`
+        : 'no es JSON válido',
+    );
   }
 
   if (!isObject(data)) return fail('debe ser un objeto JSON con la lista `strips`');
@@ -96,7 +102,9 @@ function describeError(error: SchemaError, data: Record<string, unknown>): strin
   const missing = (params.requiredProperties as string[] | undefined)?.[0];
   const where = segments[0] === 'strips' && segments[1] !== undefined ? 2 : 0;
   const field = [...segments.slice(where), ...(missing ? [missing] : [])].join('.');
-  const problem = `campo \`${field}\`: ${describeProblem(error, received)}`;
+  // Sin campo, el problema es la propia tira (por ejemplo, no es un objeto).
+  const subject = field ? `campo \`${field}\`` : 'la entrada';
+  const problem = `${subject}: ${describeProblem(error, received)}`;
 
   if (where === 0) return problem;
   const index = Number(segments[1]);
