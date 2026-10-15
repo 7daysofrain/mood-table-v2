@@ -43,7 +43,7 @@
   (decisiones 3 y 8), con su test de integración sobre ficheros temporales: válido, inexistente (el
   mensaje da la ruta) y desde otro directorio de trabajo.
   Verificar: el test de integración pasa.
-- [ ] 1.9 Arranque del motor: un controlador con temporizador llama a `tick(now)` `fps` veces por
+- [x] 1.9 Arranque del motor: un controlador con temporizador llama a `tick(now)` `fps` veces por
   segundo (decisión 7), y `main.ts` carga la configuración, crea las salidas de cada tira, escribe la
   línea de log (fichero, tiras y fps) y, si la configuración no sirve, escribe el error en la salida de
   errores y termina con código 1. Test de integración que arranca el motor con una tira y una salida
