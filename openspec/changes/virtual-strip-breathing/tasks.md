@@ -29,7 +29,7 @@
   `color` blanco cálido y `period` 4 por defecto (decisión 5). Al fijar el RGB del blanco cálido y el
   brillo mínimo se generan los frames dorados.
   Verificar: los tests de 1.4 pasan.
-- [ ] 1.6 **(test en rojo)** Tests del bucle en el núcleo, con el instante pasado a mano: 60 frames por
+- [x] 1.6 **(test en rojo)** Tests del bucle en el núcleo, con el instante pasado a mano: 60 frames por
   segundo de reloj, numerados de forma consecutiva; dos tiras con el mismo `seq` en cada pulso; un pulso
   tardío salta `seq` sin calcular los intermedios; el frame de cada tira llega a todas sus salidas; una
   salida que guarda los frames ve dos frames distintos tras dos pulsos (`specs/frame-loop`).
