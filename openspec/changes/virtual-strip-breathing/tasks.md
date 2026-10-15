@@ -119,7 +119,7 @@
 
 ## 3. MOO-18 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests de la conexión del panel con un WebSocket falso y temporizadores
+- [x] 3.1 **(test en rojo)** Tests de la conexión del panel con un WebSocket falso y temporizadores
   falsos: empieza «Sin conexión con el motor»; pasa a «Conectado» al abrirse; al cerrarse vuelve a
   «Sin conexión» y reintenta cada segundo; al reconectar vuelve a «Conectado» (`specs/viewer`).
   Verificar: los tests nuevos fallan porque la conexión no existe.
