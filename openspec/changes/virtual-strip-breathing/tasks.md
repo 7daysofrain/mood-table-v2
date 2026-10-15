@@ -123,7 +123,7 @@
   falsos: empieza «Sin conexión con el motor»; pasa a «Conectado» al abrirse; al cerrarse vuelve a
   «Sin conexión» y reintenta cada segundo; al reconectar vuelve a «Conectado» (`specs/viewer`).
   Verificar: los tests nuevos fallan porque la conexión no existe.
-- [ ] 3.2 Cliente de conexión del panel: una única conexión, reintento cada segundo (decisión 15),
+- [x] 3.2 Cliente de conexión del panel: una única conexión, reintento cada segundo (decisión 15),
   decodificación con el protocolo de `@moodtable/shared` y último frame de cada tira guardado.
   Verificar: los tests de 3.1 pasan.
 - [ ] 3.3 **(test en rojo)** Tests del visor y de la cabecera con Testing Library: con frames, una fila

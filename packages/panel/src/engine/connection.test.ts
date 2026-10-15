@@ -129,6 +129,38 @@ describe('la conexión del panel con el motor', () => {
     );
   });
 
+  it('ignora los mensajes de texto', () => {
+    connection.start();
+    lastSocket().open();
+
+    lastSocket().onmessage?.call(
+      lastSocket() as unknown as WebSocket,
+      new MessageEvent('message', { data: 'hola' }),
+    );
+
+    expect(connection.frames.size).toBe(0);
+  });
+
+  it('sin un WebSocket propio, usa el del navegador', () => {
+    const created: string[] = [];
+    vi.stubGlobal(
+      'WebSocket',
+      class extends FakeSocket {
+        constructor(url: string) {
+          super();
+          created.push(url);
+        }
+      },
+    );
+    const real = new EngineConnection('ws://motor/ws');
+
+    real.start();
+    real.stop();
+    vi.unstubAllGlobals();
+
+    expect(created).toEqual(['ws://motor/ws']);
+  });
+
   it('mantiene una sola conexión aunque se arranque dos veces', () => {
     connection.start();
     connection.start();
