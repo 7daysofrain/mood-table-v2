@@ -102,11 +102,15 @@ actualizaciones igual que uno en `/etc`.
   Ticket 1). El resto de campos de README §3 llegan con H4.
 - **`output`** es un objeto discriminado por `type`, con los campos propios de cada tipo. En esta
   historia solo existe `virtual`, sin más campos; `adalight` y su `port` llegan con H3.
-- **`fps`** es el pulso del motor (decisión 7), opcional, con **60** por defecto. Fuentes de las
-  cifras: el glosario (*unos 60 por segundo*) y D30 (la demo pública va a 30).
+- **`fps`** es el pulso del motor (decisión 7), opcional, entero entre 1 y 60, con **60** por
+  defecto. Fuentes de las cifras: el glosario (*unos 60 por segundo*), D30 (la demo pública va a 30)
+  y README §2.2 (*30-60 fps*).
 - **El motor no arranca y dice qué falla** si el fichero no existe, si no declara ninguna tira (lista
-  vacía o sin `strips`), si el JSON está mal escrito *(asumido)* o si una tira no cumple el esquema
-  (por ejemplo, una salida de un tipo no soportado).
+  vacía o sin `strips`), si el JSON está mal escrito *(asumido)*, si una tira no cumple el esquema
+  (por ejemplo, una salida de un tipo no soportado), si tiene un campo que el esquema no declara
+  *(asumido)* o si `fps` está fuera de 1-60. Los dos últimos salen de la revisión de la PR de
+  `MOO-16`: sin ellos, una errata en un campo opcional se ignora sin avisar, y unos `fps` muy altos
+  saturan la CPU sin decir por qué.
 
 ### 5. La *respiración*: blanco cálido que sube y baja cada 4 segundos
 
@@ -314,7 +318,9 @@ vacío. El requisito ya lo prevé (*mientras ninguna historia rellene una zona*)
   de 300 LEDs), unos 65 MB. Si aparece en uso real, la solución es un `if` en el adaptador del visor:
   no enviar un frame a un navegador que todavía tiene algo pendiente en su cola.
 - **[El fichero mínimo se queda corto para H4]** → El esquema crece añadiendo campos opcionales y
-  nuevos tipos de `output`, sin romper los ficheros existentes.
+  nuevos tipos de `output`, sin romper los ficheros existentes. Como rechaza los campos que no
+  declara, un fichero con campos de una versión posterior no arranca en un motor anterior: es
+  aceptable, porque el fichero y el motor se actualizan juntos con `git pull`.
 
 ## Open Questions
 

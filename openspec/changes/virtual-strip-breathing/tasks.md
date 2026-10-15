@@ -66,6 +66,10 @@
 
   Verificar: ningún documento sigue citando `/etc/moodtable/config.json` ni `deploy/config/demo.json`,
   y la entrada de `prompts.md` tiene como mucho 3 prompts literales.
+- [ ] 1.12 Revisión de la PR: el esquema rechaza los campos que no declara (en la raíz, en `server`,
+  en cada tira y en su `output`) y limita `fps` a 60, con sus tests (`specs/engine-config`).
+  Verificar: `"fsp": 30` y `"fps": 120` no arrancan y el mensaje nombra el campo; `config/demo.json`
+  sigue arrancando.
 
 ## 2. MOO-17 · engine
 

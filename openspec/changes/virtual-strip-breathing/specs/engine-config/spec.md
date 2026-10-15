@@ -33,7 +33,8 @@ falla en él.
 
 > Traza: esquema del escenario *El instrumento no arranca si el fichero de configuración no sirve* de
 > `MOO-13` (ejemplos *no existe* y *no declara ninguna tira*). El JSON mal escrito y el campo inválido
-> son *(asumido)*: `design.md`, decisión 4.
+> son *(asumido)*: `design.md`, decisión 4. El campo que no existe es *(asumido)*: revisión de la PR de
+> `MOO-16`. Sin él, una errata en un campo opcional se ignora sin avisar.
 
 #### Scenario: El fichero no existe
 - **GIVEN** que no existe `config/local.json`
@@ -60,6 +61,13 @@ falla en él.
 - **THEN** el motor no arranca
 - **AND** el mensaje nombra la tira y el campo que falla
 
+#### Scenario: El fichero tiene un campo que no existe (asumido)
+- **GIVEN** un `config/local.json` con un campo que el esquema no declara, por ejemplo `"fsp": 30`
+  (una errata de `fps`) o `"ledcont"` en una tira
+- **WHEN** el maker arranca el motor
+- **THEN** el motor no arranca
+- **AND** el mensaje nombra el campo que no existe (y la tira, si está en una)
+
 ### Requirement: Cada tira declara su identificador, su nombre, su salida y sus LEDs
 Cada tira del fichero MUST declarar `id` (único en el fichero), `name`, `output` y `ledCount` (entero
 mayor que 0). `output` SHALL ser un objeto cuyo `type` decide sus demás campos. El único tipo que
@@ -79,12 +87,14 @@ existe en este change es `virtual`, sin más campos.
 - **THEN** el motor no arranca
 - **AND** el mensaje dice qué `id` está repetido
 
-### Requirement: Los fps son opcionales, 60 por defecto
+### Requirement: Los fps son opcionales, 60 por defecto y 60 como máximo
 El campo `fps` (el pulso del motor: frames que calcula por segundo) SHALL ser opcional. Si el fichero
-no lo declara, el motor MUST usar 60.
+no lo declara, el motor MUST usar 60. Si el fichero declara un `fps` que no es un entero entre 1 y 60,
+el motor MUST NOT arrancar y el mensaje nombra el campo.
 
 > Traza: *(asumido)*, `design.md`, decisión 4. Fuente de las cifras: glosario del PRD (*unos 60 por
-> segundo*) y D30 (la demo pública va a 30).
+> segundo*), D30 (la demo pública va a 30) y README §2.2 (*tasa objetivo configurable, 30-60 fps*). El
+> máximo es *(asumido)*: revisión de la PR de `MOO-16`.
 
 #### Scenario: Sin fps en el fichero (asumido)
 - **GIVEN** un `config/local.json` válido sin `fps`
@@ -95,6 +105,12 @@ no lo declara, el motor MUST usar 60.
 - **GIVEN** un `config/local.json` válido con `"fps": 30`
 - **WHEN** el maker arranca el motor
 - **THEN** el log dice que va a 30 fps
+
+#### Scenario: Con fps por encima de 60 (asumido)
+- **GIVEN** un `config/local.json` con `"fps": 120`
+- **WHEN** el maker arranca el motor
+- **THEN** el motor no arranca
+- **AND** el mensaje dice que `fps` debe ser 60 o menos
 
 ### Requirement: La dirección del motor es opcional y solo local por defecto
 El campo `server` (con `host` y `port`) SHALL ser opcional. Si el fichero no lo declara, el motor MUST
