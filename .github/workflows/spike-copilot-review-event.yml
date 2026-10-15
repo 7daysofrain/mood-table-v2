@@ -1,0 +1,32 @@
+# Spike desechable (no se integra): ¿la review de Copilot dispara `pull_request_review` y con qué actor?
+# Solo escribe en el log los datos del evento. Sin secretos, sin checkout y sin permisos.
+name: Spike · evento de la review de Copilot
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions: {}
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    steps:
+      # El cuerpo de la review entra por variable de entorno, nunca interpolado en el script.
+      - name: Datos del evento
+        env:
+          ACTOR: ${{ github.actor }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          REVIEWER: ${{ github.event.review.user.login }}
+          REVIEWER_TYPE: ${{ github.event.review.user.type }}
+          STATE: ${{ github.event.review.state }}
+          COMMIT: ${{ github.event.review.commit_id }}
+          BODY: ${{ github.event.review.body }}
+        run: |
+          echo "actor=$ACTOR"
+          echo "triggering_actor=$TRIGGERING_ACTOR"
+          echo "reviewer=$REVIEWER ($REVIEWER_TYPE)"
+          echo "state=$STATE commit=$COMMIT"
+          echo "body (200 primeros caracteres):"
+          printf '%s' "$BODY" | head -c 200
+          echo
