@@ -15,7 +15,8 @@ state · Vitest · Playwright · GitHub Actions + SonarQube Cloud · OpenSpec fo
 
 ## Commands (from the repo root)
 
-Node 24 (`.nvmrc`; `nvm use`) and pnpm from `packageManager` (`corepack enable`, or `corepack pnpm`).
+Node 24 (`.nvmrc`; `nvm use`) and pnpm from `packageManager` via `corepack enable`. `corepack pnpm`
+alone is not enough: scripts call `pnpm` inside (`typecheck`, the E2E web server) and fail without it.
 CI runs these same scripts, so a green run locally predicts a green PR.
 
 | Command | Does |
