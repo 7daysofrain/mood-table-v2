@@ -96,7 +96,7 @@
   todos los navegadores conectados (decisiones 2 y 10). Sin contramedida para un navegador atascado
   (riesgo aceptado).
   Verificar: los tests de 2.4 pasan.
-- [ ] 2.6 `main.ts` añade la salida del visor a todas las tiras y arranca el servidor; la línea de log
+- [x] 2.6 `main.ts` añade la salida del visor a todas las tiras y arranca el servidor; la línea de log
   incluye la dirección del panel.
   Verificar: con `pnpm --filter @moodtable/panel build` hecho, `pnpm dev` deja el panel en la dirección
   del log y un cliente WebSocket de prueba recibe frames.

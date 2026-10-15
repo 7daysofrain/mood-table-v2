@@ -10,15 +10,18 @@ import { createFrameLoop, type LightOutput } from './core/frame-loop.ts';
 
 export interface EngineOptions {
   config: Config;
-  /** Las salidas de cada tira. Las decide la raíz de composición (decisión 2). */
-  createOutputs: (strip: StripConfig) => LightOutput[];
+  /**
+   * Las salidas de cada tira, con su posición en el fichero. Las decide la raíz de composición
+   * (decisión 2).
+   */
+  createOutputs: (strip: StripConfig, index: number) => LightOutput[];
   /** Reloj monótono en milisegundos. Por defecto, `performance.now()`. */
   clock?: () => number;
 }
 
 export function startEngine({ config, createOutputs, clock }: EngineOptions): Ticker {
   const loop = createFrameLoop(
-    config.strips.map((strip) => ({ config: strip, outputs: createOutputs(strip) })),
+    config.strips.map((strip, index) => ({ config: strip, outputs: createOutputs(strip, index) })),
     config.fps,
   );
   return startTicker(
@@ -30,8 +33,11 @@ export function startEngine({ config, createOutputs, clock }: EngineOptions): Ti
   );
 }
 
-/** La línea de log del arranque: qué fichero ha cargado, cuántas tiras y a qué fps. */
-export function startupMessage(file: string, config: Config): string {
+/**
+ * La línea de log del arranque: qué fichero ha cargado, cuántas tiras, a qué fps y dónde se abre el
+ * panel.
+ */
+export function startupMessage(file: string, config: Config, panelUrl: string): string {
   const strips = config.strips.length === 1 ? '1 tira' : `${config.strips.length} tiras`;
-  return `Mood Table: cargado ${file} · ${strips} a ${config.fps} fps`;
+  return `Mood Table: cargado ${file} · ${strips} a ${config.fps} fps · panel en ${panelUrl}`;
 }

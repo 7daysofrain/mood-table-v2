@@ -1,21 +1,41 @@
 /**
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
- * adaptadores. Carga la configuración, crea las salidas de cada tira y arranca el motor. Si la
- * configuración no sirve, el motor no arranca: dice qué falla y termina con código 1.
+ * adaptadores. Carga la configuración, arranca el servidor del panel y el motor, y da a cada tira sus
+ * salidas: el visor siempre (D43); la salida Adalight de las tiras físicas llega con H3. Si la
+ * configuración no sirve o el servidor no puede escuchar, el motor no arranca: dice qué falla y
+ * termina con código 1.
  */
-import { CONFIG_FILE, loadConfig } from './adapters/config-file.ts';
+import { join } from 'node:path';
+
+import { CONFIG_FILE, loadConfig, REPO_ROOT } from './adapters/config-file.ts';
+import { startServer } from './adapters/server.ts';
 import { startEngine, startupMessage } from './engine.ts';
 
-const loaded = await loadConfig();
+/** El build del panel, que sirve el motor (decisión 12). */
+const PANEL_DIR = join(REPO_ROOT, 'packages', 'panel', 'dist');
 
-if (loaded.ok) {
-  console.log(startupMessage(CONFIG_FILE, loaded.config));
+async function main(): Promise<string | undefined> {
+  const loaded = await loadConfig();
+  if (!loaded.ok) return loaded.error;
+
+  const { host, port } = loaded.config.server;
+  let server;
+  try {
+    server = await startServer({ host, port, panelDir: PANEL_DIR });
+  } catch (error) {
+    return `No puede escuchar en ${host}:${port} (${(error as Error).message})`;
+  }
+
+  console.log(startupMessage(CONFIG_FILE, loaded.config, server.url));
   startEngine({
     config: loaded.config,
-    // Una tira virtual solo tiene el visor, que llega con MOO-17; la salida Adalight, con H3.
-    createOutputs: () => [],
+    createOutputs: (_strip, index) => [server.viewerOutput(index)],
   });
-} else {
-  console.error(`El motor no arranca. ${loaded.error}`);
+  return undefined;
+}
+
+const problem = await main();
+if (problem) {
+  console.error(`El motor no arranca. ${problem}`);
   process.exitCode = 1;
 }
