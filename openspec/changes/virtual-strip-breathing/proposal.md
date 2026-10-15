@@ -72,6 +72,7 @@ Tomados de la historia `MOO-13`:
   si el diseño del puerto de salida cambia lo descrito. Documento nuevo del protocolo del visor en
   `docs/instructions/viewer-protocol.md`, con su fila en el índice de `AGENTS.md` y un enlace desde
   README §4.
-- **Tests E2E**: Playwright lo monta la tarea de enablers `MOO-49`, que bloquea a `MOO-18`.
+- **Tests E2E**: sobre el montaje de `MOO-49`, ya integrada. `MOO-18` cambia el servidor que arranca
+  `e2e/playwright.config.ts` (el motor en lugar de `vite preview`) y añade sus E2E.
 - **Linear**: ninguno más previsto. `MOO-48` (propósito de `docs/instructions/`) y `MOO-49` (E2E)
   salieron de esta exploración.

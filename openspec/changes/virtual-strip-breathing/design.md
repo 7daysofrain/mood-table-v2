@@ -261,15 +261,16 @@ paneles).
 - En cada `requestAnimationFrame` se dibuja el **último** frame recibido de cada tira; los intermedios
   se descartan (Ticket 2), así que el panel nunca acumula retraso.
 
-### 17. Los E2E: Playwright se monta en los enablers
+### 17. Los E2E: sobre el montaje de `MOO-49`
 
-- El montaje (Playwright, `pnpm test:e2e`, job de la CI y comprobación requerida) es la tarea de
-  enablers `MOO-49`, que **bloquea a `MOO-18`**.
+Playwright ya está montado (`MOO-49`, change `e2e-playwright-gate`): paquete `e2e/` del workspace,
+`pnpm test:e2e`, job `e2e` en la CI y comprobación requerida. Hoy `webServer` sirve el build del panel
+con `vite preview`, sin motor.
+
+- `MOO-18` cambia solo el bloque `webServer` de `e2e/playwright.config.ts`: arranca el motor, que
+  sirve el mismo build (decisión 12). Así lo prevé la decisión 3 de ese change.
 - Los E2E de HU1 (la tira respira, el aviso sin motor, la reconexión, dos paneles) los escribe
-  `MOO-18`, con el motor sirviendo el build del panel (decisión 12).
-
-**Alternativas descartadas:** montarlo dentro de `MOO-18` (mezclaría panel e infra en una PR) o como
-cuarta tarea de `MOO-13` (el montaje sirve a todas las historias, no solo a esta).
+  `MOO-18`. Usan un contexto de navegador por panel para el escenario de los dos paneles.
 
 ### 18. "Dos paneles ven lo mismo" se comprueba en el motor
 
@@ -312,8 +313,6 @@ vacío. El requisito ya lo prevé (*mientras ninguna historia rellene una zona*)
   minutos. Con la demo (una tira de 60 LEDs) son unos 6 MB en 10 minutos; con la mesa real (dos tiras
   de 300 LEDs), unos 65 MB. Si aparece en uso real, la solución es un `if` en el adaptador del visor:
   no enviar un frame a un navegador que todavía tiene algo pendiente en su cola.
-- **[`MOO-18` no puede cerrarse sin `MOO-49`]** → La dependencia está en Linear. `MOO-16` y `MOO-17` no
-  la necesitan, así que el montaje de Playwright puede hacerse en paralelo con ellas.
 - **[El fichero mínimo se queda corto para H4]** → El esquema crece añadiendo campos opcionales y
   nuevos tipos de `output`, sin romper los ficheros existentes.
 
