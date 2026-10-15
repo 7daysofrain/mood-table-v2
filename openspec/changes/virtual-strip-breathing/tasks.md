@@ -39,7 +39,7 @@
   `packages/engine/src/adapters`. Se quitan los marcadores de `MOO-28` (`CORE_NAME`, `ADAPTERS_NAME`) y
   sus tests.
   Verificar: los tests de 1.6 pasan y `pnpm lint` sigue en verde (el núcleo no importa adaptadores).
-- [ ] 1.8 Lectura de `config/local.json`, resuelto desde la raíz del repositorio, fuera del núcleo
+- [x] 1.8 Lectura de `config/local.json`, resuelto desde la raíz del repositorio, fuera del núcleo
   (decisiones 3 y 8), con su test de integración sobre ficheros temporales: válido, inexistente (el
   mensaje da la ruta) y desde otro directorio de trabajo.
   Verificar: el test de integración pasa.
