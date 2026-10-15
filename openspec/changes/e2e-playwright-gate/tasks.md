@@ -42,7 +42,7 @@
     roto»);
   - `pnpm lint` y `pnpm typecheck` en verde con el test nuevo, y `typecheck` pasa por
     `@moodtable/e2e`.
-- [ ] 1.3 SonarQube trata los E2E como código de test (decisión 4): `e2e` en `sonar.tests` y `e2e/**`
+- [x] 1.3 SonarQube trata los E2E como código de test (decisión 4): `e2e` en `sonar.tests` y `e2e/**`
   en `sonar.test.inclusions` de `sonar-project.properties`, con un comentario que diga por qué no
   entran en la cobertura.
 
