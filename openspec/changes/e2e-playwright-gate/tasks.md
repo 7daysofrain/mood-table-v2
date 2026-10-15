@@ -48,7 +48,7 @@
 
   Verificar: `pnpm test:coverage` no abre ningún navegador y `coverage/lcov.info` no tiene ninguna
   ruta bajo `e2e/` (escenario «Los E2E no entran en la cobertura»).
-- [ ] 1.4 Job `e2e` en `.github/workflows/ci.yml` (decisión 7):
+- [x] 1.4 Job `e2e` en `.github/workflows/ci.yml` (decisión 7):
   - `./.github/actions/setup`;
   - `pnpm --filter @moodtable/e2e exec playwright install --with-deps chromium`;
   - `pnpm test:e2e`;
