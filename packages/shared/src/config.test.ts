@@ -123,6 +123,38 @@ describe('un fichero de configuración que no sirve', () => {
     expect(error).toMatch(/repetido/);
   });
 
+  it.each([
+    [{ fsp: 30, strips: [demoStrip] }, 'campo `fsp`: no existe (¿está bien escrito?)'],
+    [
+      { server: { host: '0.0.0.0', prot: 9090 }, strips: [demoStrip] },
+      'campo `server.prot`: no existe (¿está bien escrito?)',
+    ],
+    [
+      { strips: [{ ...demoStrip, colour: 'rojo' }] },
+      'la tira «demo», campo `colour`: no existe (¿está bien escrito?)',
+    ],
+    [
+      { strips: [{ ...demoStrip, output: { type: 'virtual', port: '/dev/ttyUSB0' } }] },
+      'la tira «demo», campo `output.port`: no existe (¿está bien escrito?)',
+    ],
+  ])('con un campo que no existe (%j), lo nombra', (config, message) => {
+    expect(errorOf(text(config))).toBe(message);
+  });
+
+  it('con un campo obligatorio mal escrito, nombra el que no existe', () => {
+    const { ledCount, ...rest } = demoStrip;
+
+    expect(errorOf(text({ strips: [{ ...rest, ledcont: ledCount }] }))).toBe(
+      'la tira «demo», campo `ledcont`: no existe (¿está bien escrito?)',
+    );
+  });
+
+  it('con fps por encima de 60, dice que debe ser 60 o menos', () => {
+    expect(errorOf(text({ fps: 120, strips: [demoStrip] }))).toBe(
+      'campo `fps`: debe ser 60 o menos',
+    );
+  });
+
   it('con fps 0, nombra el campo', () => {
     expect(errorOf(text({ fps: 0, strips: [demoStrip] }))).toMatch(/`fps`/);
   });

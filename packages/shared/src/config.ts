@@ -8,27 +8,43 @@ import Value from 'typebox/value';
 
 import { findJsonError } from './json-error.ts';
 
-/** Salida de una tira, discriminada por `type`. En H1 solo existe `virtual`, sin más campos. */
-const OutputSchema = Type.Union([Type.Object({ type: Type.Literal('virtual') })]);
+/**
+ * Ningún objeto del fichero admite campos que el esquema no declare: así una errata en un campo
+ * opcional (`"fsp"` en lugar de `"fps"`) impide arrancar en lugar de ignorarse sin avisar.
+ */
+const CLOSED = { additionalProperties: false } as const;
 
-export const StripConfigSchema = Type.Object({
-  id: Type.String({ minLength: 1 }),
-  name: Type.String({ minLength: 1 }),
-  output: OutputSchema,
-  ledCount: Type.Integer({ minimum: 1 }),
-});
+/** Salida de una tira, discriminada por `type`. En H1 solo existe `virtual`, sin más campos. */
+const OutputSchema = Type.Union([Type.Object({ type: Type.Literal('virtual') }, CLOSED)]);
+
+export const StripConfigSchema = Type.Object(
+  {
+    id: Type.String({ minLength: 1 }),
+    name: Type.String({ minLength: 1 }),
+    output: OutputSchema,
+    ledCount: Type.Integer({ minimum: 1 }),
+  },
+  CLOSED,
+);
 
 /** Por defecto, solo local: el panel no tiene contraseña (README §2.5, decisión 13). */
-const ServerSchema = Type.Object({
-  host: Type.Optional(Type.String({ minLength: 1, default: '127.0.0.1' })),
-  port: Type.Optional(Type.Integer({ minimum: 1, maximum: 65535, default: 8080 })),
-});
+const ServerSchema = Type.Object(
+  {
+    host: Type.Optional(Type.String({ minLength: 1, default: '127.0.0.1' })),
+    port: Type.Optional(Type.Integer({ minimum: 1, maximum: 65535, default: 8080 })),
+  },
+  { ...CLOSED, default: {} },
+);
 
-export const ConfigFileSchema = Type.Object({
-  fps: Type.Optional(Type.Integer({ minimum: 1, default: 60 })),
-  server: Type.Optional(Type.Object(ServerSchema.properties, { default: {} })),
-  strips: Type.Array(StripConfigSchema, { minItems: 1 }),
-});
+export const ConfigFileSchema = Type.Object(
+  {
+    // El pulso del motor: README §2.2 prevé 30-60 fps, y más satura la CPU sin decir por qué.
+    fps: Type.Optional(Type.Integer({ minimum: 1, maximum: 60, default: 60 })),
+    server: Type.Optional(ServerSchema),
+    strips: Type.Array(StripConfigSchema, { minItems: 1 }),
+  },
+  CLOSED,
+);
 
 export type StripConfig = Static<typeof StripConfigSchema>;
 
@@ -66,8 +82,10 @@ export function parseConfig(text: string): ConfigResult {
   }
 
   const withDefaults = Value.Default(ConfigFileSchema, structuredClone(data));
-  const [firstError] = Value.Errors(ConfigFileSchema, withDefaults);
-  if (firstError) return fail(describeError(firstError, data));
+  const errors = Value.Errors(ConfigFileSchema, withDefaults);
+  // Un campo mal escrito da dos errores (el que no existe y el que falta): se nombra el que no existe.
+  const error = errors.find((each) => isUnknownField(each)) ?? errors[0];
+  if (error) return fail(describeError(error, data));
 
   const config = withDefaults as Config;
   const repeated = config.strips.find(
@@ -93,13 +111,23 @@ interface SchemaError {
   message: string;
 }
 
+/**
+ * TypeBox avisa de un campo no declarado de dos formas: en el propio campo (`boolean`: su esquema es
+ * `false`) y en el objeto que lo contiene (`additionalProperties`, con el nombre en sus parámetros).
+ */
+function isUnknownField(error: SchemaError): boolean {
+  return error.keyword === 'boolean' || error.keyword === 'additionalProperties';
+}
+
 /** `/strips/0/output/type` → «la tira «demo», campo `output.type`: …». */
 function describeError(error: SchemaError, data: Record<string, unknown>): string {
   const segments = error.instancePath.split('/').slice(1);
   const received = valueAt(data, segments);
   const params = error.params as Record<string, unknown>;
-  // `required` señala al objeto padre; el campo que falta va en sus parámetros.
-  const missing = (params.requiredProperties as string[] | undefined)?.[0];
+  // `required` y `additionalProperties` señalan al objeto padre; el campo va en sus parámetros.
+  const missing = ((params.requiredProperties ?? params.additionalProperties) as
+    | string[]
+    | undefined)?.[0];
   const where = segments[0] === 'strips' && segments[1] !== undefined ? 2 : 0;
   const field = [...segments.slice(where), ...(missing ? [missing] : [])].join('.');
   // Sin campo, el problema es la propia tira (por ejemplo, no es un objeto).
@@ -136,6 +164,7 @@ function valueAt(data: unknown, segments: string[]): unknown {
 
 function describeProblem(error: SchemaError, received: unknown): string {
   const params = error.params as Record<string, unknown>;
+  if (isUnknownField(error)) return 'no existe (¿está bien escrito?)';
   switch (error.keyword) {
     case 'required':
       return 'falta y es obligatorio';
