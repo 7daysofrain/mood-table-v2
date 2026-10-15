@@ -90,7 +90,7 @@
   `GET /` devuelve el `index.html` del build del panel; sin `server` en la configuración escucha en
   `127.0.0.1:8080` (`specs/viewer`, `specs/engine-config`).
   Verificar: el test falla porque el servidor no existe.
-- [ ] 2.5 Adaptador del servidor en `packages/engine/src/adapters`: Fastify con `host` y `port` de la
+- [x] 2.5 Adaptador del servidor en `packages/engine/src/adapters`: Fastify con `host` y `port` de la
   configuración (decisión 13), el build del panel servido (decisión 12) y un hub WebSocket con una
   única conexión por navegador; una salida del visor por tira que codifica cada frame y lo envía a
   todos los navegadores conectados (decisiones 2 y 10). Sin contramedida para un navegador atascado

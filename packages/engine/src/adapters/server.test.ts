@@ -58,6 +58,21 @@ describe('el servidor del motor', () => {
     expect(server.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
   });
 
+  it('con una dirección IPv6, la pone entre corchetes', async () => {
+    server = await startServer({ host: '::1', port: 0, panelDir });
+
+    expect(server.url).toMatch(/^http:\/\/\[::1\]:\d+$/);
+    expect((await fetch(`${server.url}/`)).status).toBe(200);
+  });
+
+  it('sin navegadores conectados, la salida del visor no envía nada ni falla', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
+
+    expect(() => {
+      server?.viewerOutput(0).write(new Uint8Array(180), { seq: 0, time: 0 });
+    }).not.toThrow();
+  });
+
   it('sirve el index.html del build del panel en /', async () => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
 

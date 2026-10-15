@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/ws": "catalog:",
     "typescript": "catalog:"
   }
 }
