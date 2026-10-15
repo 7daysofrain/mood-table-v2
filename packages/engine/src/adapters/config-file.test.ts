@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CONFIG_FILE, loadConfig, REPO_ROOT } from './config-file.ts';
 
@@ -28,21 +28,23 @@ async function writeConfig(content: string): Promise<void> {
   await writeFile(join(root, CONFIG_FILE), content);
 }
 
+// Con '' como ruta alternativa, los tests ignoran un MOODTABLE_CONFIG que pudiera haber en el entorno.
 describe('la lectura de config/local.json', () => {
   it('carga un fichero válido y dice de dónde lo ha cargado', async () => {
     await writeConfig(JSON.stringify({ strips: [demoStrip] }));
 
-    const result = await loadConfig(root);
+    const result = await loadConfig(root, '');
 
     expect(result).toEqual({
       ok: true,
       path: join(root, 'config', 'local.json'),
+      file: 'config/local.json',
       config: { fps: 60, server: { host: '127.0.0.1', port: 8080 }, strips: [demoStrip] },
     });
   });
 
   it('si no existe, dice que no encuentra el fichero e indica su ruta', async () => {
-    const result = await loadConfig(root);
+    const result = await loadConfig(root, '');
 
     expect(result.ok).toBe(false);
     expect(!result.ok && result.error).toBe(
@@ -53,7 +55,7 @@ describe('la lectura de config/local.json', () => {
   it('si no se puede leer, lo dice con la ruta', async () => {
     await mkdir(join(root, CONFIG_FILE), { recursive: true });
 
-    const result = await loadConfig(root);
+    const result = await loadConfig(root, '');
 
     expect(!result.ok && result.error).toMatch(/local\.json: no se puede leer el fichero/);
   });
@@ -61,11 +63,39 @@ describe('la lectura de config/local.json', () => {
   it('si no sirve, nombra el fichero y dice qué falla', async () => {
     await writeConfig(JSON.stringify({ strips: [] }));
 
-    const result = await loadConfig(root);
+    const result = await loadConfig(root, '');
 
     expect(!result.ok && result.error).toMatch(
       `${join(root, 'config', 'local.json')}: no declara ninguna tira`,
     );
+  });
+
+  it('con MOODTABLE_CONFIG, carga ese fichero en lugar de config/local.json y lo nombra así', async () => {
+    await writeConfig(JSON.stringify({ strips: [demoStrip] }));
+    const e2e = join(root, 'e2e.json');
+    await writeFile(e2e, JSON.stringify({ fps: 30, strips: [demoStrip] }));
+
+    const result = await loadConfig(root, e2e);
+
+    expect(result.ok && [result.path, result.file, result.config.fps]).toEqual([e2e, e2e, 30]);
+  });
+
+  it('con MOODTABLE_CONFIG a un fichero que no existe, lo dice con su ruta', async () => {
+    const result = await loadConfig(root, join(root, 'no-existe.json'));
+
+    expect(!result.ok && result.error).toBe(
+      `${join(root, 'no-existe.json')}: no se encuentra el fichero de configuración`,
+    );
+  });
+
+  it('si no se le pasa la ruta, la toma de la variable de entorno MOODTABLE_CONFIG', async () => {
+    await writeFile(join(root, 'desde-env.json'), JSON.stringify({ strips: [demoStrip] }));
+    vi.stubEnv('MOODTABLE_CONFIG', join(root, 'desde-env.json'));
+
+    const result = await loadConfig(root);
+    vi.unstubAllEnvs();
+
+    expect(result.ok && result.path).toBe(join(root, 'desde-env.json'));
   });
 
   it('busca el fichero desde la raíz del repositorio, sea cual sea el directorio de trabajo', async () => {

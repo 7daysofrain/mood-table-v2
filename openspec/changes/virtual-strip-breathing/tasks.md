@@ -135,7 +135,7 @@
   `requestAnimationFrame` (decisión 16), apagado sin conexión (decisión 14), e indicador de conexión
   en la cabecera.
   Verificar: los tests de 3.3 pasan y, con `pnpm dev`, la tira respira en `localhost:5173`.
-- [ ] 3.5 `MOODTABLE_CONFIG`: si existe, el motor carga ese fichero en lugar de `config/local.json`, y
+- [x] 3.5 `MOODTABLE_CONFIG`: si existe, el motor carga ese fichero en lugar de `config/local.json`, y
   la línea de log dice cuál (decisión 3, matiz para los tests), con su test (`specs/engine-config`).
   Verificar: el test pasa; sin la variable, el motor sigue cargando `config/local.json`.
 - [ ] 3.6 E2E de HU1 en `e2e/`: `webServer` arranca el motor, que sirve el build del panel (decisión

@@ -7,7 +7,7 @@
  */
 import { join } from 'node:path';
 
-import { CONFIG_FILE, loadConfig, REPO_ROOT } from './adapters/config-file.ts';
+import { loadConfig, REPO_ROOT } from './adapters/config-file.ts';
 import { startServer } from './adapters/server.ts';
 import { startEngine, startupMessage } from './engine.ts';
 
@@ -26,7 +26,7 @@ async function main(): Promise<string | undefined> {
     return `No puede escuchar en ${host}:${port} (${(error as Error).message})`;
   }
 
-  console.log(startupMessage(CONFIG_FILE, loaded.config, server.url));
+  console.log(startupMessage(loaded.file, loaded.config, server.url));
   startEngine({
     config: loaded.config,
     createOutputs: (_strip, index) => [server.viewerOutput(index)],
