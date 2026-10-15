@@ -129,7 +129,7 @@ class JsonScanner {
       const hex = this.text.slice(this.index + 2, this.index + 6);
       if (!/^[0-9a-fA-F]{4}$/.test(hex)) throw new Invalid(this.index);
       this.index += 6;
-    } else if (char !== undefined && '"\\/bfnrt'.includes(char)) {
+    } else if (char !== undefined && String.raw`"\/bfnrt`.includes(char)) {
       this.index += 2;
     } else {
       throw new Invalid(this.index);
