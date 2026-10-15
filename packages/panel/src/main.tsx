@@ -7,7 +7,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
 import { colorScheme, theme } from './theme.ts';
 
-const root = document.getElementById('root');
+const root = document.getElementById('app');
 if (!root) {
   throw new Error('No se encuentra el elemento #root en index.html');
 }
