@@ -6,19 +6,22 @@
 
 ## 1. MOO-49 · infra
 
-- [ ] 1.1 Montar el paquete `e2e` sin tests (decisión 2 de `design.md`):
+- [x] 1.1 Montar el paquete `e2e` sin tests (decisión 2 de `design.md`):
   - `@playwright/test` en el catálogo de `pnpm-workspace.yaml`, en la última versión estable que
     cumpla `minimumReleaseAge`, y `e2e` en `packages:`;
-  - `e2e/package.json` (`@moodtable/e2e`, con `"catalog:"`) con los scripts `test:e2e`
-    (`playwright test`) y `typecheck`, y `e2e/tsconfig.json`, que extiende `tsconfig.node.json`;
-  - `./e2e/tsconfig.json` en `parserOptions.project` de `eslint.config.js`;
+  - `e2e/package.json` (`@moodtable/e2e`, con `"catalog:"`) con el script `test:e2e`
+    (`playwright test`);
   - script `preview` (`vite preview`) en `packages/panel/package.json`;
   - `e2e/playwright-report/` y `e2e/test-results/` en `.gitignore`.
 
+  El `tsconfig.json` del paquete, su script `typecheck` y su entrada en ESLint van en 1.2: sin ningún
+  `.ts`, `tsc` falla con TS18003 y ESLint no puede leer ese `tsconfig`.
+
   Verificar: `pnpm install` termina sin avisos de `minimumReleaseAge`, `pnpm lint` y `pnpm typecheck`
-  siguen en verde (y `typecheck` pasa por `@moodtable/e2e`), y `pnpm test` ejecuta los mismos tests
-  que antes.
+  siguen en verde, y `pnpm test` ejecuta los mismos tests que antes.
 - [ ] 1.2 Configuración de Playwright y E2E de humo (decisiones 3, 5, 6 y 8):
+  - `e2e/tsconfig.json`, que extiende `tsconfig.node.json`; el script `typecheck` en
+    `e2e/package.json`, y `./e2e/tsconfig.json` en `parserOptions.project` de `eslint.config.js`;
   - `e2e/playwright.config.ts`:
     - `webServer` construye el panel y lo sirve con `preview` en `127.0.0.1:4173`, con
       `--strictPort` y `reuseExistingServer: false`;
@@ -36,7 +39,8 @@
   - quitando a mano una zona de `PanelLayout.tsx` (sin commitearlo), el test falla y dice qué región
     falta, y queda la traza en `e2e/test-results/` (escenario «El E2E de humo detecta un panel
     roto»);
-  - `pnpm lint` y `pnpm typecheck` en verde con el test nuevo.
+  - `pnpm lint` y `pnpm typecheck` en verde con el test nuevo, y `typecheck` pasa por
+    `@moodtable/e2e`.
 - [ ] 1.3 SonarQube trata los E2E como código de test (decisión 4): `e2e` en `sonar.tests` y `e2e/**`
   en `sonar.test.inclusions` de `sonar-project.properties`, con un comentario que diga por qué no
   entran en la cobertura.
