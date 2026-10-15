@@ -647,6 +647,33 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Un paquete TypeScript sin ningún `.ts` no compila (TS18003). El `tsconfig` de `e2e/` pasó del paso 1.1 al 1.2, para que cada commit quedara en verde, y se dejó escrito en `tasks.md`.*
 - *ESLint analizaba el informe HTML de Playwright (3.719 errores en local): se añadió a sus ignorados.*
 
+#### 6.11 El change de la HU1: el motor, el visor y la tira respirando (`MOO-13`)
+
+**Prompt 1:**
+
+> Y no tendría sentido que el visor respresente a una sola tira, que vaya con su cliente de websocket y que si hay varios visores sean varios clientes? Se que no es muy optimo, pero al final es visor de desarrollo y no creo que nunca haya mas de 2 o 3 tiras representadas. De esta manera se podrian incluso combinar visores "software" y "hardware" no? Este planteamiento cuadra?
+
+*Claude Code (`claude-opus-5-5`, 14-oct), `/opsx:explore` de la historia tarea a tarea (`MOO-16`, `17` y `18`). La IA proponía un puerto de salida que recibiera todas las tiras de un pulso en un solo mensaje. El humano propuso una salida por tira. La IA le dio la razón en el puerto: el desfase de un frame entre tiras no se ve, y así una tira puede combinar salidas. Pero separó lo que la idea mezclaba: un WebSocket por tira es otra decisión, y se mantuvo una conexión por navegador. Quedó como D43.*
+
+**Prompt 2:**
+
+> No entiendo la premisa, la ruta debería ser,  relativamente la misma
+
+*La IA proponía pasar la ruta del fichero de configuración siempre como argumento, porque el README la ponía en un sitio en el portátil y en otro en la Pi. Explicó de dónde venía esa premisa (`/etc`, por convención de Linux) y aceptó la propuesta del humano: una ruta fija dentro del repo, ignorada por git. El humano le cambió el nombre a `config/local.json`. Quedó como D44, que corrige D31.*
+
+**Prompt 3:**
+
+> esto es de importancia muy relativa, la demo está orientada a la evaluación por parte de los profesores, el uso real será siempre en red local, tiene sentido poner cotramedidas aqui? me parece sobrearquitectar
+
+*La IA proponía saltarse frames para un navegador que no los recibe. Le dio la razón al humano para la demo, pero no cedió del todo: puso un caso de la red local (un móvil bloqueado con el panel abierto) con cifras, unos 65 MB en 10 minutos en la mesa real. Con esos datos, el humano lo dejó como riesgo aceptado, escrito en el `design.md` con su arreglo de una línea por si aparece.*
+
+*Ajustes durante el change y la implementación de `MOO-16`:*
+- *Al revisar el change, el humano fijó una regla: una decisión (D#) nunca se borra ni se renumera, se tacha y se marca como obsoleta, para no dejar referencias rotas. Así se trató la D43 que proponía el change de `MOO-49`.*
+- *De la exploración salieron dos tareas aparte en Linear: `MOO-48` (`docs/instructions/` como sitio de la arquitectura y las buenas prácticas) y `MOO-49` (los E2E con Playwright, que esta historia ya usa).*
+- *Al implementar, `JSON.parse` no siempre decía dónde fallaba el JSON. La IA escribió un localizador que da la línea y la columna, con sus tests, en lugar de dejar el escenario a medias.*
+- *El test de una respiración completa falló por un error del propio test: con el redondeo, el brillo llega a 255 antes del segundo 2. Se corrigió el test, no el efecto.*
+- *La IA puso el esquema de la respiración en el motor y luego lo movió a `shared`, que es lo que dice README §2.3, en un commit aparte.*
+
 ---
 
 ### 7. Pull Requests

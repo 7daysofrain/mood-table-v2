@@ -11,7 +11,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       reportsDirectory: 'coverage',
-      include: ['packages/*/src/**/*.{ts,tsx}', '.claude/hooks/**/*.ts', 'tooling/ci/**/*.ts'],
+      include: [
+        'packages/*/src/**/*.{ts,tsx}',
+        '.claude/hooks/**/*.ts',
+        'tooling/ci/**/*.ts',
+        'tooling/dev/**/*.ts',
+      ],
       // Mantener igual que `sonar.coverage.exclusions` en sonar-project.properties.
       exclude: [
         // Raíces de composición: montan piezas, sin lógica propia (design.md §5).
@@ -23,6 +28,8 @@ export default defineConfig({
         '**/*.hardware.ts',
         // E/S de la comprobación de incidencias de Sonar; su lógica está en `sonar-issues.ts`.
         'tooling/ci/check-sonar-issues.ts',
+        // Entrada de `pnpm dev`: resuelve la raíz y avisa; la lógica está en `local-config.ts`.
+        'tooling/dev/prepare-local-config.ts',
       ],
     },
   },

@@ -1,10 +1,21 @@
 /**
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
- * adaptadores. Leerá la configuración y montará el motor (`MOO-16`).
+ * adaptadores. Carga la configuración, crea las salidas de cada tira y arranca el motor. Si la
+ * configuración no sirve, el motor no arranca: dice qué falla y termina con código 1.
  */
-import { SHARED_PACKAGE_NAME } from '@moodtable/shared';
+import { CONFIG_FILE, loadConfig } from './adapters/config-file.ts';
+import { startEngine, startupMessage } from './engine.ts';
 
-import { ADAPTERS_NAME } from './adapters/index.ts';
-import { CORE_NAME } from './core/index.ts';
+const loaded = await loadConfig();
 
-export const COMPOSITION = [SHARED_PACKAGE_NAME, CORE_NAME, ADAPTERS_NAME] as const;
+if (loaded.ok) {
+  console.log(startupMessage(CONFIG_FILE, loaded.config));
+  startEngine({
+    config: loaded.config,
+    // Una tira virtual solo tiene el visor, que llega con MOO-17; la salida Adalight, con H3.
+    createOutputs: () => [],
+  });
+} else {
+  console.error(`El motor no arranca. ${loaded.error}`);
+  process.exitCode = 1;
+}

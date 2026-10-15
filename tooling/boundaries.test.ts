@@ -34,7 +34,7 @@ describe('el núcleo del motor no depende de los adaptadores', () => {
   it('rechaza que un fichero del núcleo importe un adaptador', async () => {
     const errors = await boundaryErrors(
       'packages/engine/src/core/example.ts',
-      "import { ADAPTERS_NAME } from '../adapters/index.ts';\nexport const x = ADAPTERS_NAME;\n",
+      "import { MemoryOutput } from '../adapters/memory-output.ts';\nexport const x = MemoryOutput;\n",
     );
     expect(errors).toHaveLength(1);
   });
@@ -42,7 +42,7 @@ describe('el núcleo del motor no depende de los adaptadores', () => {
   it('permite que un adaptador importe del núcleo', async () => {
     const errors = await boundaryErrors(
       'packages/engine/src/adapters/example.ts',
-      "import { CORE_NAME } from '../core/index.ts';\nexport const x = CORE_NAME;\n",
+      "import { createFrameLoop } from '../core/frame-loop.ts';\nexport const x = createFrameLoop;\n",
     );
     expect(errors).toEqual([]);
   });
@@ -54,9 +54,9 @@ describe('solo la raíz de composición conoce núcleo y adaptadores a la vez', 
       'packages/engine/src/main.ts',
       [
         "import { SHARED_PACKAGE_NAME } from '@moodtable/shared';",
-        "import { ADAPTERS_NAME } from './adapters/index.ts';",
-        "import { CORE_NAME } from './core/index.ts';",
-        'export const x = [SHARED_PACKAGE_NAME, ADAPTERS_NAME, CORE_NAME];',
+        "import { MemoryOutput } from './adapters/memory-output.ts';",
+        "import { createFrameLoop } from './core/frame-loop.ts';",
+        'export const x = [SHARED_PACKAGE_NAME, MemoryOutput, createFrameLoop];',
         '',
       ].join('\n'),
     );
@@ -68,7 +68,7 @@ describe('el panel solo importa de shared entre los paquetes del repo', () => {
   it('rechaza que el panel importe el motor por nombre de paquete', async () => {
     const errors = await boundaryErrors(
       'packages/panel/src/example.ts',
-      "import { COMPOSITION } from '@moodtable/engine';\nexport const x = COMPOSITION;\n",
+      "import { createFrameLoop } from '@moodtable/engine';\nexport const x = createFrameLoop;\n",
     );
     expect(errors).toHaveLength(1);
   });
@@ -76,7 +76,7 @@ describe('el panel solo importa de shared entre los paquetes del repo', () => {
   it('rechaza que el panel importe el motor por ruta relativa', async () => {
     const errors = await boundaryErrors(
       'packages/panel/src/example.ts',
-      "import { CORE_NAME } from '../../engine/src/core/index.ts';\nexport const x = CORE_NAME;\n",
+      "import { createFrameLoop } from '../../engine/src/core/frame-loop.ts';\nexport const x = createFrameLoop;\n",
     );
     expect(errors).toHaveLength(1);
   });
@@ -102,7 +102,7 @@ describe('shared no depende de los otros paquetes', () => {
   it('rechaza que shared importe el motor por nombre de paquete', async () => {
     const errors = await boundaryErrors(
       'packages/shared/src/example.ts',
-      "import { COMPOSITION } from '@moodtable/engine';\nexport const x = COMPOSITION;\n",
+      "import { createFrameLoop } from '@moodtable/engine';\nexport const x = createFrameLoop;\n",
     );
     expect(errors).toHaveLength(1);
   });
@@ -110,7 +110,7 @@ describe('shared no depende de los otros paquetes', () => {
   it('rechaza que shared importe el motor por ruta relativa', async () => {
     const errors = await boundaryErrors(
       'packages/shared/src/example.ts',
-      "import { CORE_NAME } from '../../engine/src/core/index.ts';\nexport const x = CORE_NAME;\n",
+      "import { createFrameLoop } from '../../engine/src/core/frame-loop.ts';\nexport const x = createFrameLoop;\n",
     );
     expect(errors).toHaveLength(1);
   });
