@@ -106,8 +106,8 @@ escenas guardadas, sincronía por tempo, más de dos tiras o segmentos, GPIO dir
   efecto" (esquema + render + test de frame dorado), subagente de **firmware** (C++ en un
   lenguaje que Joseba no domina: el experimento controlado, con radio de daño mínimo y protocolo
   definido byte a byte), subagente de **revisión contra spec**.
-- **Decisiones validadas por spike** (material de `prompts.md`): rendimiento de Node en la Pi 3
-  B+ antes de construir el análisis de audio (D42).
+- **Decisiones validadas por spike** (material de `prompts.md`): rendimiento de Node en la
+  ~~Pi 3 B+~~ → Pi 4 de la mesa (D47) antes de construir el análisis de audio (D42).
 - **Ajustes humanos ya registrables:** el pivote desde Sutegi (post-mortem), la corrección
   "escenas guardadas → estado del instrumento" (el aparato es de *performance*, no de repertorio),
   la corrección "dos motores peleándose → dos tiras legítimas", la elección TypeScript vs Python,
@@ -118,7 +118,7 @@ escenas guardadas, sincronía por tempo, más de dos tiras o segmentos, GPIO dir
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| **Rendimiento de Node en la Pi 3 B+** (dev) | Alto si el bucle no cabe en 16 ms | Spike obligatorio antes del análisis de audio; el esqueleto del motor no lo espera (D42) (audio sintético → FFT → efecto → mezcla → salida nula; medir ms/frame). Objetivo: <8 ms a 300 LEDs. |
+| **Rendimiento de Node en la Pi** (~~3 B+, dev~~ → la 4 de la mesa, D47) | Alto si el bucle no cabe en 16 ms | Spike obligatorio antes del análisis de audio; el esqueleto del motor no lo espera (D42) (audio sintético → FFT → efecto → mezcla → salida nula; medir ms/frame). Objetivo: <8 ms a 300 LEDs. |
 | **Tirones por recolector de basura** | Medio (jitter visible) | Regla de spec: búferes preasignados, cero asignaciones en el bucle caliente. |
 | **Techo de fps por Adalight a 115.200 baudios** | Medio (~19 fps a 200 LEDs; ~6 fps a 600) | Fijar LEDs del MVP ≤ 200-300; firmware propio a 921.600 baudios como should-have. |
 | **Hardware no montado ahora mismo** | Medio | Todo se desarrolla contra la tira virtual; la tira real entra al final. El Light Box evita firmware nuevo. |
@@ -181,12 +181,12 @@ must-have de primera, lenguaje decidido con argumentos (hecho: TS), alcance reco
 | D5 | **Mandos como puerto**: `setEffect`, `setParam`, … emitidos por el panel hoy y por F1/encoder mañana | Un vocabulario, varios mandos. Los parámetros se aplican en un búfer que el bucle lee al empezar cada frame (nunca a mitad de render). |
 | D6 | **Sin escenas/presets guardados** | El aparato es de *performance*; un instrumento no guarda partituras. (Corrección de Joseba sobre una propuesta heredada de Hyperion.) |
 | D7 | **Persistencia = configuración de tira + estado del instrumento**, tras un puerto; JSON de inicio, SQLite si conviene | Datos reales sin BD con calzador; el arranque autónomo (H5) los necesita; deja la sección de BD del README defendible. |
-| D8 | **TypeScript/Node para el motor**, condicionado a spike en la Pi 3 B+ | Joseba puede leer, criticar y corregir lo que fabrica el agente (eje 2 y objetivo didáctico); tipos compartidos con el front; rendimiento sobrado en teoría (2-6 ms/frame). Python perdía el juicio humano sobre el código. |
+| D8 | **TypeScript/Node para el motor**, condicionado a spike en la ~~Pi 3 B+~~ → Pi 4 de la mesa (D47) | Joseba puede leer, criticar y corregir lo que fabrica el agente (eje 2 y objetivo didáctico); tipos compartidos con el front; rendimiento sobrado en teoría (2-6 ms/frame). Python perdía el juicio humano sobre el código. |
 | D9 | **Experimento "fabricar en un lenguaje que no domino" reservado al firmware C++** | Pieza pequeña, spec precisa byte a byte, verificable desde fuera; radio de daño mínimo para el eje 2. |
 | D10 | **Tira física vía Adalight** ~~+ Light Box~~ → **corregida el 16-oct:** con un Arduino Uno (ver D46) **como must-have**; firmware propio como should-have | El Light Box ya es un driver Adalight (era lo que usaba Hyperion): cierra H3 sin firmware ni compras. |
 | D11 | ~~Una sola capa (reactiva) en el MVP; capa ambiente mezclada como should-have~~ → **corregida el 22-sep:** el ambiente es una **segunda tira física** con su propio efecto; **no hay mezcla de capas** (ver D26) | Error de redacción arrastrado al README: la v1 ya tenía dos tiras legítimas (§5, "dos motores peleándose → dos tiras legítimas"). Desaparece la mezcla, que era la parte compleja del should-have. |
 | D12 | **Número de LEDs del MVP ≤ 200-300**, definido en la config de la tira | Techo de Adalight a 115.200 baudios y fuente de 18 A. La cifra exacta se fija en el spike. |
-| D13 | **Spike de rendimiento en la Pi 3 B+** ~~antes de cerrar la spec del motor~~ → **corregida el 14-oct:** antes de construir el análisis de audio (ver D42) | La 3 B+ va a la mitad que la 4; si va bien en la 3, sobra en la 4. Decisión validada con datos → `prompts.md`. |
+| D13 | ~~**Spike de rendimiento en la Pi 3 B+**~~ ~~antes de cerrar la spec del motor~~ → **corregida el 14-oct:** antes de construir el análisis de audio (ver D42). **Obsoleto (16-oct):** el spike se mide en la Pi 4 de la mesa, no en la 3 B+; ver D47 | ~~La 3 B+ va a la mitad que la 4; si va bien en la 3, sobra en la 4.~~ Decisión validada con datos → `prompts.md`. |
 | D14 | **Límite de potencia en el motor** | Lo hacían Hyperion/dancyPi por debajo; ahora es código propio y evita quemar fuente/tira. |
 
 ### Decisiones de la sesión de README (22-sep-2026)
@@ -230,6 +230,7 @@ must-have de primera, lenguaje decidido con argumentos (hecho: TS), alcance reco
 | D44 | **El motor carga siempre `config/local.json`**, resuelto desde la raíz del repositorio e ignorado por git; `config/demo.json` es el ejemplo versionado y `pnpm dev` lo copia a `config/local.json` si no existe. Sin argumentos ni rutas alternativas | `MOO-16`, change `virtual-strip-breathing` (`design.md` decisión 3). Corrige D31. Propuesta del humano: la ruta debería ser la misma en el portátil y en la mesa. Un solo sitio donde mirar, y la línea de log del arranque dice qué fichero ha cargado. `git pull` no toca un fichero ignorado, así que sobrevive a las actualizaciones igual que uno en `/etc`. Descartados: `/etc/moodtable/config.json` en la Pi (convención de Linux) y la ruta siempre como argumento (`--config`): los dos añaden un sitio más donde puede estar el fichero. **Matizada el 15-oct (`MOO-18`):** solo para los tests, la variable de entorno `MOODTABLE_CONFIG` indica otro fichero; el log sigue diciendo cuál se ha cargado (`design.md` del change `virtual-strip-breathing`, decisión 3). |
 | D45 | **Protocolo del visor: una conexión WebSocket por navegador y un mensaje binario por frame y tira** (tipo de mensaje, `seq` de 32 bits, índice de la tira en el fichero y RGB, 3 bytes por LED). El formato byte a byte está en `docs/instructions/viewer-protocol.md`, y el código que codifica y decodifica, en `@moodtable/shared` | `MOO-17`, change `virtual-strip-breathing` (`design.md` decisiones 10 y 11). Es el contrato que D42 pide proteger: si el motor se rehace, el panel (`MOO-18`) se salva mientras no cambie. Una sola conexión porque por ella viajarán también el estado y los cambios de efecto, y tras un reinicio el panel solo reconecta una. El panel no necesita saber nada de antemano: el índice dice de qué tira es y la longitud, cuántos LEDs. Descartados: identificar la tira por su `id` (texto que decodificar 60 veces por segundo por tira) y AsyncAPI (para un solo tipo de mensaje es más ceremonia que ayuda; se puede reconsiderar si el protocolo crece). |
 | D46 | **El controlador Adalight de la mesa es un Arduino Uno con el sketch [Adalight-FastLED](https://github.com/dmadison/Adalight-FastLED)**, en lugar del Light Box: tira de 173 LEDs, pin 6, 115.200 baudios y brillo topado al 25 % en el sketch. El sketch no se copia al repositorio: se enlaza y `HARDWARE_SETUP.md` §4.1 dice qué valores cambiar. En la configuración, la tira se declara `rgb` porque el sketch ya reordena a GRB | `MOO-34` (16-oct). El Light Box se averió (deja la línea de datos clavada en alto) y no hay sitio fiable donde comprar otro. Un Arduino habla el mismo protocolo con el mismo chip USB (CH340), así que el motor no cambia: es la alternativa que ya preveían D21 y D27, el autor tenía uno y su sketch es abierto y reparable. El sketch es GPL-3 y de un tercero: copiarlo traería una licencia distinta al repo para cambiar cuatro valores. El tope de brillo protege el adaptador de 8 A (173 LEDs ≈ 10,4 A a blanco) mientras el programa que manda no tenga límite de potencia (E8). Descartados: otro Light Box (sin fuente fiable y opaco) y el firmware propio en ESP (es el should-have S2 y necesita conversor de nivel). |
+| D47 | **El spike de rendimiento (`MOO-12`) se mide en la Pi 4 de la mesa** (8 GB, Raspberry Pi OS Lite de 64 bits), no en la Pi 3 B+. Sigue bloqueando el audio y no el esqueleto del motor (D42) | `MOO-52` (16-oct). Sustituye a D13. Mide la máquina y el sistema donde va a correr el motor, y evita instalar y montar una segunda Pi cuando el cableado de la tira (`MOO-34`) ya se ha llevado mucho tiempo. Se pierde el margen de D13 («si va bien en la 3, sobra en la 4»): el dato vale para la Pi 4, y la 3 B+ queda sin verificar como ordenador de la mesa. Descartado: reinstalar también la Pi 3 B+ con 64 bits y medir en ella. |
 
 ## 11. Fuera del MVP (visión, por orden de deseo)
 
@@ -267,7 +268,7 @@ Sin ella, todo lo demás la suplía con sockets y `spawn`. El repo v1 se conserv
 
 ## 14. Primeros pasos técnicos (antes de la E2)
 
-1. **Spike de rendimiento** en la Pi 3 B+ (D13). Salida: ms/frame a 200/300/600 LEDs, 30/60 fps.
+1. **Spike de rendimiento** en la ~~Pi 3 B+ (D13)~~ → Pi 4 de la mesa (D47). Salida: ms/frame a 200/300/600 LEDs, 30/60 fps.
    **Corregido el 14-oct (D42):** ya no va primero; el esqueleto del motor (`MOO-13`) se especifica
    antes, y el spike bloquea el audio (`MOO-14`).
 2. **Adalight con el Light Box**: script mínimo que manda un frame fijo y otro animado; confirma

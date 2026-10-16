@@ -727,6 +727,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La IA contestó varias veces en inglés aunque la memoria pide español; el humano lo corrigió.*
 - *La resistencia de 330 Ω en la línea de datos queda sin poner por decisión del humano, con el riesgo escrito en el documento.*
 
+#### 6.14 La Pi con Raspberry Pi OS de 64 bits (`MOO-52`)
+
+**Prompt 1:**
+
+> /opsx:explore MOO-52,
+
+*Claude Code (`claude-opus-5-5`, 16-oct). Antes de reinstalar, la IA miró la Pi por SSH, solo leyendo: el kernel ya era de 64 bits pero el sistema seguía siendo de 32 (`armhf`), así que había que reinstalar igualmente, y en la tarjeta había cosas que no están en ningún repo (Hyperion, la pantalla táctil de la v1 con su kiosk y el código de la v1). Propuso una microSD nueva y guardar la vieja: la reinstalación se puede deshacer y Hyperion sigue a mano como software conocido para diagnosticar la tira. Señaló también que una *chore* sin requisitos no lleva change de OpenSpec (`workflow.md` §6) y que el spike `MOO-12` estaba previsto en una Pi 3 B+ que no es la de la mesa.*
+
+**Prompt 2:**
+
+> si, vamos a acelerar que ya hemos perdido mucho tiempo con el cableado. Hacemos la prueba sobre la que tenemos conectactada. Veo bien tu propuesta. Si quieres apagala y le cambio la SSD
+
+*El humano decidió medir el spike en la Pi 4 de la mesa en lugar de reinstalar también la 3 B+. Queda como D47, con D13 tachada y marcada como obsoleta, y con su coste escrito: la 3 B+ deja de estar verificada. La IA apagó la Pi por SSH, vio que el Mac mini no tiene lector de SD, instaló Raspberry Pi Imager con permiso y dio los valores de la personalización, con la clave SSH del Mac para poder entrar sin contraseña.*
+
+**Prompt 3:**
+
+> corrije a mano
+
+*La Pi arrancaba pero rechazaba la clave. Leyendo la partición de arranque desde el Mac, la IA vio que en la tarjeta estaba la ruta `~/.ssh/id_ed25519.pub` como texto en lugar de la clave: su propia instrucción («escoge `~/.ssh/id_ed25519.pub`») daba pie a escribirla. Recomendó regrabar; el humano prefirió corregir la tarjeta a mano y la IA lo hizo (la clave real y un `instance-id` nuevo), pero la Pi no volvió a aplicar la configuración. En la regrabación, la IA vio por la huella SSH de la Pi, idéntica a la del primer arranque, que la tarjeta no se había llegado a escribir, y comprobó la siguiente grabación en el lector antes de arrancar. Con la Pi en marcha verificó `arm64` (Debian 13), la WiFi, SSH solo con clave, el Arduino y la tarjeta de sonido. Lo aprendido quedó en `HARDWARE_SETUP.md` §4.2.*
+
+*Ajustes durante la tarea:*
+- *El humano escribió en el chat la contraseña de la Pi, la de fábrica; la IA no la usó, como estaba pactado, y propuso cambiarla al regrabar.*
+- *La exploración pasó a ejecución (apagar la Pi, instalar Imager) con permiso del humano en cada paso. Cuando el humano preguntó si ya estaban haciendo la tarea, la IA enumeró lo que faltaba del flujo: la rama, el estado en Linear y la PR.*
+- *En la Pi nueva `sudo` pide contraseña, así que la IA no puede administrarla sola: queda por decidir quién instala Node 24.*
+
 ---
 
 ### 7. Pull Requests
