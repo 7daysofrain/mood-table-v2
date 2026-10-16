@@ -15,7 +15,7 @@ fichero de configuración y el servicio) está en el [README §1.4](readme.md#3-
 |---|---|---|
 | **Ordenador** | Raspberry Pi 4 Model B, 8 GB de RAM | ✅ |
 | **Alimentación de la Pi** | Su propio transformador USB-C a la red, **separado** del de la tira | ✅ |
-| **Sistema** | Raspberry Pi OS **de 64 bits** (Node.js 24 no tiene versión oficial para ARM de 32 bits) | ⏳ hoy tiene Raspbian de 32 bits ([MOO-52](https://linear.app/7daysofrain/issue/MOO-52)) |
+| **Sistema** | Raspberry Pi OS Lite **de 64 bits** (Debian 13 *trixie*, `arm64`), sin escritorio (§4.2). Node.js 24 no tiene versión oficial para ARM de 32 bits | ✅ |
 | **Red** | WiFi | ✅ |
 | **Controlador de la tira** | Arduino Uno (clon con chip USB CH340, `1a86:7523`) con el sketch [Adalight-FastLED](https://github.com/dmadison/Adalight-FastLED) (§4.1; decisión D46 de la ficha) | ✅ |
 | **Tira** | 173 LEDs direccionables de 5 V tipo WS2812B, orden de color GRB (pistas `+5V`, `Din`, `GND`; una flecha marca el sentido de los datos) | ✅ |
@@ -108,8 +108,8 @@ LEDs). Con 173 LEDs:
 
 Haz todo **con todo desenchufado de la red** y enchufa solo cuando lo diga el paso.
 
-1. **Pi.** Graba Raspberry Pi OS de 64 bits en la tarjeta SD (con Raspberry Pi Imager: WiFi, usuario y
-   SSH se configuran ahí). Alimenta la Pi con su transformador.
+1. **Pi.** Graba Raspberry Pi OS Lite de 64 bits en la tarjeta SD con Raspberry Pi Imager, que deja
+   configurados la WiFi, el usuario y el acceso por SSH (§4.2). Alimenta la Pi con su transformador.
 2. **Arduino.** Cárgale el sketch Adalight (§4.1) y conéctalo por USB a la Pi.
 3. **Tira, alimentación.** Antes de conectar la tira, comprueba con el polímetro la salida de la fuente
    (§5, medidas 1 y 2). Después conecta el adaptador a la clavija hembra de la tira y enchúfalo.
@@ -158,6 +158,50 @@ el rojo y el verde salen cambiados.
 orden de color). La cuenta sale de lo que se ve al final de la tira: en este montaje, 3 blancos, 2
 verdes y 3 rojos = 173.
 
+### 4.2. Grabar el sistema de la Pi
+
+Con [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (en macOS, `brew install --cask
+raspberry-pi-imager`) y un lector de tarjetas SD. Elige **Raspberry Pi 4**, luego **Raspberry Pi OS
+(other) → Raspberry Pi OS Lite (64-bit)**, y como destino la tarjeta: comprueba el tamaño para no
+borrar otro disco. Lite no trae escritorio: la mesa no tiene pantalla y así no compite con el motor.
+
+En la personalización:
+
+| Pantalla | Valor en este montaje | Por qué |
+|---|---|---|
+| Hostname | `moodtable` | Se llega a la Pi como `moodtable.local`, aunque el router le cambie la IP |
+| Localisation | Zona `Europe/Madrid`, teclado `es`, país de la WiFi `ES` | El país fija los canales de WiFi que puede usar |
+| User | `pi`, con una contraseña **propia** (no la antigua de fábrica) | `sudo` la pide; por SSH no se usa |
+| Wi-Fi | La red de casa | La mesa no tiene cable de red |
+| Remote access | SSH **solo con clave pública** | Sin contraseñas por la red |
+| Raspberry Pi Connect | Desactivado | Es acceso remoto por internet; la mesa no lo necesita |
+
+**En Remote access se pega la clave, no la ruta del fichero.** Imager guarda tal cual lo que hay en el
+campo: si escribes `~/.ssh/id_ed25519.pub`, la Pi apunta ese texto como clave y rechaza la conexión. En
+macOS, copia la clave con:
+
+```bash
+pbcopy < ~/.ssh/id_ed25519.pub
+```
+
+y pégala: es una sola línea que empieza por `ssh-ed25519 AAAA`.
+
+**El primer arranque tarda unos 3 minutos** (amplía la partición, aplica la configuración y se reinicia
+una vez). Después, desde el ordenador:
+
+```bash
+ssh pi@moodtable.local
+```
+
+**Si algo de la personalización salió mal, vuelve a grabar la tarjeta.** La configuración se aplica
+una sola vez, en el primer arranque. Corregir después los ficheros de la partición de arranque
+(`user-data`, `meta-data`) no la vuelve a aplicar: se probó en este montaje y la Pi siguió igual.
+
+**Para comprobar que la tarjeta se ha grabado de verdad**, vuelve a meterla en el lector (Imager la
+expulsa al terminar): en una tarjeta recién grabada la partición de Linux ocupa unos 2-3 GB (`diskutil
+list` en macOS) y crece al tamaño de la tarjeta en el primer arranque. Si ocupa toda la tarjeta, no se
+ha regrabado.
+
 ## 5. Comprobaciones con el polímetro
 
 Basta un polímetro digital básico con tensión continua y continuidad (el de este montaje es un
@@ -204,6 +248,17 @@ no dice si falla la alimentación o los datos. El orden que funcionó en este mo
    controlador tiene la línea clavada en alto. Desenchufarle el USB 10 segundos lo reinicia; si sigue
    igual, está averiado.
 
+**Software conocido para comparar.** Si la tira no enciende con Mood Table, saber si falla el hardware o
+el código nuevo es más fácil con un programa que ya funcionaba. En este montaje, al instalar el sistema
+de 64 bits se usó **una tarjeta SD nueva** y se guardó la anterior (Raspbian de 32 bits con Hyperion, el
+software de la v1): cambiar de tarjeta vuelve a Hyperion en un minuto. Cada tarjeta tiene su propia
+identidad SSH, así que tras cambiarla el ordenador avisa de que la clave del equipo ha cambiado. Es
+esperado; se borra la antigua con:
+
+```bash
+ssh-keygen -R moodtable.local
+```
+
 **Lo que se encontró** en este montaje:
 
 - **LEDs 1 y 2 muertos** (5-oct-2026): 5,36 V en la entrada, datos en la entrada del LED 1 y nada
@@ -228,7 +283,14 @@ no dice si falla la alimentación o los datos. El orden que funcionó en este mo
 
 ## 7. Comprobar que la Pi ve el hardware
 
-Desde la Pi (por SSH):
+Desde la Pi (por SSH, `ssh pi@moodtable.local`). Primero, que el sistema sea de 64 bits:
+
+```bash
+dpkg --print-architecture
+```
+
+Tiene que decir `arm64`. Con `armhf`, el sistema es de 32 bits aunque `uname -m` diga `aarch64` (el
+kernel sí es de 64 bits): era el caso de esta Pi antes de reinstalarla, y Node.js 24 no se puede instalar.
 
 ```bash
 lsusb
@@ -251,13 +313,14 @@ arecord -l
 ```
 
 La tarjeta aparece como `card N: Device [USB PnP Sound Device]`. Usa su nombre,
-`plughw:CARD=Device,DEV=0`, no el número `N`, que también puede cambiar.
+`plughw:CARD=Device,DEV=0`, no el número `N`, que también puede cambiar: en este montaje pasó de la
+`card 2` a la `card 1` al reinstalar la Pi sin la pantalla de la v1.
 
 **Permisos:** el usuario que ejecuta el motor tiene que estar en los grupos `dialout` (puerto serie) y
 `audio` (tarjeta de sonido).
 
 **Puerto ocupado:** si en la Pi sigue instalado Hyperion (la v1), tiene abierto el puerto del Arduino y
-el motor no puede usarlo. Con la reinstalación del paso 1 desaparece.
+el motor no puede usarlo. Con el sistema nuevo del paso 1 (§4.2) no está.
 
 **¿Se están mandando datos?** Mientras un programa escribe en el puerto, su fecha de modificación avanza:
 
@@ -283,5 +346,4 @@ Si las dos horas son distintas, se está escribiendo.
 - ⏳ Resistencia de 330 Ω en serie con `Din` (§2).
 - ⏳ Conexión fija entre el Arduino y el cable de datos, sin pines Dupont en la regleta (§2).
 - ⏳ Medidas 1, 2 y 4 de §5.
-- ⏳ Reinstalar la Pi con 64 bits: [MOO-52](https://linear.app/7daysofrain/issue/MOO-52).
 - ⏳ Nivel de audio con música real: [MOO-53](https://linear.app/7daysofrain/issue/MOO-53).
