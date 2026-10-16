@@ -171,7 +171,7 @@ En la personalización:
 |---|---|---|
 | Hostname | `moodtable` | Se llega a la Pi como `moodtable.local`, aunque el router le cambie la IP |
 | Localisation | Zona `Europe/Madrid`, teclado `es`, país de la WiFi `ES` | El país fija los canales de WiFi que puede usar |
-| User | `pi`, con una contraseña **propia** (no la antigua de fábrica) | `sudo` la pide; por SSH no se usa |
+| User | `pi`. Se recomienda una contraseña **propia** en lugar de la antigua de fábrica; en este montaje se mantiene la de fábrica | `sudo` la pide; por SSH no se usa, porque solo se entra con clave |
 | Wi-Fi | La red de casa | La mesa se conecta por WiFi (§1) |
 | Remote access | SSH **solo con clave pública** | Sin contraseñas por la red |
 | Raspberry Pi Connect | Desactivado | Es acceso remoto por internet; la mesa no lo necesita |
