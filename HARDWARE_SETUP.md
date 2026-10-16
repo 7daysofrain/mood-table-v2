@@ -290,7 +290,8 @@ dpkg --print-architecture
 ```
 
 Tiene que decir `arm64`. Con `armhf`, el sistema es de 32 bits aunque `uname -m` diga `aarch64` (el
-kernel sí es de 64 bits): era el caso de esta Pi antes de reinstalarla, y Node.js 24 no se puede instalar.
+kernel sí es de 64 bits): era el caso de esta Pi antes de reinstalarla. Con ese sistema, Node.js 24 no
+se puede instalar.
 
 ```bash
 lsusb
