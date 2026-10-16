@@ -147,7 +147,7 @@ tiras en un fichero.
 
 | # | Supuesto | Si resulta falso |
 |---|---|---|
-| A1 | Una Raspberry Pi (3 B+ o 4) tiene potencia de sobra para analizar el audio y pintar las tiras en tiempo real. | Se optimiza el motor o se cambia de enfoque. Se valida con una prueba de rendimiento antes de construir el análisis de audio. |
+| A1 | Una Raspberry Pi ~~(3 B+ o 4)~~ 4 tiene potencia de sobra para analizar el audio y pintar las tiras en tiempo real. | Se optimiza el motor o se cambia de enfoque. Se valida con una prueba de rendimiento antes de construir el análisis de audio, en la Pi 4 de la mesa; la 3 B+ no se mide (D47 de la ficha). |
 | A2 | Adalight da la fluidez suficiente con los LEDs de una tira de mesa (unos 200-300). | Menos LEDs por tira, o se adelanta el firmware propio (S2). |
 | A3 | La reacción al audio se percibe a tempo sin necesitar una señal de tempo aparte. | Se revisaría la decisión de la §5.4. |
 
