@@ -176,7 +176,7 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 
 **Hardware:** Raspberry Pi 4 (o 3 B+) con Raspberry Pi OS de 64 bits · tira LED direccionable conectada a un **Light Box** o a un **Arduino con el sketch Adalight** por USB · fuente de alimentación adecuada para la tira · tarjeta de sonido USB con la salida del mixer en su entrada.
 
-> **Montaje del hardware:** el cableado de la tira, su alimentación, la conexión al Light Box o al Arduino (con el sketch Adalight) y la tarjeta de sonido se documentarán paso a paso en [`HARDWARE_SETUP.md`](HARDWARE_SETUP.md), en la raíz del repositorio (*pendiente*). Los pasos siguientes dan por hecho que el hardware ya está montado.
+> **Montaje del hardware:** el cableado de la tira, su alimentación, el controlador Adalight (un Arduino con el sketch Adalight; el Light Box de la mesa se averió) y la tarjeta de sonido están paso a paso en [`HARDWARE_SETUP.md`](HARDWARE_SETUP.md), en la raíz del repositorio, con las comprobaciones con polímetro y cómo diagnosticar una tira que no enciende. Los pasos siguientes dan por hecho que el hardware ya está montado.
 
 1. En la Pi, clona el repositorio y ejecuta `sudo deploy/install.sh`. Crea el usuario `moodtable`, instala Node.js y deja el motor como servicio `systemd` (§2.4).
 2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Si algo está mal, el motor no arranca y dice qué campo falla.
