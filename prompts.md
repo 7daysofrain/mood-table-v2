@@ -700,6 +700,33 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Otra sesión dejó un worktree en `.claude/worktrees/`, y ESLint lo analizaba desde la raíz (200 errores ajenos a la rama). La IA lo detectó y comprobó el código sin esa carpeta, sin tocar el worktree.*
 - *Los E2E pasan 15 de 15 con `--repeat-each=3` antes de subirlos, porque la puerta no tiene reintentos.*
 
+#### 6.13 Montaje del hardware: `HARDWARE_SETUP.md` (`MOO-34`)
+
+**Prompt 1:**
+
+> /opsx:propose M00-34
+
+*Claude Code (`claude-opus-5-5`, 1-oct). Antes de crear nada, la IA señaló que una tarea solo de documentación no encaja en un change de OpenSpec (sus escenarios describen comportamiento del sistema, no lo que dice un documento) y que los datos del cableado no podía inventarlos: un error quema hardware. El humano eligió hacerlo sin OpenSpec y aportar él los datos. A partir de fotos del montaje, la IA identificó cada pieza (Pi 4, Light Box CH340, fuente Mean Well de 18 A, adaptador de 8 A, tarjeta C-Media) y descubrió que el montaje no estaba hecho: el documento pasó de describir un montaje a diseñarlo, con el humano revisando cada conexión.*
+
+**Prompt 2:**
+
+> I can give you ssh access to the raspberry, maybe we can create an instructions file for you to connect to it and run the required commands
+
+*La IA no puede escribir contraseñas, así que guio al humano para darle acceso con clave SSH y un alias, con una regla pactada: comandos de solo lectura sin preguntar y cualquier cambio en la Pi con permiso (reiniciar Hyperion lo pidió). Desde la Pi encontró dos cosas que cambiaron el plan: el sistema era de 32 bits y Node 24 no tiene versión oficial para ARM de 32 bits (ahora `MOO-52`), y Hyperion, el software de la v1, sí escribía en el Light Box. Propuso no reinstalar la Pi hasta ver la tira encendida, para conservar un software conocido con el que separar fallos de hardware de fallos de código nuevo.*
+
+**Prompt 3:**
+
+> Tengo un par de Arduinos Uno por aqui, no valen?
+
+*Tras dos semanas de diagnóstico guiado con un polímetro que el humano usaba por primera vez (medida a medida, una cosa cada vez), la IA localizó dos averías: los LEDs 1 y 2 muertos, que el humano reparó soldando paso a paso, y el Light Box con la línea de datos clavada en alto. El humano propuso sustituirlo por un Uno que tenía por casa; la IA cargó el sketch Adalight-FastLED desde el Mac con `arduino-cli` y la tira se encendió. Para contar los LEDs, la IA cambió el método del humano (bajar de 10 en 10 en Hyperion no podía funcionar: el sketch tenía 198) por un único frame con marcas cada 10 y cada 50: 173 LEDs en una foto. El cambio de controlador quedó como D46 en la ficha: D10 y D26 se tachan y apuntan a ella, sin borrarse.*
+
+*Ajustes durante la tarea:*
+- *La IA dio por bueno «apagada = sin corriente» y tuvo que corregirse: una WS2812B con corriente y sin datos válidos también se queda apagada. El humano detectó que había medido la línea de datos con la Pi apagada.*
+- *El humano no aceptó el polímetro para identificar los dos cables rojos y siguió las fundas a mano; la IA lo aceptó y pidió confirmarlo antes de enchufar.*
+- *Las marcas azules no se veían con poco brillo; la IA las cambió por blancas, que no dependen del orden de color, y comprobó el orden aparte.*
+- *La IA contestó varias veces en inglés aunque la memoria pide español; el humano lo corrigió.*
+- *La resistencia de 330 Ω en la línea de datos queda sin poner por decisión del humano, con el riesgo escrito en el documento.*
+
 ---
 
 ### 7. Pull Requests

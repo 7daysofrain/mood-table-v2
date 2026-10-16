@@ -72,7 +72,7 @@ https://github.com/7daysofrain/mood-table-v2
 
 - **H1 · Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, las tiras virtuales reaccionan a la música en el visor del navegador, en tiempo real, y si la fuente es un fichero, se oye en el panel.
 - **H2 · Tocar los parámetros en vivo.** Mientras suena la música, eliges el efecto de cada tira y mueves sus controles, que el panel genera a partir del esquema que declara cada efecto; la luz responde al instante.
-- **H3 · Pintar la tira física.** Lo que muestra el visor se reproduce en la tira real de la mesa, conectada al Light Box por protocolo Adalight (serie). Cualquier Arduino con firmware Adalight sirve igual.
+- **H3 · Pintar la tira física.** Lo que muestra el visor se reproduce en la tira real de la mesa, conectada a un Arduino con el sketch Adalight por protocolo Adalight (serie). Cualquier controlador Adalight sirve igual (D46).
 - **H4 · Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, orden de color y límites de potencia), y el motor, el límite de potencia y el visor lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
 - **H5 · Arrancar en el último estado.** Enciendes la Pi sin portátil y vuelve como estaba: el efecto de cada tira y sus valores.
 
@@ -174,9 +174,9 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 
 #### 3. En la mesa (Raspberry Pi con tira real)
 
-**Hardware:** Raspberry Pi 4 (o 3 B+) con Raspberry Pi OS de 64 bits · tira LED direccionable conectada a un **Light Box** o a un **Arduino con el sketch Adalight** por USB · fuente de alimentación adecuada para la tira · tarjeta de sonido USB con la salida del mixer en su entrada.
+**Hardware:** Raspberry Pi 4 (o 3 B+) con Raspberry Pi OS de 64 bits · tira LED direccionable conectada a un **Arduino con el sketch Adalight** (u otro controlador Adalight, como un Light Box) por USB · fuente de alimentación adecuada para la tira · tarjeta de sonido USB con la salida del mixer en su entrada.
 
-> **Montaje del hardware:** el cableado de la tira, su alimentación, la conexión al Light Box o al Arduino (con el sketch Adalight) y la tarjeta de sonido se documentarán paso a paso en [`HARDWARE_SETUP.md`](HARDWARE_SETUP.md), en la raíz del repositorio (*pendiente*). Los pasos siguientes dan por hecho que el hardware ya está montado.
+> **Montaje del hardware:** el cableado de la tira, su alimentación, el controlador Adalight (un Arduino con el sketch Adalight; el Light Box de la mesa se averió) y la tarjeta de sonido están paso a paso en [`HARDWARE_SETUP.md`](HARDWARE_SETUP.md), en la raíz del repositorio, con las comprobaciones con polímetro y cómo diagnosticar una tira que no enciende. Los pasos siguientes dan por hecho que el hardware ya está montado.
 
 1. En la Pi, clona el repositorio y ejecuta `sudo deploy/install.sh`. Crea el usuario `moodtable`, instala Node.js y deja el motor como servicio `systemd` (§2.4).
 2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Si algo está mal, el motor no arranca y dice qué campo falla.
@@ -198,7 +198,7 @@ flowchart LR
   mixer["🎚️ Mixer<br/>salida de audio"]
   cfg["📄 Fichero de configuración<br/>tiras declaradas"]
   panel["🖥️ Navegador<br/>React + Vite + TS<br/>panel · visor"]
-  strip1["💡 Light Box<br/>→ tira principal"]
+  strip1["💡 Arduino (Adalight)<br/>→ tira principal"]
   strip2["💡 Arduino / ESP<br/>→ tira de ambiente<br/>(should-have)"]
 
   subgraph proc["Raspberry Pi · un único proceso Node.js (TypeScript) · montado en main.ts (raíz de composición)"]
@@ -273,7 +273,7 @@ flowchart LR
   class strip2 opt
 ```
 
-*Naranja: plano de tiempo real. Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El MVP se demuestra con una tira física (la del Light Box), que el visor muestra en tiempo real, y con tiras virtuales en el simulador; el modelo admite N tiras.*
+*Naranja: plano de tiempo real. Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El MVP se demuestra con una tira física (la de la mesa, por Adalight), que el visor muestra en tiempo real, y con tiras virtuales en el simulador; el modelo admite N tiras.*
 
 #### Patrón: hexagonal ligera (puertos y adaptadores)
 
@@ -297,7 +297,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 
 #### Justificación
 
-- **Los puertos los pide el hardware, no la teoría.** Cada puerto tiene al menos dos implementaciones reales (tarjeta o fichero; Light Box o navegador; panel o F1). Sin la separación, el motor quedaría acoplado a ALSA, a los puertos serie y al navegador.
+- **Los puertos los pide el hardware, no la teoría.** Cada puerto tiene al menos dos implementaciones reales (tarjeta o fichero; Adalight o navegador; panel o F1). Sin la separación, el motor quedaría acoplado a ALSA, a los puertos serie y al navegador.
 - **La tira es una entidad desde el principio.** La mesa real tiene dos tiras (una reactiva y otra de ambiente). Diseñar el bucle, los datos y la API para N tiras cuesta ahora lo mismo que para una, y evita rehacerlos cuando llegue la segunda.
 - **Cada dato donde le corresponde.** Lo que sale de la hoja de características del hardware y no cambia (salida, número de LEDs, orden de color, límites de potencia) se **declara en un fichero de configuración** versionado y validado al arrancar. Lo que cambia mientras se toca (efecto activo y valores de cada tira) va en la **base de datos**. Una tira existe porque está cableada, así que no se da de alta desde el panel.
 - **El simulador no es una pieza aparte.** Es el mismo motor con otros adaptadores (fichero WAV + tiras virtuales). Lo que se ve en la demo pública es exactamente el código que corre en la mesa.
@@ -314,7 +314,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 | API | Fastify + TypeBox | Un solo esquema da el tipo de TypeScript, la validación y el OpenAPI (§4). El mismo esquema describe los parámetros de cada efecto y el fichero de configuración. |
 | Transporte | HTTP para comandos · WebSocket (motor → navegador) para frames binarios y estado | HTTP se documenta en OpenAPI; el WebSocket lleva el flujo continuo (300 LEDs × 3 bytes × 60 fps ≈ 54 KB/s por tira). |
 | Persistencia | SQLite tras el puerto `StateStore` | Transacciones seguras ante cortes de luz (§3). |
-| Salida física | Protocolo Adalight por serie | Protocolo abierto que ya hablan el Light Box de la mesa y cualquier Arduino con el sketch Adalight. Sin GPIO ni software de terceros. |
+| Salida física | Protocolo Adalight por serie | Protocolo abierto que habla cualquier Arduino con el sketch Adalight (el de la mesa, D46) y controladores como el Light Box. Sin GPIO ni software de terceros. |
 
 #### Beneficios
 
@@ -468,7 +468,7 @@ flowchart LR
       db[("SQLite<br/>estado")]
       svcPi --- db
     end
-    lb["💡 Light Box<br/>USB serie"]
+    lb["💡 Arduino (Adalight)<br/>USB serie"]
     snd["🎚️ Tarjeta de sonido USB"]
     lan["🖥️ Panel en la red local"]
     svcPi --> lb
@@ -504,7 +504,7 @@ flowchart LR
 | | Mesa (producción) | Demo pública |
 |---|---|---|
 | **Máquina** | Raspberry Pi 4 (arm64) | AWS EC2 `t4g.micro`: 2 vCPU Graviton (arm64), 1 GB |
-| **Tiras** | Tira del Light Box (Adalight), visible también en el visor | Solo tiras virtuales: sin puertos serie |
+| **Tiras** | Tira de la mesa (Adalight), visible también en el visor | Solo tiras virtuales: sin puertos serie |
 | **Audio** | Tarjeta de sonido USB (`arecord`) | Fichero WAV en bucle, con licencia libre |
 | **Estado** | SQLite en la tarjeta SD (§3) | En memoria; se reinicia cada cierto tiempo (§2.5) |
 | **Acceso** | Red local, sin autenticación | `https://moodtable.josebaalonso.tech`, sin login |
@@ -606,7 +606,7 @@ La estrategia sigue la arquitectura (§2.1): el núcleo no tiene E/S, así que c
 | **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (una sinusoide de 100 Hz cae en su banda). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). | Vitest |
 | **Integración** | API con `fastify.inject()`, sin abrir puertos. Tests de contrato de `StateStore` contra SQLite y en memoria. Reconciliación al arrancar. Arranque tras `kill -9` (§3). | Vitest |
 | **E2E (flujo principal)** | El motor arranca con fuente = WAV; en el navegador, el visor reacciona a la música, mover un control cambia la luz y, tras reiniciar el motor, vuelve el último estado. | Playwright |
-| **Hardware** | Tira física con el Light Box: lista de comprobación manual y vídeo. | Manual |
+| **Hardware** | Tira física de la mesa: lista de comprobación manual (`HARDWARE_SETUP.md`) y vídeo. | Manual |
 
 **Por qué así:**
 
