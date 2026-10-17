@@ -4,6 +4,9 @@
  * trabajo, para que funcione igual con `pnpm dev` que como servicio en la Pi. La validación es la
  * función pura de `@moodtable/shared`; aquí solo está el disco. Solo para los tests, la variable de
  * entorno `MOODTABLE_CONFIG` indica otro fichero (matiz de la decisión 3).
+ *
+ * Todas las rutas relativas se resuelven desde la raíz: la de `MOODTABLE_CONFIG` y la del fichero de
+ * audio (decisión 8 del change virtual-strip-audio-file, matiz de D44).
  */
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -26,14 +29,15 @@ export type LoadedConfig =
   | { ok: false; error: string };
 
 /**
- * Lee y valida `config/local.json` de `root`, o el fichero de `override` si lo hay (relativo al
- * directorio de trabajo). El error nombra el fichero y dice qué falla.
+ * Lee y valida `config/local.json` de `root`, o el fichero de `override` si lo hay (absoluto o
+ * relativo a `root`). La ruta del fichero de audio queda absoluta. El error nombra el fichero y dice
+ * qué falla.
  */
 export async function loadConfig(
   root: string = REPO_ROOT,
   override: string | undefined = process.env[CONFIG_ENV],
 ): Promise<LoadedConfig> {
-  const path = override ? resolve(override) : join(root, CONFIG_FILE);
+  const path = override ? resolve(root, override) : join(root, CONFIG_FILE);
 
   let text: string;
   try {
@@ -48,5 +52,8 @@ export async function loadConfig(
 
   const result = parseConfig(text);
   if (!result.ok) return { ok: false, error: `${path}: ${result.error}` };
-  return { ok: true, config: result.config, path, file: override || CONFIG_FILE };
+
+  const { config } = result;
+  if (config.audioSource) config.audioSource.path = resolve(root, config.audioSource.path);
+  return { ok: true, config, path, file: override || CONFIG_FILE };
 }

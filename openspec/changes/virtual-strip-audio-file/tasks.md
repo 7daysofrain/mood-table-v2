@@ -35,7 +35,7 @@
   relativa se resuelve desde la raíz, aunque el directorio de trabajo sea otro; `audioSource.path`
   relativa se resuelve desde la raíz y la absoluta se respeta (`specs/engine-config`, decisión 8).
   Verificar: los tests nuevos fallan porque hoy se resuelve desde el directorio de trabajo.
-- [ ] 1.6 Resolución de rutas desde la raíz del repositorio en `config-file.ts`: `MOODTABLE_CONFIG` y
+- [x] 1.6 Resolución de rutas desde la raíz del repositorio en `config-file.ts`: `MOODTABLE_CONFIG` y
   `audioSource.path`, que queda absoluta en la configuración cargada.
   Verificar: los tests de 1.5 pasan y `pnpm test:e2e` sigue en verde (los E2E pasan rutas absolutas).
 - [ ] 1.7 Script determinista que genera el fichero de golpes aislados de los tests y el fichero
