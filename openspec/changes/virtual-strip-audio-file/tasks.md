@@ -47,7 +47,7 @@
   `WAVE_FORMAT_EXTENSIBLE` con subformato PCM se acepta; un bloque `LIST` se salta; uno de 24 bits y
   unos bytes que no son WAV dan «formato no válido» y lo que acepta (`specs/audio-source`).
   Verificar: los tests nuevos fallan porque el decodificador no existe.
-- [ ] 1.9 Decodificador WAV como función pura en `packages/engine/src/adapters` (decisión 7).
+- [x] 1.9 Decodificador WAV como función pura en `packages/engine/src/adapters` (decisión 7).
   Verificar: los tests de 1.8 pasan.
 - [ ] 1.10 **(test en rojo)** Tests de la fuente de fichero: `read(time, out)` da las muestras que acaban
   en `round(time × frecuencia)`; una ventana que cruza el final lee el final y el principio; pasado el
