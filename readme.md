@@ -309,7 +309,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 
 | Pieza | Tecnología | Por qué |
 |---|---|---|
-| Motor | TypeScript sobre Node.js (arm64) | El autor puede leer y corregir lo que genera el agente; tipos compartidos con el front. Condicionado a un spike de rendimiento en la Pi. |
+| Motor | TypeScript sobre Node.js (arm64) | El autor puede leer y corregir lo que genera el agente; tipos compartidos con el front. Confirmado por el spike de rendimiento en la Pi (`MOO-12`, D48). |
 | Panel y visor | React + Vite + TypeScript + **Mantine 9** (solo tema oscuro) | Stack conocido; comparte tipos (esquemas de parámetros) con el motor. El motor sirve el build estático: no hay servidor aparte. Mantine trae los controles que se generan del esquema (slider, desplegable y selector de color) con estilos estáticos y sin recursos de internet ([D40](docs/idea-mood-table.md)). |
 | API | Fastify + TypeBox | Un solo esquema da el tipo de TypeScript, la validación y el OpenAPI (§4). El mismo esquema describe los parámetros de cada efecto y el fichero de configuración. |
 | Transporte | HTTP para comandos · WebSocket (motor → navegador) para frames binarios y estado | HTTP se documenta en OpenAPI; el WebSocket lleva el flujo continuo (300 LEDs × 3 bytes × 60 fps ≈ 54 KB/s por tira). |
@@ -326,7 +326,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 
 #### Sacrificios y déficits
 
-- **Un solo hilo compartido.** El bucle de frames y las peticiones HTTP se turnan en el mismo *event loop* de Node: una petición lenta retrasaría un frame. Mitigación: el plano de control solo escribe en el búfer. Si el spike mostrara tirones, el motor pasaría a un *worker thread*.
+- **Un solo hilo compartido.** El bucle de frames y las peticiones HTTP se turnan en el mismo *event loop* de Node: una petición lenta retrasaría un frame. Mitigación: el plano de control solo escribe en el búfer. El spike de rendimiento no mostró tirones (`MOO-12`, D48), así que por ahora no hace falta un *worker thread*.
 - **Recolector de basura.** Node puede pausar para liberar memoria y provocar tirones. Mitigación: búferes preasignados y cero asignaciones en el bucle.
 - **Latencia de HTTP en los sliders.** Mover un parámetro por HTTP es algo más lento que por WebSocket (milisegundos en red local; el panel limita el envío mientras arrastras). Si en uso real no se siente inmediato, `setParam` pasaría a WebSocket; el cambio es acotado porque `Commands` es un puerto.
 - **Techo de Adalight por tira.** A 115.200 baudios, unos 19 fps con 200 LEDs en cada puerto serie. Limita el número de LEDs por tira en el MVP (≤ 200-300); el firmware propio es la salida.
@@ -346,7 +346,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 **Bucle de frames** — TypeScript, sin dependencias de E/S.
 Marca el ritmo del sistema a una tasa objetivo configurable (30-60 fps). En cada vuelta: (1) lee el búfer de control, (2) si alguna tira tiene un efecto que usa audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica su límite de potencia y entrega el frame a su salida y al visor. Mide cuánto tarda cada vuelta; si llega tarde, **se salta el frame en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
 
-**Análisis de audio** — TypeScript + FFT (`fft.js` o implementación propia; se decide en el spike de rendimiento).
+**Análisis de audio** — TypeScript + FFT (`fft.js`, validada en el spike de rendimiento, D48).
 Recibe muestras PCM de la fuente de audio en un búfer circular. Cuando alguna tira lo necesita, aplica una ventana y una FFT sobre las últimas muestras y calcula los **rasgos** que consumen los efectos: energía por bandas de frecuencia (repartidas en escala logarítmica, como el oído), energía total y detección de golpes (un golpe es un salto de energía por encima de su media reciente). Se calcula **una vez por frame** y lo comparten todas las tiras. Si ninguna tira usa audio, no se calcula, y el motor puede funcionar sin fuente de audio.
 
 **Efectos** — módulos de TypeScript con esquema TypeBox.
@@ -539,7 +539,7 @@ flowchart LR
   ```
 
 - **DNS.** Un registro `A` en Spaceship apunta el subdominio a la **IP elástica** de la instancia. La IP elástica no cambia aunque la instancia se pare, y no cuesta más que una IP pública automática.
-- **CPU.** Las `t4g` acumulan créditos de CPU cuando están ociosas y los gastan en ráfagas. Por eso, en la demo, **el bucle se pausa cuando no hay ningún navegador conectado** y corre a **30 fps**: acumula créditos mientras nadie mira y tiene CPU de sobra cuando alguien entra. La instancia va en modo de créditos *standard* (si se agotan, se ralentiza en lugar de facturar más). El consumo real se mide en el spike de rendimiento.
+- **CPU.** Las `t4g` acumulan créditos de CPU cuando están ociosas y los gastan en ráfagas. Por eso, en la demo, **el bucle se pausa cuando no hay ningún navegador conectado** y corre a **30 fps**: acumula créditos mientras nadie mira y tiene CPU de sobra cuando alguien entra. La instancia va en modo de créditos *standard* (si se agotan, se ralentiza en lugar de facturar más). El consumo real en la instancia está por medir: el spike de rendimiento (`MOO-12`) midió la Pi.
 - **Red y acceso.** El grupo de seguridad solo abre 80 y 443. La administración se hace por SSM Session Manager, sin SSH. Las actualizaciones de seguridad del sistema operativo se aplican solas (`unattended-upgrades`).
 - **Coste previsto.** ~6 $/mes de instancia + ~3,6 $/mes de IPv4 pública + disco: **unos 10 $/mes**, con una **alerta de presupuesto** en AWS.
 
@@ -1016,7 +1016,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 | Riesgo | Mitigación |
 |---|---|
-| Node no llega a tiempo real en la Pi (supuesto A1) | El spike `MOO-12` va antes del audio, donde está el coste de CPU (D42); el bucle salta frames en vez de acumular retraso |
+| Node no llega a tiempo real en la Pi (supuesto A1) | El spike `MOO-12` va antes del audio, donde está el coste de CPU (D42); el bucle salta frames en vez de acumular retraso. ✅ **Validado el 17-oct (D48):** 0,46 ms por frame en la Pi |
 | Pausas del recolector de basura | Búferes preasignados; nada se crea dentro del bucle |
 | El contrato `Effect` queda hecho a la medida de *respiración* | Se diseña con `usesAudio` y `FrameContext.audio` desde el principio; la spec lo revisa pensando en *energía* |
 | El fichero mínimo se queda corto para H4 | Esquema TypeBox extensible; los campos nuevos se añaden sin romper los existentes |
@@ -1177,7 +1177,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 **Requisitos técnicos** (§2.2)
 
-- **Análisis:** búfer circular de muestras PCM; ventana y **FFT** sobre las últimas muestras (`fft.js` o implementación propia, según el spike `MOO-12`); rasgos: energía por bandas en escala logarítmica, energía total y **golpes** (un golpe es un salto de energía por encima de su media reciente). Se calcula una vez por frame y lo comparten todas las tiras.
+- **Análisis:** búfer circular de muestras PCM; ventana y **FFT** sobre las últimas muestras (`fft.js`, validada en el spike `MOO-12`); rasgos: energía por bandas en escala logarítmica, energía total y **golpes** (un golpe es un salto de energía por encima de su media reciente). Se calcula una vez por frame y lo comparten todas las tiras.
 - **Efecto *energía*:** `usesAudio: true`; recibe los rasgos en `FrameContext.audio`; en silencio, la tira se apaga. Sus parámetros de sensibilidad se declaran en el esquema, pero no tienen controles hasta H2.
 - **Nivel y fuente** al panel por el mismo WebSocket del visor.
 

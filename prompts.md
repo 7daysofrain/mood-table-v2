@@ -752,6 +752,34 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La exploración pasó a ejecución (apagar la Pi, instalar Imager) con permiso del humano en cada paso. Cuando el humano preguntó si ya estaban haciendo la tarea, la IA enumeró lo que faltaba del flujo: la rama, el estado en Linear y la PR.*
 - *En la Pi nueva `sudo` pide contraseña, así que la IA no puede administrarla sola: queda por decidir quién instala Node 24.*
 
+#### 6.15 El spike de rendimiento en la Pi: TypeScript sirve (`MOO-12`, `MOO-54` y `MOO-55`)
+
+**Prompt 1:**
+
+> aqui te voy a pedir ayuda porque no se definir un happy path para algo que es un spike de rendimiento. Me interesa mas un resultado. Es decir, el unico path seria ejecutar la prueba y sacar un resultado fiable y medible con el que poder tomar la decision.
+>
+> Vamos por el camino del propotipo desechable
+
+*Claude Code (`claude-opus-5-5`, 17-oct), con `/refine-story`. La skill prohíbe dar un borrador del caso feliz, así que la IA no lo escribió: le explicó al humano que en un spike el comportamiento observable es el resultado, y le pidió que concretara tres palabras suyas: «fiable», «medible» y «decisión». De ahí salieron los 3 minutos por pasada, las 13 configuraciones y el documento de resultados. Antes, la IA había sacado a la luz una decisión que D42 dejaba para el refinamiento, prototipo o motor real, y el humano eligió el prototipo. El subagente `poke-holes`, que solo vio las palabras del humano, propuso 8 criterios; el humano los repasó uno a uno y se quedó con 4.*
+
+**Prompt 2:**
+
+> Interesa como criterio ¿Como ves percentil 80?
+
+*La IA no le dio la razón: el p80 deja fuera el 20 % de frames más lentos, que es justo donde caen las pausas del recolector de basura de Node, lo que pone en duda D8. Propuso dos cifras (la mediana para el margen, un percentil alto para los tirones), y el humano eligió el p95. Cuando el humano quiso fijar el umbral «luego, según vayamos haciendo pruebas», la IA lo paró: un umbral que se elige después de ver los datos siempre da por buena la medición. Quedó un umbral en dos niveles: el objetivo (mediana < 8 ms y p95 < 16,6 ms) y un mínimo que reabre D8 (p95 < 33,3 ms, es decir, 30 fps).*
+
+**Prompt 3:**
+
+> Lo veo con muchas piezas para ser un prototipo que mide el rendimiento. Aqui la decisión es "mas facil de desarrollar" no facil de escalar ni bien escrito. Eres consciente de eso verad?
+
+*El humano rechazó el primer plan de ejecución: siete ficheros con separación de responsabilidades, para un código que se iba a tirar. La IA lo rehízo en dos ficheros (`bench.ts` y `run.sh`) y mantuvo solo lo que protege la medición: el temporizador real del motor y una suma de control para que V8 no se salte el trabajo. Con el permiso del humano para seguir hasta el final («me voy a dormir un rato»), lo midió en la Pi: 0,46 ms de mediana y 0,51 ms de p95 en la peor configuración, sin frenado. Queda como D48: TypeScript se confirma con margen y `fft.js` queda validada.*
+
+*Ajustes durante la tarea:*
+- *Planning poker: humano 5 y estimador ciego 5, por motivos distintos (el humano pesaba el volumen del prototipo; el estimador, que no necesita calidad de producto).*
+- *Un subagente revisó el documento de resultados contra los datos en crudo. Las cifras cuadraban, pero encontró 8 imprecisiones. La más seria: la IA entraba por SSH en la Pi cada minuto para ver si había terminado, y eso subía la frecuencia de la CPU durante la medición. No cambia el veredicto, y el documento lo dice.*
+- *El humano quiso conservar el prototipo como referencia. La IA propuso borrarlo y dejar la referencia en el commit `9d0005a`: en `main` se habría roto en cuanto cambiara el `ticker.ts` que importa. El humano estuvo de acuerdo.*
+- *Copilot no revisó la PR porque se había agotado la cuota. La revisión del subagente lo cubrió.*
+
 ---
 
 ### 7. Pull Requests

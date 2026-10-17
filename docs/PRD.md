@@ -147,7 +147,7 @@ tiras en un fichero.
 
 | # | Supuesto | Si resulta falso |
 |---|---|---|
-| A1 | Una Raspberry Pi 4 tiene potencia de sobra para analizar el audio y pintar las tiras en tiempo real. | Se optimiza el motor o se cambia de enfoque. Se valida con una prueba de rendimiento antes de construir el análisis de audio, en la Pi 4 de la mesa; la 3 B+ no se mide (D47 de la ficha). |
+| A1 | Una Raspberry Pi 4 tiene potencia de sobra para analizar el audio y pintar las tiras en tiempo real. | Se optimiza el motor o se cambia de enfoque. Se valida con una prueba de rendimiento antes de construir el análisis de audio, en la Pi 4 de la mesa; la 3 B+ no se mide (D47 de la ficha). ✅ **Comprobado el 17-oct:** 0,46 ms por frame con dos tiras de 300 LEDs y análisis de audio, frente a un presupuesto de 16,6 ms (D48; [resultados](spikes/moo-12-rendimiento-pi.md)). |
 | A2 | Adalight da la fluidez suficiente con los LEDs de una tira de mesa (unos 200-300). | Menos LEDs por tira, o se adelanta el firmware propio (S2). |
 | A3 | La reacción al audio se percibe a tempo sin necesitar una señal de tempo aparte. | Se revisaría la decisión de la §5.4. |
 
@@ -170,7 +170,7 @@ tiras en un fichero.
 
 | # | Pregunta | Cómo se resuelve |
 |---|---|---|
-| Q1 | ¿Cuántos LEDs por tira admite el instrumento con fluidez? | Con la prueba de rendimiento (A1, A2). |
+| Q1 | ¿Cuántos LEDs por tira admite el instrumento con fluidez? | Con la prueba de rendimiento (A1, A2). **Resuelta en parte (17-oct):** por CPU, una tira de 600 LEDs cabe con margen ([resultados](spikes/moo-12-rendimiento-pi.md)); falta Adalight (A2, H3), que será el límite real. |
 | Q2 | ¿Qué controles tiene cada efecto? Por ejemplo, sensibilidad, color o velocidad. | Decisión del DJ, a partir de los efectos de la v1. **Resuelta para la *respiración*:** color (por defecto, blanco cálido) y periodo, los segundos de una respiración completa (por defecto, 4); toda la tira a la vez, con una onda suave de casi apagado al máximo (decisión del DJ al especificar MOO-13). Los efectos reactivos, pendientes. |
 | Q3 | Al cambiar de efecto, ¿se pasa con un **fundido** o con un **corte seco**? | Decisión del DJ. |
 | Q4 | ¿Qué hacen los efectos reactivos cuando hay **silencio** o no hay fuente de audio? ¿Se apagan o quedan con un mínimo? | ✅ **Resuelta:** en silencio, un efecto reactivo se apaga y uno de ambiente sigue (decisión del DJ al refinar MOO-14). |
