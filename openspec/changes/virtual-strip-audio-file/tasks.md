@@ -49,7 +49,7 @@
   Verificar: los tests nuevos fallan porque el decodificador no existe.
 - [x] 1.9 Decodificador WAV como función pura en `packages/engine/src/adapters` (decisión 7).
   Verificar: los tests de 1.8 pasan.
-- [ ] 1.10 **(test en rojo)** Tests de la fuente de fichero: `read(time, out)` da las muestras que acaban
+- [x] 1.10 **(test en rojo)** Tests de la fuente de fichero: `read(time, out)` da las muestras que acaban
   en `round(time × frecuencia)`; una ventana que cruza el final lee el final y el principio; pasado el
   final, el fichero vuelve a empezar (`mod`). Tests de integración: un fichero que no existe da un
   error con la ruta resuelta; uno con formato no válido, un error que nombra el fichero
