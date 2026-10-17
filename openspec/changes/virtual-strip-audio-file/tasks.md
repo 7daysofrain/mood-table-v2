@@ -84,7 +84,7 @@
   `minimumReleaseAge`) y como dependencia de `@moodtable/engine`, con su declaración de tipos si no la
   trae.
   Verificar: `pnpm install` sin avisos, y lint, tipos y tests siguen en verde.
-- [ ] 2.2 **(test en rojo)** Tests del análisis en el núcleo, con una fuente en memoria: el nivel de un
+- [x] 2.2 **(test en rojo)** Tests del análisis en el núcleo, con una fuente en memoria: el nivel de un
   silencio es 0 y el de un seno de amplitud 1 ronda 0,707; con un tono de 400 Hz, las bandas con más
   energía están en el tercio inferior, y con uno de 8 kHz, en el superior; el silencio digital se marca
   como silencio; la ventana dura unos 40 ms a 44,1 y a 48 kHz (decisiones 4 y 11).
