@@ -137,6 +137,7 @@ describe('el decodificador WAV', () => {
     ],
     ['un WAV de tres canales', riff(fmt({ channels: 3 }), data([0, 0, 0]))],
     ['un WAV sin bloque fmt', riff(data([0, 0]))],
+    ['un WAV con el bloque fmt cortado', riff(chunk('fmt ', fmt({}).slice(8, 20)), data([0, 0]))],
     ['un WAV sin bloque data', riff(fmt({}))],
     ['un WAV cortado a mitad de las muestras', riff(fmt({}), data([1, 2, 3, 4])).slice(0, 50)],
     ['unos bytes que no son WAV', new TextEncoder().encode('esto no es un fichero de audio')],
