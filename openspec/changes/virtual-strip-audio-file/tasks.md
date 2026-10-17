@@ -121,7 +121,7 @@
   `audioSource` no arranca, y el mensaje nombra la tira y dice que *energy* necesita una fuente de
   audio (`specs/engine-config`, decisión 6).
   Verificar: el test nuevo falla porque `parseConfig` no lo comprueba.
-- [ ] 2.9 Comprobación en `parseConfig`, con el `usesAudio` del catálogo.
+- [x] 2.9 Comprobación en `parseConfig`, con el `usesAudio` del catálogo.
   Verificar: el test de 2.8 pasa.
 - [ ] 2.10 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de fuente (tipo `2`)
   sin fuente y con un fichero cuyo nombre lleva acentos se codifica y se decodifica igual; el de nivel

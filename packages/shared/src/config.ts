@@ -118,6 +118,17 @@ export function parseConfig(text: string): ConfigResult {
   );
   if (repeated) return fail(`el id «${repeated.id}» está repetido en más de una tira`);
 
+  // Al arrancar, una tira reactiva sin fuente de audio solo puede ser un olvido: se dice, no se
+  // esconde con la tira apagada (decisión 6 del change virtual-strip-audio-file).
+  const deaf = config.audioSource
+    ? undefined
+    : config.strips.find((strip) => EFFECT_CATALOG.some((e) => e.id === strip.effect && e.usesAudio));
+  if (deaf) {
+    return fail(
+      `la tira «${deaf.id}», efecto \`${deaf.effect}\`: necesita una fuente de audio (\`audioSource\`)`,
+    );
+  }
+
   return { ok: true, config };
 }
 
