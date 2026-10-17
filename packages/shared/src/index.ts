@@ -19,8 +19,10 @@ export {
 export {
   BreathingParamsSchema,
   EFFECT_CATALOG,
+  EnergyParamsSchema,
   type BreathingParams,
   type EffectId,
+  type EnergyParams,
 } from './effects.ts';
 
 export {

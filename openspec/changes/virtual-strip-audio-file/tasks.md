@@ -104,7 +104,7 @@
   si alguna tira tiene un efecto con `usesAudio`, las pasa en `FrameContext.audio` y entrega el nivel a
   un puerto `LevelOutput` (decisiones 4 y 5).
   Verificar: los tests de 2.4 pasan y el bucle no crea objetos por pulso.
-- [ ] 2.6 **(test en rojo)** Tests de *energía* (`specs/effects`): con el fichero de golpes, la tira se
+- [x] 2.6 **(test en rojo)** Tests de *energía* (`specs/effects`): con el fichero de golpes, la tira se
   ilumina con cada golpe y vuelve a apagarse antes del siguiente; en silencio, todos los LEDs a 0; un
   tono de 400 Hz enciende solo rojo y uno de 8 kHz solo azul, en tramos centrados y simétricos; tras un
   golpe, a 30 y a 60 fps la tira queda apagada en el mismo instante (como mucho un pulso de 30 fps de
