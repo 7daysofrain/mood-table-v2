@@ -24,7 +24,7 @@
   máquina.
   Verificar: los tests de 1.1 pasan, el resto sigue en verde y `pnpm dev` arranca con la tira
   respirando.
-- [ ] 1.3 **(test en rojo)** Tests del motor: el bucle anima cada tira con el efecto que declara (dos
+- [x] 1.3 **(test en rojo)** Tests del motor: el bucle anima cada tira con el efecto que declara (dos
   tiras, cada una con el suyo, con un efecto de prueba registrado); el registro de efectos del motor y
   el catálogo de `shared` tienen los mismos ids y el mismo `usesAudio` (`specs/effects`).
   Verificar: los tests nuevos fallan porque el bucle sigue usando siempre la respiración.

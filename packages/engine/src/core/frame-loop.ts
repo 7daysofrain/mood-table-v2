@@ -7,6 +7,7 @@ import type { StripConfig } from '@moodtable/shared';
 
 import { breathing } from './effects/breathing.ts';
 import { defaultParams, type Effect, type FrameContext } from './effects/effect.ts';
+import type { AnyEffect } from './effects/registry.ts';
 
 /** El pulso al que pertenece un frame. Es el mismo objeto en todos los frames. */
 export interface Tick {
@@ -29,6 +30,11 @@ export interface LightOutput {
 export interface LoopStrip {
   config: StripConfig;
   outputs: LightOutput[];
+}
+
+export interface FrameLoopOptions {
+  /** Los efectos entre los que elige cada tira. Por defecto, el registro del motor. */
+  effects?: readonly AnyEffect[];
 }
 
 export interface FrameLoop {
@@ -61,7 +67,12 @@ function createSlot<P, M>(strip: LoopStrip, effect: Effect<P, M>): StripSlot {
   };
 }
 
-export function createFrameLoop(strips: readonly LoopStrip[], fps: number): FrameLoop {
+export function createFrameLoop(
+  strips: readonly LoopStrip[],
+  fps: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- solo la forma: la usa el paso 1.4
+  _options: FrameLoopOptions = {},
+): FrameLoop {
   const slots = strips.map((strip) => createSlot(strip, INITIAL_EFFECT));
   // Se reutilizan en cada pulso: dentro del bucle no se crean objetos (README §2.2).
   const tick: Tick = { seq: -1, time: 0 };
