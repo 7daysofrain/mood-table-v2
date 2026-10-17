@@ -123,7 +123,7 @@
   Verificar: el test nuevo falla porque `parseConfig` no lo comprueba.
 - [x] 2.9 Comprobación en `parseConfig`, con el `usesAudio` del catálogo.
   Verificar: el test de 2.8 pasa.
-- [ ] 2.10 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de fuente (tipo `2`)
+- [x] 2.10 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de fuente (tipo `2`)
   sin fuente y con un fichero cuyo nombre lleva acentos se codifica y se decodifica igual; el de nivel
   (tipo `3`) lleva `seq` y nivel en big-endian; los mensajes mal formados se rechazan, y
   `decodeFrame` sigue rechazando los tipos que no son `1` (decisión 5).

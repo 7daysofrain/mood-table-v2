@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { decodeFrame, encodeFrame } from './viewer-protocol.ts';
+import {
+  decodeFrame,
+  decodeLevel,
+  decodeSource,
+  encodeFrame,
+  encodeLevel,
+  encodeSource,
+} from './viewer-protocol.ts';
 
 /** Los colores de una tira de `ledCount` LEDs, distintos en cada byte. */
 function colorsOf(ledCount: number): Uint8Array {
@@ -63,5 +70,72 @@ describe('un mensaje que no es un frame', () => {
     ['con colores que no son de LEDs enteros', Uint8Array.of(1, 0, 0, 0, 1, 0, 10, 20)],
   ])('se rechaza si es %s', (_, message) => {
     expect(decodeFrame(message)).toBeUndefined();
+  });
+});
+
+function hexOf(message: Uint8Array): string {
+  return Array.from(message, (byte) => byte.toString(16).padStart(2, '0')).join(' ');
+}
+
+describe('el mensaje de la fuente de audio', () => {
+  it('sin fuente, son dos bytes: el tipo 2 y la clase 0', () => {
+    expect(hexOf(encodeSource({ kind: 'none' }))).toBe('02 00');
+  });
+
+  it('con un fichero, lleva la clase 1 y su nombre en UTF-8, como en el ejemplo del documento', () => {
+    expect(hexOf(encodeSource({ kind: 'file', name: 'golpes.wav' }))).toBe(
+      '02 01 67 6f 6c 70 65 73 2e 77 61 76',
+    );
+  });
+
+  it.each([
+    [{ kind: 'none' as const }],
+    [{ kind: 'file' as const, name: 'Canción del año (versión ñ).wav' }],
+  ])('%j se decodifica igual que se codificó', (source) => {
+    expect(decodeSource(encodeSource(source))).toEqual(source);
+  });
+
+  it.each([
+    ['vacío', []],
+    ['de otro tipo', [1, 0]],
+    ['con una clase que no existe', [2, 7]],
+    ['sin fuente pero con nombre', [2, 0, 0x61]],
+    ['de un fichero sin nombre', [2, 1]],
+    ['con un nombre que no es UTF-8 válido', [2, 1, 0xff, 0xfe]],
+  ])('%s, se rechaza', (_name, bytes) => {
+    expect(decodeSource(Uint8Array.from(bytes))).toBeUndefined();
+  });
+});
+
+describe('el mensaje del nivel', () => {
+  it('lleva el tipo 3, el seq y el nivel en float32, los dos en big-endian', () => {
+    expect(hexOf(encodeLevel(260, 0.5))).toBe('03 00 00 01 04 3f 00 00 00');
+  });
+
+  it('se decodifica igual que se codificó', () => {
+    expect(decodeLevel(encodeLevel(123_456, 0.25))).toEqual({ seq: 123_456, level: 0.25 });
+  });
+
+  it('no admite un nivel fuera de 0 a 1', () => {
+    expect(() => encodeLevel(1, 1.5)).toThrow(RangeError);
+    expect(() => encodeLevel(1, Number.NaN)).toThrow(RangeError);
+  });
+
+  it.each([
+    ['corto', [3, 0, 0, 1, 4, 0x3f, 0, 0]],
+    ['largo', [3, 0, 0, 1, 4, 0x3f, 0, 0, 0, 0]],
+    ['de otro tipo', [1, 0, 0, 1, 4, 0x3f, 0, 0, 0]],
+    ['con un nivel por encima de 1 (2,0)', [3, 0, 0, 1, 4, 0x40, 0, 0, 0]],
+    ['con un nivel que no es un número', [3, 0, 0, 1, 4, 0x7f, 0xc0, 0, 0]],
+  ])('%s, se rechaza', (_name, bytes) => {
+    expect(decodeLevel(Uint8Array.from(bytes))).toBeUndefined();
+  });
+});
+
+describe('los mensajes de fuente y de nivel no son frames', () => {
+  it('decodeFrame los rechaza, aunque su longitud cuadre con la de un frame', () => {
+    // 9 bytes: la cabecera de un frame y un LED.
+    expect(decodeFrame(encodeLevel(1, 0.5))).toBeUndefined();
+    expect(decodeFrame(encodeSource({ kind: 'file', name: 'abc.wav' }))).toBeUndefined();
   });
 });

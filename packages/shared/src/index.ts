@@ -27,9 +27,17 @@ export {
 
 export {
   decodeFrame,
+  decodeLevel,
+  decodeSource,
   encodeFrame,
+  encodeLevel,
+  encodeSource,
   FRAME_HEADER_BYTES,
   FRAME_MESSAGE_TYPE,
   type FrameMessage,
+  LEVEL_MESSAGE_TYPE,
+  type LevelMessage,
   MAX_STRIPS,
+  SOURCE_MESSAGE_TYPE,
+  type SourceMessage,
 } from './viewer-protocol.ts';

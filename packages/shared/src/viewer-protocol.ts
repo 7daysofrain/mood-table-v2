@@ -55,3 +55,35 @@ export function decodeFrame(message: Uint8Array): FrameMessage | undefined {
     colors: message.subarray(FRAME_HEADER_BYTES),
   };
 }
+
+/** Tipo del mensaje de la fuente de audio (decisión 5 del change virtual-strip-audio-file). */
+export const SOURCE_MESSAGE_TYPE = 2;
+
+/** Tipo del mensaje del nivel de la fuente de audio. */
+export const LEVEL_MESSAGE_TYPE = 3;
+
+/** La fuente de audio del instrumento, como la ve el panel: sin la ruta del fichero. */
+export type SourceMessage = { kind: 'none' } | { kind: 'file'; name: string };
+
+export interface LevelMessage {
+  /** El pulso al que pertenece, como el `seq` de los frames. */
+  seq: number;
+  /** Nivel de la fuente, de 0 a 1, sin ajustar. */
+  level: number;
+}
+
+export function encodeSource(source: SourceMessage): Uint8Array {
+  throw new Error(`Sin implementar (${source.kind})`);
+}
+
+export function decodeSource(message: Uint8Array): SourceMessage | undefined {
+  throw new Error(`Sin implementar (${message.length} bytes)`);
+}
+
+export function encodeLevel(seq: number, level: number): Uint8Array {
+  throw new Error(`Sin implementar (${seq}, ${level})`);
+}
+
+export function decodeLevel(message: Uint8Array): LevelMessage | undefined {
+  throw new Error(`Sin implementar (${message.length} bytes)`);
+}
