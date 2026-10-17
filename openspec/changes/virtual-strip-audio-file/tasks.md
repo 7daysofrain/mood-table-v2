@@ -100,7 +100,7 @@
   las bandas se calculan una vez por pulso para todas las tiras; el nivel llega a sus salidas con el
   `seq` del pulso; sin fuente, ni nivel ni bandas.
   Verificar: los tests nuevos fallan porque el bucle no lee audio.
-- [ ] 2.5 El bucle lee la ventana del pulso de la `AudioSource`, mide el nivel, calcula las bandas solo
+- [x] 2.5 El bucle lee la ventana del pulso de la `AudioSource`, mide el nivel, calcula las bandas solo
   si alguna tira tiene un efecto con `usesAudio`, las pasa en `FrameContext.audio` y entrega el nivel a
   un puerto `LevelOutput` (decisiones 4 y 5).
   Verificar: los tests de 2.4 pasan y el bucle no crea objetos por pulso.
