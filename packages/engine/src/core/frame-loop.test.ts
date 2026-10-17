@@ -1,12 +1,13 @@
-import type { StripConfig } from '@moodtable/shared';
+import type { EffectId, StripConfig } from '@moodtable/shared';
+import Type from 'typebox';
 import { describe, expect, it } from 'vitest';
 
 import { breathing } from './effects/breathing.ts';
-import { defaultParams } from './effects/effect.ts';
+import { defaultParams, type Effect } from './effects/effect.ts';
 import { createFrameLoop, type LightOutput, type Tick } from './frame-loop.ts';
 
 function strip(id: string, ledCount: number): StripConfig {
-  return { id, name: id, output: { type: 'virtual' }, ledCount };
+  return { id, name: id, output: { type: 'virtual' }, ledCount, effect: 'breathing' };
 }
 
 /** Una salida de prueba que copia lo que recibe (el frame solo vale durante `write`). */
@@ -29,6 +30,26 @@ function breathingAt(time: number, ledCount: number): Uint8Array {
 }
 
 const FRAME_MS = 1000 / 60;
+
+/** Un efecto de prueba, que no está en el catálogo: pinta todos los LEDs de un color fijo. */
+const solid: Effect<Record<string, never>, null> = {
+  id: 'solid',
+  usesAudio: false,
+  paramsSchema: Type.Object({}),
+  createMemory: () => null,
+  render(_ctx, _params, _memory, out) {
+    for (let index = 0; index < out.length; index += 3) {
+      out[index] = 10;
+      out[index + 1] = 20;
+      out[index + 2] = 30;
+    }
+  },
+};
+
+/** Una tira con el efecto de prueba: su id no es del catálogo, así que el tipo no lo admite. */
+function solidStrip(id: string, ledCount: number): StripConfig {
+  return { ...strip(id, ledCount), effect: solid.id as EffectId };
+}
 
 describe('el bucle de frames', () => {
   it('a 60 fps, en un segundo de reloj da 60 frames numerados de forma consecutiva', () => {
@@ -109,5 +130,32 @@ describe('el bucle de frames', () => {
     expect(viewer.frames).toHaveLength(1);
     expect(serial.frames).toEqual(viewer.frames);
     expect(other.frames.map((frame) => frame.colors.length)).toEqual([30]);
+  });
+
+  it('anima cada tira con el efecto que declara', () => {
+    const breathes = recorder();
+    const fixed = recorder();
+    const loop = createFrameLoop(
+      [
+        { config: strip('respira', 60), outputs: [breathes.output] },
+        { config: solidStrip('fija', 2), outputs: [fixed.output] },
+      ],
+      60,
+      { effects: [breathing, solid] },
+    );
+
+    loop.tick(0);
+    loop.tick(120 * FRAME_MS);
+
+    expect(breathes.frames[1]?.colors).toEqual(breathingAt(2, 60));
+    expect(fixed.frames[1]?.colors).toEqual(Uint8Array.from([10, 20, 30, 10, 20, 30]));
+  });
+
+  it('con un efecto que no está en el registro, no se crea y dice cuál es', () => {
+    expect(() =>
+      createFrameLoop([{ config: solidStrip('fija', 2), outputs: [] }], 60, {
+        effects: [breathing],
+      }),
+    ).toThrow('la tira «fija» declara el efecto «solid», que el motor no tiene');
   });
 });

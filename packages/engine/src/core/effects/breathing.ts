@@ -1,7 +1,7 @@
 /**
  * Efecto *respiración* (specs/effects): toda la tira de un color que sube y baja de brillo, de
- * casi apagado al máximo, como una respiración. Es de ambiente y el efecto con el que arranca toda
- * tira. El esquema de sus parámetros (color y periodo) está en `@moodtable/shared`.
+ * casi apagado al máximo, como una respiración. Es de ambiente: sigue igual haya audio o no. El
+ * esquema de sus parámetros (color y periodo) está en `@moodtable/shared`.
  */
 import { type BreathingParams, BreathingParamsSchema } from '@moodtable/shared';
 

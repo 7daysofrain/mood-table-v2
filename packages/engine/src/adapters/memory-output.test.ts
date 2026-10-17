@@ -6,7 +6,13 @@ import { MemoryOutput } from './memory-output.ts';
 describe('la salida en memoria', () => {
   it('tras dos pulsos con colores distintos, guarda dos frames distintos', () => {
     const output = new MemoryOutput();
-    const config = { id: 'demo', name: 'demo', output: { type: 'virtual' as const }, ledCount: 60 };
+    const config = {
+      id: 'demo',
+      name: 'demo',
+      output: { type: 'virtual' as const },
+      ledCount: 60,
+      effect: 'breathing' as const,
+    };
     const loop = createFrameLoop([{ config, outputs: [output] }], 60);
 
     loop.tick(0);

@@ -43,7 +43,15 @@ export async function createTestEngine(): Promise<TestEngine> {
     config,
     JSON.stringify({
       server: { host: '127.0.0.1', port },
-      strips: [{ id: 'e2e', name: 'Tira de los E2E', output: { type: 'virtual' }, ledCount: 60 }],
+      strips: [
+        {
+          id: 'e2e',
+          name: 'Tira de los E2E',
+          output: { type: 'virtual' },
+          ledCount: 60,
+          effect: 'breathing',
+        },
+      ],
     }),
   );
 

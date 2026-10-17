@@ -10,13 +10,13 @@
 
 ## 1. MOO-19 · engine
 
-- [ ] 1.1 **(test en rojo)** Tests de la validación en `packages/shared`: una tira sin `effect` (el
+- [x] 1.1 **(test en rojo)** Tests de la validación en `packages/shared`: una tira sin `effect` (el
   mensaje nombra la tira y dice que el campo falta y es obligatorio); un `effect` que no existe (el
   mensaje lista los válidos: `breathing`); `audioSource` de tipo `file` con `path`; sin `audioSource`;
   `audioSource` de un tipo que no existe (nombra `audioSource.type`) y con un campo que no declara
   (`specs/engine-config`).
   Verificar: los tests nuevos fallan porque el esquema no tiene esos campos; el resto sigue en verde.
-- [ ] 1.2 Catálogo de efectos en `packages/shared` (id y `usesAudio`; de momento solo `breathing`),
+- [x] 1.2 Catálogo de efectos en `packages/shared` (id y `usesAudio`; de momento solo `breathing`),
   `effect` obligatorio como unión de literales del catálogo y `audioSource` discriminado por `type`
   (decisiones 10 y 12). En el mismo commit, `"effect": "breathing"` en `config/demo.json`,
   `e2e/config.json`, el fichero que escribe `e2e/engine.ts` y los ficheros de configuración de los
@@ -24,44 +24,44 @@
   máquina.
   Verificar: los tests de 1.1 pasan, el resto sigue en verde y `pnpm dev` arranca con la tira
   respirando.
-- [ ] 1.3 **(test en rojo)** Tests del motor: el bucle anima cada tira con el efecto que declara (dos
+- [x] 1.3 **(test en rojo)** Tests del motor: el bucle anima cada tira con el efecto que declara (dos
   tiras, cada una con el suyo, con un efecto de prueba registrado); el registro de efectos del motor y
   el catálogo de `shared` tienen los mismos ids y el mismo `usesAudio` (`specs/effects`).
   Verificar: los tests nuevos fallan porque el bucle sigue usando siempre la respiración.
-- [ ] 1.4 Registro de efectos por id en el núcleo; el bucle crea cada tira con el efecto de su
+- [x] 1.4 Registro de efectos por id en el núcleo; el bucle crea cada tira con el efecto de su
   `effect` y deja de tener un efecto inicial fijo.
   Verificar: los tests de 1.3 pasan y los frames dorados de la respiración no cambian.
-- [ ] 1.5 **(test en rojo)** Tests de integración de `config-file.ts`: `MOODTABLE_CONFIG` con una ruta
+- [x] 1.5 **(test en rojo)** Tests de integración de `config-file.ts`: `MOODTABLE_CONFIG` con una ruta
   relativa se resuelve desde la raíz, aunque el directorio de trabajo sea otro; `audioSource.path`
   relativa se resuelve desde la raíz y la absoluta se respeta (`specs/engine-config`, decisión 8).
   Verificar: los tests nuevos fallan porque hoy se resuelve desde el directorio de trabajo.
-- [ ] 1.6 Resolución de rutas desde la raíz del repositorio en `config-file.ts`: `MOODTABLE_CONFIG` y
+- [x] 1.6 Resolución de rutas desde la raíz del repositorio en `config-file.ts`: `MOODTABLE_CONFIG` y
   `audioSource.path`, que queda absoluta en la configuración cargada.
   Verificar: los tests de 1.5 pasan y `pnpm test:e2e` sigue en verde (los E2E pasan rutas absolutas).
-- [ ] 1.7 Script determinista que genera el fichero de golpes aislados de los tests y el fichero
+- [x] 1.7 Script determinista que genera el fichero de golpes aislados de los tests y el fichero
   generado, `packages/engine/test/fixtures/golpes.wav`: 4 s, mono, 16 bits, 44,1 kHz, con un golpe de
   unos 50 ms en los segundos 1, 2 y 3 y silencio digital entre ellos (decisión 15).
   Verificar: ejecutar el script dos veces da un fichero idéntico byte a byte, de unos 350 KB.
-- [ ] 1.8 **(test en rojo)** Tests del decodificador WAV, sin disco: el fichero de golpes da 4 s de
+- [x] 1.8 **(test en rojo)** Tests del decodificador WAV, sin disco: el fichero de golpes da 4 s de
   muestras mono a 44,1 kHz; un WAV estéreo a 48 kHz generado en el test se mezcla a mono con la media;
   `WAVE_FORMAT_EXTENSIBLE` con subformato PCM se acepta; un bloque `LIST` se salta; uno de 24 bits y
   unos bytes que no son WAV dan «formato no válido» y lo que acepta (`specs/audio-source`).
   Verificar: los tests nuevos fallan porque el decodificador no existe.
-- [ ] 1.9 Decodificador WAV como función pura en `packages/engine/src/adapters` (decisión 7).
+- [x] 1.9 Decodificador WAV como función pura en `packages/engine/src/adapters` (decisión 7).
   Verificar: los tests de 1.8 pasan.
-- [ ] 1.10 **(test en rojo)** Tests de la fuente de fichero: `read(time, out)` da las muestras que acaban
+- [x] 1.10 **(test en rojo)** Tests de la fuente de fichero: `read(time, out)` da las muestras que acaban
   en `round(time × frecuencia)`; una ventana que cruza el final lee el final y el principio; pasado el
   final, el fichero vuelve a empezar (`mod`). Tests de integración: un fichero que no existe da un
   error con la ruta resuelta; uno con formato no válido, un error que nombra el fichero
   (`specs/audio-source`).
   Verificar: los tests nuevos fallan porque la fuente no existe.
-- [ ] 1.11 Puerto `AudioSource` *pull* en `packages/engine/src/core/audio` (decisión 3), adaptador de
+- [x] 1.11 Puerto `AudioSource` *pull* en `packages/engine/src/core/audio` (decisión 3), adaptador de
   fuente de fichero (lee el disco y decodifica al arrancar) y fuente en memoria para los tests, en
   `adapters`. `main.ts` crea la fuente si el fichero declara `audioSource`; si no se puede leer o su
   formato no vale, el motor no arranca y dice por qué.
   Verificar: los tests de 1.10 pasan; `node packages/engine/src/main.ts` con una `audioSource` que no
   existe termina con código 1 y da la ruta.
-- [ ] 1.12 Documentación:
+- [x] 1.12 Documentación:
   - README §2.1 (fila de `AudioSource`: *pull*) y §2.2 (*Análisis de audio* y adaptadores: el bucle
     pide las muestras; el búfer circular pasa al adaptador de la tarjeta; el fichero, en bucle con el
     reloj del motor);

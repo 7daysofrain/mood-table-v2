@@ -11,7 +11,13 @@ import { CONFIG_FILE, loadConfig, REPO_ROOT } from './config-file.ts';
 
 const run = promisify(execFile);
 
-const demoStrip = { id: 'demo', name: 'Tira de prueba', output: { type: 'virtual' }, ledCount: 60 };
+const demoStrip = {
+  id: 'demo',
+  name: 'Tira de prueba',
+  output: { type: 'virtual' },
+  ledCount: 60,
+  effect: 'breathing',
+};
 
 let root: string;
 
@@ -98,6 +104,19 @@ describe('la lectura de config/local.json', () => {
     expect(result.ok && result.path).toBe(join(root, 'desde-env.json'));
   });
 
+  it('con MOODTABLE_CONFIG relativa, la resuelve desde la raíz y no desde el directorio de trabajo', async () => {
+    // El directorio de trabajo de los tests es el del repositorio, no `root`.
+    await mkdir(join(root, 'e2e'));
+    await writeFile(join(root, 'e2e', 'config.json'), JSON.stringify({ strips: [demoStrip] }));
+
+    const result = await loadConfig(root, 'e2e/config.json');
+
+    expect(result.ok && [result.path, result.file]).toEqual([
+      join(root, 'e2e', 'config.json'),
+      'e2e/config.json',
+    ]);
+  });
+
   it('busca el fichero desde la raíz del repositorio, sea cual sea el directorio de trabajo', async () => {
     // Un proceso de Node arrancado en otro directorio, como el motor arrancado desde otro sitio.
     const module = fileURLToPath(new URL('./config-file.ts', import.meta.url));
@@ -108,5 +127,36 @@ describe('la lectura de config/local.json', () => {
 
     expect(stdout.trim()).toBe(fileURLToPath(new URL('../../../../', import.meta.url)));
     expect(REPO_ROOT).toBe(stdout.trim());
+  });
+});
+
+describe('la ruta del fichero de audio', () => {
+  it('relativa, la resuelve desde la raíz del repositorio y la deja absoluta', async () => {
+    const audioSource = { type: 'file', path: 'config/audio/bouncer.wav' };
+    await writeConfig(JSON.stringify({ audioSource, strips: [demoStrip] }));
+
+    const result = await loadConfig(root, '');
+
+    expect(result.ok && result.config.audioSource).toEqual({
+      type: 'file',
+      path: join(root, 'config', 'audio', 'bouncer.wav'),
+    });
+  });
+
+  it('absoluta, la respeta', async () => {
+    const path = join(tmpdir(), 'otra-carpeta', 'musica.wav');
+    await writeConfig(JSON.stringify({ audioSource: { type: 'file', path }, strips: [demoStrip] }));
+
+    const result = await loadConfig(root, '');
+
+    expect(result.ok && result.config.audioSource).toEqual({ type: 'file', path });
+  });
+
+  it('sin fuente de audio, la configuración no tiene ninguna', async () => {
+    await writeConfig(JSON.stringify({ strips: [demoStrip] }));
+
+    const result = await loadConfig(root, '');
+
+    expect(result.ok && 'audioSource' in result.config).toBe(false);
   });
 });

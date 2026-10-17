@@ -1,12 +1,14 @@
 /**
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
- * adaptadores. Carga la configuración, arranca el servidor del panel y el motor, y da a cada tira sus
- * salidas: el visor siempre (D43); la salida Adalight de las tiras físicas llega con H3. Si la
- * configuración no sirve o el servidor no puede escuchar, el motor no arranca: dice qué falla y
- * termina con código 1.
+ * adaptadores. Carga la configuración y la fuente de audio, si la declara, arranca el servidor del
+ * panel y el motor, y da a cada tira sus salidas: el visor siempre (D43); la salida Adalight de las
+ * tiras físicas llega con H3. Si la configuración no sirve, el fichero de audio no se puede leer o su
+ * formato no vale, o el servidor no puede escuchar, el motor no arranca: dice qué falla y termina con
+ * código 1.
  */
 import { join } from 'node:path';
 
+import { loadAudioFile } from './adapters/audio-file.ts';
 import { loadConfig, REPO_ROOT } from './adapters/config-file.ts';
 import { startServer } from './adapters/server.ts';
 import { startEngine, startupMessage } from './engine.ts';
@@ -17,6 +19,12 @@ const PANEL_DIR = join(REPO_ROOT, 'packages', 'panel', 'dist');
 async function main(): Promise<string | undefined> {
   const loaded = await loadConfig();
   if (!loaded.ok) return loaded.error;
+
+  // La fuente se lee antes de abrir el servidor, para no arrancar a medias. Con MOO-20 la escucha el
+  // bucle; de momento solo se comprueba que el fichero sirve.
+  const { audioSource } = loaded.config;
+  const audio = audioSource ? await loadAudioFile(audioSource.path) : undefined;
+  if (audio && !audio.ok) return audio.error;
 
   const { host, port } = loaded.config.server;
   let server;
