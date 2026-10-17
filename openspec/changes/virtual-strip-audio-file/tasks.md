@@ -61,7 +61,7 @@
   formato no vale, el motor no arranca y dice por qué.
   Verificar: los tests de 1.10 pasan; `node packages/engine/src/main.ts` con una `audioSource` que no
   existe termina con código 1 y da la ruta.
-- [ ] 1.12 Documentación:
+- [x] 1.12 Documentación:
   - README §2.1 (fila de `AudioSource`: *pull*) y §2.2 (*Análisis de audio* y adaptadores: el bucle
     pide las muestras; el búfer circular pasa al adaptador de la tarjeta; el fichero, en bucle con el
     reloj del motor);

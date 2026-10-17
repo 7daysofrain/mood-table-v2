@@ -780,6 +780,35 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El humano quiso conservar el prototipo como referencia. La IA propuso borrarlo y dejar la referencia en el commit `9d0005a`: en `main` se habría roto en cuanto cambiara el `ticker.ts` que importa. El humano estuvo de acuerdo.*
 - *Copilot no revisó la PR porque se había agotado la cuota. La revisión del subagente lo cubrió.*
 
+#### 6.16 El change de la HU2: la tira reacciona a un fichero de audio (`MOO-14`)
+
+**Prompt 1:**
+
+> esto es pull porque el motor es el que determina el ritmo
+
+*Claude Code (`claude-opus-5-5`, 17-oct), `/opsx:explore` de la historia, hilo a hilo. La IA comparaba dos formas del puerto `AudioSource`: *push*, la fuente empuja bloques a un búfer del núcleo (lo que decía el README), y *pull*, el bucle pide la ventana del instante del pulso. Recomendaba *pull* con una lista de razones, y el humano la resumió en una que la IA adoptó como justificación del design: la fuente nunca decide cuándo pasa algo. Quedó como D50, y el búfer circular pasa del núcleo al adaptador de la tarjeta de sonido.*
+
+**Prompt 2:**
+
+> pues yo creo que (a) porque al final esto solo se produce como error de configuración, no es algo que alguien quiera elegir y hacerlo como dices escondería el error
+
+*La IA proponía que una tira con un efecto reactivo y sin fuente de audio arrancara apagada, con un aviso en el log, para tener una sola regla al arrancar y en caliente. El humano lo descartó: al arrancar solo puede ser un olvido. La IA reconoció el fallo de su argumento (mezclaba dos momentos distintos) y apuntó el caso al que esta regla no llega: con H5, la reconciliación puede restaurar un efecto reactivo en una instalación que ha quitado su fuente. Queda como nota para la spec de H5.*
+
+**Prompt 3:**
+
+> * no, hace falta guardar compatibilidad, porque meter restricciones en pleno desarrollo. Para mi effect es obligatorio y validado contra los efectos existentes
+> * Si, en inglés
+> * Si
+> * ok
+> * si, perfecto
+
+*La IA proponía `effect` opcional, con la respiración por defecto, para que los ficheros de configuración existentes siguieran valiendo. El humano lo hizo obligatorio y validado. La IA explicó lo que arrastraba: el `config/local.json` de cada uno deja de arrancar (y dice qué falta), la spec `effects` pierde un requisito y el contexto técnico de `MOO-14` en Linear queda obsoleto. Quedó como D52, con el catálogo de efectos en `shared`.*
+
+*Ajustes durante la exploración y la spec:*
+- *Rutas relativas: la IA recomendaba resolverlas desde el fichero de configuración, como `tsconfig` o ESLint. El humano prefirió una sola regla para todo el repositorio, la raíz, también para `MOODTABLE_CONFIG`. Es un matiz de D44.*
+- *Un WAV que no sirve: el motor no arranca y dice qué formato acepta, sin explicar cómo convertirlo, por decisión del humano.*
+- *El humano pidió que la actualización de su `config/local.json` fuera un paso de cada tarea y no un aviso suelto: no produce commit, y la PR lo avisa.*
+
 ---
 
 ### 7. Pull Requests
