@@ -179,3 +179,65 @@ describe('un fichero de configuración que no sirve', () => {
     expect(errorOf(text(config))).toMatch(message);
   });
 });
+
+/** La tira mínima con el efecto con el que arranca (specs/engine-config, decisión 10). */
+const breathingStrip = { ...demoStrip, effect: 'breathing' };
+
+describe('el efecto de cada tira', () => {
+  it('acepta una tira con la respiración', () => {
+    const result = parseConfig(text({ strips: [breathingStrip] }));
+
+    expect(result.ok && result.config.strips).toEqual([breathingStrip]);
+  });
+
+  it('sin effect, nombra la tira y dice que el campo falta y es obligatorio', () => {
+    expect(errorOf(text({ strips: [breathingStrip, { ...demoStrip, id: 'sin-efecto' }] }))).toBe(
+      'la tira «sin-efecto», campo `effect`: falta y es obligatorio',
+    );
+  });
+
+  it('con un efecto que no existe, nombra la tira y dice cuáles hay', () => {
+    expect(errorOf(text({ strips: [{ ...demoStrip, effect: 'energia' }] }))).toBe(
+      'la tira «demo», campo `effect`: «energia» no es un efecto (hay: `breathing`)',
+    );
+  });
+});
+
+describe('la fuente de audio', () => {
+  it('acepta un fichero con su ruta', () => {
+    const audioSource = { type: 'file', path: 'config/audio/bouncer.wav' };
+    const result = parseConfig(text({ audioSource, strips: [breathingStrip] }));
+
+    expect(result).toEqual({
+      ok: true,
+      config: {
+        fps: 60,
+        server: { host: '127.0.0.1', port: 8080 },
+        audioSource,
+        strips: [breathingStrip],
+      },
+    });
+  });
+
+  it('es opcional: sin audioSource, el instrumento no tiene fuente de audio', () => {
+    const result = parseConfig(text({ strips: [breathingStrip] }));
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && 'audioSource' in result.config).toBe(false);
+  });
+
+  it.each([
+    [
+      { type: 'mp3', path: 'musica.mp3' },
+      'campo `audioSource.type`: «mp3» no es un valor válido (se admite «file»)',
+    ],
+    [
+      { type: 'file', path: 'musica.wav', volume: 1 },
+      'campo `audioSource.volume`: no existe (¿está bien escrito?)',
+    ],
+    [{ type: 'file' }, 'campo `audioSource.path`: falta y es obligatorio'],
+    [{ type: 'file', path: '' }, 'campo `audioSource.path`: no puede estar vacío'],
+  ])('con %j, nombra el campo y dice qué falla', (audioSource, message) => {
+    expect(errorOf(text({ audioSource, strips: [breathingStrip] }))).toBe(message);
+  });
+});

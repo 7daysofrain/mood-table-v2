@@ -10,7 +10,7 @@
 
 ## 1. MOO-19 · engine
 
-- [ ] 1.1 **(test en rojo)** Tests de la validación en `packages/shared`: una tira sin `effect` (el
+- [x] 1.1 **(test en rojo)** Tests de la validación en `packages/shared`: una tira sin `effect` (el
   mensaje nombra la tira y dice que el campo falta y es obligatorio); un `effect` que no existe (el
   mensaje lista los válidos: `breathing`); `audioSource` de tipo `file` con `path`; sin `audioSource`;
   `audioSource` de un tipo que no existe (nombra `audioSource.type`) y con un campo que no declara
