@@ -1,9 +1,0 @@
-{
-  "name": "moo-12-spike",
-  "private": true,
-  "type": "module",
-  "description": "Spike de rendimiento de MOO-12 (prototipo desechable, no forma parte del workspace)",
-  "dependencies": {
-    "fft.js": "4.0.4"
-  }
-}
