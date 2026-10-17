@@ -117,7 +117,7 @@
   `shared` con `usesAudio: true` y en el registro del motor. Al congelar las constantes se generan los
   frames dorados.
   Verificar: los tests de 2.6 pasan.
-- [ ] 2.8 **(test en rojo)** Test de la validación en `packages/shared`: una tira con `energy` y sin
+- [x] 2.8 **(test en rojo)** Test de la validación en `packages/shared`: una tira con `energy` y sin
   `audioSource` no arranca, y el mensaje nombra la tira y dice que *energy* necesita una fuente de
   audio (`specs/engine-config`, decisión 6).
   Verificar: el test nuevo falla porque `parseConfig` no lo comprueba.
