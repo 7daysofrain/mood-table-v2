@@ -89,7 +89,7 @@
   energía están en el tercio inferior, y con uno de 8 kHz, en el superior; el silencio digital se marca
   como silencio; la ventana dura unos 40 ms a 44,1 y a 48 kHz (decisiones 4 y 11).
   Verificar: los tests nuevos fallan porque el análisis no existe.
-- [ ] 2.3 Análisis en `packages/engine/src/core/audio`: ventana en segundos rellenada hasta potencia de
+- [x] 2.3 Análisis en `packages/engine/src/core/audio`: ventana en segundos rellenada hasta potencia de
   2, Hamming, `fft.js`, 24 bandas mel de 200 Hz a 12 kHz calculadas para la frecuencia de la fuente,
   ganancia y suavizado comunes con `dt` (decisión 2), puerta de silencio y nivel RMS sin ajustar, todo
   con memoria reservada al arrancar. Las constantes se comprueban en el código de la v1 (`dsp.py`,
