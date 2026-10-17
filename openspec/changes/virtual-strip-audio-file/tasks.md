@@ -128,7 +128,7 @@
   (tipo `3`) lleva `seq` y nivel en big-endian; los mensajes mal formados se rechazan, y
   `decodeFrame` sigue rechazando los tipos que no son `1` (decisión 5).
   Verificar: los tests nuevos fallan porque los mensajes no existen.
-- [ ] 2.11 Codificadores y decodificadores de los mensajes de fuente y de nivel en `packages/shared`;
+- [x] 2.11 Codificadores y decodificadores de los mensajes de fuente y de nivel en `packages/shared`;
   `docs/instructions/viewer-protocol.md` con los dos mensajes byte a byte y su ejemplo, y la fila del
   documento en el índice de `AGENTS.md` actualizada.
   Verificar: los tests de 2.10 pasan y el documento describe exactamente lo que hace el código.
