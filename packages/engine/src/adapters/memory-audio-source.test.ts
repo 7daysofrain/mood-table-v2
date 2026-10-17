@@ -48,4 +48,12 @@ describe('la fuente de audio en memoria', () => {
 
     expect(positionsAt(source, 0.3, 7)).toEqual([3, 1, 2, 3, 1, 2, 3]);
   });
+
+  it('sin muestras, da silencio', () => {
+    const out = new Float32Array([0.5, 0.5]);
+
+    new MemoryAudioSource(new Float32Array(0), 44_100).read(1, out);
+
+    expect(Array.from(out)).toEqual([0, 0]);
+  });
 });

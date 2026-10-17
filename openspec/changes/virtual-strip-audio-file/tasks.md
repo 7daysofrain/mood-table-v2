@@ -55,7 +55,7 @@
   error con la ruta resuelta; uno con formato no válido, un error que nombra el fichero
   (`specs/audio-source`).
   Verificar: los tests nuevos fallan porque la fuente no existe.
-- [ ] 1.11 Puerto `AudioSource` *pull* en `packages/engine/src/core/audio` (decisión 3), adaptador de
+- [x] 1.11 Puerto `AudioSource` *pull* en `packages/engine/src/core/audio` (decisión 3), adaptador de
   fuente de fichero (lee el disco y decodifica al arrancar) y fuente en memoria para los tests, en
   `adapters`. `main.ts` crea la fuente si el fichero declara `audioSource`; si no se puede leer o su
   formato no vale, el motor no arranca y dice por qué.
