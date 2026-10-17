@@ -46,18 +46,20 @@ análisis de audio más todas las tiras.
 | 600 | energía | 60 | 10 801 (10 800) | 0,484 | 0,549 | 8,656 | 0 | no |
 | **300 + 300** | **espectro + energía** | **60** | **10 801 (10 800)** | **0,457** | **0,513** | **8,531** | **0** | **no** |
 
-Cada pasada saca un frame más de los esperados porque el arnés cuenta también el del instante 0. Es
-un detalle del arnés, no del motor.
+Cada pasada saca un frame más de los esperados: el último pulso, el del segundo 180, cae justo antes
+del corte y también se cuenta. Es un detalle del arnés, no del motor.
 
 **Lo que se lee en la tabla:**
 - **El coste casi no depende de los LEDs.** De 200 a 600 LEDs sube unos 0,1 ms, y la segunda tira
   añade unos 0,05 ms. Casi todo el tiempo se va en el análisis de audio (unos 0,35 ms, estimado
   por diferencia: no se midió aparte), que se calcula una vez por frame para todas las tiras. Cuadra con el diseño del README §2.2.
-- **El máximo ronda los 8-9 ms en todas las pasadas**, sea cual sea la configuración. Eso apunta a
-  pausas puntuales (el recolector de basura de Node o la compilación de V8 en los primeros frames) y
-  no al trabajo de cada frame. Aun así, queda por debajo de 16,6 ms, y el p95 ni se entera.
-- **Para Q1** (cuántos LEDs por tira con fluidez): por CPU, la Pi llega con al menos 600 LEDs por
-  tira, con margen de sobra. Q1 queda resuelta solo en parte: falta Adalight (A2, H3), que será el
+- **El máximo ronda los 7-9 ms en todas las pasadas** (de 6,9 a 9,0 ms), sea cual sea la
+  configuración. Eso apunta a pausas puntuales y no al trabajo de cada frame. *Hipótesis, no medida:*
+  el recolector de basura de Node o la compilación de V8; el arnés solo guarda las cifras agregadas, no
+  cuándo cayó cada frame. Aun así, queda por debajo de 16,6 ms, y el p95 ni se entera.
+- **Para Q1** (cuántos LEDs por tira con fluidez): por CPU, una tira de 600 LEDs (lo más que se midió)
+  cabe con margen de sobra. Varias tiras de 600 no se midieron, aunque el coste casi plano lo hace
+  verosímil. Q1 queda resuelta solo en parte: falta Adalight (A2, H3), que será el
   límite real.
 
 ## ¿Se frenó la Pi?
@@ -70,8 +72,14 @@ frecuencia de la CPU (unas 176 muestras por pasada):
 - La temperatura máxima fue de **60,3 °C**, muy lejos de los ~80 °C a los que la Pi 4 empieza a
   frenarse.
 - La frecuencia osciló entre 600 y 1 800 MHz. Es el gobernador `ondemand`, que la baja cuando hay
-  poca carga, y la carga es mínima. Parte de los frames se calcularon por tanto a frecuencia baja, así
-  que las cifras son, si acaso, conservadoras.
+  poca carga, y la carga es mínima. Según una muestra por segundo, la CPU estuvo a 600 MHz la mayor
+  parte del tiempo (entre el 71 % y el 84 % de las muestras de cada pasada), así que las cifras son, si
+  acaso, conservadoras.
+- **Subidas a 1 800 MHz durante unos 5 s, cada minuto más o menos**, en todas las pasadas. La primera,
+  al empezar cada pasada, es el arranque de `bench.ts`, que genera la pista sintética. Las demás
+  coinciden con la espera del agente, que entraba por SSH en la Pi cada 60 s para ver si había
+  terminado. Esos frames salieron algo más rápidos que el resto, pero son menos de una décima parte del
+  tiempo, así que no mueven la mediana ni el p95.
 
 Todas las mediciones cuentan para el veredicto.
 
@@ -84,9 +92,9 @@ Todas las mediciones cuentan para el veredicto.
 | Node | v24.22.0 (NodeSource), sin opciones |
 | FFT | `fft.js` 4.0.4 |
 | Gobernador de la CPU | `ondemand` (el de serie; no se tocó) |
-| Qué más corría | Nada: el sistema base, `sshd` y el propio `ps` (lista completa en `results/conditions.txt`) |
+| Qué más corría | El sistema base y, durante las pasadas, el registro de `vcgencmd` (una vez por segundo), `run.sh` y la sesión SSH, más la espera del agente por SSH cada minuto (ver «¿Se frenó la Pi?»). Al empezar, los procesos que más CPU gastaban eran `ps` y `sshd` ([foto inicial](https://github.com/7daysofrain/mood-table-v2/blob/9d0005a6cd96032a39ada46b171f027be1cfc713/.spikes/moo-12/results/conditions.txt)) |
 | Código | commit `7531b72` |
-| Duración y orden | 13 pasadas de 180 s con 20 s de pausa entre ellas. La peor configuración fue la última, con la Pi más caliente |
+| Duración y orden | 13 pasadas de 180 s con 20 s de pausa entre ellas. La peor configuración fue la última, con la Pi ya a su temperatura de trabajo (56-60 °C) |
 
 ## Método
 
@@ -101,12 +109,12 @@ los frames a ninguna salida:
    dentro de un golpe.
 3. **Efectos por tira:** *espectro* (las bandas repartidas a lo largo de la tira, con caída suave) y
    *energía* (brillo que sigue a la energía y destello en cada golpe, abriéndose desde el centro).
-4. **Límite de potencia por tira:** estima la corriente del frame y escala el brillo si pasa de lo
-   declarado.
+4. **Límite de potencia por tira:** estima la corriente del frame (20 mA por canal a tope) y escala
+   el brillo si pasa de un límite fijo de 4 A por tira.
 
 El ritmo lo marca el temporizador real del motor (`startTicker`, `packages/engine/src/adapters/ticker.ts`).
-Cada frame se mide con `performance.now()`. Como la salida es nula, se acumula una suma de control de
-los frames para que V8 no pueda saltarse el trabajo; la suma salió distinta de cero en todas las
+Cada frame se mide con `performance.now()`. Como la salida es nula, se acumula una suma de control (el
+primer y el último byte de cada tira en cada frame) para que V8 no pueda saltarse el trabajo; la suma salió distinta de cero en todas las
 pasadas.
 
 ## Límites del resultado
@@ -146,6 +154,7 @@ de 300 LEDs con *espectro* y *energía*, 60 fps) y ponerlo al lado de la tabla d
 git clone https://github.com/7daysofrain/mood-table-v2.git && cd mood-table-v2
 git checkout 9d0005a6cd96032a39ada46b171f027be1cfc713
 cd .spikes/moo-12 && npm install
+cp -r results results-ref                # run.sh sobrescribe results/: guarda antes la referencia
 nohup ./run.sh > run.log 2>&1 &          # ~45 min; resultados en results/
 node bench.ts 300:spectrum,300:energy 60 180   # una sola pasada
 ```
