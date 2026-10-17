@@ -6,7 +6,7 @@ import { defaultParams } from './effects/effect.ts';
 import { createFrameLoop, type LightOutput, type Tick } from './frame-loop.ts';
 
 function strip(id: string, ledCount: number): StripConfig {
-  return { id, name: id, output: { type: 'virtual' }, ledCount };
+  return { id, name: id, output: { type: 'virtual' }, ledCount, effect: 'breathing' };
 }
 
 /** Una salida de prueba que copia lo que recibe (el frame solo vale durante `write`). */

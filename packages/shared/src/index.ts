@@ -6,15 +6,22 @@
 export const SHARED_PACKAGE_NAME = '@moodtable/shared';
 
 export {
+  AudioSourceConfigSchema,
   ConfigFileSchema,
   parseConfig,
   StripConfigSchema,
+  type AudioSourceConfig,
   type Config,
   type ConfigResult,
   type StripConfig,
 } from './config.ts';
 
-export { BreathingParamsSchema, type BreathingParams } from './effects.ts';
+export {
+  BreathingParamsSchema,
+  EFFECT_CATALOG,
+  type BreathingParams,
+  type EffectId,
+} from './effects.ts';
 
 export {
   decodeFrame,

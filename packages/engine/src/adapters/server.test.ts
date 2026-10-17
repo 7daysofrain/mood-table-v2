@@ -8,7 +8,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createFrameLoop } from '../core/frame-loop.ts';
 import { type EngineServer, startServer } from './server.ts';
 
-const strip = { id: 'demo', name: 'demo', output: { type: 'virtual' as const }, ledCount: 60 };
+const strip = {
+  id: 'demo',
+  name: 'demo',
+  output: { type: 'virtual' as const },
+  ledCount: 60,
+  effect: 'breathing' as const,
+};
 
 let panelDir: string;
 let server: EngineServer | undefined;

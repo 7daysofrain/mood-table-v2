@@ -6,6 +6,7 @@
 import Type, { type Static } from 'typebox';
 import Value from 'typebox/value';
 
+import { EFFECT_CATALOG, type EffectId } from './effects.ts';
 import { findJsonError } from './json-error.ts';
 import { MAX_STRIPS } from './viewer-protocol.ts';
 
@@ -18,15 +19,32 @@ const CLOSED = { additionalProperties: false } as const;
 /** Salida de una tira, discriminada por `type`. En H1 solo existe `virtual`, sin más campos. */
 const OutputSchema = Type.Union([Type.Object({ type: Type.Literal('virtual') }, CLOSED)]);
 
+/**
+ * El efecto con el que arranca la tira: uno de los ids del catálogo (decisión 10). La unión se genera
+ * del catálogo, y `Unsafe` le da su tipo, que el `map` pierde; el esquema es el mismo.
+ */
+const EffectIdSchema = Type.Unsafe<EffectId>(
+  Type.Union(EFFECT_CATALOG.map((effect) => Type.Literal(effect.id))),
+);
+
 export const StripConfigSchema = Type.Object(
   {
     id: Type.String({ minLength: 1 }),
     name: Type.String({ minLength: 1 }),
     output: OutputSchema,
     ledCount: Type.Integer({ minimum: 1 }),
+    effect: EffectIdSchema,
   },
   CLOSED,
 );
+
+/**
+ * Fuente de audio, discriminada por `type` como `output` (decisión 12). Solo existe `file`: un WAV
+ * con ruta absoluta o relativa a la raíz del repositorio. La tarjeta de sonido llega con `MOO-15`.
+ */
+export const AudioSourceConfigSchema = Type.Union([
+  Type.Object({ type: Type.Literal('file'), path: Type.String({ minLength: 1 }) }, CLOSED),
+]);
 
 /** Por defecto, solo local: el panel no tiene contraseña (README §2.5, decisión 13). */
 const ServerSchema = Type.Object(
@@ -42,6 +60,8 @@ export const ConfigFileSchema = Type.Object(
     // El pulso del motor: README §2.2 prevé 30-60 fps, y más satura la CPU sin decir por qué.
     fps: Type.Optional(Type.Integer({ minimum: 1, maximum: 60, default: 60 })),
     server: Type.Optional(ServerSchema),
+    // Opcional: sin ella, el instrumento no tiene fuente de audio.
+    audioSource: Type.Optional(AudioSourceConfigSchema),
     strips: Type.Array(StripConfigSchema, { minItems: 1, maxItems: MAX_STRIPS }),
   },
   CLOSED,
@@ -49,10 +69,14 @@ export const ConfigFileSchema = Type.Object(
 
 export type StripConfig = Static<typeof StripConfigSchema>;
 
+export type AudioSourceConfig = Static<typeof AudioSourceConfigSchema>;
+
 /** La configuración ya validada, con los valores por defecto aplicados. */
 export interface Config {
   fps: number;
   server: { host: string; port: number };
+  /** Sin `audioSource`, el instrumento no tiene fuente de audio. */
+  audioSource?: AudioSourceConfig;
   strips: StripConfig[];
 }
 
@@ -86,7 +110,7 @@ export function parseConfig(text: string): ConfigResult {
   const errors = Value.Errors(ConfigFileSchema, withDefaults);
   // Un campo mal escrito da dos errores (el que no existe y el que falta): se nombra el que no existe.
   const error = errors.find((each) => isUnknownField(each)) ?? errors[0];
-  if (error) return fail(describeError(error, data));
+  if (error) return fail(describeError(error, errors, data));
 
   const config = withDefaults as Config;
   const repeated = config.strips.find(
@@ -120,8 +144,15 @@ function isUnknownField(error: SchemaError): boolean {
   return error.keyword === 'boolean' || error.keyword === 'additionalProperties';
 }
 
-/** `/strips/0/output/type` → «la tira «demo», campo `output.type`: …». */
-function describeError(error: SchemaError, data: Record<string, unknown>): string {
+/**
+ * `/strips/0/output/type` → «la tira «demo», campo `output.type`: …». `errors` son todos los del
+ * fichero: un valor que no está en una unión de literales da uno por cada literal admitido.
+ */
+function describeError(
+  error: SchemaError,
+  errors: readonly SchemaError[],
+  data: Record<string, unknown>,
+): string {
   const segments = error.instancePath.split('/').slice(1);
   const received = valueAt(data, segments);
   const params = error.params as Record<string, unknown>;
@@ -133,7 +164,10 @@ function describeError(error: SchemaError, data: Record<string, unknown>): strin
   const field = [...segments.slice(where), ...(missing ? [missing] : [])].join('.');
   // Sin campo, el problema es la propia tira (por ejemplo, no es un objeto).
   const subject = field ? `campo \`${field}\`` : 'la entrada';
-  const problem = `${subject}: ${describeProblem(error, received)}`;
+  const allowed = errors
+    .filter((each) => each.keyword === 'const' && each.instancePath === error.instancePath)
+    .map((each) => String((each.params as Record<string, unknown>).allowedValue));
+  const problem = `${subject}: ${describeProblem(error, received, field, allowed)}`;
 
   if (where === 0) return problem;
   const index = Number(segments[1]);
@@ -163,7 +197,12 @@ function valueAt(data: unknown, segments: string[]): unknown {
   );
 }
 
-function describeProblem(error: SchemaError, received: unknown): string {
+function describeProblem(
+  error: SchemaError,
+  received: unknown,
+  field: string,
+  allowed: readonly string[],
+): string {
   const params = error.params as Record<string, unknown>;
   if (isUnknownField(error)) return 'no existe (¿está bien escrito?)';
   switch (error.keyword) {
@@ -180,7 +219,10 @@ function describeProblem(error: SchemaError, received: unknown): string {
     case 'minLength':
       return 'no puede estar vacío';
     case 'const':
-      return `«${String(received)}» no es un valor válido (se admite «${String(params.allowedValue)}»)`;
+      // El efecto lista los que hay, como pide specs/engine-config; el resto, los valores admitidos.
+      return field === 'effect'
+        ? `«${String(received)}» no es un efecto (hay: ${allowed.map((id) => `\`${id}\``).join(', ')})`
+        : `«${String(received)}» no es un valor válido (se admite ${allowed.map((value) => `«${value}»`).join(' o ')})`;
     default:
       return error.message;
   }

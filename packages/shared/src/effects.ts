@@ -1,8 +1,18 @@
 /**
- * Esquemas de los parámetros de cada efecto (README §2.3): viven aquí porque los necesitan el panel,
- * para generar los controles, y la API, para validar. El render de cada efecto está en el motor.
+ * Catálogo de efectos y esquemas de sus parámetros (README §2.3): viven aquí porque los necesitan el
+ * fichero de configuración, para validar el efecto de cada tira, el panel, para generar los
+ * controles, y la API, para validar. El render de cada efecto está en el motor, en un registro con
+ * los mismos ids.
  */
 import Type, { type Static } from 'typebox';
+
+/**
+ * Los efectos que existen (decisión 10 del change virtual-strip-audio-file): su id, en inglés como
+ * el resto del fichero, y si son reactivos (`true`) o de ambiente (`false`).
+ */
+export const EFFECT_CATALOG = [{ id: 'breathing', usesAudio: false }] as const;
+
+export type EffectId = (typeof EFFECT_CATALOG)[number]['id'];
 
 /** Blanco cálido: el de una bombilla incandescente (unos 2700 K). */
 const WARM_WHITE = '#FFA957';

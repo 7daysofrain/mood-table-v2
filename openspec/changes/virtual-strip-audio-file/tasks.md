@@ -16,7 +16,7 @@
   `audioSource` de un tipo que no existe (nombra `audioSource.type`) y con un campo que no declara
   (`specs/engine-config`).
   Verificar: los tests nuevos fallan porque el esquema no tiene esos campos; el resto sigue en verde.
-- [ ] 1.2 Catálogo de efectos en `packages/shared` (id y `usesAudio`; de momento solo `breathing`),
+- [x] 1.2 Catálogo de efectos en `packages/shared` (id y `usesAudio`; de momento solo `breathing`),
   `effect` obligatorio como unión de literales del catálogo y `audioSource` discriminado por `type`
   (decisiones 10 y 12). En el mismo commit, `"effect": "breathing"` en `config/demo.json`,
   `e2e/config.json`, el fichero que escribe `e2e/engine.ts` y los ficheros de configuración de los

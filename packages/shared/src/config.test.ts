@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { parseConfig } from './config.ts';
 
 /** Una tira virtual mínima, como la de `config/demo.json` (specs/engine-config). */
-const demoStrip = { id: 'demo', name: 'Tira de prueba', output: { type: 'virtual' }, ledCount: 60 };
+const demoStrip = {
+  id: 'demo',
+  name: 'Tira de prueba',
+  output: { type: 'virtual' },
+  ledCount: 60,
+  effect: 'breathing',
+};
 
 function text(value: unknown): string {
   return JSON.stringify(value);
@@ -180,18 +186,15 @@ describe('un fichero de configuración que no sirve', () => {
   });
 });
 
-/** La tira mínima con el efecto con el que arranca (specs/engine-config, decisión 10). */
-const breathingStrip = { ...demoStrip, effect: 'breathing' };
-
 describe('el efecto de cada tira', () => {
   it('acepta una tira con la respiración', () => {
-    const result = parseConfig(text({ strips: [breathingStrip] }));
+    const result = parseConfig(text({ strips: [demoStrip] }));
 
-    expect(result.ok && result.config.strips).toEqual([breathingStrip]);
+    expect(result.ok && result.config.strips).toEqual([demoStrip]);
   });
 
   it('sin effect, nombra la tira y dice que el campo falta y es obligatorio', () => {
-    expect(errorOf(text({ strips: [breathingStrip, { ...demoStrip, id: 'sin-efecto' }] }))).toBe(
+    expect(errorOf(text({ strips: [demoStrip, { ...demoStripWithout('effect'), id: 'sin-efecto' }] }))).toBe(
       'la tira «sin-efecto», campo `effect`: falta y es obligatorio',
     );
   });
@@ -206,7 +209,7 @@ describe('el efecto de cada tira', () => {
 describe('la fuente de audio', () => {
   it('acepta un fichero con su ruta', () => {
     const audioSource = { type: 'file', path: 'config/audio/bouncer.wav' };
-    const result = parseConfig(text({ audioSource, strips: [breathingStrip] }));
+    const result = parseConfig(text({ audioSource, strips: [demoStrip] }));
 
     expect(result).toEqual({
       ok: true,
@@ -214,13 +217,13 @@ describe('la fuente de audio', () => {
         fps: 60,
         server: { host: '127.0.0.1', port: 8080 },
         audioSource,
-        strips: [breathingStrip],
+        strips: [demoStrip],
       },
     });
   });
 
   it('es opcional: sin audioSource, el instrumento no tiene fuente de audio', () => {
-    const result = parseConfig(text({ strips: [breathingStrip] }));
+    const result = parseConfig(text({ strips: [demoStrip] }));
 
     expect(result.ok).toBe(true);
     expect(result.ok && 'audioSource' in result.config).toBe(false);
@@ -238,6 +241,6 @@ describe('la fuente de audio', () => {
     [{ type: 'file' }, 'campo `audioSource.path`: falta y es obligatorio'],
     [{ type: 'file', path: '' }, 'campo `audioSource.path`: no puede estar vacío'],
   ])('con %j, nombra el campo y dice qué falla', (audioSource, message) => {
-    expect(errorOf(text({ audioSource, strips: [breathingStrip] }))).toBe(message);
+    expect(errorOf(text({ audioSource, strips: [demoStrip] }))).toBe(message);
   });
 });

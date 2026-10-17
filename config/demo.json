@@ -1,6 +1,12 @@
 {
   "fps": 60,
   "strips": [
-    { "id": "demo", "name": "Tira de prueba", "output": { "type": "virtual" }, "ledCount": 60 }
+    {
+      "id": "demo",
+      "name": "Tira de prueba",
+      "output": { "type": "virtual" },
+      "ledCount": 60,
+      "effect": "breathing"
+    }
   ]
 }

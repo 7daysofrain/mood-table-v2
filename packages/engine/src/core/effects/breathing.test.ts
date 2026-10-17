@@ -8,6 +8,7 @@ const strip = {
   name: 'Tira de prueba',
   output: { type: 'virtual' as const },
   ledCount: 60,
+  effect: 'breathing' as const,
 };
 
 /** El frame de la respiración con sus valores por defecto en el instante `time` (segundos). */

@@ -11,7 +11,13 @@ import { CONFIG_FILE, loadConfig, REPO_ROOT } from './config-file.ts';
 
 const run = promisify(execFile);
 
-const demoStrip = { id: 'demo', name: 'Tira de prueba', output: { type: 'virtual' }, ledCount: 60 };
+const demoStrip = {
+  id: 'demo',
+  name: 'Tira de prueba',
+  output: { type: 'virtual' },
+  ledCount: 60,
+  effect: 'breathing',
+};
 
 let root: string;
 
