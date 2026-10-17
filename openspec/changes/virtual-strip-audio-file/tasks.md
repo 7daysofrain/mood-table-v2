@@ -80,7 +80,7 @@
 
 ## 2. MOO-20 · engine
 
-- [ ] 2.1 `fft.js` en el catálogo de `pnpm-workspace.yaml` (la versión del spike, 4.0.4, si cumple
+- [x] 2.1 `fft.js` en el catálogo de `pnpm-workspace.yaml` (la versión del spike, 4.0.4, si cumple
   `minimumReleaseAge`) y como dependencia de `@moodtable/engine`, con su declaración de tipos si no la
   trae.
   Verificar: `pnpm install` sin avisos, y lint, tipos y tests siguen en verde.

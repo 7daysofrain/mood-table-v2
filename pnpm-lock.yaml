@@ -224,6 +224,9 @@ catalogs:
     fastify:
       specifier: 5.12.7
       version: 5.12.7
+    fft.js:
+      specifier: 4.0.4
+      version: 4.0.4
     globals:
       specifier: 17.12.0
       version: 17.12.0
@@ -319,6 +322,9 @@ importers:
       fastify:
         specifier: 'catalog:'
         version: 5.12.7
+      fft.js:
+        specifier: 'catalog:'
+        version: 4.0.4
       typebox:
         specifier: 'catalog:'
         version: 1.3.37
@@ -1682,6 +1688,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fft.js@4.0.4:
+    resolution: {integrity: sha512-f9c00hphOgeQTlDyavwTtu6RiK8AIFjD6+jvXkNkpeQ7rirK3uFWVpalkoS4LAwbdX7mfZ8aoBfFVQX1Re/8aw==}
 
   file-entry-cache@11.1.5:
     resolution: {integrity: sha512-+PFTHITI08JIGhnNpGNI8T8inUpgZfk3GNEqfT9R2zZV2iFXg3CvqzSl/uEhs7TSGujYRELEANyDvS8Fj7+S7Q==}
@@ -3913,6 +3922,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
+
+  fft.js@4.0.4: {}
 
   file-entry-cache@11.1.5:
     dependencies:
