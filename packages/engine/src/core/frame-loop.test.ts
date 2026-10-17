@@ -2,9 +2,11 @@ import type { EffectId, StripConfig } from '@moodtable/shared';
 import Type from 'typebox';
 import { describe, expect, it } from 'vitest';
 
+import type { AudioFeatures } from './audio/analysis.ts';
+import type { AudioSource } from './audio/audio-source.ts';
 import { breathing } from './effects/breathing.ts';
 import { defaultParams, type Effect } from './effects/effect.ts';
-import { createFrameLoop, type LightOutput, type Tick } from './frame-loop.ts';
+import { createFrameLoop, type LevelOutput, type LightOutput, type Tick } from './frame-loop.ts';
 
 function strip(id: string, ledCount: number): StripConfig {
   return { id, name: id, output: { type: 'virtual' }, ledCount, effect: 'breathing' };
@@ -157,5 +159,129 @@ describe('el bucle de frames', () => {
         effects: [breathing],
       }),
     ).toThrow('la tira «fija» declara el efecto «solid», que el motor no tiene');
+  });
+});
+
+/** Una fuente de prueba: un tono de 1 kHz de amplitud 1 que apunta en qué instantes se lee. */
+function toneSource() {
+  const reads: number[] = [];
+  const source: AudioSource = {
+    sampleRate: 44_100,
+    read(time, out) {
+      reads.push(time);
+      const start = time * 44_100 - out.length;
+      for (let index = 0; index < out.length; index++) {
+        out[index] = Math.sin((2 * Math.PI * 1000 * (start + index)) / 44_100);
+      }
+    },
+  };
+  return { source, reads };
+}
+
+/** Un efecto de prueba que apunta el `FrameContext.audio` que recibe en cada frame. */
+function audioSpy(id: string, usesAudio: boolean) {
+  const seen: (AudioFeatures | null)[] = [];
+  const effect: Effect<Record<string, never>, null> = {
+    id,
+    usesAudio,
+    paramsSchema: Type.Object({}),
+    createMemory: () => null,
+    render(ctx) {
+      seen.push(ctx.audio);
+    },
+  };
+  return { effect, seen };
+}
+
+function spyStrip(id: string, effect: { id: string }): StripConfig {
+  return { ...strip(id, 1), effect: effect.id as EffectId };
+}
+
+function levelRecorder() {
+  const levels: { seq: number; level: number }[] = [];
+  const output: LevelOutput = {
+    write(level, tick) {
+      levels.push({ seq: tick.seq, level });
+    },
+  };
+  return { output, levels };
+}
+
+describe('el bucle con fuente de audio', () => {
+  it('con solo la respiración, mide el nivel en cada pulso pero no calcula las bandas', () => {
+    const ambient = audioSpy('ambiente', false);
+    const { source, reads } = toneSource();
+    const level = levelRecorder();
+    const loop = createFrameLoop([{ config: spyStrip('a', ambient.effect), outputs: [] }], 60, {
+      effects: [ambient.effect],
+      audioSource: source,
+      levelOutputs: [level.output],
+    });
+
+    for (let pulse = 0; pulse < 3; pulse++) loop.tick(pulse * FRAME_MS);
+
+    expect(reads).toEqual([0, 1 / 60, 2 / 60]);
+    expect(level.levels.map(({ level: value }) => value)).toEqual([
+      expect.closeTo(Math.SQRT1_2, 2),
+      expect.closeTo(Math.SQRT1_2, 2),
+      expect.closeTo(Math.SQRT1_2, 2),
+    ]);
+    expect(ambient.seen).toEqual([null, null, null]);
+  });
+
+  it('con una tira reactiva, calcula las bandas una vez por pulso y las da a todas las tiras', () => {
+    const first = audioSpy('reactivo', true);
+    const second = audioSpy('otro-reactivo', true);
+    const ambient = audioSpy('ambiente', false);
+    const { source, reads } = toneSource();
+    const loop = createFrameLoop(
+      [
+        { config: spyStrip('a', first.effect), outputs: [] },
+        { config: spyStrip('b', second.effect), outputs: [] },
+        { config: spyStrip('c', ambient.effect), outputs: [] },
+      ],
+      60,
+      { effects: [first.effect, second.effect, ambient.effect], audioSource: source },
+    );
+
+    loop.tick(0);
+    loop.tick(FRAME_MS);
+
+    // Una lectura por pulso: la misma ventana para todas las tiras.
+    expect(reads).toHaveLength(2);
+    expect(first.seen[1]?.bands).toHaveLength(24);
+    expect(second.seen[1]).toBe(first.seen[1]);
+    // Una tira de ambiente recibe los mismos rasgos aunque no los mire.
+    expect(ambient.seen[1]).toBe(first.seen[1]);
+  });
+
+  it('el nivel llega a sus salidas con el seq de su pulso, también si se saltan pulsos', () => {
+    const { source } = toneSource();
+    const level = levelRecorder();
+    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+      audioSource: source,
+      levelOutputs: [level.output],
+    });
+
+    loop.tick(0);
+    loop.tick(FRAME_MS);
+    loop.tick(5 * FRAME_MS);
+
+    expect(level.levels.map(({ seq }) => seq)).toEqual([0, 1, 5]);
+  });
+
+  it('sin fuente de audio, ni nivel ni bandas, aunque la tira sea reactiva', () => {
+    const reactive = audioSpy('reactivo', true);
+    const level = levelRecorder();
+    const loop = createFrameLoop([{ config: spyStrip('a', reactive.effect), outputs: [] }], 60, {
+      effects: [reactive.effect],
+      levelOutputs: [level.output],
+    });
+
+    loop.tick(0);
+    loop.tick(FRAME_MS);
+
+    expect(reactive.seen).toEqual([null, null]);
+    expect(level.levels).toEqual([]);
   });
 });

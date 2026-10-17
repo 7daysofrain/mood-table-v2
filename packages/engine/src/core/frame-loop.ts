@@ -5,6 +5,7 @@
  */
 import type { StripConfig } from '@moodtable/shared';
 
+import type { AudioSource } from './audio/audio-source.ts';
 import { defaultParams, type Effect, type FrameContext } from './effects/effect.ts';
 import { type AnyEffect, EFFECTS } from './effects/registry.ts';
 
@@ -31,9 +32,22 @@ export interface LoopStrip {
   outputs: LightOutput[];
 }
 
+/**
+ * Puerto de salida del **nivel de la fuente de audio** (decisión 5 del change
+ * virtual-strip-audio-file): un número por pulso, de 0 a 1, con el pulso al que pertenece. Síncrono
+ * y sin bloquear, como `LightOutput`.
+ */
+export interface LevelOutput {
+  write(level: number, tick: Tick): void;
+}
+
 export interface FrameLoopOptions {
   /** Los efectos entre los que elige cada tira. Por defecto, el registro del motor. */
   effects?: readonly AnyEffect[];
+  /** La fuente de audio, si el instrumento tiene. Sin ella, ni nivel ni análisis. */
+  audioSource?: AudioSource;
+  /** Quién recibe el nivel de la fuente en cada pulso: el visor, los tests… */
+  levelOutputs?: readonly LevelOutput[];
 }
 
 export interface FrameLoop {

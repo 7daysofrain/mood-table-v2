@@ -95,7 +95,7 @@
   con memoria reservada al arrancar. Las constantes se comprueban en el código de la v1 (`dsp.py`,
   `visualization.py` y `config.py` de dancyPi) y el commit consultado se cita en el código.
   Verificar: los tests de 2.2 pasan.
-- [ ] 2.4 **(test en rojo)** Tests del bucle con audio: con fuente y solo *respiración*, se mide el nivel
+- [x] 2.4 **(test en rojo)** Tests del bucle con audio: con fuente y solo *respiración*, se mide el nivel
   en cada pulso pero no se calculan las bandas (`FrameContext.audio` es `null`); con una tira reactiva,
   las bandas se calculan una vez por pulso para todas las tiras; el nivel llega a sus salidas con el
   `seq` del pulso; sin fuente, ni nivel ni bandas.
