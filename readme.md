@@ -991,7 +991,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 **Requisitos técnicos**
 
 - TypeScript sobre Node LTS. Código en `packages/engine` (núcleo sin E/S; adaptadores aparte) y `packages/shared` (esquema TypeBox de la configuración).
-- **Configuración mínima:** `id`, `name`, `output: { type: "virtual" }`, `ledCount`. Toda tira arranca con *respiración* (efecto por defecto en el código); declarar el efecto inicial en el fichero llega con `MOO-19`, y el resto de campos del §3, con H4. El esquema se escribe para crecer.
+- **Configuración mínima:** `id`, `name`, `output: { type: "virtual" }`, `ledCount`. En esta tarea, toda tira arrancaba con *respiración* (efecto por defecto en el código); desde `MOO-19`, cada tira declara su `effect` en el fichero (D52), y el resto de campos del §3 llega con H4. El esquema se escribe para crecer.
 - **Bucle de frames** (§2.2): tasa objetivo configurable (30-60 fps); si una vuelta llega tarde, **salta el frame** en lugar de acumular retraso; búfer preasignado por tira (`Uint8Array` de `ledCount × 3`); sin crear objetos dentro del bucle (pausas del recolector).
 - **Reloj inyectable** en el bucle y en los efectos, para que los tests sean deterministas.
 - **Efecto *respiración*:** `usesAudio: false`, esquema de parámetros con valores por defecto, memoria por tira (`createMemory`). Los valores concretos (color, periodo) se fijan al escribir el efecto (PRD Q2); cualquier animación cumple la historia.
