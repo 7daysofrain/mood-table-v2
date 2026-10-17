@@ -135,6 +135,11 @@ describe('el decodificador WAV', () => {
       'WAVE_FORMAT_EXTENSIBLE en coma flotante',
       riff(fmt({ tag: 0xfffe, bits: 32, subformat: FLOAT_SUBFORMAT }), data([0, 0])),
     ],
+    [
+      'WAVE_FORMAT_EXTENSIBLE de 16 bits con un subformato que no es PCM',
+      riff(fmt({ tag: 0xfffe, subformat: FLOAT_SUBFORMAT }), data([0, 0])),
+    ],
+    ['WAVE_FORMAT_EXTENSIBLE sin la extensión del subformato', riff(fmt({ tag: 0xfffe }), data([0]))],
     ['un WAV de tres canales', riff(fmt({ channels: 3 }), data([0, 0, 0]))],
     ['un WAV sin bloque fmt', riff(data([0, 0]))],
     ['un WAV con el bloque fmt cortado', riff(chunk('fmt ', fmt({}).slice(8, 20)), data([0, 0]))],
