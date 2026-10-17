@@ -42,7 +42,7 @@
   generado, `packages/engine/test/fixtures/golpes.wav`: 4 s, mono, 16 bits, 44,1 kHz, con un golpe de
   unos 50 ms en los segundos 1, 2 y 3 y silencio digital entre ellos (decisión 15).
   Verificar: ejecutar el script dos veces da un fichero idéntico byte a byte, de unos 350 KB.
-- [ ] 1.8 **(test en rojo)** Tests del decodificador WAV, sin disco: el fichero de golpes da 4 s de
+- [x] 1.8 **(test en rojo)** Tests del decodificador WAV, sin disco: el fichero de golpes da 4 s de
   muestras mono a 44,1 kHz; un WAV estéreo a 48 kHz generado en el test se mezcla a mono con la media;
   `WAVE_FORMAT_EXTENSIBLE` con subformato PCM se acepta; un bloque `LIST` se salta; uno de 24 bits y
   unos bytes que no son WAV dan «formato no válido» y lo que acepta (`specs/audio-source`).
