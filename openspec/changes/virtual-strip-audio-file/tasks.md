@@ -38,7 +38,7 @@
 - [x] 1.6 Resolución de rutas desde la raíz del repositorio en `config-file.ts`: `MOODTABLE_CONFIG` y
   `audioSource.path`, que queda absoluta en la configuración cargada.
   Verificar: los tests de 1.5 pasan y `pnpm test:e2e` sigue en verde (los E2E pasan rutas absolutas).
-- [ ] 1.7 Script determinista que genera el fichero de golpes aislados de los tests y el fichero
+- [x] 1.7 Script determinista que genera el fichero de golpes aislados de los tests y el fichero
   generado, `packages/engine/test/fixtures/golpes.wav`: 4 s, mono, 16 bits, 44,1 kHz, con un golpe de
   unos 50 ms en los segundos 1, 2 y 3 y silencio digital entre ellos (decisión 15).
   Verificar: ejecutar el script dos veces da un fichero idéntico byte a byte, de unos 350 KB.

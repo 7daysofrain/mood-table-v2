@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node src/main.ts",
+    "fixtures": "node test/fixtures/golpes.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
