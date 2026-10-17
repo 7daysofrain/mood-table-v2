@@ -2,10 +2,18 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { decodeFrame, type FrameMessage } from '@moodtable/shared';
+import {
+  decodeFrame,
+  decodeLevel,
+  decodeSource,
+  type FrameMessage,
+  type LevelMessage,
+  type SourceMessage,
+} from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createFrameLoop } from '../core/frame-loop.ts';
+import { MemoryAudioSource } from './memory-audio-source.ts';
 import { type EngineServer, startServer } from './server.ts';
 
 const strip = {
@@ -32,21 +40,38 @@ afterEach(async () => {
   await rm(panelDir, { recursive: true, force: true });
 });
 
-/** Un navegador conectado al WebSocket del motor, que guarda los frames que recibe. */
-async function connect(url: string): Promise<FrameMessage[]> {
-  const frames: FrameMessage[] = [];
+/** Lo que recibe un navegador, por tipo de mensaje. */
+interface Received {
+  frames: FrameMessage[];
+  sources: SourceMessage[];
+  levels: LevelMessage[];
+}
+
+/** Un navegador conectado al WebSocket del motor, que guarda los mensajes que recibe. */
+async function connectAll(url: string): Promise<Received> {
+  const received: Received = { frames: [], sources: [], levels: [] };
   const client = new WebSocket(`${url.replace('http', 'ws')}/ws`);
   client.binaryType = 'arraybuffer';
   client.addEventListener('message', (event) => {
-    const frame = decodeFrame(new Uint8Array(event.data as ArrayBuffer));
-    if (frame) frames.push({ ...frame, colors: frame.colors.slice() });
+    const message = new Uint8Array(event.data as ArrayBuffer);
+    const frame = decodeFrame(message);
+    if (frame) received.frames.push({ ...frame, colors: frame.colors.slice() });
+    const source = decodeSource(message);
+    if (source) received.sources.push(source);
+    const level = decodeLevel(message);
+    if (level) received.levels.push(level);
   });
   clients.push(client);
   await new Promise((resolve, reject) => {
     client.addEventListener('open', resolve);
     client.addEventListener('error', reject);
   });
-  return frames;
+  return received;
+}
+
+/** Los frames que recibe un navegador conectado. */
+async function connect(url: string): Promise<FrameMessage[]> {
+  return (await connectAll(url)).frames;
 }
 
 async function until(condition: () => boolean): Promise<void> {
@@ -138,5 +163,64 @@ describe('el servidor del motor', () => {
       [0, 0, 180],
       [0, 1, 30],
     ]);
+  });
+
+  it('al conectarse, cada navegador recibe la fuente de audio: el fichero, con su nombre', async () => {
+    const source = { kind: 'file' as const, name: 'golpes.wav' };
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, source });
+    const first = await connectAll(server.url);
+    const second = await connectAll(server.url);
+
+    await until(() => first.sources.length === 1 && second.sources.length === 1);
+
+    expect(first.sources).toEqual([source]);
+    expect(second.sources).toEqual([source]);
+  });
+
+  it('sin fuente de audio, cada navegador recibe que no hay ninguna', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
+    const received = await connectAll(server.url);
+
+    await until(() => received.sources.length === 1);
+
+    expect(received.sources).toEqual([{ kind: 'none' }]);
+  });
+
+  it('en cada pulso, los dos navegadores reciben el mismo nivel, con el seq de los frames', async () => {
+    server = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      source: { kind: 'file', name: 'tono.wav' },
+    });
+    const first = await connectAll(server.url);
+    const second = await connectAll(server.url);
+    const tone = Float32Array.from({ length: 44_100 }, (_, index) =>
+      Math.sin((2 * Math.PI * 1000 * index) / 44_100),
+    );
+    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60, {
+      audioSource: new MemoryAudioSource(tone, 44_100),
+      levelOutputs: [server.levelOutput],
+    });
+
+    for (let pulse = 0; pulse < 3; pulse++) loop.tick((pulse * 1000) / 60);
+    await until(() => first.levels.length === 3 && second.levels.length === 3);
+
+    expect(first.levels.map(({ seq }) => seq)).toEqual(first.frames.map(({ seq }) => seq));
+    expect(first.levels.every(({ level }) => Math.abs(level - Math.SQRT1_2) < 0.01)).toBe(true);
+    expect(second.levels).toEqual(first.levels);
+  });
+
+  it('sin fuente de audio, ningún mensaje de nivel', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
+    const received = await connectAll(server.url);
+    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60, {
+      levelOutputs: [server.levelOutput],
+    });
+
+    for (let pulse = 0; pulse < 3; pulse++) loop.tick((pulse * 1000) / 60);
+    await until(() => received.frames.length === 3);
+
+    expect(received.levels).toEqual([]);
   });
 });

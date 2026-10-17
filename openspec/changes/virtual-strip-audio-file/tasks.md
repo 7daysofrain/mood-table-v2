@@ -132,7 +132,7 @@
   `docs/instructions/viewer-protocol.md` con los dos mensajes byte a byte y su ejemplo, y la fila del
   documento en el índice de `AGENTS.md` actualizada.
   Verificar: los tests de 2.10 pasan y el documento describe exactamente lo que hace el código.
-- [ ] 2.12 **(test en rojo)** Test de integración del servidor con dos clientes WebSocket: cada uno
+- [x] 2.12 **(test en rojo)** Test de integración del servidor con dos clientes WebSocket: cada uno
   recibe al conectarse el mensaje de fuente (fichero con su nombre, o sin fuente); en cada pulso, un
   mensaje de nivel con el mismo `seq` que los frames, igual para los dos; sin fuente, ningún mensaje de
   nivel (`specs/audio-source`).

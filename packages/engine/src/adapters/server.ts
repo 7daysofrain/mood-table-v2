@@ -14,16 +14,18 @@ import { join } from 'node:path';
 
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
-import { encodeFrame } from '@moodtable/shared';
+import { encodeFrame, type SourceMessage } from '@moodtable/shared';
 import Fastify from 'fastify';
 
-import type { LightOutput } from '../core/frame-loop.ts';
+import type { LevelOutput, LightOutput } from '../core/frame-loop.ts';
 
 export interface ServerOptions {
   host: string;
   port: number;
   /** Carpeta del build del panel (`packages/panel/dist`). */
   panelDir: string;
+  /** La fuente de audio que se anuncia a cada panel al conectarse. Por defecto, ninguna. */
+  source?: SourceMessage;
 }
 
 export interface EngineServer {
@@ -31,6 +33,8 @@ export interface EngineServer {
   url: string;
   /** La salida del visor de la tira que ocupa `stripIndex` en el fichero de configuración. */
   viewerOutput(stripIndex: number): LightOutput;
+  /** La salida del nivel de la fuente de audio: lo envía a todos los navegadores conectados. */
+  levelOutput: LevelOutput;
   close(): Promise<void>;
 }
 
@@ -83,6 +87,7 @@ export async function startServer({ host, port, panelDir }: ServerOptions): Prom
         }
       },
     }),
+    levelOutput: { write: () => undefined },
     close: () => app.close(),
   };
 }
