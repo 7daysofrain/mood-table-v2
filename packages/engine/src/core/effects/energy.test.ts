@@ -17,8 +17,12 @@ function strip(ledCount: number) {
   };
 }
 
-/** El último frame de *energía* tras `seconds` segundos de un tono continuo de `frequency` Hz. */
-function frameAfterTone(frequency: number, ledCount: number, seconds = 1): Uint8Array {
+/**
+ * El último frame de *energía* tras `seconds` segundos de un tono continuo de `frequency` Hz. Por
+ * defecto, dos segundos: como en la v1, el primer pulso con audio enciende los tres colores (las bandas
+ * arrancan en 0,1 y la ganancia de cada banda en 0,01), y tardan cerca de 1,5 s en apagarse.
+ */
+function frameAfterTone(frequency: number, ledCount: number, seconds = 2): Uint8Array {
   const analyzer = createAudioAnalyzer(RATE);
   const memory = energy.createMemory(strip(ledCount));
   const out = new Uint8Array(ledCount * 3);

@@ -111,7 +111,7 @@
   diferencia); dos tiras, una con *energía* y otra con *respiración*: en silencio, la segunda sigue
   animándose; frames dorados de una tira de 60 LEDs a 60 fps con el fichero de golpes.
   Verificar: los tests nuevos fallan porque *energía* no existe.
-- [ ] 2.7 Efecto *energía* en el núcleo (decisiones 1 y 2): esquema de parámetros vacío, memoria por
+- [x] 2.7 Efecto *energía* en el núcleo (decisiones 1 y 2): esquema de parámetros vacío, memoria por
   tira (ganancia por banda y suavizado de los LEDs), tres tercios a rojo, verde y azul desde el centro,
   desenfoque gaussiano de sigma 4 LEDs, espejo y apagado en silencio. `energy` entra en el catálogo de
   `shared` con `usesAudio: true` y en el registro del motor. Al congelar las constantes se generan los
