@@ -134,7 +134,13 @@ El refinamiento y la estimación de MOO-12 no cuentan.
 
 El código y los datos en crudo están en el commit
 [`9d0005a`](https://github.com/7daysofrain/mood-table-v2/tree/9d0005a6cd96032a39ada46b171f027be1cfc713/.spikes/moo-12).
-El prototipo se borra antes de integrar, porque no forma parte del producto.
+El prototipo se borra antes de integrar, porque no forma parte del producto, pero **sirve de
+referencia**: si el motor real rinde peor de lo esperado, se compara con estas cifras y, si hace falta,
+se vuelve a ejecutar desde ese commit. Ahí el prototipo y el `ticker.ts` contra el que corre están
+congelados juntos. Copiado a `main`, se rompería en cuanto el motor cambiara.
+
+Para comparar de verdad, lo que hay que medir es el **motor real con la misma carga** (audio, dos tiras
+de 300 LEDs con *espectro* y *energía*, 60 fps) y ponerlo al lado de la tabla de arriba.
 
 ```bash
 git clone https://github.com/7daysofrain/mood-table-v2.git && cd mood-table-v2
