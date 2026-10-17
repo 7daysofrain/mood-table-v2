@@ -5,9 +5,8 @@
  */
 import type { StripConfig } from '@moodtable/shared';
 
-import { breathing } from './effects/breathing.ts';
 import { defaultParams, type Effect, type FrameContext } from './effects/effect.ts';
-import type { AnyEffect } from './effects/registry.ts';
+import { type AnyEffect, EFFECTS } from './effects/registry.ts';
 
 /** El pulso al que pertenece un frame. Es el mismo objeto en todos los frames. */
 export interface Tick {
@@ -45,9 +44,6 @@ export interface FrameLoop {
   tick(now: number): void;
 }
 
-/** Efecto con el que arranca toda tira: no se declara en el fichero (specs/effects). */
-const INITIAL_EFFECT = breathing;
-
 /** Lo que el bucle guarda de cada tira: su búfer preasignado, sus salidas y su efecto. */
 interface StripSlot {
   frame: Uint8Array;
@@ -70,10 +66,19 @@ function createSlot<P, M>(strip: LoopStrip, effect: Effect<P, M>): StripSlot {
 export function createFrameLoop(
   strips: readonly LoopStrip[],
   fps: number,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- solo la forma: la usa el paso 1.4
-  _options: FrameLoopOptions = {},
+  { effects = EFFECTS }: FrameLoopOptions = {},
 ): FrameLoop {
-  const slots = strips.map((strip) => createSlot(strip, INITIAL_EFFECT));
+  // Cada tira arranca con el efecto que declara el fichero (specs/effects). El fichero ya valida el
+  // id contra el catálogo, y un test comprueba que el registro tiene los mismos.
+  const slots = strips.map((strip) => {
+    const effect = effects.find((each) => each.id === strip.config.effect);
+    if (!effect) {
+      throw new Error(
+        `la tira «${strip.config.id}» declara el efecto «${strip.config.effect}», que el motor no tiene`,
+      );
+    }
+    return createSlot(strip, effect);
+  });
   // Se reutilizan en cada pulso: dentro del bucle no se crean objetos (README §2.2).
   const tick: Tick = { seq: -1, time: 0 };
   const ctx: FrameContext = { time: 0, dt: 0, audio: null };

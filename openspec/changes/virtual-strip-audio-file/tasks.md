@@ -28,7 +28,7 @@
   tiras, cada una con el suyo, con un efecto de prueba registrado); el registro de efectos del motor y
   el catálogo de `shared` tienen los mismos ids y el mismo `usesAudio` (`specs/effects`).
   Verificar: los tests nuevos fallan porque el bucle sigue usando siempre la respiración.
-- [ ] 1.4 Registro de efectos por id en el núcleo; el bucle crea cada tira con el efecto de su
+- [x] 1.4 Registro de efectos por id en el núcleo; el bucle crea cada tira con el efecto de su
   `effect` y deja de tener un efecto inicial fijo.
   Verificar: los tests de 1.3 pasan y los frames dorados de la respiración no cambian.
 - [ ] 1.5 **(test en rojo)** Tests de integración de `config-file.ts`: `MOODTABLE_CONFIG` con una ruta

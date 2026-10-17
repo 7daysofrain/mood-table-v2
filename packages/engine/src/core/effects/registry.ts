@@ -3,6 +3,7 @@
  * efecto del catálogo de `@moodtable/shared`, con el mismo id y el mismo `usesAudio`. El bucle busca
  * aquí el efecto que declara cada tira.
  */
+import { breathing } from './breathing.ts';
 import type { Effect } from './effect.ts';
 
 /**
@@ -11,4 +12,4 @@ import type { Effect } from './effect.ts';
  */
 export type AnyEffect = Effect<unknown, unknown>;
 
-export const EFFECTS: readonly AnyEffect[] = [];
+export const EFFECTS: readonly AnyEffect[] = [breathing];
