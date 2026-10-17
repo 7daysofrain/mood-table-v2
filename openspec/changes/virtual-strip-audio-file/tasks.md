@@ -31,7 +31,7 @@
 - [x] 1.4 Registro de efectos por id en el núcleo; el bucle crea cada tira con el efecto de su
   `effect` y deja de tener un efecto inicial fijo.
   Verificar: los tests de 1.3 pasan y los frames dorados de la respiración no cambian.
-- [ ] 1.5 **(test en rojo)** Tests de integración de `config-file.ts`: `MOODTABLE_CONFIG` con una ruta
+- [x] 1.5 **(test en rojo)** Tests de integración de `config-file.ts`: `MOODTABLE_CONFIG` con una ruta
   relativa se resuelve desde la raíz, aunque el directorio de trabajo sea otro; `audioSource.path`
   relativa se resuelve desde la raíz y la absoluta se respeta (`specs/engine-config`, decisión 8).
   Verificar: los tests nuevos fallan porque hoy se resuelve desde el directorio de trabajo.
