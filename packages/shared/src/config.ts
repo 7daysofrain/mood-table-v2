@@ -197,6 +197,16 @@ function valueAt(data: unknown, segments: string[]): unknown {
   );
 }
 
+/** «valor», como se cita un valor del fichero en los mensajes. */
+function quoted(value: string): string {
+  return `«${value}»`;
+}
+
+/** `id`, como se cita un identificador en los mensajes. */
+function asCode(id: string): string {
+  return `\`${id}\``;
+}
+
 function describeProblem(
   error: SchemaError,
   received: unknown,
@@ -218,11 +228,14 @@ function describeProblem(
       return `admite como mucho ${String(params.limit)} tiras`;
     case 'minLength':
       return 'no puede estar vacío';
-    case 'const':
+    case 'const': {
       // El efecto lista los que hay, como pide specs/engine-config; el resto, los valores admitidos.
-      return field === 'effect'
-        ? `«${String(received)}» no es un efecto (hay: ${allowed.map((id) => `\`${id}\``).join(', ')})`
-        : `«${String(received)}» no es un valor válido (se admite ${allowed.map((value) => `«${value}»`).join(' o ')})`;
+      const value = quoted(String(received));
+      if (field === 'effect') {
+        return `${value} no es un efecto (hay: ${allowed.map(asCode).join(', ')})`;
+      }
+      return `${value} no es un valor válido (se admite ${allowed.map(quoted).join(' o ')})`;
+    }
     default:
       return error.message;
   }
