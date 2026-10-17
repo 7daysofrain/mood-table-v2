@@ -2,7 +2,8 @@
  * Servidor del motor: sirve el build del panel (decisión 12) y abre el WebSocket del visor, una
  * conexión por navegador (decisión 10), en la dirección y el puerto de la configuración (decisión
  * 13). Cada tira tiene su salida del visor, que codifica cada frame con el protocolo de
- * `@moodtable/shared` y lo envía a todos los navegadores conectados.
+ * `@moodtable/shared` y lo envía a todos los navegadores conectados. Por la misma conexión, cada
+ * navegador recibe la fuente de audio al conectarse y su nivel en cada pulso.
  *
  * Sin contramedida para un navegador que no recibe (riesgo aceptado en el design): sus mensajes se
  * acumulan en su conexión hasta que se da por muerta.
@@ -14,7 +15,7 @@ import { join } from 'node:path';
 
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
-import { encodeFrame, type SourceMessage } from '@moodtable/shared';
+import { encodeFrame, encodeLevel, encodeSource, type SourceMessage } from '@moodtable/shared';
 import Fastify from 'fastify';
 
 import type { LevelOutput, LightOutput } from '../core/frame-loop.ts';
@@ -59,7 +60,12 @@ function panelHost({ address, family }: AddressInfo): string {
   return family === 'IPv6' ? `[${address}]` : address;
 }
 
-export async function startServer({ host, port, panelDir }: ServerOptions): Promise<EngineServer> {
+export async function startServer({
+  host,
+  port,
+  panelDir,
+  source = { kind: 'none' },
+}: ServerOptions): Promise<EngineServer> {
   const app = Fastify();
   await app.register(fastifyWebsocket);
   if (existsSync(join(panelDir, 'index.html'))) {
@@ -67,8 +73,12 @@ export async function startServer({ host, port, panelDir }: ServerOptions): Prom
   } else {
     app.get('/', (_request, reply) => reply.code(503).type('text/plain').send(PANEL_NOT_BUILT));
   }
-  // El navegador solo recibe: los frames los envía la salida del visor de cada tira.
-  app.get(VIEWER_PATH, { websocket: true }, () => undefined);
+  // El navegador solo recibe. Al conectarse, la fuente de audio, que no cambia mientras el motor
+  // corre (decisión 5 del change virtual-strip-audio-file); los frames y el nivel, en cada pulso.
+  const sourceMessage = encodeSource(source);
+  app.get(VIEWER_PATH, { websocket: true }, (socket) => {
+    socket.send(sourceMessage);
+  });
   await app.listen({ host, port });
 
   const browsers = app.websocketServer.clients;
@@ -87,7 +97,15 @@ export async function startServer({ host, port, panelDir }: ServerOptions): Prom
         }
       },
     }),
-    levelOutput: { write: () => undefined },
+    levelOutput: {
+      write(level, tick) {
+        if (browsers.size === 0) return;
+        const message = encodeLevel(tick.seq, level);
+        for (const browser of browsers) {
+          if (browser.readyState === browser.OPEN) browser.send(message);
+        }
+      },
+    },
     close: () => app.close(),
   };
 }

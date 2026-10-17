@@ -3,10 +3,13 @@
  * marcha con el temporizador. `main.ts` le pasa las piezas reales; los tests, una salida en
  * memoria.
  */
-import type { Config, StripConfig } from '@moodtable/shared';
+import { basename } from 'node:path';
+
+import type { Config, SourceMessage, StripConfig } from '@moodtable/shared';
 
 import { startTicker, type Ticker } from './adapters/ticker.ts';
-import { createFrameLoop, type LightOutput } from './core/frame-loop.ts';
+import type { AudioSource } from './core/audio/audio-source.ts';
+import { createFrameLoop, type LevelOutput, type LightOutput } from './core/frame-loop.ts';
 
 export interface EngineOptions {
   config: Config;
@@ -15,14 +18,25 @@ export interface EngineOptions {
    * (decisión 2).
    */
   createOutputs: (strip: StripConfig, index: number) => LightOutput[];
+  /** La fuente de audio, si el fichero declara una. */
+  audioSource?: AudioSource;
+  /** Quién recibe el nivel de la fuente en cada pulso. */
+  levelOutputs?: LevelOutput[];
   /** Reloj monótono en milisegundos. Por defecto, `performance.now()`. */
   clock?: () => number;
 }
 
-export function startEngine({ config, createOutputs, clock }: EngineOptions): Ticker {
+export function startEngine({
+  config,
+  createOutputs,
+  audioSource,
+  levelOutputs,
+  clock,
+}: EngineOptions): Ticker {
   const loop = createFrameLoop(
     config.strips.map((strip, index) => ({ config: strip, outputs: createOutputs(strip, index) })),
     config.fps,
+    { audioSource, levelOutputs },
   );
   return startTicker(
     config.fps,
@@ -40,4 +54,15 @@ export function startEngine({ config, createOutputs, clock }: EngineOptions): Ti
 export function startupMessage(file: string, config: Config, panelUrl: string): string {
   const strips = config.strips.length === 1 ? '1 tira' : `${config.strips.length} tiras`;
   return `Mood Table: cargado ${file} · ${strips} a ${config.fps} fps · panel en ${panelUrl}`;
+}
+
+/**
+ * La fuente de audio tal como se anuncia a los paneles: si es un fichero, solo su nombre, nunca la
+ * ruta, que en la demo pública es la del disco de la instancia (decisión 5 del change
+ * virtual-strip-audio-file).
+ */
+export function sourceMessage(config: Config): SourceMessage {
+  return config.audioSource
+    ? { kind: 'file', name: basename(config.audioSource.path) }
+    : { kind: 'none' };
 }

@@ -137,7 +137,7 @@
   mensaje de nivel con el mismo `seq` que los frames, igual para los dos; sin fuente, ningún mensaje de
   nivel (`specs/audio-source`).
   Verificar: el test falla porque el servidor no envía esos mensajes.
-- [ ] 2.13 El servidor recibe la fuente (clase y nombre, sin ruta) al arrancar y la envía a cada
+- [x] 2.13 El servidor recibe la fuente (clase y nombre, sin ruta) al arrancar y la envía a cada
   conexión, y da una `LevelOutput` que envía el nivel a todos los paneles; `main.ts` lo conecta todo.
   Verificar: el test de 2.12 pasa; con `pnpm dev`, un cliente WebSocket de prueba recibe la fuente y el
   nivel.
