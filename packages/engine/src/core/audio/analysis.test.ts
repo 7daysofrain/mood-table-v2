@@ -6,20 +6,26 @@ const RATE = 44_100;
 const PULSE = 1 / 50;
 
 /** Rellena la ventana con un seno continuo de `frequency` Hz, la que acaba en el instante `time`. */
-function fillTone(analyzer: AudioAnalyzer, frequency: number, time: number, amplitude = 1): void {
+function fillTone(
+  analyzer: AudioAnalyzer,
+  frequency: number,
+  time: number,
+  amplitude = 1,
+  rate = RATE,
+): void {
   const { window } = analyzer;
-  const start = time * RATE - window.length;
+  const start = time * rate - window.length;
   for (let index = 0; index < window.length; index++) {
-    window[index] = amplitude * Math.sin((2 * Math.PI * frequency * (start + index)) / RATE);
+    window[index] = amplitude * Math.sin((2 * Math.PI * frequency * (start + index)) / rate);
   }
 }
 
 /** Las bandas tras dos segundos de un tono a 50 pulsos por segundo. */
-function bandsAfterTone(frequency: number): number[] {
-  const analyzer = createAudioAnalyzer(RATE);
+function bandsAfterTone(frequency: number, rate = RATE): number[] {
+  const analyzer = createAudioAnalyzer(rate);
   let bands: number[] = [];
   for (let pulse = 1; pulse <= 100; pulse++) {
-    fillTone(analyzer, frequency, pulse * PULSE);
+    fillTone(analyzer, frequency, pulse * PULSE, 1, rate);
     bands = Array.from(analyzer.update(PULSE).bands);
   }
   return bands;
@@ -62,12 +68,22 @@ describe('el análisis del audio', () => {
     expect(bandsAfterTone(1000)).toHaveLength(24);
   });
 
-  it('con un tono de 400 Hz, las bandas con más energía están en el tercio inferior', () => {
-    expect(strongest(bandsAfterTone(400), 3).every((band) => band < 8)).toBe(true);
-  });
+  it.each([44_100, 48_000])(
+    'a %i Hz, con un tono de 400 Hz, las bandas con más energía están en el tercio inferior',
+    (rate) => {
+      expect(strongest(bandsAfterTone(400, rate), 3).every((band) => band < 8)).toBe(true);
+    },
+  );
 
-  it('con un tono de 8 kHz, las bandas con más energía están en el tercio superior', () => {
-    expect(strongest(bandsAfterTone(8000), 3).every((band) => band >= 16)).toBe(true);
+  it.each([44_100, 48_000])(
+    'a %i Hz, con un tono de 8 kHz, las bandas con más energía están en el tercio superior',
+    (rate) => {
+      expect(strongest(bandsAfterTone(8000, rate), 3).every((band) => band >= 16)).toBe(true);
+    },
+  );
+
+  it('una misma frecuencia cae en la misma banda a 44,1 y a 48 kHz', () => {
+    expect(strongest(bandsAfterTone(1000, 48_000), 1)).toEqual(strongest(bandsAfterTone(1000), 1));
   });
 
   it('marca el silencio digital como silencio, y una señal mínima, no', () => {
