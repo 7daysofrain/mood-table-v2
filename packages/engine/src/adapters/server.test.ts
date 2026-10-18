@@ -120,6 +120,14 @@ describe('el servidor del motor', () => {
     }).not.toThrow();
   });
 
+  it('sin navegadores conectados, la salida de nivel no envía nada ni falla', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
+
+    expect(() => {
+      server?.levelOutput.write(0.5, { seq: 0, time: 0 });
+    }).not.toThrow();
+  });
+
   it('sirve el index.html del build del panel en /', async () => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
 
