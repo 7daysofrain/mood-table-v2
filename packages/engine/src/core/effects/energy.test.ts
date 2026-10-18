@@ -93,6 +93,33 @@ describe('energía', () => {
     expect(channel(frame, 1).every((value) => value === 0)).toBe(true);
   });
 
+  it('la caída no depende de los fps: cuando el audio baja, se apaga en el mismo instante a 30 y a 60 fps', () => {
+    // El audio baja sin llegar a silencio digital: así apaga la tira la caída de los LEDs, y no la
+    // puerta de silencio.
+    const loud = { bands: new Float32Array(24).fill(1), silent: false };
+    const quiet = { bands: new Float32Array(24).fill(1e-4), silent: false };
+    const darkAfter = (fps: number) => {
+      const memory = energy.createMemory(strip(60));
+      const out = new Uint8Array(180);
+      // Tres segundos fuertes, para que se apague el destello del arranque y la tira se asiente.
+      for (let pulse = 1; pulse <= 3 * fps; pulse++) {
+        energy.render({ time: pulse / fps, dt: 1 / fps, audio: loud }, {}, memory, out);
+      }
+      for (let pulse = 1; pulse <= 3 * fps; pulse++) {
+        energy.render({ time: 3 + pulse / fps, dt: 1 / fps, audio: quiet }, {}, memory, out);
+        if (out.every((value) => value === 0)) return pulse / fps;
+      }
+      return Number.NaN;
+    };
+
+    const at30 = darkAfter(30);
+    const at60 = darkAfter(60);
+
+    // Cae de verdad (en algo más de un segundo), no se corta de golpe.
+    expect(at30).toBeGreaterThan(0.5);
+    expect(Math.abs(at30 - at60)).toBeLessThanOrEqual(1 / 30);
+  });
+
   it('en una tira de LEDs impares, el tramo también queda centrado', () => {
     expect(isCenteredSegment(channel(frameAfterTone(400, 61), 0))).toBe(true);
   });
