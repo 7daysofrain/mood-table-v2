@@ -14,6 +14,7 @@
  */
 import { type EnergyParams, EnergyParamsSchema, type StripConfig } from '@moodtable/shared';
 
+import { BAND_COUNT } from '../audio/analysis.ts';
 import { blur, follow, gaussianKernel } from '../audio/dsp.ts';
 import type { Effect } from './effect.ts';
 
@@ -98,7 +99,7 @@ function createEnergyMemory(strip: StripConfig): EnergyMemory {
   const half = Math.ceil(strip.ledCount / 2);
   const center = (strip.ledCount - 1) / 2;
   return {
-    gain: new Float64Array(24).fill(BAND_GAIN.initial),
+    gain: new Float64Array(BAND_COUNT).fill(BAND_GAIN.initial),
     leds: new Float64Array(CHANNELS * half).fill(LED_SMOOTHING.initial),
     rounded: new Float64Array(half),
     blurred: new Float64Array(half),

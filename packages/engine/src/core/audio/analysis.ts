@@ -41,7 +41,7 @@ export interface AudioAnalyzer {
 /** Dos bloques de 960 muestras a 48 kHz en la v1 (`N_ROLLING_HISTORY` y `MIC_RATE / FPS`). */
 const WINDOW_SECONDS = 0.04;
 /** `N_FFT_BINS`, `MIN_FREQUENCY` y `MAX_FREQUENCY` de la v1. */
-const BAND_COUNT = 24;
+export const BAND_COUNT = 24;
 const MIN_FREQUENCY = 200;
 const MAX_FREQUENCY = 12_000;
 /** `MIN_VOLUME_THRESHOLD`: por debajo, en toda la ventana, es silencio digital. */
@@ -98,7 +98,9 @@ export function createAudioAnalyzer(sampleRate: number): AudioAnalyzer {
       }
       fft.realTransform(spectrum, input);
       for (let bin = 0; bin < magnitudes.length; bin++) {
-        magnitudes[bin] = Math.hypot(spectrum[2 * bin] ?? 0, spectrum[2 * bin + 1] ?? 0);
+        const real = spectrum[2 * bin] ?? 0;
+        const imaginary = spectrum[2 * bin + 1] ?? 0;
+        magnitudes[bin] = Math.sqrt(real * real + imaginary * imaginary);
       }
 
       for (let band = 0; band < BAND_COUNT; band++) {
