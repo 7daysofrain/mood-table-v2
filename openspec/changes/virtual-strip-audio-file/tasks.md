@@ -142,12 +142,12 @@
   Verificar: el test de 2.12 pasa; con `pnpm dev`, un cliente WebSocket de prueba recibe la fuente y el
   nivel.
 - [ ] 2.14 Audio de la demo (decisión 9): con permiso del usuario, descargar *Bouncer* de OpenGameArt y
-  comprobar su licencia CC0 en la página; cortar el loop en los compases que elija el usuario, en PCM de
-  16 bits, mono y 44,1 kHz, en `config/audio/bouncer.wav`, con `config/audio/README.md` (autor,
-  enlace, licencia y tramo). `config/demo.json` declara esa fuente y `"effect": "energy"`. Sin commit:
-  lo mismo en `config/local.json` de esta máquina.
-  Verificar: el fichero ocupa 5 MB o menos; en un clon limpio, `pnpm dev` muestra la tira reaccionando
-  a la música, y el final del loop enlaza con el principio sin un salto que se note en la tira.
+  comprobar su licencia CC0 en la página; el WAV original, tal cual, en `config/audio/bouncer.wav`,
+  con `config/audio/README.md` (autor, enlace, licencia y que es el original). `config/demo.json`
+  declara esa fuente y `"effect": "energy"`. Sin commit: lo mismo en `config/local.json` de esta
+  máquina.
+  Verificar: el fichero es el original, byte a byte; en un clon limpio, `pnpm dev` muestra la tira
+  reaccionando a la música, y al volver a empezar la tira no se apaga (decisión 9).
 - [ ] 2.15 Documentación:
   - README §2.2 (*Análisis de audio*: bandas mel, nivel, sin detector de golpes; efecto *energía*) y
     el ticket `MOO-20` del §6 (sin parámetros de sensibilidad ni golpes; rasgos que calcula);

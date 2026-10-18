@@ -30,8 +30,8 @@ deterministas. Ya no está bloqueada: el spike de rendimiento confirmó TypeScri
 - **Fuente y nivel en el panel**: la cabecera dice qué fuente de audio hay (o que no hay ninguna) y
   muestra su nivel en tiempo real. Viajan por el mismo WebSocket que los frames, como mensajes nuevos
   del protocolo.
-- **Demo con música**: `config/demo.json` declara una tira con *energía* y un loop de techno con
-  licencia CC0 como fuente, así que `pnpm dev` muestra la parte reactiva sin preparar nada.
+- **Demo con música**: `config/demo.json` declara una tira con *energía* y un tema de electro con
+  licencia CC0, en bucle, como fuente, así que `pnpm dev` muestra la parte reactiva sin preparar nada.
 
 ## Capabilities
 
@@ -79,7 +79,7 @@ Fuera también, decidido en la exploración:
   protocolo), `packages/engine` (puerto `AudioSource`, lector WAV, análisis, *energía*, envío de la
   fuente y del nivel) y `packages/panel` (cabecera con fuente y nivel).
 - **Dependencias nuevas**: `fft.js` en el catálogo (validada en el spike `MOO-12`, D48).
-- **Ficheros nuevos**: el loop de la demo (*Bouncer*, de Of Far Different Nature, CC0) junto a
+- **Ficheros nuevos**: el tema de la demo (*Bouncer*, de Of Far Different Nature, CC0) junto a
   `config/demo.json` con una nota de origen y licencia, y un WAV de golpes aislados para los tests,
   generado por un script.
 - **Configuración local**: el `config/local.json` de la máquina del desarrollo se actualiza en
