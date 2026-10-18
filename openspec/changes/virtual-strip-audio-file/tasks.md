@@ -148,7 +148,7 @@
   máquina.
   Verificar: el fichero es el original, byte a byte; en un clon limpio, `pnpm dev` muestra la tira
   reaccionando a la música, y al volver a empezar la tira no se apaga (decisión 9).
-- [ ] 2.15 Documentación:
+- [x] 2.15 Documentación:
   - README §2.2 (*Análisis de audio*: bandas mel, nivel, sin detector de golpes; efecto *energía*) y
     el ticket `MOO-20` del §6 (sin parámetros de sensibilidad ni golpes; rasgos que calcula);
   - README §1.4: la demo suena con un loop CC0 y la tira tiene *energía*;

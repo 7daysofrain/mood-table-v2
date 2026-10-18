@@ -191,6 +191,8 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | **Simulador** | *(no es una pieza)* | Uso del instrumento **sin tiras físicas**: solo tiras virtuales, con cualquier fuente de audio (fichero, o tarjeta de sonido en Linux). Es la H1. |
 | **Salida** | `output` | A dónde van los colores de una tira: **Adalight** (serie, tira física) o **virtual**. |
 | **Fuente de audio** | `audioSource` | De dónde sale la música: **tarjeta de sonido** o **fichero**. Opcional: sin fuente solo funcionan los efectos de ambiente. |
+| **Nivel** | `level` | Cuánta señal llega de la fuente de audio en cada instante, antes de que el motor la ajuste. El panel lo muestra en tiempo real. |
+| **Golpe** | *(no aparece en el código)* | Cada sonido corto y fuerte de la música, como el bombo, que destaca sobre lo que suena alrededor. Los efectos reactivos lo marcan con la luz. |
 | **Efecto** | `effect` | Algoritmo que decide los colores de una tira en cada instante. **Reactivo** si usa el audio; **de ambiente** si no. |
 | **Parámetro** | `param` | Cada ajuste que declara un efecto (p. ej. *sensibilidad*), con su tipo, rango y valor por defecto. Lo define el código. |
 | **Valor** | `value` | Lo que vale ahora un parámetro en una tira concreta. Lo decide el DJ y se guarda. |
