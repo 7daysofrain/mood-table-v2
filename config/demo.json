@@ -1,12 +1,13 @@
 {
   "fps": 60,
+  "audioSource": { "type": "file", "path": "config/audio/bouncer.wav" },
   "strips": [
     {
       "id": "demo",
       "name": "Tira de prueba",
       "output": { "type": "virtual" },
       "ledCount": 60,
-      "effect": "breathing"
+      "effect": "energy"
     }
   ]
 }

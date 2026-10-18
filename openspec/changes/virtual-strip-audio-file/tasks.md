@@ -141,7 +141,7 @@
   conexión, y da una `LevelOutput` que envía el nivel a todos los paneles; `main.ts` lo conecta todo.
   Verificar: el test de 2.12 pasa; con `pnpm dev`, un cliente WebSocket de prueba recibe la fuente y el
   nivel.
-- [ ] 2.14 Audio de la demo (decisión 9): con permiso del usuario, descargar *Bouncer* de OpenGameArt y
+- [x] 2.14 Audio de la demo (decisión 9): con permiso del usuario, descargar *Bouncer* de OpenGameArt y
   comprobar su licencia CC0 en la página; el WAV original, tal cual, en `config/audio/bouncer.wav`,
   con `config/audio/README.md` (autor, enlace, licencia y que es el original). `config/demo.json`
   declara esa fuente y `"effect": "energy"`. Sin commit: lo mismo en `config/local.json` de esta
