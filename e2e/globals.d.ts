@@ -5,8 +5,13 @@
  */
 interface MoodTableAudio {
   state: 'silent' | 'preparing' | 'playing';
-  /** El punto que suena menos el del visor, en segundos. Callado, `undefined`. */
+  /**
+   * El último error medido antes de corregir: el punto que suena menos el del visor, en segundos.
+   * Callado, o antes de la primera comprobación, `undefined`.
+   */
   error: number | undefined;
+  /** Cuántas veces ha saltado para corregir la deriva desde que el maker pidió oír. */
+  jumps: number;
 }
 
 interface Window {

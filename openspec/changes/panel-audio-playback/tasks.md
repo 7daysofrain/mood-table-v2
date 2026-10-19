@@ -141,7 +141,7 @@
   Verificar: los tests nuevos fallan porque arranca en cuanto tiene el fichero.
 - [x] 2.18 `player.ts` espera al reloj de audio en marcha para el primer arranque.
   Verificar: los tests de 2.17 pasan.
-- [ ] 2.19 E2E de sincronía con los saltos: *Oír* y *Volver a oír*, sin saltos tras arrancar; *El
+- [x] 2.19 E2E de sincronía con los saltos: *Oír* y *Volver a oír*, sin saltos tras arrancar; *El
   bucle* (~10 s), como mucho uno. Avisos de Sonar `S2925` en `e2e/playback.spec.ts`: «no suena solo» y
   «al volver el motor» esperan a que el visor cambie en vez de un tiempo fijo; las esperas de «el motor
   lleva un rato» y «dejó de oír hace un rato» son de tiempo por definición y se marcan con
