@@ -80,7 +80,7 @@
   por encima del umbral para el nodo y arranca otro; al perder la conexión, deja de sonar y suelta el
   buffer (decisión 3).
   Verificar: los tests nuevos fallan porque el reproductor no existe.
-- [ ] 2.7 `packages/panel/src/audio/player.ts`: Web Audio (`decodeAudioData`, `AudioBufferSourceNode`
+- [x] 2.7 `packages/panel/src/audio/player.ts`: Web Audio (`decodeAudioData`, `AudioBufferSourceNode`
   con `loop`, `start(cuando, desde)`, `getOutputTimestamp` y `outputLatency`), con la sincronía de 2.5
   comprobada unas pocas veces por segundo.
   Verificar: los tests de 2.6 pasan.

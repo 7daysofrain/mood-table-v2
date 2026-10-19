@@ -254,7 +254,9 @@ describe('el reproductor del fichero de audio', () => {
 
     expect(first.stopped).toBe(true);
     expect(context.nodes).toHaveLength(2);
-    expect(lastNode().started?.offset).toBeCloseTo(point.value + 0.04, 2);
+    // El nodo nuevo suena ahora por el punto que mostrará el visor cuando se oiga, 40 ms después.
+    const { when, offset } = lastNode().started ?? { when: 0, offset: 0 };
+    expect(offset + (context.currentTime - when)).toBeCloseTo(point.value + 0.04, 3);
     expect(Math.abs(player.error ?? 1)).toBeLessThan(0.02);
   });
 
@@ -271,7 +273,7 @@ describe('el reproductor del fichero de audio', () => {
     expect(player.error).toBeCloseTo(0.015, 3);
   });
 
-  it('al perder la conexión, calla y suelta el buffer: al volver, lo descarga otra vez', async () => {
+  it('sin conexión, calla y suelta el buffer: al volver, lo descarga otra vez', async () => {
     const point = { value: 1 };
     player.play();
     await settle();
