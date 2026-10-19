@@ -64,7 +64,7 @@
 - [x] 2.3 La conexión decodifica la posición con el protocolo de `@moodtable/shared` y la entrega a sus
   suscriptores con `performance.now()` de la llegada.
   Verificar: los tests de 2.2 pasan.
-- [ ] 2.4 **(test en rojo)** Tests de `sync.ts`, sin navegador ni temporizadores: el punto de arranque
+- [x] 2.4 **(test en rojo)** Tests de `sync.ts`, sin navegador ni temporizadores: el punto de arranque
   es la posición del visor más la latencia declarada; sin latencia declarada, se toma 0; el error es
   circular (93,7 s frente a 0,1 s en un fichero de 93,8 s es +0,2 s); unas pocas llegadas retrasadas
   por *jitter* no mueven la referencia filtrada; a 19 ms de error no salta y a 21 ms sí; tras muchas
