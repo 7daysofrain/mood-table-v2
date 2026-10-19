@@ -24,7 +24,7 @@ export function PanelLayout({ status, audio, viewer }: Readonly<PanelLayoutProps
   return (
     <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Title order={1} size="h3">
             Mood Table
           </Title>

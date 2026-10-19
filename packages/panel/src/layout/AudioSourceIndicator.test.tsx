@@ -31,6 +31,13 @@ describe('la fuente de audio de la cabecera', () => {
     expect(screen.getByRole('meter', METER)).toBeInTheDocument();
   });
 
+  it('con un nombre largo, lo recorta y deja el completo como título', () => {
+    const name = 'una-sesion-de-techno-muy-larga-grabada-en-directo-en-la-mesa-del-dj.wav';
+    render(<AudioSourceIndicator source={{ kind: 'file', name }} levels={{ level: 0 }} />);
+
+    expect(screen.getByText(`Fichero: ${name}`)).toHaveAttribute('title', name);
+  });
+
   it('sin fuente, dice «Sin fuente de audio» y no hay vúmetro', () => {
     render(<AudioSourceIndicator source={{ kind: 'none' }} levels={{ level: undefined }} />);
 
@@ -56,6 +63,7 @@ describe('la fuente de audio de la cabecera', () => {
     levels.level = 1;
     nextAnimationFrame();
     expect(meter).toHaveAttribute('aria-valuenow', '0');
+    expect(meter).toHaveAttribute('aria-valuetext', '0 dB');
 
     levels.level = undefined;
     nextAnimationFrame();

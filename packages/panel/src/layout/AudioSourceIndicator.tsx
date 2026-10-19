@@ -28,7 +28,10 @@ export function AudioSourceIndicator({
   }
   return (
     <Group gap="xs" wrap="nowrap">
-      <Text size="sm">{`Fichero: ${source.name}`}</Text>
+      {/* Un nombre largo se recorta para no desbordar la cabecera; el completo, al pasar el ratón. */}
+      <Text size="sm" truncate="end" maw={260} title={source.name}>
+        {`Fichero: ${source.name}`}
+      </Text>
       <LevelMeter levels={levels} />
     </Group>
   );
@@ -50,9 +53,11 @@ function LevelMeter({ levels }: Readonly<{ levels: LevelSource }>) {
 
     let request = 0;
     const draw = () => {
-      const level = levels.level ?? 0;
-      meter.setAttribute('aria-valuenow', String(Math.round(levelToDecibels(level))));
-      bar.style.width = `${(levelToFill(level) * 100).toFixed(1)}%`;
+      const decibels = Math.round(levelToDecibels(levels.level ?? 0));
+      meter.setAttribute('aria-valuenow', String(decibels));
+      // El lector de pantalla lee el valor con su unidad.
+      meter.setAttribute('aria-valuetext', `${decibels} dB`);
+      bar.style.width = `${(levelToFill(levels.level ?? 0) * 100).toFixed(1)}%`;
       request = requestAnimationFrame(draw);
     };
     request = requestAnimationFrame(draw);
@@ -70,6 +75,7 @@ function LevelMeter({ levels }: Readonly<{ levels: LevelSource }>) {
       aria-valuemin={METER_MIN_DB}
       aria-valuemax={0}
       aria-valuenow={METER_MIN_DB}
+      aria-valuetext={`${METER_MIN_DB} dB`}
       w={120}
       h={8}
       bg="var(--mantine-color-default-border)"
