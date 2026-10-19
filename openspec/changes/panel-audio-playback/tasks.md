@@ -103,7 +103,7 @@
   tarda en llegar* (`page.route` retrasa `/audio`: se ve «Preparando el audio»); *El motor se para
   mientras el maker oye* (calla y, al volver, no suena solo). Los E2E de HU1 y HU2 siguen pasando.
   Verificar: `pnpm test:e2e` pasa en local y en la CI.
-- [ ] 2.11 Comprobación a oído con el usuario: con `pnpm dev` y `bouncer.wav`, el usuario oye el panel
+- [x] 2.11 Comprobación a oído con el usuario: con `pnpm dev` y `bouncer.wav`, el usuario oye el panel
   unos minutos, deja de oírlo y vuelve, y juzga si la tira va al ritmo de lo que oye (caso feliz de
   `MOO-22`). Si el salto de la corrección se nota, se anota para pasar a `playbackRate` (decisión 4).
   Verificar: el resultado queda en la descripción de la PR.
