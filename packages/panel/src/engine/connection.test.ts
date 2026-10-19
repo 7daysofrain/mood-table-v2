@@ -1,4 +1,4 @@
-import { encodeFrame } from '@moodtable/shared';
+import { encodeFrame, encodeLevel, encodeSource } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EngineConnection, type SocketLike, viewerUrl } from './connection.ts';
@@ -233,5 +233,90 @@ describe('la dirección del WebSocket del visor', () => {
     [{ protocol: 'https:', host: 'moodtable.example' }, 'wss://moodtable.example/ws'],
   ])('desde %j es %s', (location, url) => {
     expect(viewerUrl(location)).toBe(url);
+  });
+});
+
+describe('la fuente de audio y su nivel', () => {
+  it('guarda la fuente que anuncia el motor al conectarse y avisa', () => {
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    connection.start();
+    lastSocket().open();
+    listener.mockClear();
+
+    lastSocket().receive(encodeSource({ kind: 'file', name: 'golpes.wav' }));
+
+    expect(connection.source).toEqual({ kind: 'file', name: 'golpes.wav' });
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('sabe también que no hay fuente de audio', () => {
+    connection.start();
+    lastSocket().open();
+
+    lastSocket().receive(encodeSource({ kind: 'none' }));
+
+    expect(connection.source).toEqual({ kind: 'none' });
+  });
+
+  it('guarda el último nivel, sin avisar en cada pulso', () => {
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeSource({ kind: 'file', name: 'golpes.wav' }));
+    listener.mockClear();
+
+    lastSocket().receive(encodeLevel(1, 0.25));
+    lastSocket().receive(encodeLevel(2, 0.5));
+
+    expect(connection.level).toBe(0.5);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('al cerrarse la conexión, olvida la fuente y el nivel', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeSource({ kind: 'file', name: 'golpes.wav' }));
+    lastSocket().receive(encodeLevel(1, 0.5));
+
+    lastSocket().drop();
+
+    expect(connection.source).toBeUndefined();
+    expect(connection.level).toBeUndefined();
+  });
+
+  it('al pararla, también los olvida', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeSource({ kind: 'file', name: 'golpes.wav' }));
+    lastSocket().receive(encodeLevel(1, 0.5));
+
+    connection.stop();
+
+    expect(connection.source).toBeUndefined();
+    expect(connection.level).toBeUndefined();
+  });
+
+  it('ignora los mensajes de fuente y de nivel mal formados', () => {
+    connection.start();
+    lastSocket().open();
+
+    lastSocket().receive(Uint8Array.of(2, 7));
+    lastSocket().receive(Uint8Array.of(3, 0, 0, 0, 1, 0x40, 0, 0, 0));
+
+    expect(connection.source).toBeUndefined();
+    expect(connection.level).toBeUndefined();
+  });
+
+  it('los frames siguen llegando igual entre los mensajes de fuente y de nivel', () => {
+    connection.start();
+    lastSocket().open();
+
+    lastSocket().receive(encodeSource({ kind: 'file', name: 'golpes.wav' }));
+    lastSocket().receive(encodeFrame(1, 0, Uint8Array.of(1, 2, 3)));
+    lastSocket().receive(encodeLevel(1, 0.5));
+
+    expect(connection.frames).toEqual(new Map([[0, Uint8Array.of(1, 2, 3)]]));
   });
 });

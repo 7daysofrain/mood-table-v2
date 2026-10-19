@@ -161,7 +161,7 @@
 
 ## 3. MOO-21 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests de la conexión del panel con un WebSocket falso: guarda la fuente del
+- [x] 3.1 **(test en rojo)** Tests de la conexión del panel con un WebSocket falso: guarda la fuente del
   mensaje de tipo `2` y el último nivel del tipo `3`; al cerrarse, olvida los dos; ignora los mensajes
   mal formados; los frames siguen funcionando igual (`specs/audio-source`).
   Verificar: los tests nuevos fallan porque la conexión no decodifica esos mensajes.

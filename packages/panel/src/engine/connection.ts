@@ -4,7 +4,7 @@
  * tira, decodificado con el protocolo de `@moodtable/shared`. No sabe nada de React: el visor lee los
  * frames cuando dibuja, y la cabecera se suscribe a los cambios de estado.
  */
-import { decodeFrame } from '@moodtable/shared';
+import { decodeFrame, type SourceMessage } from '@moodtable/shared';
 
 export type ConnectionStatus = 'connected' | 'disconnected';
 
@@ -50,6 +50,16 @@ export class EngineConnection {
   /** El último frame recibido de cada tira, por su índice. Sin conexión, vacío. */
   get frames(): ReadonlyMap<number, Uint8Array> {
     return this.lastFrames;
+  }
+
+  /** La fuente de audio que anunció el motor al conectarse. Sin conexión, `undefined`. */
+  get source(): SourceMessage | undefined {
+    return undefined;
+  }
+
+  /** El último nivel de la fuente de audio, de 0 a 1. Sin conexión o sin fuente, `undefined`. */
+  get level(): number | undefined {
+    return undefined;
   }
 
   /** Avisa de cada cambio de estado. Devuelve la función para darse de baja. */
