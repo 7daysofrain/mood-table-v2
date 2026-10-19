@@ -9,6 +9,8 @@ import { Zone } from './Zone.tsx';
 interface PanelLayoutProps {
   /** Estado de la conexión con el motor, que muestra la cabecera. */
   status: ConnectionStatus;
+  /** La fuente de audio y su vúmetro, a la izquierda del indicador de conexión. */
+  audio?: ReactNode;
   /** Contenido de la zona «Visor». */
   viewer?: ReactNode;
 }
@@ -18,7 +20,7 @@ interface PanelLayoutProps {
  * debajo, tiras, efectos y controles en tres columnas. Cada historia pone su contenido en su zona; las
  * que aún no rellena ninguna, quedan vacías.
  */
-export function PanelLayout({ status, viewer }: Readonly<PanelLayoutProps>) {
+export function PanelLayout({ status, audio, viewer }: Readonly<PanelLayoutProps>) {
   return (
     <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>
@@ -26,7 +28,10 @@ export function PanelLayout({ status, viewer }: Readonly<PanelLayoutProps>) {
           <Title order={1} size="h3">
             Mood Table
           </Title>
-          <ConnectionIndicator status={status} />
+          <Group gap="lg" wrap="nowrap">
+            {audio}
+            <ConnectionIndicator status={status} />
+          </Group>
         </Group>
       </AppShell.Header>
 

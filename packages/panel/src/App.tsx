@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 import { EngineConnection, viewerUrl } from './engine/connection.ts';
+import { AudioSourceIndicator } from './layout/AudioSourceIndicator.tsx';
 import { PanelLayout } from './layout/PanelLayout.tsx';
 import { Viewer } from './viewer/Viewer.tsx';
 
@@ -12,7 +13,8 @@ export type PanelConnection = Pick<
 
 /**
  * Componente raíz del panel: se conecta al motor en la misma dirección que sirve el panel, la
- * cabecera muestra el estado de la conexión y el visor dibuja sus frames. El resto de zonas las
+ * cabecera muestra la fuente de audio, su nivel y el estado de la conexión, y el visor dibuja sus
+ * frames. El resto de zonas las
  * rellenan las historias de H2 y H4.
  */
 export function App({ connection: provided }: Readonly<{ connection?: PanelConnection }>) {
@@ -29,6 +31,13 @@ export function App({ connection: provided }: Readonly<{ connection?: PanelConne
 
   const subscribe = useCallback((listener: () => void) => connection.subscribe(listener), [connection]);
   const status = useSyncExternalStore(subscribe, () => connection.status);
+  const source = useSyncExternalStore(subscribe, () => connection.source);
 
-  return <PanelLayout status={status} viewer={<Viewer source={connection} />} />;
+  return (
+    <PanelLayout
+      status={status}
+      audio={<AudioSourceIndicator source={source} levels={connection} />}
+      viewer={<Viewer source={connection} />}
+    />
+  );
 }

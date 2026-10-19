@@ -173,7 +173,7 @@
   «Sin fuente de audio» y no hay vúmetro; sin conexión, ni fuente ni vúmetro; el vúmetro va vacío a
   −60 dB o menos y lleno a 0 dB (`specs/audio-source`, decisión 14).
   Verificar: los tests nuevos fallan porque la cabecera no muestra la fuente.
-- [ ] 3.4 Fuente y vúmetro en la cabecera, a la izquierda del indicador de conexión, con componentes de
+- [x] 3.4 Fuente y vúmetro en la cabecera, a la izquierda del indicador de conexión, con componentes de
   Mantine; el vúmetro pinta el último nivel en cada `requestAnimationFrame`.
   Verificar: los tests de 3.3 pasan y, con `pnpm dev`, la cabecera dice «Fichero: bouncer.wav» y el
   vúmetro sigue la música.
