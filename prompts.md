@@ -809,6 +809,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Un WAV que no sirve: el motor no arranca y dice qué formato acepta, sin explicar cómo convertirlo, por decisión del humano.*
 - *El humano pidió que la actualización de su `config/local.json` fuera un paso de cada tarea y no un aviso suelto: no produce commit, y la PR lo avisa.*
 
+#### 6.17 La HU2 de punta a punta: fichero de audio, energía y panel (`MOO-19`, `MOO-20` y `MOO-21`)
+
+**Prompt 1:**
+
+> Lanza también un subagente de code review
+
+*Claude Code (`claude-opus-5-5`, 17-19 oct), `/opsx:apply` de la historia, sección a sección y una PR por tarea. Copilot se había quedado sin cuota, así que el humano pidió una revisión con un subagente en cada PR. En `MOO-20` encontró algo que los tests no veían: el de «la caída no depende de los fps» pasaba aunque se quitara la conversión con `dt`, porque con el fichero de golpes la tira la apaga la puerta de silencio y no la caída. La IA lo verificó y escribió un test que falla sin la conversión, y añadió los tonos a 48 kHz, que el escenario del WAV estéreo no cubría.*
+
+**Prompt 2:**
+
+> Si, descargalo, pero no hace falta cortarlo, lo usamos tal cual
+
+*El design preveía cortar un loop mono de 5 MB o menos. Antes de seguir, la IA midió la pista: estéreo, 93,8 s y 16,5 MB en un repo público, y una costura en la que calculó que la tira parpadearía. El humano eligió el estéreo tal cual, porque con `MOO-22` el panel lo hará sonar. Al probarlo con el bucle real, la IA vio que su cálculo era falso (los 35 ms de silencio del principio no llenan la ventana de 40 ms) y corrigió la decisión 9 antes de subirla.*
+
+**Prompt 3:**
+
+> si, queda claro, ya lo habiamos decidido, pensaba que era algo nuevo. No me pidas confirmación para escribir decisiones que ya hemos tomado
+
+*El `tasks.md` decía «D49 y D51, si el usuario las aprueba», y la IA pidió aprobarlas otra vez al cerrar `MOO-20`. El humano no reconoció la D49 como suya y pidió contexto. Tras la explicación, fijó una regla de trabajo: las D# que solo registran lo decidido en la exploración se escriben sin preguntar, y solo se pregunta por lo nuevo. Quedó guardada en la memoria del agente.*
+
+*Ajustes durante la implementación:*
+- *Al leer el código de la v1, la IA encontró que su banco mel tenía las frecuencias un 6 % desplazadas y que *energía* da un destello al empezar a sonar. El humano corrigió lo primero y mantuvo lo segundo. Los escenarios de los tonos pasaron a durar dos segundos, con su commit de OpenSpec.*
+- *SonarQube marcó plantillas anidadas, bucles con índice y un `Math.sqrt` que la propia revisión había propuesto en lugar de `Math.hypot`. Se corrigieron todas; en los bucles, el humano eligió `for…of` antes que aceptar la incidencia.*
+- *Los golpes duran unos 90 ms por segundo, así que los E2E de la historia muestrean el visor y el vúmetro en cada frame de pantalla en lugar de con `expect.poll`.*
+
 ---
 
 ### 7. Pull Requests

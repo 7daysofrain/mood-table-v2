@@ -161,29 +161,29 @@
 
 ## 3. MOO-21 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests de la conexión del panel con un WebSocket falso: guarda la fuente del
+- [x] 3.1 **(test en rojo)** Tests de la conexión del panel con un WebSocket falso: guarda la fuente del
   mensaje de tipo `2` y el último nivel del tipo `3`; al cerrarse, olvida los dos; ignora los mensajes
   mal formados; los frames siguen funcionando igual (`specs/audio-source`).
   Verificar: los tests nuevos fallan porque la conexión no decodifica esos mensajes.
-- [ ] 3.2 La conexión decodifica los mensajes de fuente y de nivel con el protocolo de
+- [x] 3.2 La conexión decodifica los mensajes de fuente y de nivel con el protocolo de
   `@moodtable/shared`, avisa de los cambios de fuente a quien se suscriba y expone el último nivel.
   Verificar: los tests de 3.1 pasan.
-- [ ] 3.3 **(test en rojo)** Tests de la cabecera con Testing Library: con un fichero, dice
+- [x] 3.3 **(test en rojo)** Tests de la cabecera con Testing Library: con un fichero, dice
   «Fichero: golpes.wav» y tiene un vúmetro con nombre «Nivel de la fuente de audio»; sin fuente, dice
   «Sin fuente de audio» y no hay vúmetro; sin conexión, ni fuente ni vúmetro; el vúmetro va vacío a
   −60 dB o menos y lleno a 0 dB (`specs/audio-source`, decisión 14).
   Verificar: los tests nuevos fallan porque la cabecera no muestra la fuente.
-- [ ] 3.4 Fuente y vúmetro en la cabecera, a la izquierda del indicador de conexión, con componentes de
+- [x] 3.4 Fuente y vúmetro en la cabecera, a la izquierda del indicador de conexión, con componentes de
   Mantine; el vúmetro pinta el último nivel en cada `requestAnimationFrame`.
   Verificar: los tests de 3.3 pasan y, con `pnpm dev`, la cabecera dice «Fichero: bouncer.wav» y el
   vúmetro sigue la música.
-- [ ] 3.5 E2E de HU2 en `e2e/`: `e2e/engine.ts` admite la configuración de cada test; un motor con el
+- [x] 3.5 E2E de HU2 en `e2e/`: `e2e/engine.ts` admite la configuración de cada test; un motor con el
   fichero de golpes y una tira con *energía*. Escenarios: *La tira virtual reacciona a un fichero de
   audio* (el visor cambia entre un golpe y el silencio, la cabecera dice «Fichero: golpes.wav» y el
   vúmetro se mueve); *Instrumento sin fuente de audio* (con la configuración de `e2e/config.json`, la
   cabecera dice «Sin fuente de audio»). Los E2E de HU1 siguen pasando.
   Verificar: `pnpm test:e2e` pasa en local y en la CI.
-- [ ] 3.6 Documentación y cierre de la historia:
+- [x] 3.6 Documentación y cierre de la historia:
   - README §1.3 (*Cabecera*) y §2.2 (*Panel y visor*), si cambia lo que describen;
   - `prompts.md`: entrada de la implementación de la historia, con el formato de `course.md` §5;
   - cada escenario de los criterios de `MOO-14` tiene su test (DoD de la historia).
