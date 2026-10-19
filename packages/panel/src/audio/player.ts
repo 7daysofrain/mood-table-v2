@@ -60,6 +60,12 @@ const CHECK_MS = 250;
  */
 const LEAD = 0.05;
 
+/**
+ * Cuánto reloj de audio (s) se espera, como mucho, a que el navegador diga cuándo se oye lo que suena
+ * antes del primer arranque. Pasado, se arranca con el retraso que declara.
+ */
+const STARTUP = 1;
+
 /** Ruta en la que el motor sirve el fichero de audio. */
 const AUDIO_PATH = '/audio';
 
@@ -86,6 +92,22 @@ interface Arrival {
 interface Track {
   buffer: AudioBuffer;
   sync: Sync;
+}
+
+/**
+ * Si el reloj de audio ya va al paso del panel (decisión 3). Recién creado, el contexto aún no suena:
+ * su reloj no va al paso de `performance.now()`, el retraso declarado puede valer 0 y
+ * `getOutputTimestamp()` da `performanceTime = 0`. Arrancar entonces suena tarde y la corrección
+ * salta enseguida. Si tras `STARTUP` el navegador sigue sin dar el instante, o no tiene la API, vale el
+ * retraso declarado.
+ */
+function running(context: AudioContextLike, clock: AudioClock): boolean {
+  if (context.state !== 'running') return false;
+  return (
+    clock.timestamp === undefined ||
+    clock.timestamp.performanceTime > 0 ||
+    clock.contextTime >= STARTUP
+  );
 }
 
 export class AudioPlayer {
@@ -232,6 +254,8 @@ export class AudioPlayer {
     if (this.current !== 'preparing' && !this.playing) return;
     if (!context || !track) return;
     const clock = this.clock(context);
+    // Arranca con la siguiente posición que llegue, cuando el reloj ya vaya.
+    if (!running(context, clock)) return;
     const when = clock.contextTime + LEAD;
     const offset = track.sync.pointAt(audibleAt(clock, when));
     // Sin posiciones todavía: arrancará con la primera que llegue.
