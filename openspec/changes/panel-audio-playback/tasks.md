@@ -57,7 +57,7 @@
   local y en la CI. Si pasa, se queda como primer test del fichero; si no, se para y se decide con el
   usuario la alternativa (navegador con pantalla con `xvfb` o reducir el E2E de sincronía).
   Verificar: el test pasa en local y en la CI, o la decisión queda anotada en `design.md`.
-- [ ] 2.2 **(test en rojo)** Tests de la conexión con un WebSocket falso: decodifica el mensaje de
+- [x] 2.2 **(test en rojo)** Tests de la conexión con un WebSocket falso: decodifica el mensaje de
   tipo `4` y avisa a quien escuche de cada posición con su instante de llegada; ignora un mensaje de
   posición mal formado; al cerrarse, deja de avisar; frames, fuente y nivel siguen igual.
   Verificar: los tests nuevos fallan porque la conexión no decodifica la posición.
