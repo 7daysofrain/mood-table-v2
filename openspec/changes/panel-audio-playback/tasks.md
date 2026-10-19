@@ -74,7 +74,7 @@
 - [x] 2.5 `packages/panel/src/audio/sync.ts`: filtro de mediana circular sobre la última ventana de
   posiciones, error circular, punto de arranque con latencia y decisión de salto con umbral de 20 ms.
   Verificar: los tests de 2.4 pasan.
-- [ ] 2.6 **(test en rojo)** Tests del reproductor con un `AudioContext` falso: descarga `/audio` una
+- [x] 2.6 **(test en rojo)** Tests del reproductor con un `AudioContext` falso: descarga `/audio` una
   sola vez por conexión y decodifica; suena en bucle desde el punto que le pide la sincronía; dejar de
   oír para el nodo; volver a oír crea uno nuevo en el punto del momento sin volver a descargar; un error
   por encima del umbral para el nodo y arranca otro; al perder la conexión, deja de sonar y suelta el
