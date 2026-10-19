@@ -1,10 +1,12 @@
 /**
  * Conexión del panel con el motor (specs/viewer): una única conexión WebSocket con el motor, que se
  * reintenta cada segundo mientras no hay conexión (decisión 15) y guarda el último frame de cada
- * tira, decodificado con el protocolo de `@moodtable/shared`. No sabe nada de React: el visor lee los
- * frames cuando dibuja, y la cabecera se suscribe a los cambios de estado.
+ * tira, decodificado con el protocolo de `@moodtable/shared`, además de la fuente de audio y su último
+ * nivel (decisión 5 del change virtual-strip-audio-file). No sabe nada de React: el visor lee los
+ * frames y el vúmetro el nivel cuando dibujan, y la cabecera se suscribe a los cambios de estado y de
+ * fuente.
  */
-import { decodeFrame, type SourceMessage } from '@moodtable/shared';
+import { decodeFrame, decodeLevel, decodeSource, type SourceMessage } from '@moodtable/shared';
 
 export type ConnectionStatus = 'connected' | 'disconnected';
 
@@ -32,6 +34,8 @@ export class EngineConnection {
   private socket: SocketLike | undefined;
   private retry: ReturnType<typeof setTimeout> | undefined;
   private current: ConnectionStatus = 'disconnected';
+  private currentSource: SourceMessage | undefined;
+  private lastLevel: number | undefined;
 
   constructor(
     url: string,
@@ -54,12 +58,12 @@ export class EngineConnection {
 
   /** La fuente de audio que anunció el motor al conectarse. Sin conexión, `undefined`. */
   get source(): SourceMessage | undefined {
-    return undefined;
+    return this.currentSource;
   }
 
   /** El último nivel de la fuente de audio, de 0 a 1. Sin conexión o sin fuente, `undefined`. */
   get level(): number | undefined {
-    return undefined;
+    return this.lastLevel;
   }
 
   /** Avisa de cada cambio de estado. Devuelve la función para darse de baja. */
@@ -91,7 +95,7 @@ export class EngineConnection {
         socket.close();
       }
     }
-    this.lastFrames.clear();
+    this.forget();
     this.setStatus('disconnected');
   }
 
@@ -104,14 +108,28 @@ export class EngineConnection {
     };
     socket.onmessage = ({ data }) => {
       if (!(data instanceof ArrayBuffer)) return;
-      const frame = decodeFrame(new Uint8Array(data));
+      const message = new Uint8Array(data);
+      const frame = decodeFrame(message);
       // Cada mensaje es un búfer nuevo: los colores se guardan sin copiarlos.
-      if (frame) this.lastFrames.set(frame.stripIndex, frame.colors);
+      if (frame) {
+        this.lastFrames.set(frame.stripIndex, frame.colors);
+        return;
+      }
+      const level = decodeLevel(message);
+      if (level) {
+        this.lastLevel = level.level;
+        return;
+      }
+      const source = decodeSource(message);
+      if (source) {
+        this.currentSource = source;
+        this.notify();
+      }
     };
     // Un fallo al conectar también acaba en `close`: es el único sitio donde se reintenta.
     socket.onclose = () => {
       this.socket = undefined;
-      this.lastFrames.clear();
+      this.forget();
       this.setStatus('disconnected');
       this.retry = setTimeout(() => {
         this.connect();
@@ -120,9 +138,24 @@ export class EngineConnection {
     this.socket = socket;
   }
 
+  /**
+   * Sin conexión no se sabe qué hay en el motor: ni frames, ni fuente, ni nivel. No avisa: la fuente
+   * solo llega con la conexión abierta, así que siempre se olvida a la vez que se pierde, y ese cambio
+   * de estado ya avisa.
+   */
+  private forget(): void {
+    this.lastFrames.clear();
+    this.currentSource = undefined;
+    this.lastLevel = undefined;
+  }
+
   private setStatus(status: ConnectionStatus): void {
     if (status === this.current) return;
     this.current = status;
+    this.notify();
+  }
+
+  private notify(): void {
     for (const listener of this.listeners) listener();
   }
 }

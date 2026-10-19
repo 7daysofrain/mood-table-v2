@@ -165,7 +165,7 @@
   mensaje de tipo `2` y el último nivel del tipo `3`; al cerrarse, olvida los dos; ignora los mensajes
   mal formados; los frames siguen funcionando igual (`specs/audio-source`).
   Verificar: los tests nuevos fallan porque la conexión no decodifica esos mensajes.
-- [ ] 3.2 La conexión decodifica los mensajes de fuente y de nivel con el protocolo de
+- [x] 3.2 La conexión decodifica los mensajes de fuente y de nivel con el protocolo de
   `@moodtable/shared`, avisa de los cambios de fuente a quien se suscriba y expone el último nivel.
   Verificar: los tests de 3.1 pasan.
 - [ ] 3.3 **(test en rojo)** Tests de la cabecera con Testing Library: con un fichero, dice
