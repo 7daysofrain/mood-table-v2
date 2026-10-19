@@ -834,6 +834,32 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *SonarQube marcó plantillas anidadas, bucles con índice y un `Math.sqrt` que la propia revisión había propuesto en lugar de `Math.hypot`. Se corrigieron todas; en los bucles, el humano eligió `for…of` antes que aceptar la incidencia.*
 - *Los golpes duran unos 90 ms por segundo, así que los E2E de la historia muestrean el visor y el vúmetro en cada frame de pantalla en lugar de con `expect.poll`.*
 
+#### 6.18 El change de oír el fichero en el panel: refinamiento, estimación y spec (`MOO-22`)
+
+**Prompt 1:**
+
+> pero esto siempre va a ser así no? Es decir, el motor arranca y empieza a procesar el audio, el navegador cuando entre y se conecte normalmente será en un punto en el futuro, pero rara vez en el "0:00"
+
+*Claude Code (`claude-opus-5-5`, 19-oct), `/refine-story` de la historia, candidato a candidato del poke-holes. La IA proponía un esquema del escenario con dos casos de «oye el punto por el que va el motor»: la primera vez que se oye y al volver tras dejar de oír. El humano vio que el primero no es un caso límite sino el normal, así que pasó al caso feliz («el motor lleva un rato reproduciendo el fichero») y solo quedó aparte *volver a oír*. Antes, su primera versión del caso feliz empezaba a sonar al abrir el panel; la IA explicó que los navegadores exigen un gesto, y de ahí sale el botón de oír y dejar de oír. En la misma sesión, el humano pidió que la recomendación fuera al principio de cada propuesta, para no tener que hacer scroll.*
+
+**Prompt 2:**
+
+> vale, yo no he tenido en cuenta las pruebas complicadas. aunque es cierto que la sincronía podría ser un problema en principio no deberia ser tanto, lo puedo dejar en 5
+
+*`/estimate-story`: el humano sacó un 2 («un componente bastante aislado») y el subagente estimador, a ciegas, un 8: dos áreas y un mensaje nuevo en el protocolo, la sincronía como incógnita seria y E2E con audio real en Chromium sin pantalla. La IA puso las dos cartas lado a lado con los supuestos de cada una, sin elegir por él, y el humano reconoció el coste de las pruebas. Quedó un 5, con la condición de que bastara una resincronización simple, que la exploración tenía que comprobar.*
+
+**Prompt 3:**
+
+> Wen audio tiene un api mas moderno asi que no hay duda
+
+*`/opsx:explore`, decisión a decisión con diagramas en ASCII. La IA recomendaba Web Audio frente a `<audio loop>` y el humano lo aceptó por ser más moderno. La IA no dio el motivo por bueno: las dos API son estándar, y lo que decide es la precisión (saltar a una muestra exacta, un bucle sin costura y conocer el retraso de salida), que es lo que piden los escenarios. El `design.md` lo justifica así.*
+
+*Ajustes durante la exploración y la spec:*
+- *Contra qué reloj sincronizar: la IA mostró que con el del motor la luz iría por detrás del sonido en la demo pública, por la latencia de la red, y recomendó sincronizar contra lo que muestra el visor. El humano lo eligió (D53).*
+- *Cómo sabe el panel por dónde va el fichero: la IA veía dos formas, enviar los `fps` y que el panel lo calcule, o un mensaje con la posición. El humano eligió el mensaje: «fuente de verdad única en el protocolo».*
+- *La deriva: entre saltar al pasar un umbral, ajustar la velocidad o programar cada vuelta, el humano eligió el salto por simplicidad, con la velocidad como plan B si el salto se oye.*
+- *El cambio se aprobó con el commit del change en su PR, y la implementación de `MOO-56` empezó en una rama encima sin esperar a integrarla, por decisión del humano.*
+
 ---
 
 ### 7. Pull Requests

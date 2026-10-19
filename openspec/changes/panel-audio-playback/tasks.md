@@ -39,7 +39,7 @@
   `/audio` con la ruta del fichero que le pasa `main.ts`; `main.ts` lo conecta todo.
   Verificar: los tests de 1.5 pasan; con `pnpm dev`, `curl -sI http://127.0.0.1:8080/audio` da
   `200` y `audio/wav`, y un cliente WebSocket de prueba recibe mensajes de tipo `4`.
-- [ ] 1.7 Documentación:
+- [x] 1.7 Documentación:
   - README §2.2: adaptador *Visor* (también la posición del fichero, tipo `4`), adaptador *Fichero
     WAV* (`positionAt`) y *Reproductor* (el motor sirve el fichero en `/audio`);
   - `docs/idea-mood-table.md` §10: D53 (sincronizar contra el visor, con la posición del fichero que
