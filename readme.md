@@ -107,7 +107,7 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 
 #### Zonas del panel
 
-- **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», o «Sin fuente de audio») con un vúmetro de su nivel; más adelante, los fps reales del motor. Sin conexión no muestra fuente ni nivel.
+- **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», o «Sin fuente de audio») con un vúmetro de su nivel y, si la fuente es un fichero, el botón de oírlo en el panel: un altavoz tachado mientras el panel calla y con ondas mientras suena. Más adelante, los fps reales del motor. Sin conexión no muestra fuente, nivel ni botón.
 - **Visor:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
 - **Tiras:** lista de las tiras declaradas en el fichero de configuración, en solo lectura: nombre, número de LEDs y salida (virtual o Adalight con su puerto). Al seleccionar una, el resto del panel actúa sobre ella.
 - **Efectos:** los efectos disponibles para la tira seleccionada, etiquetados como *reactivo* o *ambiente*, con el activo marcado.
@@ -115,7 +115,7 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 
 #### Recorrido por las funcionalidades principales
 
-1. **Probar en el simulador (H1).** Se abre la demo pública y se pulsa play: suena el fichero de audio y las tiras virtuales reaccionan en el visor.
+1. **Probar en el simulador (H1).** Se abre la demo pública y se pulsa el botón de oír de la cabecera: suena el fichero de audio y las tiras virtuales reaccionan en el visor.
 2. **Tocar los parámetros en vivo (H2).** Se elige otro efecto (espectro, energía, scroll o respiración) y la tira cambia al instante. Se mueve un slider (por ejemplo, la sensibilidad) y la luz responde mientras se arrastra.
 3. **Pintar la tira física (H3).** En la mesa, la lista de tiras muestra la principal con salida *Adalight · /dev/ttyUSB0*. Lo que se ve en el visor es lo que pinta la mesa.
 4. **Declarar mis tiras (H4).** Las tiras, su número de LEDs y su salida son las del fichero de configuración; el panel las muestra pero no las edita.
@@ -133,7 +133,7 @@ Hay tres formas de probar Mood Table, de menos a más esfuerzo: la **demo públi
 #### 1. Probar la demo pública (sin instalar nada) — *disponible con la entrega final*
 
 1. Abre `https://moodtable.josebaalonso.tech`.
-2. Pulsa play: suena una pista de ejemplo y las dos tiras virtuales reaccionan (**H1**).
+2. Pulsa el botón de oír (el altavoz de la cabecera): suena una pista de ejemplo y las dos tiras virtuales reaccionan (**H1**).
 3. En **Efectos**, cambia de *Espectro* a *Energía* o *Scroll*: la tira cambia al instante (**H2**).
 4. En **Controles**, mueve *Sensibilidad*: la luz responde mientras arrastras (**H2**).
 5. En **Tiras**, selecciona la otra tira: los controles pasan a ser los suyos (**H4**).
@@ -397,7 +397,7 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 - **Panel de control:** muestra los efectos, etiquetados como reactivos o de ambiente, y **genera los controles a partir del esquema** del efecto activo de la tira (un número con rango se convierte en slider, un color en selector de color, una lista de opciones en desplegable). Al mover un control, envía el cambio por HTTP, limitando la frecuencia de envío mientras se arrastra.
 - **Visor:** recibe los frames binarios por WebSocket ([protocolo del visor](docs/instructions/viewer-protocol.md)) y dibuja **todas las tiras** en un `<canvas>` del navegador, sin librería: una fila por tira, en el orden del fichero de configuración, con un punto de luz por LED. En cada `requestAnimationFrame` pinta el último frame recibido de cada tira, así que nunca acumula retraso. Sin conexión con el motor queda en negro, la cabecera lo avisa y el panel reintenta cada segundo hasta que el motor vuelve, sin recargar. Dibujar cada tira con su geometría declarada llega con H4.
 - **Cabecera:** el estado de la conexión y, por la misma conexión del visor, la fuente de audio (D51): «Fichero: nombre», sin la ruta, o «Sin fuente de audio». Si hay fuente, un vúmetro pinta su nivel en cada `requestAnimationFrame`, como el visor, en una escala de −60 a 0 dB.
-- **Reproductor:** cuando la fuente es un fichero, lo reproduce en el navegador con un botón de play, porque los navegadores no reproducen audio sin un gesto del usuario. El motor sirve en `/audio` el mismo fichero que analiza, tal cual y sin decir su ruta en disco, y en cada pulso dice por qué punto del fichero va; el panel hace sonar el punto del último frame que muestra el visor, así que el retraso de la red afecta igual a la luz y al sonido (D53). El reproductor llega con `MOO-57`.
+- **Reproductor:** cuando la fuente es un fichero, el maker puede oírlo en el navegador con el botón de la cabecera, porque los navegadores no reproducen audio sin un gesto del usuario. Dejar de oír solo calla el panel: el motor y la tira siguen. El motor sirve en `/audio` el mismo fichero que analiza, tal cual y sin decir su ruta en disco, y en cada pulso dice por qué punto del fichero va; el panel hace sonar el punto del último frame que muestra el visor, así que el retraso de la red afecta igual a la luz y al sonido (D53). Lo reproduce con Web Audio, con el fichero entero en memoria y en bucle, arrancado en el punto exacto en cuanto el reloj de audio está en marcha; la referencia es la mediana del último segundo de posiciones, para no seguir el temblor de la red. Unas pocas veces por segundo compara lo que suena con el visor y, si se separan más de 20 ms (la deriva entre los dos relojes, unos ms por minuto), salta al punto bueno con un empalme programado (D54). Solo compensa el retraso de salida que declara el navegador (D55). Sin conexión, calla.
 
 **Tipos compartidos.** Los esquemas TypeBox (efectos, comandos, configuración de las tiras) viven en un paquete común que importan el motor y el panel. Si cambia un parámetro, el compilador avisa en los dos lados.
 

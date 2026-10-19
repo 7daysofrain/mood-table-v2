@@ -147,7 +147,7 @@
   lleva un rato» y «dejó de oír hace un rato» son de tiempo por definición y se marcan con
   `// NOSONAR` y su motivo.
   Verificar: `pnpm test:e2e` pasa en local tres veces seguidas y en la CI, y `sonar-issues` pasa.
-- [ ] 2.20 Documentación y cierre de la historia:
+- [x] 2.20 Documentación y cierre de la historia:
   - README §1.3 (*Cabecera*: el control de oír) y §2.2 (*Reproductor*: Web Audio, sincronía contra el
     visor y corrección con salto); «pulsa play» pasa a «pulsa Oír» en el README (también en H1);
   - `docs/idea-mood-table.md` §10: D54 (Web Audio con salto al pasar 20 ms) y D55 (solo el retraso de
