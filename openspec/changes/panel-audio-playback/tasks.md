@@ -52,7 +52,7 @@
 
 ## 2. MOO-57 · panel
 
-- [ ] 2.1 Comprobación del riesgo de `design.md`: un E2E mínimo en `e2e/playback.spec.ts` que, tras un
+- [x] 2.1 Comprobación del riesgo de `design.md`: un E2E mínimo en `e2e/playback.spec.ts` que, tras un
   clic, crea un `AudioContext` en Chromium sin pantalla y ve avanzar `currentTime` durante 1 s, en
   local y en la CI. Si pasa, se queda como primer test del fichero; si no, se para y se decide con el
   usuario la alternativa (navegador con pantalla con `xvfb` o reducir el E2E de sincronía).
