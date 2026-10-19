@@ -87,7 +87,7 @@ el punto que muestra el visor.
 |---|---|---|---|
 | 0 | 1 | Tipo de mensaje | `4` (posición) |
 | 1-4 | 4 | `seq` | El pulso al que pertenece, como el de los frames: entero sin signo de 32 bits, **big-endian** |
-| 5-12 | 8 | Posición | Segundos desde el principio del fichero, en coma flotante de 64 bits (IEEE 754), **big-endian**. Va de 0 a la duración del fichero y vuelve a 0 con el bucle |
+| 5-12 | 8 | Posición | Segundos desde el principio del fichero, en coma flotante de 64 bits (IEEE 754), **big-endian**. Va de 0 hasta justo antes de la duración del fichero, que nunca alcanza, y vuelve a 0 con el bucle |
 
 Ejemplo: la posición 1,5 s del pulso 260:
 

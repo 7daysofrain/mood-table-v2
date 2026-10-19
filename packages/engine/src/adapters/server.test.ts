@@ -228,7 +228,10 @@ describe('el servidor del motor', () => {
     });
 
     for (let pulse = 0; pulse < 3; pulse++) loop.tick((pulse * 1000) / 60);
-    await until(() => first.levels.length === 3 && second.levels.length === 3);
+    // El nivel de un pulso sale antes que sus frames: se esperan los dos.
+    await until(
+      () => first.levels.length === 3 && second.levels.length === 3 && first.frames.length === 3,
+    );
 
     expect(first.levels.map(({ seq }) => seq)).toEqual(first.frames.map(({ seq }) => seq));
     expect(first.levels.every(({ level }) => Math.abs(level - Math.SQRT1_2) < 0.01)).toBe(true);
@@ -264,7 +267,11 @@ describe('el servidor del motor', () => {
     });
 
     for (let pulse = 0; pulse < 3; pulse++) loop.tick((pulse * 1000) / 60);
-    await until(() => first.positions.length === 3 && second.positions.length === 3);
+    // La posición de un pulso sale antes que sus frames: se esperan los dos.
+    await until(
+      () =>
+        first.positions.length === 3 && second.positions.length === 3 && first.frames.length === 3,
+    );
 
     expect(first.positions.map(({ seq }) => seq)).toEqual(first.frames.map(({ seq }) => seq));
     expect(first.positions.map(({ position }) => position)).toEqual([0, 1 / 60, 2 / 60]);

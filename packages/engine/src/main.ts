@@ -2,10 +2,10 @@
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
  * adaptadores. Carga la configuración y la fuente de audio, si la declara, arranca el servidor del
  * panel (que anuncia la fuente, envía su nivel y la posición del fichero y sirve el fichero) y el
- * motor, y da a cada tira sus salidas: el visor
- * siempre (D43); la salida Adalight de las tiras físicas llega con H3. Si la configuración no sirve,
- * el fichero de audio no se puede leer o su formato no vale, o el servidor no puede escuchar, el
- * motor no arranca: dice qué falla y termina con código 1.
+ * motor, y da a cada tira sus salidas: el visor siempre (D43); la salida Adalight de las tiras
+ * físicas llega con H3. Si la configuración no sirve, el fichero de audio no se puede leer o su
+ * formato no vale, o el servidor no puede escuchar, el motor no arranca: dice qué falla y termina
+ * con código 1.
  */
 import { join } from 'node:path';
 
