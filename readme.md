@@ -151,7 +151,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` arranca el motor con la configuración de `config/local.json`. Si no existe, la crea copiando la de ejemplo (`config/demo.json`: una tira virtual con la *respiración*), y si ya existe no la toca: es la de tu instalación, y git la ignora. Cada tira declara el efecto con el que arranca (`effect`, obligatorio), y el fichero puede declarar una fuente de audio (`audioSource`): un fichero WAV PCM de 16 bits, mono o estéreo, con su ruta absoluta o relativa a la raíz del repositorio (§3). Al arrancar, el motor escribe qué fichero ha cargado, cuántas tiras y a qué fps; si el fichero no sirve, no arranca y dice qué falla. `pnpm dev` arranca también el panel con recarga en caliente: abre `http://localhost:5173`. Es el servidor de Vite, que reenvía al motor la conexión del visor; por eso, en desarrollo, el motor tiene que escuchar en el puerto `8080` (el que tiene por defecto). El motor sirve además el build del panel en `http://127.0.0.1:8080` (la dirección que dice su línea de log), si lo has construido antes con `pnpm --filter @moodtable/panel build`; es lo que se usa en la mesa y en la demo.
+`pnpm dev` arranca el motor con la configuración de `config/local.json`. Si no existe, la crea copiando la de ejemplo (`config/demo.json`: una tira virtual con *energía*, que reacciona a *Bouncer*, un tema de electro CC0 incluido en `config/audio/`), y si ya existe no la toca: es la de tu instalación, y git la ignora. Cada tira declara el efecto con el que arranca (`effect`, obligatorio), y el fichero puede declarar una fuente de audio (`audioSource`): un fichero WAV PCM de 16 bits, mono o estéreo, con su ruta absoluta o relativa a la raíz del repositorio (§3). Al arrancar, el motor escribe qué fichero ha cargado, cuántas tiras y a qué fps; si el fichero no sirve, no arranca y dice qué falla. `pnpm dev` arranca también el panel con recarga en caliente: abre `http://localhost:5173`. Es el servidor de Vite, que reenvía al motor la conexión del visor; por eso, en desarrollo, el motor tiene que escuchar en el puerto `8080` (el que tiene por defecto). El motor sirve además el build del panel en `http://127.0.0.1:8080` (la dirección que dice su línea de log), si lo has construido antes con `pnpm --filter @moodtable/panel build`; es lo que se usa en la mesa y en la demo.
 
 **Fuente de audio:** el simulador usa un fichero de audio en cualquier sistema. La tarjeta de sonido como fuente solo funciona en Linux (ALSA): en macOS y Windows se usa el fichero.
 
@@ -347,7 +347,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 Marca el ritmo del sistema a una tasa objetivo configurable (30-60 fps). En cada vuelta: (1) lee el búfer de control, (2) si alguna tira tiene un efecto que usa audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica su límite de potencia y entrega el frame a su salida y al visor. Mide cuánto tarda cada vuelta; si llega tarde, **se salta el frame en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
 
 **Análisis de audio** — TypeScript + FFT (`fft.js`, validada en el spike de rendimiento, D48).
-En cada pulso pide a la fuente de audio la ventana que acaba en el instante del pulso: el puerto es *pull*, así que el ritmo lo marca el motor y no la fuente (D50). Cuando alguna tira lo necesita, aplica una ventana y una FFT sobre esas muestras y calcula los **rasgos** que consumen los efectos: energía por bandas de frecuencia (repartidas en escala logarítmica, como el oído), energía total y detección de golpes (un golpe es un salto de energía por encima de su media reciente). Se calcula **una vez por frame** y lo comparten todas las tiras. Si ninguna tira usa audio, no se calcula, y el motor puede funcionar sin fuente de audio.
+En cada pulso pide a la fuente de audio la ventana que acaba en el instante del pulso: el puerto es *pull*, así que el ritmo lo marca el motor y no la fuente (D50). Mientras haya fuente, mide su **nivel** (el RMS de la ventana, antes de cualquier ajuste) en cada pulso, aunque ninguna tira use audio, y lo envía al panel. Cuando alguna tira lo necesita, calcula además los **rasgos** que consumen los efectos, como la v1 (D49): una ventana de Hamming de 40 ms y una FFT, **24 bandas mel** de 200 Hz a 12 kHz (una escala parecida a la del oído) normalizadas con una ganancia automática y suavizadas, y si la ventana es silencio digital. **No detecta golpes**: *energía* marca cada uno con la subida rápida y la caída suave de su luz, y ningún efecto del MVP necesita más. Se calcula **una vez por frame** y lo comparten todas las tiras. Si ninguna tira usa audio, no se calcula, y el motor puede funcionar sin fuente de audio.
 
 **Efectos** — módulos de TypeScript con esquema TypeBox.
 Cada efecto es un módulo con la misma forma, sea reactivo o de ambiente (patrón *Strategy*):
@@ -383,7 +383,7 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 | **Tarjeta de sonido** | `AudioSource` | `arecord` (ALSA) como proceso hijo | Lee PCM crudo (16 bits, mono) por `stdout` y guarda las últimas muestras en un búfer circular: cuando el bucle pide la ventana, da las más recientes. Sin binarios nativos en Node. |
 | **Fichero WAV** | `AudioSource` | Lector WAV en TypeScript | Lee y decodifica el fichero entero al arrancar (PCM de 16 bits, mono o estéreo, que se mezcla a mono). Suena en bucle con el reloj del motor: en cada pulso da el audio de ese instante, contado desde el arranque, y al llegar al final vuelve a empezar. Es la fuente del simulador y de los tests. |
 | **Adalight serie** | `LightOutput` | `serialport` | Una instancia **por tira física**, en su puerto. Añade la cabecera Adalight (`Ada` + número de LEDs + checksum), reordena los canales según el orden de color de la tira (RGB, GRB…) y escribe por USB serie. Si el puerto sigue ocupado con el frame anterior, descarta el nuevo en lugar de encolarlo. |
-| **Visor** | `LightOutput` | WebSocket (`@fastify/websocket`) | Una instancia **por tira** (D43). Codifica cada frame con el [protocolo del visor](docs/instructions/viewer-protocol.md) y lo envía en binario a todos los navegadores conectados, por una sola conexión por navegador (D45). Más adelante, por la misma conexión, también los cambios de estado. |
+| **Visor** | `LightOutput` | WebSocket (`@fastify/websocket`) | Una instancia **por tira** (D43). Codifica cada frame con el [protocolo del visor](docs/instructions/viewer-protocol.md) y lo envía en binario a todos los navegadores conectados, por una sola conexión por navegador (D45). Por la misma conexión, cada navegador recibe la fuente de audio al conectarse y su nivel en cada pulso (D51); más adelante, también los cambios de estado. |
 | **API HTTP** | `Commands` | Fastify + TypeBox | Rutas para listar las tiras (solo lectura) y los efectos con sus esquemas, y para cambiar el efecto y los parámetros de una tira. Valida cada petición y publica el OpenAPI. También sirve el build del panel. |
 | **Persistencia** | `StateStore` | SQLite (§3) · en memoria para tests | Guarda y carga el estado de cada tira: efecto activo y valores de cada efecto. Al arrancar, el motor recupera el último estado desde aquí. |
 
@@ -417,7 +417,7 @@ mood-table-v2/
 ├── e2e/            # Tests E2E (Playwright) del flujo principal
 ├── firmware/       # (should-have) Firmware C++ para ESP8266/ESP32
 ├── openspec/       # Specs de SDD: specs vivas y cambios propuestos
-├── config/         # Configuración de cada instalación: demo.json (ejemplo versionado) y local.json (ignorado por git)
+├── config/         # Configuración de cada instalación: demo.json (ejemplo versionado), local.json (ignorado por git) y audio/ (el tema de la demo)
 ├── deploy/         # Servicio systemd y ejemplos de configuración de tiras (mesa y demo pública)
 ├── docs/           # PRD, instrucciones de trabajo (workflow, Linear), ficha y decisiones
 ├── .claude/        # Skills y subagentes de Claude Code
@@ -1180,14 +1180,14 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 **Requisitos técnicos** (§2.2)
 
-- **Análisis:** en cada pulso pide a la fuente la ventana de audio que acaba en ese instante (*pull*, D50); ventana y **FFT** sobre esas muestras (`fft.js`, validada en el spike `MOO-12`); rasgos: energía por bandas en escala logarítmica, energía total y **golpes** (un golpe es un salto de energía por encima de su media reciente). Se calcula una vez por frame y lo comparten todas las tiras.
-- **Efecto *energía*:** `usesAudio: true`; recibe los rasgos en `FrameContext.audio`; en silencio, la tira se apaga. Sus parámetros de sensibilidad se declaran en el esquema, pero no tienen controles hasta H2.
-- **Nivel y fuente** al panel por el mismo WebSocket del visor.
+- **Análisis:** en cada pulso pide a la fuente la ventana de audio que acaba en ese instante (*pull*, D50); ventana y **FFT** sobre esas muestras (`fft.js`, validada en el spike `MOO-12`); rasgos: 24 bandas mel y si la ventana es silencio, como en la v1 (D49), **sin detector de golpes**; el nivel de la fuente, siempre que haya fuente. Se calcula una vez por frame y lo comparten todas las tiras.
+- **Efecto *energía*:** el de la v1 (D49); `usesAudio: true`; recibe los rasgos en `FrameContext.audio`; en silencio, la tira se apaga. **Sin parámetros**, como la v1: la sensibilidad llega con H2.
+- **Nivel y fuente** al panel por el mismo WebSocket del visor, como mensajes del protocolo (D51).
 
 **Tareas de desarrollo** *(previstas; el detalle definitivo será la sección `MOO-20` del `tasks.md`)*
 
 1. Ventana del pulso y FFT.
-2. Rasgos: bandas, energía total y detección de golpes.
+2. Rasgos: bandas mel, silencio y nivel.
 3. Efecto *energía*, con la regla del silencio.
 4. Cálculo condicionado a que alguna tira use audio.
 5. Publicar la fuente de audio y su nivel hacia el panel.
@@ -1213,8 +1213,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 **Tests**
 
-- **Unitarios (Vitest):** una sinusoide de 100 Hz cae en su banda; golpes sintéticos generan golpes detectados; silencio → *energía* apagada; *respiración* no cambia con audio.
-- **Integración:** WAV de golpes aislados → secuencia de frames esperada; sin tiras con audio, el análisis no se ejecuta.
+- **Unitarios (Vitest):** un tono de 400 Hz cae en el tercio inferior de las bandas y uno de 8 kHz en el superior; *energía* los pinta de rojo y de azul; silencio → *energía* apagada; *respiración* no cambia con audio; sin tiras con audio, no se calculan las bandas.
+- **Integración:** WAV de golpes aislados → la tira se enciende con cada golpe y se apaga antes del siguiente, y frames dorados; el servidor envía la fuente y el nivel a cada panel.
 
 ---
 

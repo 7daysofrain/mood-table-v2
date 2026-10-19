@@ -10,7 +10,10 @@ import Type, { type Static } from 'typebox';
  * Los efectos que existen (decisión 10 del change virtual-strip-audio-file): su id, en inglés como
  * el resto del fichero, y si son reactivos (`true`) o de ambiente (`false`).
  */
-export const EFFECT_CATALOG = [{ id: 'breathing', usesAudio: false }] as const;
+export const EFFECT_CATALOG = [
+  { id: 'breathing', usesAudio: false },
+  { id: 'energy', usesAudio: true },
+] as const;
 
 export type EffectId = (typeof EFFECT_CATALOG)[number]['id'];
 
@@ -27,3 +30,11 @@ export const BreathingParamsSchema = Type.Object({
 });
 
 export type BreathingParams = Static<typeof BreathingParamsSchema>;
+
+/**
+ * *Energía*: sin parámetros, como la de la v1 (decisión 1 del change virtual-strip-audio-file). La
+ * sensibilidad llega con H2.
+ */
+export const EnergyParamsSchema = Type.Object({});
+
+export type EnergyParams = Static<typeof EnergyParamsSchema>;

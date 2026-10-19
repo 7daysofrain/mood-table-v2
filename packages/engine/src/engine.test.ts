@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryOutput } from './adapters/memory-output.ts';
 import { breathing } from './core/effects/breathing.ts';
 import { defaultParams } from './core/effects/effect.ts';
-import { startEngine, startupMessage } from './engine.ts';
+import { sourceMessage, startEngine, startupMessage } from './engine.ts';
 
 const demoStrip = {
   id: 'demo',
@@ -77,5 +77,17 @@ describe('la línea de log del arranque', () => {
     expect(startupMessage('config/local.json', twoStrips, 'http://127.0.0.1:8080')).toBe(
       'Mood Table: cargado config/local.json · 2 tiras a 30 fps · panel en http://127.0.0.1:8080',
     );
+  });
+});
+
+describe('la fuente de audio que se anuncia a los paneles', () => {
+  it('de un fichero, da su nombre y nunca la ruta', () => {
+    const audioSource = { type: 'file' as const, path: '/srv/mood-table/config/audio/bouncer.wav' };
+
+    expect(sourceMessage({ ...config, audioSource })).toEqual({ kind: 'file', name: 'bouncer.wav' });
+  });
+
+  it('sin fuente de audio, dice que no hay ninguna', () => {
+    expect(sourceMessage(config)).toEqual({ kind: 'none' });
   });
 });

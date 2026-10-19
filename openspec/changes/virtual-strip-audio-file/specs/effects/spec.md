@@ -64,7 +64,10 @@ de los agudos, medidas frente a su nivel reciente. Es reactiva y no tiene parám
 
 > Traza: PRD §4 y README §1.2 (*el brillo y la extensión de la luz siguen la energía del audio*); D20
 > (*los de la v1, reescritos*). El reparto en tres bandas y el espejo son el efecto *energy* de la v1:
-> `design.md`, decisión 1. Glosario del PRD: *golpe*.
+> `design.md`, decisión 1. Glosario del PRD: *golpe*. Los tonos duran dos segundos porque, como en
+> la v1, el primer pulso con audio enciende los tres colores (las bandas arrancan en 0,1 y la
+> ganancia de cada banda en 0,01) y tardan cerca de 1,5 s en apagarse: se porta tal cual, decisión
+> del usuario al implementar `MOO-20`.
 
 #### Scenario: La tira marca cada golpe
 - **GIVEN** que el fichero de audio tiene golpes aislados, separados por silencio
@@ -75,12 +78,12 @@ de los agudos, medidas frente a su nivel reciente. Es reactiva y no tiene parám
 
 #### Scenario: Un tono grave enciende el rojo (asumido)
 - **GIVEN** *energía* con un tono continuo de 400 Hz como audio
-- **WHEN** se calculan sus frames durante un segundo
+- **WHEN** se calculan sus frames durante dos segundos
 - **THEN** los LEDs encendidos son rojos y forman un tramo centrado en la mitad de la tira
 
 #### Scenario: Un tono agudo enciende el azul (asumido)
 - **GIVEN** *energía* con un tono continuo de 8 kHz como audio
-- **WHEN** se calculan sus frames durante un segundo
+- **WHEN** se calculan sus frames durante dos segundos
 - **THEN** los LEDs encendidos son azules y forman un tramo centrado en la mitad de la tira
 
 #### Scenario: La caída no depende de los fps (asumido)

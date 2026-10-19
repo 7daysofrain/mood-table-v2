@@ -80,75 +80,75 @@
 
 ## 2. MOO-20 · engine
 
-- [ ] 2.1 `fft.js` en el catálogo de `pnpm-workspace.yaml` (la versión del spike, 4.0.4, si cumple
+- [x] 2.1 `fft.js` en el catálogo de `pnpm-workspace.yaml` (la versión del spike, 4.0.4, si cumple
   `minimumReleaseAge`) y como dependencia de `@moodtable/engine`, con su declaración de tipos si no la
   trae.
   Verificar: `pnpm install` sin avisos, y lint, tipos y tests siguen en verde.
-- [ ] 2.2 **(test en rojo)** Tests del análisis en el núcleo, con una fuente en memoria: el nivel de un
+- [x] 2.2 **(test en rojo)** Tests del análisis en el núcleo, con una fuente en memoria: el nivel de un
   silencio es 0 y el de un seno de amplitud 1 ronda 0,707; con un tono de 400 Hz, las bandas con más
   energía están en el tercio inferior, y con uno de 8 kHz, en el superior; el silencio digital se marca
   como silencio; la ventana dura unos 40 ms a 44,1 y a 48 kHz (decisiones 4 y 11).
   Verificar: los tests nuevos fallan porque el análisis no existe.
-- [ ] 2.3 Análisis en `packages/engine/src/core/audio`: ventana en segundos rellenada hasta potencia de
+- [x] 2.3 Análisis en `packages/engine/src/core/audio`: ventana en segundos rellenada hasta potencia de
   2, Hamming, `fft.js`, 24 bandas mel de 200 Hz a 12 kHz calculadas para la frecuencia de la fuente,
   ganancia y suavizado comunes con `dt` (decisión 2), puerta de silencio y nivel RMS sin ajustar, todo
   con memoria reservada al arrancar. Las constantes se comprueban en el código de la v1 (`dsp.py`,
   `visualization.py` y `config.py` de dancyPi) y el commit consultado se cita en el código.
   Verificar: los tests de 2.2 pasan.
-- [ ] 2.4 **(test en rojo)** Tests del bucle con audio: con fuente y solo *respiración*, se mide el nivel
+- [x] 2.4 **(test en rojo)** Tests del bucle con audio: con fuente y solo *respiración*, se mide el nivel
   en cada pulso pero no se calculan las bandas (`FrameContext.audio` es `null`); con una tira reactiva,
   las bandas se calculan una vez por pulso para todas las tiras; el nivel llega a sus salidas con el
   `seq` del pulso; sin fuente, ni nivel ni bandas.
   Verificar: los tests nuevos fallan porque el bucle no lee audio.
-- [ ] 2.5 El bucle lee la ventana del pulso de la `AudioSource`, mide el nivel, calcula las bandas solo
+- [x] 2.5 El bucle lee la ventana del pulso de la `AudioSource`, mide el nivel, calcula las bandas solo
   si alguna tira tiene un efecto con `usesAudio`, las pasa en `FrameContext.audio` y entrega el nivel a
   un puerto `LevelOutput` (decisiones 4 y 5).
   Verificar: los tests de 2.4 pasan y el bucle no crea objetos por pulso.
-- [ ] 2.6 **(test en rojo)** Tests de *energía* (`specs/effects`): con el fichero de golpes, la tira se
+- [x] 2.6 **(test en rojo)** Tests de *energía* (`specs/effects`): con el fichero de golpes, la tira se
   ilumina con cada golpe y vuelve a apagarse antes del siguiente; en silencio, todos los LEDs a 0; un
   tono de 400 Hz enciende solo rojo y uno de 8 kHz solo azul, en tramos centrados y simétricos; tras un
   golpe, a 30 y a 60 fps la tira queda apagada en el mismo instante (como mucho un pulso de 30 fps de
   diferencia); dos tiras, una con *energía* y otra con *respiración*: en silencio, la segunda sigue
   animándose; frames dorados de una tira de 60 LEDs a 60 fps con el fichero de golpes.
   Verificar: los tests nuevos fallan porque *energía* no existe.
-- [ ] 2.7 Efecto *energía* en el núcleo (decisiones 1 y 2): esquema de parámetros vacío, memoria por
+- [x] 2.7 Efecto *energía* en el núcleo (decisiones 1 y 2): esquema de parámetros vacío, memoria por
   tira (ganancia por banda y suavizado de los LEDs), tres tercios a rojo, verde y azul desde el centro,
   desenfoque gaussiano de sigma 4 LEDs, espejo y apagado en silencio. `energy` entra en el catálogo de
   `shared` con `usesAudio: true` y en el registro del motor. Al congelar las constantes se generan los
   frames dorados.
   Verificar: los tests de 2.6 pasan.
-- [ ] 2.8 **(test en rojo)** Test de la validación en `packages/shared`: una tira con `energy` y sin
+- [x] 2.8 **(test en rojo)** Test de la validación en `packages/shared`: una tira con `energy` y sin
   `audioSource` no arranca, y el mensaje nombra la tira y dice que *energy* necesita una fuente de
   audio (`specs/engine-config`, decisión 6).
   Verificar: el test nuevo falla porque `parseConfig` no lo comprueba.
-- [ ] 2.9 Comprobación en `parseConfig`, con el `usesAudio` del catálogo.
+- [x] 2.9 Comprobación en `parseConfig`, con el `usesAudio` del catálogo.
   Verificar: el test de 2.8 pasa.
-- [ ] 2.10 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de fuente (tipo `2`)
+- [x] 2.10 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de fuente (tipo `2`)
   sin fuente y con un fichero cuyo nombre lleva acentos se codifica y se decodifica igual; el de nivel
   (tipo `3`) lleva `seq` y nivel en big-endian; los mensajes mal formados se rechazan, y
   `decodeFrame` sigue rechazando los tipos que no son `1` (decisión 5).
   Verificar: los tests nuevos fallan porque los mensajes no existen.
-- [ ] 2.11 Codificadores y decodificadores de los mensajes de fuente y de nivel en `packages/shared`;
+- [x] 2.11 Codificadores y decodificadores de los mensajes de fuente y de nivel en `packages/shared`;
   `docs/instructions/viewer-protocol.md` con los dos mensajes byte a byte y su ejemplo, y la fila del
   documento en el índice de `AGENTS.md` actualizada.
   Verificar: los tests de 2.10 pasan y el documento describe exactamente lo que hace el código.
-- [ ] 2.12 **(test en rojo)** Test de integración del servidor con dos clientes WebSocket: cada uno
+- [x] 2.12 **(test en rojo)** Test de integración del servidor con dos clientes WebSocket: cada uno
   recibe al conectarse el mensaje de fuente (fichero con su nombre, o sin fuente); en cada pulso, un
   mensaje de nivel con el mismo `seq` que los frames, igual para los dos; sin fuente, ningún mensaje de
   nivel (`specs/audio-source`).
   Verificar: el test falla porque el servidor no envía esos mensajes.
-- [ ] 2.13 El servidor recibe la fuente (clase y nombre, sin ruta) al arrancar y la envía a cada
+- [x] 2.13 El servidor recibe la fuente (clase y nombre, sin ruta) al arrancar y la envía a cada
   conexión, y da una `LevelOutput` que envía el nivel a todos los paneles; `main.ts` lo conecta todo.
   Verificar: el test de 2.12 pasa; con `pnpm dev`, un cliente WebSocket de prueba recibe la fuente y el
   nivel.
-- [ ] 2.14 Audio de la demo (decisión 9): con permiso del usuario, descargar *Bouncer* de OpenGameArt y
-  comprobar su licencia CC0 en la página; cortar el loop en los compases que elija el usuario, en PCM de
-  16 bits, mono y 44,1 kHz, en `config/audio/bouncer.wav`, con `config/audio/README.md` (autor,
-  enlace, licencia y tramo). `config/demo.json` declara esa fuente y `"effect": "energy"`. Sin commit:
-  lo mismo en `config/local.json` de esta máquina.
-  Verificar: el fichero ocupa 5 MB o menos; en un clon limpio, `pnpm dev` muestra la tira reaccionando
-  a la música, y el final del loop enlaza con el principio sin un salto que se note en la tira.
-- [ ] 2.15 Documentación:
+- [x] 2.14 Audio de la demo (decisión 9): con permiso del usuario, descargar *Bouncer* de OpenGameArt y
+  comprobar su licencia CC0 en la página; el WAV original, tal cual, en `config/audio/bouncer.wav`,
+  con `config/audio/README.md` (autor, enlace, licencia y que es el original). `config/demo.json`
+  declara esa fuente y `"effect": "energy"`. Sin commit: lo mismo en `config/local.json` de esta
+  máquina.
+  Verificar: el fichero es el original, byte a byte; en un clon limpio, `pnpm dev` muestra la tira
+  reaccionando a la música, y al volver a empezar la tira no se apaga (decisión 9).
+- [x] 2.15 Documentación:
   - README §2.2 (*Análisis de audio*: bandas mel, nivel, sin detector de golpes; efecto *energía*) y
     el ticket `MOO-20` del §6 (sin parámetros de sensibilidad ni golpes; rasgos que calcula);
   - README §1.4: la demo suena con un loop CC0 y la tira tiene *energía*;

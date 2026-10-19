@@ -5,12 +5,13 @@
 > y decodifica, en `packages/shared/src/viewer-protocol.ts`, que usan el motor y el panel. Si cambia
 > el formato, cambian este documento y ese código en la misma PR.
 >
-> Origen: change `virtual-strip-breathing`, `design.md` decisiones 10 y 11 (`MOO-17`).
+> Origen: change `virtual-strip-breathing`, `design.md` decisiones 10 y 11 (`MOO-17`). Los mensajes
+> de fuente y de nivel: change `virtual-strip-audio-file`, `design.md` decisión 5 (`MOO-20`).
 
 ## Conexión
 
 - **Una sola conexión WebSocket por navegador**, en la ruta `/ws` del motor (la misma dirección que
-  sirve el panel). Por ella viajan los frames de todas las tiras, y más adelante otros mensajes.
+  sirve el panel). Por ella viajan los frames de todas las tiras, la fuente de audio y su nivel.
 - Los mensajes van en **binario**. El primer byte dice de qué tipo es el mensaje.
 - El panel no necesita saber nada de antemano: cada mensaje dice de qué tira es y cuántos LEDs tiene.
 
@@ -37,7 +38,48 @@ Ejemplo: el frame con `seq` 260 de la primera tira, con dos LEDs, rojo y azul:
 - El índice no se queda desfasado: las tiras solo cambian al reiniciar el motor, y un reinicio obliga
   al panel a reconectar.
 
+## Mensaje de fuente de audio (tipo `2`)
+
+Uno al conectarse cada panel: la fuente no cambia mientras el motor corre. Si el motor se reinicia con
+otra, el panel reconecta y la recibe de nuevo. También se envía si no hay fuente.
+
+| Byte | Tamaño | Campo | Valor |
+|---|---|---|---|
+| 0 | 1 | Tipo de mensaje | `2` (fuente) |
+| 1 | 1 | Clase de fuente | `0` sin fuente de audio, `1` fichero |
+| 2… | resto | Nombre | Solo si es un fichero: su nombre en UTF-8, **sin la ruta**. Sin fuente, el mensaje acaba en el byte 1 |
+
+Ejemplo: la fuente es el fichero `golpes.wav`:
+
+```
+02  01  67 6f 6c 70 65 73 2e 77 61 76
+```
+
+Sin fuente de audio: `02 00`.
+
+## Mensaje de nivel (tipo `3`)
+
+Uno en cada pulso, solo si hay fuente de audio: el nivel de la fuente (su RMS, antes de que el motor la
+ajuste), el mismo para todos los paneles.
+
+| Byte | Tamaño | Campo | Valor |
+|---|---|---|---|
+| 0 | 1 | Tipo de mensaje | `3` (nivel) |
+| 1-4 | 4 | `seq` | El pulso al que pertenece, como el de los frames: entero sin signo de 32 bits, **big-endian** |
+| 5-8 | 4 | Nivel | Número en coma flotante de 32 bits (IEEE 754), **big-endian**, de 0 a 1 |
+
+Ejemplo: el nivel 0,5 del pulso 260:
+
+```
+03  00 00 01 04  3f 00 00 00
+```
+
 ## Qué hace el panel con un mensaje que no entiende
 
-Lo ignora. Un mensaje se rechaza si su tipo no es `1`, si es más corto que la cabecera (6 bytes) o si
-sus colores no son un número entero de LEDs (al menos uno).
+Lo ignora, también si es de un tipo que todavía no conoce. Se rechaza:
+
+- un frame cuyo tipo no es `1`, más corto que la cabecera (6 bytes) o cuyos colores no son un número
+  entero de LEDs (al menos uno);
+- un mensaje de fuente con una clase que no es `0` ni `1`, sin fuente pero con nombre, de un fichero
+  sin nombre o con un nombre que no es UTF-8 válido;
+- un mensaje de nivel que no mide 9 bytes o cuyo nivel no es un número de 0 a 1.

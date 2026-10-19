@@ -58,7 +58,7 @@ Read a file **when its "When" column applies**, not all of them up front.
 |---|---|---|
 | [`workflow.md`](docs/instructions/workflow.md) | PRD → epic → story → task → OpenSpec → PR chain; task = PR, step = commit; source of truth for each thing | Before creating or touching epics, stories, tasks or specs, and before opening a PR |
 | [`linear.md`](docs/instructions/linear.md) | Linear conventions: single project, epic = parent issue, states, labels, estimation, branches and the PR base branch, MCP permissions | Before creating or editing anything in Linear, before creating a branch, and before opening a PR |
-| [`viewer-protocol.md`](docs/instructions/viewer-protocol.md) | Byte-level format of the WebSocket messages from the engine to the panel (frames of each strip) | Before touching the viewer output, the panel's connection or `packages/shared/src/viewer-protocol.ts` |
+| [`viewer-protocol.md`](docs/instructions/viewer-protocol.md) | Byte-level format of the WebSocket messages from the engine to the panel (frames of each strip, audio source and level) | Before touching the viewer output, the panel's connection or `packages/shared/src/viewer-protocol.ts` |
 | [`course.md`](docs/instructions/course.md) | Master's requirements: scope, evaluation axes, deliveries and their mechanics, methodology, `prompts.md` format | When preparing or checking a delivery, deciding scope, or recording prompts |
 
 Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.md`](docs/umbrales-para-specs.md).

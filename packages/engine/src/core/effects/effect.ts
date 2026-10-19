@@ -7,14 +7,19 @@ import type { StripConfig } from '@moodtable/shared';
 import type { TSchema } from 'typebox';
 import Value from 'typebox/value';
 
+import type { AudioFeatures } from '../audio/analysis.ts';
+
 /** Lo que el bucle le pasa al efecto en cada frame. Es el mismo objeto en todos los frames. */
 export interface FrameContext {
   /** Segundos desde que arrancó el bucle: el ambiente se anima con él. */
   time: number;
   /** Segundos desde el frame anterior. */
   dt: number;
-  /** Rasgos del audio del frame. Llegan con `MOO-14`; hasta entonces no hay fuente de audio. */
-  audio: null;
+  /**
+   * Rasgos del audio del pulso, los mismos para todas las tiras. `null` si no hay fuente de audio o
+   * si ninguna tira tiene un efecto que use audio (decisión 4 del change virtual-strip-audio-file).
+   */
+  audio: AudioFeatures | null;
 }
 
 export interface Effect<P, M> {

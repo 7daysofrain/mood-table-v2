@@ -201,7 +201,25 @@ describe('el efecto de cada tira', () => {
 
   it('con un efecto que no existe, nombra la tira y dice cuáles hay', () => {
     expect(errorOf(text({ strips: [{ ...demoStrip, effect: 'energia' }] }))).toBe(
-      'la tira «demo», campo `effect`: «energia» no es un efecto (hay: `breathing`)',
+      'la tira «demo», campo `effect`: «energia» no es un efecto (hay: `breathing`, `energy`)',
+    );
+  });
+});
+
+describe('un efecto reactivo sin fuente de audio', () => {
+  it('no arranca: nombra la tira y dice que su efecto necesita una fuente de audio', () => {
+    const energyStrip = { ...demoStrip, id: 'reactiva', effect: 'energy' };
+
+    expect(errorOf(text({ strips: [demoStrip, energyStrip] }))).toBe(
+      'la tira «reactiva», efecto `energy`: necesita una fuente de audio (`audioSource`)',
+    );
+  });
+
+  it('con fuente de audio, arranca', () => {
+    const audioSource = { type: 'file', path: 'config/audio/bouncer.wav' };
+
+    expect(parseConfig(text({ audioSource, strips: [{ ...demoStrip, effect: 'energy' }] })).ok).toBe(
+      true,
     );
   });
 });

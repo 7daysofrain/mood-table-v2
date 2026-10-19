@@ -5,7 +5,7 @@
  * la fuente de verdad: si cambia uno, cambia el otro.
  */
 
-/** Tipo del mensaje de un frame: el primer byte. Otros tipos podrán viajar por la misma conexión. */
+/** Tipo del mensaje de un frame: el primer byte. Por la misma conexión viajan otros tipos. */
 export const FRAME_MESSAGE_TYPE = 1;
 
 /** Tipo (1 byte) + `seq` (4 bytes, big-endian) + índice de la tira (1 byte). */
@@ -54,4 +54,71 @@ export function decodeFrame(message: Uint8Array): FrameMessage | undefined {
     stripIndex: view.getUint8(5),
     colors: message.subarray(FRAME_HEADER_BYTES),
   };
+}
+
+/** Tipo del mensaje de la fuente de audio (decisión 5 del change virtual-strip-audio-file). */
+export const SOURCE_MESSAGE_TYPE = 2;
+
+/** Tipo del mensaje del nivel de la fuente de audio. */
+export const LEVEL_MESSAGE_TYPE = 3;
+
+/** La fuente de audio del instrumento, como la ve el panel: sin la ruta del fichero. */
+export type SourceMessage = { kind: 'none' } | { kind: 'file'; name: string };
+
+export interface LevelMessage {
+  /** El pulso al que pertenece, como el `seq` de los frames. */
+  seq: number;
+  /** Nivel de la fuente, de 0 a 1, sin ajustar. */
+  level: number;
+}
+
+/** Clase de la fuente: el segundo byte del mensaje de fuente. */
+const SOURCE_NONE = 0;
+const SOURCE_FILE = 1;
+
+/** Tipo (1 byte) + `seq` (4 bytes, big-endian) + nivel (`float32`, big-endian). */
+const LEVEL_MESSAGE_BYTES = 9;
+
+/** El mensaje de la fuente de audio: lo recibe cada panel al conectarse. */
+export function encodeSource(source: SourceMessage): Uint8Array {
+  const name = source.kind === 'file' ? new TextEncoder().encode(source.name) : new Uint8Array(0);
+  const message = new Uint8Array(2 + name.length);
+  message[0] = SOURCE_MESSAGE_TYPE;
+  message[1] = source.kind === 'file' ? SOURCE_FILE : SOURCE_NONE;
+  message.set(name, 2);
+  return message;
+}
+
+/** La fuente que lleva `message`, o `undefined` si no es un mensaje de fuente bien formado. */
+export function decodeSource(message: Uint8Array): SourceMessage | undefined {
+  if (message.length < 2 || message[0] !== SOURCE_MESSAGE_TYPE) return undefined;
+  if (message[1] === SOURCE_NONE) return message.length === 2 ? { kind: 'none' } : undefined;
+  if (message[1] !== SOURCE_FILE || message.length === 2) return undefined;
+  try {
+    const name = new TextDecoder('utf-8', { fatal: true }).decode(message.subarray(2));
+    return { kind: 'file', name };
+  } catch {
+    return undefined;
+  }
+}
+
+/** El mensaje del nivel de un pulso. Es nuevo en cada llamada: se puede enviar sin copiarlo. */
+export function encodeLevel(seq: number, level: number): Uint8Array {
+  if (!(level >= 0 && level <= 1)) throw new RangeError(`El nivel va de 0 a 1: ${level}`);
+  const message = new Uint8Array(LEVEL_MESSAGE_BYTES);
+  const view = new DataView(message.buffer);
+  view.setUint8(0, LEVEL_MESSAGE_TYPE);
+  view.setUint32(1, seq, false);
+  view.setFloat32(5, level, false);
+  return message;
+}
+
+/** El nivel que lleva `message`, o `undefined` si no es un mensaje de nivel bien formado. */
+export function decodeLevel(message: Uint8Array): LevelMessage | undefined {
+  if (message.length !== LEVEL_MESSAGE_BYTES) return undefined;
+  const view = new DataView(message.buffer, message.byteOffset, message.byteLength);
+  if (view.getUint8(0) !== LEVEL_MESSAGE_TYPE) return undefined;
+  const level = view.getFloat32(5, false);
+  if (!(level >= 0 && level <= 1)) return undefined;
+  return { seq: view.getUint32(1, false), level };
 }

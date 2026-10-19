@@ -2,9 +2,15 @@
  * Bucle de frames (specs/frame-loop, README §2.2): en cada pulso calcula el frame de cada tira con
  * su efecto y lo entrega a sus salidas. Es una función pura del instante: no lee el reloj ni
  * programa temporizadores (decisión 7), así que los tests pasan el instante a mano.
+ *
+ * Con fuente de audio, pide en cada pulso la ventana que acaba en su instante (la fuente es *pull*,
+ * D50), mide el nivel y, solo si alguna tira tiene un efecto que usa audio, calcula las bandas, una
+ * vez para todas (decisiones 4 y 11 del change virtual-strip-audio-file).
  */
 import type { StripConfig } from '@moodtable/shared';
 
+import { createAudioAnalyzer } from './audio/analysis.ts';
+import type { AudioSource } from './audio/audio-source.ts';
 import { defaultParams, type Effect, type FrameContext } from './effects/effect.ts';
 import { type AnyEffect, EFFECTS } from './effects/registry.ts';
 
@@ -31,9 +37,22 @@ export interface LoopStrip {
   outputs: LightOutput[];
 }
 
+/**
+ * Puerto de salida del **nivel de la fuente de audio** (decisión 5 del change
+ * virtual-strip-audio-file): un número por pulso, de 0 a 1, con el pulso al que pertenece. Síncrono
+ * y sin bloquear, como `LightOutput`.
+ */
+export interface LevelOutput {
+  write(level: number, tick: Tick): void;
+}
+
 export interface FrameLoopOptions {
   /** Los efectos entre los que elige cada tira. Por defecto, el registro del motor. */
   effects?: readonly AnyEffect[];
+  /** La fuente de audio, si el instrumento tiene. Sin ella, ni nivel ni análisis. */
+  audioSource?: AudioSource;
+  /** Quién recibe el nivel de la fuente en cada pulso: el visor, los tests… */
+  levelOutputs?: readonly LevelOutput[];
 }
 
 export interface FrameLoop {
@@ -48,6 +67,8 @@ export interface FrameLoop {
 interface StripSlot {
   frame: Uint8Array;
   outputs: LightOutput[];
+  /** Su efecto es reactivo: hace falta analizar el audio. */
+  usesAudio: boolean;
   render(ctx: FrameContext, out: Uint8Array): void;
 }
 
@@ -57,6 +78,7 @@ function createSlot<P, M>(strip: LoopStrip, effect: Effect<P, M>): StripSlot {
   return {
     frame: new Uint8Array(strip.config.ledCount * 3),
     outputs: strip.outputs,
+    usesAudio: effect.usesAudio,
     render: (ctx, out) => {
       effect.render(ctx, params, memory, out);
     },
@@ -66,7 +88,7 @@ function createSlot<P, M>(strip: LoopStrip, effect: Effect<P, M>): StripSlot {
 export function createFrameLoop(
   strips: readonly LoopStrip[],
   fps: number,
-  { effects = EFFECTS }: FrameLoopOptions = {},
+  { effects = EFFECTS, audioSource, levelOutputs = [] }: FrameLoopOptions = {},
 ): FrameLoop {
   // Cada tira arranca con el efecto que declara el fichero (specs/effects). El fichero ya valida el
   // id contra el catálogo, y un test comprueba que el registro tiene los mismos.
@@ -79,6 +101,9 @@ export function createFrameLoop(
     }
     return createSlot(strip, effect);
   });
+  // El nivel se mide siempre que hay fuente; las bandas, solo si alguna tira las usa (decisión 4).
+  const analyzer = audioSource && createAudioAnalyzer(audioSource.sampleRate);
+  const needsBands = slots.some((slot) => slot.usesAudio);
   // Se reutilizan en cada pulso: dentro del bucle no se crean objetos (README §2.2).
   const tick: Tick = { seq: -1, time: 0 };
   const ctx: FrameContext = { time: 0, dt: 0, audio: null };
@@ -96,6 +121,13 @@ export function createFrameLoop(
       ctx.time = time;
       tick.seq = seq;
       tick.time = time;
+
+      if (audioSource && analyzer) {
+        audioSource.read(time, analyzer.window);
+        const level = analyzer.level();
+        ctx.audio = needsBands ? analyzer.update(ctx.dt) : null;
+        for (const output of levelOutputs) output.write(level, tick);
+      }
 
       for (const slot of slots) {
         slot.render(ctx, slot.frame);

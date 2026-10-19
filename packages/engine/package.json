@@ -13,6 +13,7 @@
     "@fastify/websocket": "catalog:",
     "@moodtable/shared": "workspace:*",
     "fastify": "catalog:",
+    "fft.js": "catalog:",
     "typebox": "catalog:"
   },
   "devDependencies": {

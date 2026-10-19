@@ -228,19 +228,21 @@ que propuso el agente. El usuario prefirió una sola regla para todo el reposito
 
 → **Matiz de D44**, sin D# propia.
 
-### 9. La demo suena con *Bouncer*, un loop CC0
+### 9. La demo suena con *Bouncer*, entero y en bucle, CC0
 
 - **Tema:** *Bouncer*, de Of Far Different Nature, CC0
   ([OpenGameArt](https://opengameart.org/node/107501)). Electro con un beat muy marcado, elegido por el
   usuario frente a *Access* (dub techno de cinameng, golpes más suaves) y a un loop solo de batería
   (sin medios, el verde de *energía* apenas saldría).
-- **Formato:** un loop de 30-60 s (16 o 32 compases) que enlace bien el final con el principio, PCM de
-  16 bits, mono, 44,1 kHz. Son 2,6-5 MB en git, sin LFS. Lo corta el usuario, que es quien oye si el
-  enlace es limpio, o el agente con `ffmpeg` en los compases que el usuario diga.
-- **Dónde:** `config/audio/bouncer.wav`, con `config/audio/README.md`: autor, enlace, licencia y qué
-  tramo se cortó. CC0 no lo exige, pero así queda trazado.
-- **La versión en loop de *Loop Box #4*:** si se usa en lugar del WAV original, hay que comprobar su
-  licencia al descargarla. El autor publica temas CC0 y CC-BY en las mismas colecciones.
+- **Formato:** el WAV original **tal cual**, sin cortar ni convertir: PCM de 16 bits, estéreo, 44,1
+  kHz, 93,8 s y 16,5 MB en git, sin LFS. Lo decidió el usuario al implementar `MOO-20`, frente a un
+  loop mono de 30-60 s (2,6-5 MB) o la pista entera en mono (8,3 MB): el motor lo pasa a mono, pero
+  con `MOO-22` el panel lo hará sonar, y en estéreo suena mejor.
+- **La costura del bucle:** la pista acaba fuerte, sin *fade* (unos −7 dB), y empieza más suave (unos
+  −13 dB) tras 35 ms de silencio digital. Ese silencio es más corto que la ventana del análisis (40
+  ms), así que nunca la llena: medido con el bucle real, *energía* no se apaga en la costura.
+- **Dónde:** `config/audio/bouncer.wav`, con `config/audio/README.md`: autor, enlace, licencia y que
+  es el fichero original. CC0 no lo exige, pero así queda trazado.
 - **Descargarlo pide permiso al usuario** (fichero, origen y tamaño).
 
 **Alternativas descartadas:** un loop propio del usuario (no le encajaba ahora), un tema CC-BY
@@ -355,8 +357,8 @@ el resto del fichero.
   de Node y de `fft.js`, el resultado es el mismo en local y en la CI. Si un cambio de plataforma
   mueve un redondeo, se compara con una tolerancia de ±1 por canal en lugar de byte a byte.
 - **[La ganancia automática amplifica el ruido de un *fade out*]** → Con el ruido que no es silencio
-  digital, la v1 acaba encendiendo la tira. El loop de la demo se corta sin *fades*, y el fichero de
-  los tests tiene silencio digital. El caso real (la tarjeta) es de `MOO-15`.
+  digital, la v1 acaba encendiendo la tira. *Bouncer* no tiene *fades*, y el fichero de los tests
+  tiene silencio digital. El caso real (la tarjeta) es de `MOO-15`.
 - **[El bombo no se nota por el corte en 200 Hz]** → Decisión del usuario («tal cual»). Si pasa en la
   mesa, se baja el corte: es una constante, no un cambio de diseño.
 - **[Constantes de la v1 recordadas y no leídas]** → Las de *energía* se leyeron en la exploración; las
@@ -364,8 +366,8 @@ el resto del fichero.
 - **[`MOO-20` es grande]** → Asumido (decisión 13). Cada paso es un commit que deja los tests en verde.
 - **[El motor real rinde peor que el prototipo]** → El análisis es parecido al del spike (FFT de 2 048
   y bandas). Si en la Pi se aleja de 0,5 ms por frame, se compara con el commit `9d0005a`.
-- **[Un WAV de 2,6-5 MB en git]** → Aceptable para un fichero que no cambia. Si hiciera falta otro, se
-  revisaría Git LFS.
+- **[Un WAV de 16,5 MB en git]** → Aceptado por el usuario para un fichero que no cambia (decisión 9).
+  Si hiciera falta otro, se revisaría Git LFS.
 
 ## Migration Plan
 
@@ -378,5 +380,4 @@ el resto del fichero.
 
 ## Open Questions
 
-- **Qué compases de *Bouncer* forman el loop:** los elige el usuario al escucharlo. No cambia nada más.
 - **La posición exacta del vúmetro y sus colores** en la cabecera: se ajustan al verlo.
