@@ -61,7 +61,7 @@
   tipo `4` y avisa a quien escuche de cada posición con su instante de llegada; ignora un mensaje de
   posición mal formado; al cerrarse, deja de avisar; frames, fuente y nivel siguen igual.
   Verificar: los tests nuevos fallan porque la conexión no decodifica la posición.
-- [ ] 2.3 La conexión decodifica la posición con el protocolo de `@moodtable/shared` y la entrega a sus
+- [x] 2.3 La conexión decodifica la posición con el protocolo de `@moodtable/shared` y la entrega a sus
   suscriptores con `performance.now()` de la llegada.
   Verificar: los tests de 2.2 pasan.
 - [ ] 2.4 **(test en rojo)** Tests de `sync.ts`, sin navegador ni temporizadores: el punto de arranque
