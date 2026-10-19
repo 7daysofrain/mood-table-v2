@@ -84,7 +84,7 @@ export function createAudioAnalyzer(sampleRate: number): AudioAnalyzer {
 
     level() {
       let sum = 0;
-      for (let index = 0; index < window.length; index++) sum += (window[index] ?? 0) ** 2;
+      for (const sample of window) sum += sample * sample;
       return Math.sqrt(sum / window.length);
     },
 
@@ -132,15 +132,13 @@ export function createAudioAnalyzer(sampleRate: number): AudioAnalyzer {
 
 /** Silencio digital: toda la ventana por debajo del umbral, en valor absoluto. */
 function isSilent(window: Float32Array): boolean {
-  for (let index = 0; index < window.length; index++) {
-    if (Math.abs(window[index] ?? 0) >= SILENCE_THRESHOLD) return false;
-  }
+  for (const sample of window) if (Math.abs(sample) >= SILENCE_THRESHOLD) return false;
   return true;
 }
 
 function peak(values: Float64Array): number {
   let max = -Infinity;
-  for (let index = 0; index < values.length; index++) max = Math.max(max, values[index] ?? 0);
+  for (const value of values) max = Math.max(max, value);
   return max;
 }
 
