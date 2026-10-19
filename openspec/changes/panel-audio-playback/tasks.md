@@ -71,7 +71,7 @@
   vueltas simuladas con una deriva de 3 ms/min, el error nunca pasa de los 45/125 ms de la spec
   (decisiones 4 y 5).
   Verificar: los tests nuevos fallan porque `sync.ts` no existe.
-- [ ] 2.5 `packages/panel/src/audio/sync.ts`: filtro de mediana circular sobre la última ventana de
+- [x] 2.5 `packages/panel/src/audio/sync.ts`: filtro de mediana circular sobre la última ventana de
   posiciones, error circular, punto de arranque con latencia y decisión de salto con umbral de 20 ms.
   Verificar: los tests de 2.4 pasan.
 - [ ] 2.6 **(test en rojo)** Tests del reproductor con un `AudioContext` falso: descarga `/audio` una
