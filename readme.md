@@ -107,7 +107,7 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 
 #### Zonas del panel
 
-- **Cabecera:** estado de la conexión con el motor, fuente de audio activa (fichero o tarjeta) con su nivel, y fps reales del motor.
+- **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», o «Sin fuente de audio») con un vúmetro de su nivel; más adelante, los fps reales del motor. Sin conexión no muestra fuente ni nivel.
 - **Visor:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
 - **Tiras:** lista de las tiras declaradas en el fichero de configuración, en solo lectura: nombre, número de LEDs y salida (virtual o Adalight con su puerto). Al seleccionar una, el resto del panel actúa sobre ella.
 - **Efectos:** los efectos disponibles para la tira seleccionada, etiquetados como *reactivo* o *ambiente*, con el activo marcado.
@@ -396,6 +396,7 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 - **Selector de tira:** lista las tiras declaradas; lo que se toca se aplica a la tira seleccionada.
 - **Panel de control:** muestra los efectos, etiquetados como reactivos o de ambiente, y **genera los controles a partir del esquema** del efecto activo de la tira (un número con rango se convierte en slider, un color en selector de color, una lista de opciones en desplegable). Al mover un control, envía el cambio por HTTP, limitando la frecuencia de envío mientras se arrastra.
 - **Visor:** recibe los frames binarios por WebSocket ([protocolo del visor](docs/instructions/viewer-protocol.md)) y dibuja **todas las tiras** en un `<canvas>` del navegador, sin librería: una fila por tira, en el orden del fichero de configuración, con un punto de luz por LED. En cada `requestAnimationFrame` pinta el último frame recibido de cada tira, así que nunca acumula retraso. Sin conexión con el motor queda en negro, la cabecera lo avisa y el panel reintenta cada segundo hasta que el motor vuelve, sin recargar. Dibujar cada tira con su geometría declarada llega con H4.
+- **Cabecera:** el estado de la conexión y, por la misma conexión del visor, la fuente de audio (D51): «Fichero: nombre», sin la ruta, o «Sin fuente de audio». Si hay fuente, un vúmetro pinta su nivel en cada `requestAnimationFrame`, como el visor, en una escala de −60 a 0 dB.
 - **Reproductor:** cuando la fuente es un fichero, lo reproduce en el navegador (el motor sirve el mismo fichero que analiza) con un botón de play, porque los navegadores no reproducen audio sin un gesto del usuario. Cómo se sincroniza con los frames del motor se decide en la spec de `MOO-22`.
 
 **Tipos compartidos.** Los esquemas TypeBox (efectos, comandos, configuración de las tiras) viven en un paquete común que importan el motor y el panel. Si cambia un parámetro, el compilador avisa en los dos lados.

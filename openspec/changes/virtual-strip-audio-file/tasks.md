@@ -183,7 +183,7 @@
   vúmetro se mueve); *Instrumento sin fuente de audio* (con la configuración de `e2e/config.json`, la
   cabecera dice «Sin fuente de audio»). Los E2E de HU1 siguen pasando.
   Verificar: `pnpm test:e2e` pasa en local y en la CI.
-- [ ] 3.6 Documentación y cierre de la historia:
+- [x] 3.6 Documentación y cierre de la historia:
   - README §1.3 (*Cabecera*) y §2.2 (*Panel y visor*), si cambia lo que describen;
   - `prompts.md`: entrada de la implementación de la historia, con el formato de `course.md` §5;
   - cada escenario de los criterios de `MOO-14` tiene su test (DoD de la historia).
