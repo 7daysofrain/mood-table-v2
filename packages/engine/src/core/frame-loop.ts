@@ -46,6 +46,15 @@ export interface LevelOutput {
   write(level: number, tick: Tick): void;
 }
 
+/**
+ * Puerto de salida de la **posición del fichero de audio** (decisión 9 del change
+ * panel-audio-playback): en cada pulso, el punto del fichero en segundos con el pulso al que
+ * pertenece. Síncrono y sin bloquear, como `LevelOutput`.
+ */
+export interface PositionOutput {
+  write(position: number, tick: Tick): void;
+}
+
 export interface FrameLoopOptions {
   /** Los efectos entre los que elige cada tira. Por defecto, el registro del motor. */
   effects?: readonly AnyEffect[];
@@ -53,6 +62,8 @@ export interface FrameLoopOptions {
   audioSource?: AudioSource;
   /** Quién recibe el nivel de la fuente en cada pulso: el visor, los tests… */
   levelOutputs?: readonly LevelOutput[];
+  /** Quién recibe la posición del fichero en cada pulso, si la fuente la sabe. */
+  positionOutputs?: readonly PositionOutput[];
 }
 
 export interface FrameLoop {

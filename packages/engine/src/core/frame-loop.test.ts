@@ -6,7 +6,13 @@ import type { AudioFeatures } from './audio/analysis.ts';
 import type { AudioSource } from './audio/audio-source.ts';
 import { breathing } from './effects/breathing.ts';
 import { defaultParams, type Effect } from './effects/effect.ts';
-import { createFrameLoop, type LevelOutput, type LightOutput, type Tick } from './frame-loop.ts';
+import {
+  createFrameLoop,
+  type LevelOutput,
+  type LightOutput,
+  type PositionOutput,
+  type Tick,
+} from './frame-loop.ts';
 
 function strip(id: string, ledCount: number): StripConfig {
   return { id, name: id, output: { type: 'virtual' }, ledCount, effect: 'breathing' };
@@ -283,5 +289,90 @@ describe('el bucle con fuente de audio', () => {
 
     expect(reactive.seen).toEqual([null, null]);
     expect(level.levels).toEqual([]);
+  });
+});
+
+/** Una fuente de prueba que sabe en qué punto está: su posición es el instante en un fichero de 4 s. */
+function sourceWithPosition(): AudioSource {
+  return {
+    sampleRate: 44_100,
+    read(_time, out) {
+      out.fill(0);
+    },
+    positionAt: (time) => time % 4,
+  };
+}
+
+function positionRecorder() {
+  const positions: { seq: number; position: number }[] = [];
+  const output: PositionOutput = {
+    write(position, tick) {
+      positions.push({ seq: tick.seq, position });
+    },
+  };
+  return { output, positions };
+}
+
+describe('el bucle con una fuente que sabe su posición', () => {
+  it('entrega en cada pulso la posición del fichero con el seq del pulso', () => {
+    const position = positionRecorder();
+    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+      audioSource: sourceWithPosition(),
+      positionOutputs: [position.output],
+    });
+
+    loop.tick(0);
+    loop.tick(FRAME_MS);
+    loop.tick(5 * FRAME_MS);
+
+    expect(position.positions).toEqual([
+      { seq: 0, position: 0 },
+      { seq: 1, position: 1 / 60 },
+      { seq: 5, position: 5 / 60 },
+    ]);
+  });
+
+  it('la posición vuelve a casi 0 cuando el bucle pasa del final del fichero', () => {
+    const position = positionRecorder();
+    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+      audioSource: sourceWithPosition(),
+      positionOutputs: [position.output],
+    });
+
+    loop.tick(0);
+    loop.tick(239 * FRAME_MS);
+    loop.tick(241 * FRAME_MS);
+
+    expect(position.positions.map(({ position: value }) => value)).toEqual([
+      0,
+      expect.closeTo(239 / 60, 9),
+      expect.closeTo(1 / 60, 9),
+    ]);
+  });
+
+  it('con una fuente que no sabe su posición, no entrega nada', () => {
+    const { source } = toneSource();
+    const position = positionRecorder();
+    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+      audioSource: source,
+      positionOutputs: [position.output],
+    });
+
+    loop.tick(0);
+    loop.tick(FRAME_MS);
+
+    expect(position.positions).toEqual([]);
+  });
+
+  it('sin fuente de audio, no entrega nada', () => {
+    const position = positionRecorder();
+    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+      positionOutputs: [position.output],
+    });
+
+    loop.tick(0);
+    loop.tick(FRAME_MS);
+
+    expect(position.positions).toEqual([]);
   });
 });

@@ -32,4 +32,8 @@ export class MemoryAudioSource implements AudioSource {
       index = index + 1 === length ? 0 : index + 1;
     }
   }
+
+  positionAt(time: number): number {
+    throw new Error(`Sin implementar (${time})`);
+  }
 }

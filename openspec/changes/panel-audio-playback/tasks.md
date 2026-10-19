@@ -19,7 +19,7 @@
   `docs/instructions/viewer-protocol.md` con el mensaje byte a byte y su ejemplo, y la fila del
   documento en el índice de `AGENTS.md` si cambia su descripción.
   Verificar: los tests de 1.1 pasan y el documento describe exactamente lo que hace el código.
-- [ ] 1.3 **(test en rojo)** Tests del núcleo: `positionAt(time)` de la fuente en memoria da, en
+- [x] 1.3 **(test en rojo)** Tests del núcleo: `positionAt(time)` de la fuente en memoria da, en
   segundos, la muestra en la que acaba la ventana de `read(time, …)`, y vuelve a casi 0 al pasar el
   final; con el fichero de golpes (4 s), `positionAt(5)` ronda 1 s. Tests del bucle: con una fuente con
   `positionAt`, una `PositionOutput` recibe en cada pulso la posición con el `seq` del pulso; con una
