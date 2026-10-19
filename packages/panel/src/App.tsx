@@ -17,7 +17,7 @@ export type PanelConnection = Pick<
 /** Lo que el panel usa del reproductor del fichero de audio. */
 export type PanelPlayer = Pick<
   AudioPlayer,
-  'state' | 'error' | 'jumps' | 'subscribe' | 'play' | 'stop'
+  'state' | 'error' | 'jumps' | 'subscribe' | 'play' | 'stop' | 'open' | 'close'
 >;
 
 /**
@@ -42,15 +42,17 @@ export function App({
     };
   }, [connection]);
 
-  // Los E2E no pueden oír: leen el estado del reproductor y su error de sincronía, sin poder tocar
-  // nada (decisión 8 del change panel-audio-playback). Al cerrarse el panel, deja de sonar.
+  // El reproductor escucha la conexión mientras el panel está abierto; al cerrarse, calla y suelta
+  // el contexto de audio. Los E2E no pueden oír: leen su estado, el error de sincronía y los saltos,
+  // sin poder tocar nada (decisión 8 del change panel-audio-playback).
   useEffect(() => {
+    player.open();
     Object.defineProperty(window, 'moodTableAudio', {
       configurable: true,
       get: () => ({ state: player.state, error: player.error, jumps: player.jumps }),
     });
     return () => {
-      player.stop();
+      player.close();
       Reflect.deleteProperty(window, 'moodTableAudio');
     };
   }, [player]);

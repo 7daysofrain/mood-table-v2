@@ -126,7 +126,7 @@
   conexión; `open()` y `close()` se pueden repetir (doble montaje de `StrictMode`); `close()` cierra el
   contexto de audio y el siguiente «Oír» crea otro (decisión 3).
   Verificar: los tests nuevos fallan porque el constructor se suscribe y nadie cierra el contexto.
-- [ ] 2.15 `AudioPlayer.open()` y `close()` (sustituye a `dispose()`), y `App` los llama desde un
+- [x] 2.15 `AudioPlayer.open()` y `close()` (sustituye a `dispose()`), y `App` los llama desde un
   efecto, como la conexión.
   Verificar: los tests de 2.14 pasan y los de `App` siguen en verde.
 - [ ] 2.16 Iconos de escucha en `AudioControl.tsx`: altavoz tachado callado y altavoz con ondas

@@ -31,7 +31,13 @@ export type PlayerConnection = Pick<
 /** Lo que el reproductor usa de un `AudioContext`: así los tests pueden darle uno falso. */
 export type AudioContextLike = Pick<
   AudioContext,
-  'currentTime' | 'state' | 'destination' | 'resume' | 'decodeAudioData' | 'createBufferSource'
+  | 'currentTime'
+  | 'state'
+  | 'destination'
+  | 'resume'
+  | 'close'
+  | 'decodeAudioData'
+  | 'createBufferSource'
 > &
   Partial<Pick<AudioContext, 'outputLatency' | 'baseLatency' | 'getOutputTimestamp'>>;
 
@@ -88,7 +94,7 @@ export class AudioPlayer {
   private readonly createContext: () => AudioContextLike;
   private readonly now: () => number;
   private readonly listeners = new Set<() => void>();
-  private readonly unsubscribe: (() => void)[];
+  private unsubscribe: (() => void)[] = [];
   private context: AudioContextLike | undefined;
   private track: Track | undefined;
   /** Sin fichero aún, el último segundo de posiciones: el primer arranque sale de su mediana. */
@@ -106,6 +112,12 @@ export class AudioPlayer {
     this.fetchAudio = options.fetchAudio ?? fetchAudioFile;
     this.createContext = options.createContext ?? (() => new AudioContext());
     this.now = options.now ?? (() => performance.now());
+  }
+
+  /** Empieza a escuchar la conexión. Se puede volver a abrir tras cerrarlo. */
+  open(): void {
+    if (this.unsubscribe.length > 0) return;
+    const { connection } = this;
     this.unsubscribe = [
       connection.subscribePositions(({ position }, arrivedAt) => {
         this.arrive(position, arrivedAt);
@@ -114,6 +126,19 @@ export class AudioPlayer {
         if (connection.status === 'disconnected') this.forget();
       }),
     ];
+  }
+
+  /**
+   * Deja de escuchar la conexión, calla y cierra el contexto de audio, que mantiene vivo el hilo de
+   * audio del navegador. El siguiente «Oír» crea otro.
+   */
+  close(): void {
+    for (const unsubscribe of this.unsubscribe) unsubscribe();
+    this.unsubscribe = [];
+    this.forget();
+    const { context } = this;
+    this.context = undefined;
+    void context?.close().catch(() => undefined);
   }
 
   get state(): PlayerState {
@@ -168,12 +193,6 @@ export class AudioPlayer {
     this.request++;
     this.silence();
     this.setState('silent');
-  }
-
-  /** Deja de escuchar la conexión y calla. */
-  dispose(): void {
-    for (const unsubscribe of this.unsubscribe) unsubscribe();
-    this.stop();
   }
 
   private async prepare(context: AudioContextLike, request: number): Promise<void> {
