@@ -1,8 +1,8 @@
 /**
- * Un motor propio para los E2E que tienen que pararlo o arrancarlo (reinicio, panel sin motor). Se
- * arranca como proceso, igual que lo arranca el maker, con su propio fichero de configuración
- * (`MOODTABLE_CONFIG`) y un puerto libre: los E2E prueban el sistema desde fuera, sin importar código
- * del motor (README §2.3).
+ * Un motor propio para los E2E que tienen que pararlo o arrancarlo (reinicio, panel sin motor) o que
+ * necesitan otra configuración (una fuente de audio). Se arranca como proceso, igual que lo arranca
+ * el maker, con su propio fichero de configuración (`MOODTABLE_CONFIG`) y un puerto libre: los E2E
+ * prueban el sistema desde fuera, sin importar código del motor (README §2.3).
  */
 import { type ChildProcess, spawn } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
@@ -32,25 +32,31 @@ async function freePort(): Promise<number> {
   return address.port;
 }
 
+export interface TestEngineOptions {
+  /** Ruta absoluta de un fichero de audio como fuente. Sin ella, el motor no tiene fuente de audio. */
+  audioFile?: string;
+  /** El efecto con el que arranca la tira. Por defecto, la respiración. */
+  effect?: 'breathing' | 'energy';
+}
+
 /**
- * Prepara un motor con una tira virtual de 60 LEDs en un puerto libre, sin arrancarlo. Su fichero de
- * configuración va en la carpeta de resultados del test, que Playwright vacía en cada ejecución.
+ * Prepara un motor con una tira virtual de 60 LEDs en un puerto libre, sin arrancarlo, con la fuente
+ * de audio y el efecto que pida el test. Su fichero de configuración va en la carpeta de resultados
+ * del test, que Playwright vacía en cada ejecución.
  */
-export async function createTestEngine(): Promise<TestEngine> {
+export async function createTestEngine({
+  audioFile,
+  effect = 'breathing',
+}: TestEngineOptions = {}): Promise<TestEngine> {
   const port = await freePort();
   const config = test.info().outputPath('config.json');
   await writeFile(
     config,
     JSON.stringify({
       server: { host: '127.0.0.1', port },
+      ...(audioFile ? { audioSource: { type: 'file', path: audioFile } } : {}),
       strips: [
-        {
-          id: 'e2e',
-          name: 'Tira de los E2E',
-          output: { type: 'virtual' },
-          ledCount: 60,
-          effect: 'breathing',
-        },
+        { id: 'e2e', name: 'Tira de los E2E', output: { type: 'virtual' }, ledCount: 60, effect },
       ],
     }),
   );

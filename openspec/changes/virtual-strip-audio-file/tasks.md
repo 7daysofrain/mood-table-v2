@@ -177,7 +177,7 @@
   Mantine; el vúmetro pinta el último nivel en cada `requestAnimationFrame`.
   Verificar: los tests de 3.3 pasan y, con `pnpm dev`, la cabecera dice «Fichero: bouncer.wav» y el
   vúmetro sigue la música.
-- [ ] 3.5 E2E de HU2 en `e2e/`: `e2e/engine.ts` admite la configuración de cada test; un motor con el
+- [x] 3.5 E2E de HU2 en `e2e/`: `e2e/engine.ts` admite la configuración de cada test; un motor con el
   fichero de golpes y una tira con *energía*. Escenarios: *La tira virtual reacciona a un fichero de
   audio* (el visor cambia entre un golpe y el silencio, la cabecera dice «Fichero: golpes.wav» y el
   vúmetro se mueve); *Instrumento sin fuente de audio* (con la configuración de `e2e/config.json`, la
