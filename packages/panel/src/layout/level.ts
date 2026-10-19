@@ -7,9 +7,12 @@
 /** Por debajo, el vúmetro ya está vacío. */
 const FLOOR_DB = -60;
 
-/** Decibelios del nivel (de 0 a 1), recortados al rango del vúmetro. El silencio es el mínimo. */
+/**
+ * Decibelios del nivel (de 0 a 1), recortados al rango del vúmetro. El silencio, y un nivel que no es
+ * un número, son el mínimo.
+ */
 export function levelToDecibels(level: number): number {
-  if (!(level > 0)) return FLOOR_DB;
+  if (Number.isNaN(level) || level <= 0) return FLOOR_DB;
   return Math.min(0, Math.max(FLOOR_DB, 20 * Math.log10(level)));
 }
 
