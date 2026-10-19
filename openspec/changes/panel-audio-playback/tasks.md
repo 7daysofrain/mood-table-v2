@@ -15,7 +15,7 @@
   longitud distinta, otro tipo y una posición negativa o no finita; `decodeFrame`, `decodeLevel` y
   `decodeSource` rechazan el tipo `4` (`specs/audio-playback`, decisión 2).
   Verificar: los tests nuevos fallan porque el mensaje no existe; el resto sigue en verde.
-- [ ] 1.2 Codificador y decodificador del mensaje de posición en `packages/shared`;
+- [x] 1.2 Codificador y decodificador del mensaje de posición en `packages/shared`;
   `docs/instructions/viewer-protocol.md` con el mensaje byte a byte y su ejemplo, y la fila del
   documento en el índice de `AGENTS.md` si cambia su descripción.
   Verificar: los tests de 1.1 pasan y el documento describe exactamente lo que hace el código.
