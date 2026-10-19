@@ -18,7 +18,10 @@ const METER = { name: 'Nivel de la fuente de audio' };
 /** Los golpes duran unos 90 ms por segundo: se muestrea en cada frame de pantalla, durante 3 s. */
 const SAMPLE_MS = 3000;
 
-/** El brillo del visor (suma de los canales RGB) más bajo y más alto en `SAMPLE_MS`. */
+/**
+ * El brillo del visor (suma de los canales RGB) más alto en `SAMPLE_MS`, y el más bajo después de
+ * verlo encendido: antes del primer frame, el canvas solo tiene el fondo negro, y no probaría nada.
+ */
 async function viewerBrightnessRange(page: Page): Promise<{ min: number; max: number }> {
   return page.getByRole('img', { name: 'Tiras del visor' }).evaluate(async (element, duration) => {
     const canvas = element as HTMLCanvasElement;
@@ -34,8 +37,8 @@ async function viewerBrightnessRange(page: Page): Promise<{ min: number; max: nu
       for (let index = 0; index < data.length; index += 4) {
         sum += (data[index] ?? 0) + (data[index + 1] ?? 0) + (data[index + 2] ?? 0);
       }
-      min = Math.min(min, sum);
       max = Math.max(max, sum);
+      if (max > 0) min = Math.min(min, sum);
     }
     return { min, max };
   }, SAMPLE_MS);
@@ -61,20 +64,23 @@ function header(page: Page) {
 test('la tira virtual reacciona a un fichero de audio', async ({ page }) => {
   const engine = await createTestEngine({ audioFile: GOLPES, effect: 'energy' });
   await engine.start();
+  // El motor se para aunque falle una comprobación: si no, quedaría vivo con su puerto ocupado.
+  try {
+    await page.goto(engine.url);
 
-  await page.goto(engine.url);
-
-  await expect(header(page).getByRole('status')).toHaveText('Conectado');
-  await expect(header(page)).toContainText('Fichero: golpes.wav');
-  // El visor cambia entre un golpe (encendido) y el silencio (en negro).
-  const brightness = await viewerBrightnessRange(page);
-  expect(brightness.max, 'el visor se enciende con los golpes').toBeGreaterThan(0);
-  expect(brightness.min, 'el visor se apaga en el silencio').toBe(0);
-  // El vúmetro se mueve: sube con los golpes y vuelve al mínimo en el silencio.
-  const levels = await meterValues(page);
-  expect(Math.max(...levels), 'el vúmetro sube con los golpes').toBeGreaterThan(-60);
-  expect(Math.min(...levels), 'el vúmetro vuelve al mínimo').toBe(-60);
-  await engine.stop();
+    await expect(header(page).getByRole('status')).toHaveText('Conectado');
+    await expect(header(page)).toContainText('Fichero: golpes.wav');
+    // El visor cambia entre un golpe (encendido) y el silencio (en negro).
+    const brightness = await viewerBrightnessRange(page);
+    expect(brightness.max, 'el visor se enciende con los golpes').toBeGreaterThan(0);
+    expect(brightness.min, 'el visor se apaga en el silencio').toBe(0);
+    // El vúmetro se mueve: sube con los golpes y vuelve al mínimo en el silencio.
+    const levels = await meterValues(page);
+    expect(Math.max(...levels), 'el vúmetro sube con los golpes').toBeGreaterThan(-60);
+    expect(Math.min(...levels), 'el vúmetro vuelve al mínimo').toBe(-60);
+  } finally {
+    await engine.stop();
+  }
 });
 
 test('instrumento sin fuente de audio', async ({ page }) => {
