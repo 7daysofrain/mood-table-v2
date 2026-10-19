@@ -118,8 +118,8 @@ reproduce con un `AudioBufferSourceNode` en bucle (`loop = true`), arrancado en 
   se corrige nada: su reloj no avanza y el error crecería solo. Si el navegador no deja reanudarlo, el
   control vuelve a callado. Reanudarlo solo o avisar al maker queda fuera de `MOO-22`.
 - **Ciclo de vida:** el reproductor no hace nada al crearse; se conecta y se desconecta con
-  `start()` y `stop()` desde un efecto de React, como la conexión, y `stop()` cierra el contexto de
-  audio. Así sobrevive al doble montaje de `StrictMode` sin dejar suscripciones colgadas.
+  `open()` y `close()` desde un efecto de React, como la conexión con `start()` y `stop()` (que en el
+  reproductor ya es dejar de oír), y `close()` cierra el contexto de audio. Así sobrevive al doble montaje de `StrictMode` sin dejar suscripciones colgadas.
 
 **Alternativa descartada:** `<audio loop>`. Empieza a sonar antes (descarga por partes), pero el
 salto con `currentTime` es aproximado y distinto en cada navegador, el bucle puede tener un pequeño

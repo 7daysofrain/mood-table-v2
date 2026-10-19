@@ -27,6 +27,11 @@ class FakeConnection implements PlayerConnection {
     return () => this.positionListeners.delete(listener);
   }
 
+  /** Cuántos oyentes tiene, de estado y de posiciones. */
+  get listenerCount(): number {
+    return this.listeners.size + this.positionListeners.size;
+  }
+
   position(position: number, arrivedAt: number): void {
     const message: PositionMessage = { seq: 0, position };
     for (const listener of this.positionListeners) listener(message, arrivedAt);
@@ -47,6 +52,7 @@ let now: number;
 let context: FakeContext;
 let connection: FakeConnection;
 let fetches: number;
+let contexts: number;
 let player: AudioPlayer;
 
 /**
@@ -92,18 +98,25 @@ beforeEach(() => {
   context = new FakeContext();
   connection = new FakeConnection();
   fetches = 0;
+  contexts = 0;
   player = new AudioPlayer(connection, {
     fetchAudio: () => {
       fetches++;
       return Promise.resolve(new ArrayBuffer(8));
     },
-    createContext: () => context,
+    createContext: () => {
+      contexts++;
+      // Cerrado, el navegador obliga a crear otro: el test sigue con uno nuevo.
+      if (context.closed) context = new FakeContext();
+      return context;
+    },
     now: () => now,
   });
+  player.open();
 });
 
 afterEach(() => {
-  player.dispose();
+  player.close();
   vi.useRealTimers();
 });
 
@@ -337,11 +350,12 @@ describe('el reproductor del fichero de audio', () => {
       now: () => now,
     });
 
+    failing.open();
     failing.play();
     await settle();
 
     expect(failing.state).toBe('silent');
-    failing.dispose();
+    failing.close();
   });
 
   it('avisa de cada cambio de estado', async () => {
@@ -383,5 +397,53 @@ describe('muchas vueltas del bucle con deriva entre los relojes', () => {
     expect(Math.min(...errors)).toBeGreaterThanOrEqual(-0.125);
     // 3 ms por minuto en 10 minutos son 30 ms: salta una vez, al pasar de 20 ms, no en cada vuelta.
     expect(player.jumps).toBe(1);
+  });
+});
+
+describe('el ciclo de vida del reproductor', () => {
+  it('crearlo no lo suscribe a la conexión: lo hace al abrirlo, y al cerrarlo se da de baja', () => {
+    const fresh = new FakeConnection();
+    const idle = new AudioPlayer(fresh, { createContext: () => context });
+    expect(fresh.listenerCount).toBe(0);
+
+    idle.open();
+    expect(fresh.listenerCount).toBe(2);
+
+    idle.close();
+    expect(fresh.listenerCount).toBe(0);
+  });
+
+  it('se puede abrir, cerrar y volver a abrir, como en el doble montaje de StrictMode', async () => {
+    player.close();
+    player.open();
+    player.open();
+    expect(connection.listenerCount).toBe(2);
+
+    const point = { value: 1 };
+    connection.position(point.value, now);
+    player.play();
+    await settle();
+
+    expect(player.state).toBe('playing');
+  });
+
+  it('al cerrarlo calla y cierra el contexto de audio; el siguiente «Oír» crea otro', async () => {
+    const point = { value: 1 };
+    player.play();
+    await settle();
+    advance(100, point);
+    const first = context;
+    const node = lastNode();
+
+    player.close();
+
+    expect(node.stopped).toBe(true);
+    expect(player.state).toBe('silent');
+    expect(first.closed).toBe(true);
+
+    player.open();
+    player.play();
+    expect(contexts).toBe(2);
+    expect(context).not.toBe(first);
   });
 });

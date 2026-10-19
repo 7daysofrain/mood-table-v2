@@ -122,11 +122,12 @@
 - [x] 2.13 `player.ts` con lo de 2.12; `jumps` en `window.moodTableAudio`; fuera `Sync.reset()`, que no
   usa nadie, con su test.
   Verificar: los tests de 2.12 pasan.
-- [ ] 2.14 **(test en rojo)** Tests del ciclo de vida del reproductor: crearlo no lo suscribe a la
-  conexión; `start()` y `stop()` se pueden repetir (doble montaje de `StrictMode`); `stop()` cierra el
+- [x] 2.14 **(test en rojo)** Tests del ciclo de vida del reproductor: crearlo no lo suscribe a la
+  conexión; `open()` y `close()` se pueden repetir (doble montaje de `StrictMode`); `close()` cierra el
   contexto de audio y el siguiente «Oír» crea otro (decisión 3).
   Verificar: los tests nuevos fallan porque el constructor se suscribe y nadie cierra el contexto.
-- [ ] 2.15 `AudioPlayer.start()` y `stop()`, y `App` los llama desde un efecto, como la conexión.
+- [ ] 2.15 `AudioPlayer.open()` y `close()` (sustituye a `dispose()`), y `App` los llama desde un
+  efecto, como la conexión.
   Verificar: los tests de 2.14 pasan y los de `App` siguen en verde.
 - [ ] 2.16 Iconos de escucha en `AudioControl.tsx`: altavoz tachado callado y altavoz con ondas
   sonando, dos SVG de un trazo como ahora (decisión 7). Los nombres accesibles no cambian.

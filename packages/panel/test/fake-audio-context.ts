@@ -44,7 +44,14 @@ export class FakeContext implements AudioContextLike {
   readonly destination = {} as AudioDestinationNode;
   readonly nodes: FakeNode[] = [];
   resumed = 0;
+  closed = false;
   decoded: ArrayBuffer[] = [];
+
+  close(): Promise<void> {
+    this.closed = true;
+    this.state = 'closed';
+    return Promise.resolve();
+  }
 
   resume(): Promise<void> {
     this.resumed++;
