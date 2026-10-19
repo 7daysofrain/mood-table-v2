@@ -4,13 +4,16 @@
  */
 import type { AudioContextLike } from '../src/audio/player.ts';
 
-/** Un nodo de audio falso: apunta cómo lo arrancan y si lo paran. */
+/** Un nodo de audio falso: apunta cómo lo arrancan y cuándo lo paran. */
 export class FakeNode {
   buffer: AudioBuffer | null = null;
   loop = false;
   started: { when: number; offset: number } | undefined;
   stopped = false;
+  /** El instante del contexto en que se pidió que parase; `0`, ya. */
+  stoppedAt: number | undefined;
   connected = false;
+  onended: (() => void) | null = null;
 
   connect(): void {
     this.connected = true;
@@ -24,14 +27,18 @@ export class FakeNode {
     this.started = { when, offset };
   }
 
-  stop(): void {
+  stop(when = 0): void {
     this.stopped = true;
+    this.stoppedAt = when;
   }
 }
 
 /** Un `AudioContext` falso: el test mueve su reloj y decide su retraso de salida. */
 export class FakeContext implements AudioContextLike {
   currentTime = 50;
+  state: AudioContextState = 'running';
+  /** Si es `true`, el navegador no deja reanudar el contexto. */
+  resumeFails = false;
   outputLatency: number | undefined = 0.03;
   baseLatency: number | undefined = 0.01;
   readonly destination = {} as AudioDestinationNode;
@@ -41,6 +48,8 @@ export class FakeContext implements AudioContextLike {
 
   resume(): Promise<void> {
     this.resumed++;
+    if (this.resumeFails) return Promise.reject(new Error('NotAllowedError'));
+    this.state = 'running';
     return Promise.resolve();
   }
 

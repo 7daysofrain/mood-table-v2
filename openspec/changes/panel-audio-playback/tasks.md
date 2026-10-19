@@ -111,7 +111,7 @@
 > Pasos 2.12-2.17: lo que salió de la code review de la PR (19-oct), con `design.md` revisado
 > (decisiones 3, 4, 7 y 8, y riesgos).
 
-- [ ] 2.12 **(test en rojo)** Tests del reproductor con el `AudioContext` falso: expone cuántos saltos
+- [x] 2.12 **(test en rojo)** Tests del reproductor con el `AudioContext` falso: expone cuántos saltos
   lleva desde el último «Oír» y el error medido antes de corregir; el primer arranque sale de la
   mediana de las posiciones llegadas mientras se preparaba, no de la primera tras decodificar; con el
   contexto parado, no corrige; si `resume()` falla, vuelve a callado; el nodo nuevo se programa ~50 ms
