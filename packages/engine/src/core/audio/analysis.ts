@@ -98,9 +98,7 @@ export function createAudioAnalyzer(sampleRate: number): AudioAnalyzer {
       }
       fft.realTransform(spectrum, input);
       for (let bin = 0; bin < magnitudes.length; bin++) {
-        const real = spectrum[2 * bin] ?? 0;
-        const imaginary = spectrum[2 * bin + 1] ?? 0;
-        magnitudes[bin] = Math.sqrt(real * real + imaginary * imaginary);
+        magnitudes[bin] = Math.hypot(spectrum[2 * bin] ?? 0, spectrum[2 * bin + 1] ?? 0);
       }
 
       for (let band = 0; band < BAND_COUNT; band++) {
