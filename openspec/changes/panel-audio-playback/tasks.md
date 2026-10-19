@@ -29,7 +29,7 @@
   misma cuenta que `read`; puerto `PositionOutput` en `core/frame-loop.ts` y entrega en cada pulso, sin
   crear objetos.
   Verificar: los tests de 1.3 pasan y los frames dorados no cambian.
-- [ ] 1.5 **(test en rojo)** Tests de integración del servidor: con dos clientes WebSocket y un fichero
+- [x] 1.5 **(test en rojo)** Tests de integración del servidor: con dos clientes WebSocket y un fichero
   como fuente, los dos reciben en cada pulso un mensaje de posición con el mismo `seq` que los frames;
   sin fuente, ninguno. `GET /audio` con un fichero como fuente devuelve el fichero byte a byte con
   `Content-Type: audio/wav`, y sin fuente, 404; ni el cuerpo del 404 ni las cabeceras llevan la ruta en

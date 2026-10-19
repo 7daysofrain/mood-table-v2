@@ -18,7 +18,7 @@ import fastifyWebsocket from '@fastify/websocket';
 import { encodeFrame, encodeLevel, encodeSource, type SourceMessage } from '@moodtable/shared';
 import Fastify from 'fastify';
 
-import type { LevelOutput, LightOutput } from '../core/frame-loop.ts';
+import type { LevelOutput, LightOutput, PositionOutput } from '../core/frame-loop.ts';
 
 export interface ServerOptions {
   host: string;
@@ -27,6 +27,8 @@ export interface ServerOptions {
   panelDir: string;
   /** La fuente de audio que se anuncia a cada panel al conectarse. Por defecto, ninguna. */
   source?: SourceMessage;
+  /** Ruta ya resuelta del fichero de audio que se sirve en `/audio`. Sin ella, `/audio` no existe. */
+  audioFile?: string;
 }
 
 export interface EngineServer {
@@ -36,6 +38,8 @@ export interface EngineServer {
   viewerOutput(stripIndex: number): LightOutput;
   /** La salida del nivel de la fuente de audio: lo envía a todos los navegadores conectados. */
   levelOutput: LevelOutput;
+  /** La salida de la posición del fichero de audio: la envía a todos los navegadores conectados. */
+  positionOutput: PositionOutput;
   close(): Promise<void>;
 }
 
@@ -104,6 +108,11 @@ export async function startServer({
         for (const browser of browsers) {
           if (browser.readyState === browser.OPEN) browser.send(message);
         }
+      },
+    },
+    positionOutput: {
+      write(position, tick) {
+        throw new Error(`Sin implementar (${position}, ${tick.seq})`);
       },
     },
     close: () => app.close(),
