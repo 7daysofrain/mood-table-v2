@@ -129,7 +129,7 @@
 - [x] 2.15 `AudioPlayer.open()` y `close()` (sustituye a `dispose()`), y `App` los llama desde un
   efecto, como la conexión.
   Verificar: los tests de 2.14 pasan y los de `App` siguen en verde.
-- [ ] 2.16 Iconos de escucha en `AudioControl.tsx`: altavoz tachado callado y altavoz con ondas
+- [x] 2.16 Iconos de escucha en `AudioControl.tsx`: altavoz tachado callado y altavoz con ondas
   sonando, dos SVG de un trazo como ahora (decisión 7). Los nombres accesibles no cambian.
   Verificar: captura del control en los tres estados con `pnpm dev`.
 - [ ] 2.17 E2E de sincronía con los saltos: *Oír* y *Volver a oír*, sin saltos tras arrancar; *El

@@ -1,7 +1,7 @@
 /**
  * Control de oír el fichero de audio (decisión 7 del change panel-audio-playback): un botón en la
- * cabecera, junto a la fuente, con tres estados. Callado, pide oír; mientras prepara el audio, avisa
- * y no hace nada; sonando, lo calla. Quién lo muestra decide cuándo hay algo que oír: solo con un
+ * cabecera, junto a la fuente, con tres estados. Callado (altavoz tachado), pide oír; mientras
+ * prepara el audio, avisa y no hace nada; sonando (altavoz con ondas), lo calla. Quién lo muestra decide cuándo hay algo que oír: solo con un
  * fichero como fuente.
  */
 import { ActionIcon } from '@mantine/core';
@@ -12,19 +12,26 @@ import type { AudioPlayer } from './player.ts';
 /** Lo que el control usa del reproductor: así los tests pueden darle uno falso. */
 export type ControlPlayer = Pick<AudioPlayer, 'state' | 'subscribe' | 'play' | 'stop'>;
 
-/** Iconos de *play* y *pause*: dos trazos, sin una librería de iconos para solo dos. */
-function PlayIcon() {
+/**
+ * Iconos de escucha, no de transporte: el fichero sigue sonando en el motor aunque el panel calle.
+ * Como en los reproductores de vídeo, el icono muestra el estado (¿suena el panel?) y el nombre
+ * accesible, la acción. Dos SVG de un trazo, sin una librería de iconos para solo dos.
+ */
+function SpeakerIcon({ muted }: Readonly<{ muted: boolean }>) {
   return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M8 5v14l11-7z" />
-    </svg>
-  );
-}
-
-function PauseIcon() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor" />
+      {muted ? <path d="M16 9l5 6M21 9l-5 6" /> : <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" />}
     </svg>
   );
 }
@@ -48,7 +55,7 @@ export function AudioControl({ player }: Readonly<{ player: ControlPlayer }>): R
           player.stop();
         }}
       >
-        <PauseIcon />
+        <SpeakerIcon muted={false} />
       </ActionIcon>
     );
   }
@@ -61,7 +68,7 @@ export function AudioControl({ player }: Readonly<{ player: ControlPlayer }>): R
         player.play();
       }}
     >
-      <PlayIcon />
+      <SpeakerIcon muted />
     </ActionIcon>
   );
 }
