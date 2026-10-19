@@ -84,7 +84,7 @@
   con `loop`, `start(cuando, desde)`, `getOutputTimestamp` y `outputLatency`), con la sincronía de 2.5
   comprobada unas pocas veces por segundo.
   Verificar: los tests de 2.6 pasan.
-- [ ] 2.8 **(test en rojo)** Tests del control con Testing Library: con un fichero como fuente, un
+- [x] 2.8 **(test en rojo)** Tests del control con Testing Library: con un fichero como fuente, un
   botón «Oír el fichero de audio» en la cabecera; al pulsarlo, «Preparando el audio» y después «Dejar
   de oír el fichero de audio»; al pulsar este, vuelve a «Oír…»; sin fuente de audio o sin conexión,
   ningún botón; al perder la conexión mientras suena, vuelve a «Oír…» (decisión 7).

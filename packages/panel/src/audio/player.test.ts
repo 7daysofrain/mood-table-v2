@@ -1,60 +1,9 @@
 import type { PositionMessage } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { FakeContext, type FakeNode } from '../../test/fake-audio-context.ts';
 import type { ConnectionStatus, PositionListener } from '../engine/connection.ts';
-import { AudioPlayer, type AudioContextLike, type PlayerConnection } from './player.ts';
-
-/** Un nodo de audio falso: apunta cómo lo arrancan y si lo paran. */
-class FakeNode {
-  buffer: AudioBuffer | null = null;
-  loop = false;
-  started: { when: number; offset: number } | undefined;
-  stopped = false;
-  connected = false;
-
-  connect(): void {
-    this.connected = true;
-  }
-
-  disconnect(): void {
-    this.connected = false;
-  }
-
-  start(when: number, offset: number): void {
-    this.started = { when, offset };
-  }
-
-  stop(): void {
-    this.stopped = true;
-  }
-}
-
-/** Un `AudioContext` falso: el test mueve su reloj y decide su retraso de salida. */
-class FakeContext implements AudioContextLike {
-  currentTime = 50;
-  outputLatency: number | undefined = 0.03;
-  baseLatency: number | undefined = 0.01;
-  readonly destination = {} as AudioDestinationNode;
-  readonly nodes: FakeNode[] = [];
-  resumed = 0;
-  decoded: ArrayBuffer[] = [];
-
-  resume(): Promise<void> {
-    this.resumed++;
-    return Promise.resolve();
-  }
-
-  decodeAudioData(data: ArrayBuffer): Promise<AudioBuffer> {
-    this.decoded.push(data);
-    return Promise.resolve({ duration: 4 } as AudioBuffer);
-  }
-
-  createBufferSource(): AudioBufferSourceNode {
-    const node = new FakeNode();
-    this.nodes.push(node);
-    return node as unknown as AudioBufferSourceNode;
-  }
-}
+import { AudioPlayer, type PlayerConnection } from './player.ts';
 
 /** La conexión con el motor, falsa: el test cambia su estado y le hace llegar posiciones. */
 class FakeConnection implements PlayerConnection {
