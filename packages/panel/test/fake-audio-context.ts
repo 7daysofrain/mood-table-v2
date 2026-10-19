@@ -40,6 +40,8 @@ export class FakeContext implements AudioContextLike {
   /** Si es `true`, el navegador no deja reanudar el contexto. */
   resumeFails = false;
   outputLatency: number | undefined = 0.03;
+  /** `getOutputTimestamp()`: sin asignar, el navegador no tiene la API. */
+  getOutputTimestamp: (() => AudioTimestamp) | undefined;
   baseLatency: number | undefined = 0.01;
   readonly destination = {} as AudioDestinationNode;
   readonly nodes: FakeNode[] = [];

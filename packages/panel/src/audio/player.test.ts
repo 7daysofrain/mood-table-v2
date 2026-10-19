@@ -447,3 +447,61 @@ describe('el ciclo de vida del reproductor', () => {
     expect(context).not.toBe(first);
   });
 });
+
+describe('el primer arranque espera al reloj de audio en marcha', () => {
+  it('con el contexto naciendo, sin instante de salida, no arranca; arranca cuando lo da', async () => {
+    // Recién creado: el reloj apenas ha empezado y el navegador aún no sabe cuándo se oye.
+    context.currentTime = 0.005;
+    let timestamp = { contextTime: 0, performanceTime: 0 };
+    context.getOutputTimestamp = () => timestamp;
+    const point = { value: 1 };
+    connection.position(point.value, now);
+
+    player.play();
+    await settle();
+    advance(50, point);
+
+    expect(player.state).toBe('preparing');
+    expect(context.nodes).toHaveLength(0);
+
+    // Ya suena: lo que el contexto sonó 19 ms antes de su reloj se oye ahora.
+    timestamp = { contextTime: context.currentTime - 0.019, performanceTime: now };
+    advance(1, point);
+
+    expect(player.state).toBe('playing');
+    const { when, offset } = lastNode().started ?? { when: 0, offset: 0 };
+    // Se oirá 19 ms después de `when`, cuando el visor vaya por ahí.
+    expect(offset).toBeCloseTo(point.value + (when - context.currentTime) + 0.019, 3);
+  });
+
+  it('con el contexto sin arrancar, no arranca', async () => {
+    context.state = 'suspended';
+    context.resume = () => Promise.resolve();
+    const point = { value: 1 };
+    connection.position(point.value, now);
+
+    player.play();
+    await settle();
+    advance(100, point);
+
+    expect(player.state).toBe('preparing');
+    expect(context.nodes).toHaveLength(0);
+  });
+
+  it('si tras 1 s de reloj sigue sin dar el instante, arranca con el retraso declarado', async () => {
+    context.currentTime = 0.005;
+    context.getOutputTimestamp = () => ({ contextTime: 0, performanceTime: 0 });
+    const point = { value: 1 };
+    player.play();
+    await settle();
+    advance(900, point);
+    expect(context.nodes).toHaveLength(0);
+
+    advance(200, point);
+
+    expect(player.state).toBe('playing');
+    // Arrancó a mitad del avance: el punto, contado desde el reloj de ahora.
+    const { when, offset } = lastNode().started ?? { when: 0, offset: 0 };
+    expect(offset).toBeCloseTo(point.value + (when - context.currentTime) + LATENCY, 3);
+  });
+});

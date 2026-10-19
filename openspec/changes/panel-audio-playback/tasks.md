@@ -108,7 +108,7 @@
   `MOO-22`). Si el salto de la corrección se nota, se anota para pasar a `playbackRate` (decisión 4).
   Verificar: el resultado queda en la descripción de la PR.
 
-> Pasos 2.12-2.17: lo que salió de la code review de la PR (19-oct), con `design.md` revisado
+> Pasos 2.12-2.19: lo que salió de la code review de la PR (19-oct), con `design.md` revisado
 > (decisiones 3, 4, 7 y 8, y riesgos).
 
 - [x] 2.12 **(test en rojo)** Tests del reproductor con el `AudioContext` falso: expone cuántos saltos
@@ -132,13 +132,22 @@
 - [x] 2.16 Iconos de escucha en `AudioControl.tsx`: altavoz tachado callado y altavoz con ondas
   sonando, dos SVG de un trazo como ahora (decisión 7). Los nombres accesibles no cambian.
   Verificar: captura del control en los tres estados con `pnpm dev`.
-- [ ] 2.17 E2E de sincronía con los saltos: *Oír* y *Volver a oír*, sin saltos tras arrancar; *El
+- [x] 2.17 **(test en rojo)** Tests del primer arranque: con el contexto aún sin `running`, o con
+  `getOutputTimestamp()` que todavía da `performanceTime = 0`, no arranca; arranca con la siguiente
+  posición cuando el reloj ya está en marcha, en el punto que da `getOutputTimestamp()`; si tras 1 s de
+  reloj de audio sigue sin darlo, o el navegador no tiene la API, arranca con el retraso declarado
+  (decisión 3). Lo destapó el E2E del 2.19: en Chromium sin pantalla, arrancar con el contexto naciendo
+  sonaba 94 ms tarde y la corrección saltaba a los 250 ms.
+  Verificar: los tests nuevos fallan porque arranca en cuanto tiene el fichero.
+- [ ] 2.18 `player.ts` espera al reloj de audio en marcha para el primer arranque.
+  Verificar: los tests de 2.17 pasan.
+- [ ] 2.19 E2E de sincronía con los saltos: *Oír* y *Volver a oír*, sin saltos tras arrancar; *El
   bucle* (~10 s), como mucho uno. Avisos de Sonar `S2925` en `e2e/playback.spec.ts`: «no suena solo» y
   «al volver el motor» esperan a que el visor cambie en vez de un tiempo fijo; las esperas de «el motor
   lleva un rato» y «dejó de oír hace un rato» son de tiempo por definición y se marcan con
   `// NOSONAR` y su motivo.
   Verificar: `pnpm test:e2e` pasa en local tres veces seguidas y en la CI, y `sonar-issues` pasa.
-- [ ] 2.18 Documentación y cierre de la historia:
+- [ ] 2.20 Documentación y cierre de la historia:
   - README §1.3 (*Cabecera*: el control de oír) y §2.2 (*Reproductor*: Web Audio, sincronía contra el
     visor y corrección con salto); «pulsa play» pasa a «pulsa Oír» en el README (también en H1);
   - `docs/idea-mood-table.md` §10: D54 (Web Audio con salto al pasar 20 ms) y D55 (solo el retraso de

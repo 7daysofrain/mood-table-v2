@@ -114,6 +114,12 @@ reproduce con un `AudioBufferSourceNode` en bucle (`loop = true`), arrancado en 
   perderla (el motor puede volver con otro fichero).
 - **Mientras se descarga y decodifica**, el control indica que está preparando el audio *(asumido)*.
   En local es inmediato; en la demo, unos segundos.
+- **El primer arranque espera al reloj de audio en marcha:** contexto `running` y
+  `getOutputTimestamp()` con `performanceTime > 0`. Recién creado, el reloj del contexto aún no va al
+  paso de `performance.now()` y el retraso declarado puede valer 0; arrancar entonces sonaba ~94 ms
+  tarde en Chromium sin pantalla y la corrección saltaba enseguida. Como las posiciones llegan a 60 Hz,
+  la espera es de unas decenas de ms dentro de «Preparando». Si tras 1 s de reloj el navegador no da
+  el instante, o no tiene la API, arranca con el retraso declarado: nunca se queda preparando.
 - **Con el contexto de audio parado** (Safari lo interrumpe con una llamada o al bloquear el móvil) no
   se corrige nada: su reloj no avanza y el error crecería solo. Si el navegador no deja reanudarlo, el
   control vuelve a callado. Reanudarlo solo o avisar al maker queda fuera de `MOO-22`.
