@@ -25,7 +25,7 @@
   `positionAt`, una `PositionOutput` recibe en cada pulso la posición con el `seq` del pulso; con una
   fuente sin `positionAt` o sin fuente, no recibe nada (decisión 9).
   Verificar: los tests nuevos fallan porque ni el método ni el puerto existen.
-- [ ] 1.4 `positionAt` opcional en el puerto `AudioSource`, implementado en `MemoryAudioSource` con la
+- [x] 1.4 `positionAt` opcional en el puerto `AudioSource`, implementado en `MemoryAudioSource` con la
   misma cuenta que `read`; puerto `PositionOutput` en `core/frame-loop.ts` y entrega en cada pulso, sin
   crear objetos.
   Verificar: los tests de 1.3 pasan y los frames dorados no cambian.

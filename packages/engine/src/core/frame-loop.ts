@@ -5,7 +5,8 @@
  *
  * Con fuente de audio, pide en cada pulso la ventana que acaba en su instante (la fuente es *pull*,
  * D50), mide el nivel y, solo si alguna tira tiene un efecto que usa audio, calcula las bandas, una
- * vez para todas (decisiones 4 y 11 del change virtual-strip-audio-file).
+ * vez para todas (decisiones 4 y 11 del change virtual-strip-audio-file). Si la fuente sabe en qué
+ * punto está, entrega esa posición en cada pulso (decisión 9 del change panel-audio-playback).
  */
 import type { StripConfig } from '@moodtable/shared';
 
@@ -99,7 +100,7 @@ function createSlot<P, M>(strip: LoopStrip, effect: Effect<P, M>): StripSlot {
 export function createFrameLoop(
   strips: readonly LoopStrip[],
   fps: number,
-  { effects = EFFECTS, audioSource, levelOutputs = [] }: FrameLoopOptions = {},
+  { effects = EFFECTS, audioSource, levelOutputs = [], positionOutputs = [] }: FrameLoopOptions = {},
 ): FrameLoop {
   // Cada tira arranca con el efecto que declara el fichero (specs/effects). El fichero ya valida el
   // id contra el catálogo, y un test comprueba que el registro tiene los mismos.
@@ -138,6 +139,10 @@ export function createFrameLoop(
         const level = analyzer.level();
         ctx.audio = needsBands ? analyzer.update(ctx.dt) : null;
         for (const output of levelOutputs) output.write(level, tick);
+        if (audioSource.positionAt) {
+          const position = audioSource.positionAt(time);
+          for (const output of positionOutputs) output.write(position, tick);
+        }
       }
 
       for (const slot of slots) {
