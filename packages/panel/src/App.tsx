@@ -14,8 +14,7 @@ export type PanelConnection = Pick<
 /**
  * Componente raíz del panel: se conecta al motor en la misma dirección que sirve el panel, la
  * cabecera muestra la fuente de audio, su nivel y el estado de la conexión, y el visor dibuja sus
- * frames. El resto de zonas las
- * rellenan las historias de H2 y H4.
+ * frames. El resto de zonas las rellenan las historias de H2 y H4.
  */
 export function App({ connection: provided }: Readonly<{ connection?: PanelConnection }>) {
   const [connection] = useState<PanelConnection>(

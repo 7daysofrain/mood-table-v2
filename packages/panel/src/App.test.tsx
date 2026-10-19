@@ -1,10 +1,9 @@
+import type { SourceMessage } from '@moodtable/shared';
 import { act, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { render } from '../test/render.tsx';
 import { App, type PanelConnection } from './App.tsx';
-import type { SourceMessage } from '@moodtable/shared';
-
 import type { ConnectionStatus } from './engine/connection.ts';
 
 /** Una conexión falsa: el test decide cuándo cambia de estado. */
