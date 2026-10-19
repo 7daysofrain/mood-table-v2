@@ -16,6 +16,7 @@ import {
   createSync,
   shouldJump,
   type Sync,
+  WINDOW_MS,
 } from './sync.ts';
 
 /** Callado, preparando el audio (descarga y decodificación) o sonando. */
@@ -30,7 +31,7 @@ export type PlayerConnection = Pick<
 /** Lo que el reproductor usa de un `AudioContext`: así los tests pueden darle uno falso. */
 export type AudioContextLike = Pick<
   AudioContext,
-  'currentTime' | 'destination' | 'resume' | 'decodeAudioData' | 'createBufferSource'
+  'currentTime' | 'state' | 'destination' | 'resume' | 'decodeAudioData' | 'createBufferSource'
 > &
   Partial<Pick<AudioContext, 'outputLatency' | 'baseLatency' | 'getOutputTimestamp'>>;
 
@@ -45,6 +46,13 @@ export interface PlayerOptions {
 
 /** Cada cuánto se compara lo que suena con el visor (decisión 4: unas pocas veces por segundo). */
 const CHECK_MS = 250;
+
+/**
+ * Cuánto por delante del reloj de audio se programa un nodo (s). Arrancar «ya» empieza un poco
+ * después con el mismo punto; programado, empieza justo en su punto, y al saltar el viejo para en
+ * la misma muestra (decisión 4).
+ */
+const LEAD = 0.05;
 
 /** Ruta en la que el motor sirve el fichero de audio. */
 const AUDIO_PATH = '/audio';
@@ -62,6 +70,12 @@ interface Playing {
   startedAt: number;
 }
 
+/** Una posición del fichero que llegó del motor, y cuándo (ms de `performance.now()`). */
+interface Arrival {
+  position: number;
+  arrivedAt: number;
+}
+
 /** El fichero decodificado y su sincronía con el visor, mientras dura la conexión. */
 interface Track {
   buffer: AudioBuffer;
@@ -77,10 +91,13 @@ export class AudioPlayer {
   private readonly unsubscribe: (() => void)[];
   private context: AudioContextLike | undefined;
   private track: Track | undefined;
+  /** Sin fichero aún, el último segundo de posiciones: el primer arranque sale de su mediana. */
+  private arrivals: Arrival[] = [];
   private playing: Playing | undefined;
   private check: ReturnType<typeof setInterval> | undefined;
   private current: PlayerState = 'silent';
   private lastError: number | undefined;
+  private jumpCount = 0;
   /** Cambia con cada petición de oír o callar: lo que prepara una petición anterior se descarta. */
   private request = 0;
 
@@ -91,9 +108,7 @@ export class AudioPlayer {
     this.now = options.now ?? (() => performance.now());
     this.unsubscribe = [
       connection.subscribePositions(({ position }, arrivedAt) => {
-        this.track?.sync.add(position, arrivedAt);
-        // Preparado, solo faltaba saber por dónde va el visor.
-        if (this.current === 'preparing' && this.track) this.start();
+        this.arrive(position, arrivedAt);
       }),
       connection.subscribe(() => {
         if (connection.status === 'disconnected') this.forget();
@@ -106,11 +121,16 @@ export class AudioPlayer {
   }
 
   /**
-   * El último error de sincronía medido (s): el punto que suena menos el del visor. Positivo, el
-   * sonido va por delante de la luz. Callado, `undefined`.
+   * El último error de sincronía medido (s), antes de corregirlo: el punto que suena menos el del
+   * visor. Positivo, el sonido va por delante de la luz. Callado, `undefined`.
    */
   get error(): number | undefined {
     return this.lastError;
+  }
+
+  /** Cuántas veces ha saltado para corregir la deriva desde que el maker pidió oír. */
+  get jumps(): number {
+    return this.jumpCount;
   }
 
   /** Avisa de cada cambio de estado. Devuelve la función para darse de baja. */
@@ -126,8 +146,12 @@ export class AudioPlayer {
   play(): void {
     if (this.current !== 'silent' || this.connection.status !== 'connected') return;
     const request = ++this.request;
+    this.jumpCount = 0;
     this.context ??= this.createContext();
-    void this.context.resume();
+    this.context.resume().catch(() => {
+      // El navegador no deja sonar: vuelve a callado y el maker puede pedirlo otra vez.
+      if (request === this.request) this.stop();
+    });
     this.setState('preparing');
     if (this.track) {
       this.start();
@@ -157,27 +181,56 @@ export class AudioPlayer {
     const buffer = await context.decodeAudioData(data);
     // Mientras, el maker ha callado o se ha perdido la conexión: lo descargado ya no sirve.
     if (request !== this.request) return;
-    // Arranca con la primera posición que llegue: la sincronía empieza a contar desde ahora.
-    this.track = { buffer, sync: createSync(buffer.duration) };
+    // La sincronía arranca con lo que ha llegado mientras tanto, no con una sola llegada.
+    const sync = createSync(buffer.duration);
+    for (const { position, arrivedAt } of this.arrivals) sync.add(position, arrivedAt);
+    this.arrivals = [];
+    this.track = { buffer, sync };
+    this.start();
   }
 
-  /** Arranca un nodo en el punto que muestra el visor cuando empiece a oírse. */
+  /** Una posición del motor: a la sincronía, o a la espera del fichero. */
+  private arrive(position: number, arrivedAt: number): void {
+    const { track } = this;
+    if (!track) {
+      this.arrivals.push({ position, arrivedAt });
+      while ((this.arrivals[0]?.arrivedAt ?? arrivedAt) < arrivedAt - WINDOW_MS) {
+        this.arrivals.shift();
+      }
+      return;
+    }
+    track.sync.add(position, arrivedAt);
+    // Preparado, solo faltaba saber por dónde va el visor.
+    if (this.current === 'preparing') this.start();
+  }
+
+  /**
+   * Programa un nodo, un poco por delante del reloj de audio, en el punto que mostrará el visor
+   * cuando se oiga. Si ya sonaba otro, lo para en ese mismo instante.
+   */
   private start(): void {
     const { context, track } = this;
+    if (this.current !== 'preparing' && !this.playing) return;
     if (!context || !track) return;
     const clock = this.clock(context);
-    const offset = track.sync.pointAt(audibleAt(clock, clock.contextTime));
+    const when = clock.contextTime + LEAD;
+    const offset = track.sync.pointAt(audibleAt(clock, when));
     // Sin posiciones todavía: arrancará con la primera que llegue.
     if (offset === undefined) return;
 
-    this.silence();
+    const previous = this.playing;
+    if (previous) {
+      previous.node.onended = () => {
+        previous.node.disconnect();
+      };
+      previous.node.stop(when);
+    }
     const node = context.createBufferSource();
     node.buffer = track.buffer;
     node.loop = true;
     node.connect(context.destination);
-    node.start(clock.contextTime, offset);
-    this.playing = { node, offset, startedAt: clock.contextTime };
-    this.lastError = 0;
+    node.start(when, offset);
+    this.playing = { node, offset, startedAt: when };
     this.check ??= setInterval(() => {
       this.correct();
     }, CHECK_MS);
@@ -191,12 +244,16 @@ export class AudioPlayer {
   private correct(): void {
     const { context, track, playing } = this;
     if (!context || !track || !playing) return;
+    // Parado (Safari lo interrumpe con una llamada), su reloj no avanza: el error crecería solo.
+    if (context.state !== 'running') return;
     const clock = this.clock(context);
     const sounding = playing.offset + (clock.contextTime - playing.startedAt);
     const viewer = track.sync.pointAt(audibleAt(clock, clock.contextTime));
     if (viewer === undefined) return;
     this.lastError = circularDifference(sounding, viewer, track.buffer.duration);
-    if (shouldJump(this.lastError)) this.start();
+    if (!shouldJump(this.lastError)) return;
+    this.jumpCount++;
+    this.start();
   }
 
   private clock(context: AudioContextLike): AudioClock {
@@ -229,6 +286,8 @@ export class AudioPlayer {
   /** Sin conexión: calla y suelta el fichero, que el motor de después puede no tener. */
   private forget(): void {
     this.track = undefined;
+    this.arrivals = [];
+    this.jumpCount = 0;
     this.stop();
   }
 

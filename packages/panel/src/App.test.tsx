@@ -204,17 +204,18 @@ describe('oír el fichero de audio desde la cabecera', () => {
     expect(screen.getByRole('button', LISTEN)).toBeInTheDocument();
   });
 
-  it('deja leer en window, de solo lectura, el estado y el error de sincronía', async () => {
+  it('deja leer en window, de solo lectura, el estado, el error de sincronía y los saltos', async () => {
     const panel = panelWithAudio();
     act(() => {
       panel.setSource({ kind: 'file', name: 'golpes.wav' });
     });
-    expect(window.moodTableAudio).toEqual({ state: 'silent', error: undefined });
+    expect(window.moodTableAudio).toEqual({ state: 'silent', error: undefined, jumps: 0 });
 
     fireEvent.click(screen.getByRole('button', LISTEN));
     await panel.download();
 
-    expect(window.moodTableAudio).toEqual({ state: 'playing', error: 0 });
+    // Aún no ha comparado lo que suena con el visor: no hay error medido.
+    expect(window.moodTableAudio).toEqual({ state: 'playing', error: undefined, jumps: 0 });
     expect(() => {
       Object.assign(window, { moodTableAudio: { state: 'silent' } });
     }).toThrow();

@@ -31,9 +31,10 @@ export interface Sync {
   add(position: number, arrivedAt: number): void;
   /** El punto del fichero (s) que muestra el visor en `at` (ms), o `undefined` si no hay posiciones. */
   pointAt(at: number): number | undefined;
-  /** Olvida las posiciones: al perder la conexión, el motor de después puede ir por otro sitio. */
-  reset(): void;
 }
+
+/** La ventana de posiciones que entra en la mediana por defecto, en milisegundos. */
+export const WINDOW_MS = 1000;
 
 /**
  * El error a partir del cual se salta al punto correcto (decisión 4): deja margen dentro de los 45 ms
@@ -82,7 +83,7 @@ function median(values: number[]): number {
   return values.length % 2 === 1 ? upper : ((values[middle - 1] ?? 0) + upper) / 2;
 }
 
-export function createSync(duration: number, { windowMs = 1000 }: SyncOptions = {}): Sync {
+export function createSync(duration: number, { windowMs = WINDOW_MS }: SyncOptions = {}): Sync {
   const positions: number[] = [];
   const arrivals: number[] = [];
 
@@ -108,11 +109,6 @@ export function createSync(duration: number, { windowMs = 1000 }: SyncOptions = 
         circularDifference(estimate(index), last, duration),
       );
       return wrap(last + median(offsets), duration);
-    },
-
-    reset() {
-      positions.length = 0;
-      arrivals.length = 0;
     },
   };
 }

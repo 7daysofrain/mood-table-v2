@@ -15,7 +15,10 @@ export type PanelConnection = Pick<
 >;
 
 /** Lo que el panel usa del reproductor del fichero de audio. */
-export type PanelPlayer = Pick<AudioPlayer, 'state' | 'error' | 'subscribe' | 'play' | 'stop'>;
+export type PanelPlayer = Pick<
+  AudioPlayer,
+  'state' | 'error' | 'jumps' | 'subscribe' | 'play' | 'stop'
+>;
 
 /**
  * Componente raíz del panel: se conecta al motor en la misma dirección que sirve el panel, la
@@ -44,7 +47,7 @@ export function App({
   useEffect(() => {
     Object.defineProperty(window, 'moodTableAudio', {
       configurable: true,
-      get: () => ({ state: player.state, error: player.error }),
+      get: () => ({ state: player.state, error: player.error, jumps: player.jumps }),
     });
     return () => {
       player.stop();

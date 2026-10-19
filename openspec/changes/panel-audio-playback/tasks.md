@@ -119,7 +119,7 @@
   deriva de `sync.test.ts` pasa aquí, con el reproductor real, un reloj de audio 50 ppm más rápido,
   temporizadores falsos y el oráculo de lo que se oye (decisiones 3, 4 y 8).
   Verificar: los tests nuevos fallan por lo que falta, y el resto sigue en verde.
-- [ ] 2.13 `player.ts` con lo de 2.12; `jumps` en `window.moodTableAudio`; fuera `Sync.reset()`, que no
+- [x] 2.13 `player.ts` con lo de 2.12; `jumps` en `window.moodTableAudio`; fuera `Sync.reset()`, que no
   usa nadie, con su test.
   Verificar: los tests de 2.12 pasan.
 - [ ] 2.14 **(test en rojo)** Tests del ciclo de vida del reproductor: crearlo no lo suscribe a la

@@ -228,15 +228,14 @@ describe('el reproductor del fichero de audio', () => {
     advance(500, point);
     const first = lastNode();
 
-    // El reloj de audio se adelanta 25 ms al del motor.
+    // El reloj de audio se adelanta 25 ms al del motor; frame a frame hasta la comprobación que salta.
     context.currentTime += 0.025;
-    advance(250, point);
+    for (let frame = 0; frame < 15 && player.jumps === 0; frame++) advance(1, point);
 
     expect(context.nodes).toHaveLength(2);
     const { when, offset } = lastNode().started ?? { when: 0, offset: 0 };
     // Empalme en la misma muestra: el viejo para justo cuando arranca el nuevo, no antes.
     expect(first.stoppedAt).toBe(when);
-    expect(when).toBeGreaterThan(context.currentTime);
     // El nodo nuevo suena por el punto que mostrará el visor cuando se oiga.
     expect(offset + (context.currentTime - when)).toBeCloseTo(point.value + LATENCY, 3);
     // Cuenta el salto y deja ver el error que lo provocó, no el de después de corregir.

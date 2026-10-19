@@ -116,15 +116,6 @@ describe('el punto del visor, filtrado', () => {
 
     expect(sync.pointAt(1000 + 60 * FRAME_MS)).toBeCloseTo(0.5, 4);
   });
-
-  it('al olvidarlo todo, vuelve a no saberse', () => {
-    const sync = createSync(BOUNCER);
-    feed(sync, 10, 1000, 10);
-
-    sync.reset();
-
-    expect(sync.pointAt(1200)).toBeUndefined();
-  });
 });
 
 describe('el punto de arranque', () => {
