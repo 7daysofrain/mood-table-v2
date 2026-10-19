@@ -89,7 +89,7 @@
   de oír el fichero de audio»; al pulsar este, vuelve a «Oír…»; sin fuente de audio o sin conexión,
   ningún botón; al perder la conexión mientras suena, vuelve a «Oír…» (decisión 7).
   Verificar: los tests nuevos fallan porque el control no existe.
-- [ ] 2.9 `AudioControl.tsx` en la cabecera, junto a la fuente, con iconos de *play* y *pause* de
+- [x] 2.9 `AudioControl.tsx` en la cabecera, junto a la fuente, con iconos de *play* y *pause* de
   Mantine; el objeto de solo lectura en `window` con el error de sincronía estimado y el estado del
   reproductor (decisión 8).
   Verificar: los tests de 2.8 pasan; con `pnpm dev`, el botón suena y calla `bouncer.wav`.
