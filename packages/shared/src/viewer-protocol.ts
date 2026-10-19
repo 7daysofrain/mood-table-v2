@@ -122,3 +122,21 @@ export function decodeLevel(message: Uint8Array): LevelMessage | undefined {
   if (!(level >= 0 && level <= 1)) return undefined;
   return { seq: view.getUint32(1, false), level };
 }
+
+/** Tipo del mensaje de la posición del fichero (decisión 2 del change panel-audio-playback). */
+export const POSITION_MESSAGE_TYPE = 4;
+
+export interface PositionMessage {
+  /** El pulso al que pertenece, como el `seq` de los frames. */
+  seq: number;
+  /** Punto del fichero, en segundos desde su principio, en el que acaba la ventana del pulso. */
+  position: number;
+}
+
+export function encodePosition(seq: number, position: number): Uint8Array {
+  throw new Error(`Sin implementar (${seq}, ${position})`);
+}
+
+export function decodePosition(message: Uint8Array): PositionMessage | undefined {
+  throw new Error(`Sin implementar (${message.length} bytes)`);
+}

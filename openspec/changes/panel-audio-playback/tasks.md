@@ -9,7 +9,7 @@
 
 ## 1. MOO-56 · engine
 
-- [ ] 1.1 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de posición (tipo `4`)
+- [x] 1.1 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de posición (tipo `4`)
   lleva `seq` (`u32`) y posición (`f64`) en big-endian y ocupa 13 bytes; se codifica y se decodifica
   igual con posiciones de 0, de un fichero largo (una hora) y con `seq` cerca de 2³²; se rechazan una
   longitud distinta, otro tipo y una posición negativa o no finita; `decodeFrame`, `decodeLevel` y
