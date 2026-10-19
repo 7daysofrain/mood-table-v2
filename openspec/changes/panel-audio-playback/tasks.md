@@ -93,7 +93,7 @@
   Mantine; el objeto de solo lectura en `window` con el error de sincronía estimado y el estado del
   reproductor (decisión 8).
   Verificar: los tests de 2.8 pasan; con `pnpm dev`, el botón suena y calla `bouncer.wav`.
-- [ ] 2.10 E2E de `MOO-22` en `e2e/playback.spec.ts`, con un motor con `golpes.wav` y una tira con
+- [x] 2.10 E2E de `MOO-22` en `e2e/playback.spec.ts`, con un motor con `golpes.wav` y una tira con
   *energía* (`e2e/engine.ts`). Escenarios: *Oír el fichero de audio mientras la tira virtual reacciona*
   (tras unos segundos de motor, pedir oír: el error queda dentro de la tolerancia); *El panel no suena
   solo*; *Dejar de oír* (el reproductor calla y el visor sigue cambiando); *Volver a oír tras dejar de
