@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { loadAudioFile } from './audio-file.ts';
 import { CONFIG_FILE, loadConfig, REPO_ROOT } from './config-file.ts';
 
 const run = promisify(execFile);
@@ -158,5 +159,24 @@ describe('la ruta del fichero de audio', () => {
     const result = await loadConfig(root, '');
 
     expect(result.ok && 'audioSource' in result.config).toBe(false);
+  });
+});
+
+describe('el config/demo.json del repositorio', () => {
+  // specs/engine-config, «El simulador arranca sin preparar nada»: lo que `pnpm dev` copia a
+  // `config/local.json` en un clon limpio.
+  it('arranca con una tira virtual con energía y el fichero de audio de la demo', async () => {
+    const result = await loadConfig(REPO_ROOT, 'config/demo.json');
+    if (!result.ok) throw new Error(result.error);
+    const { strips, audioSource } = result.config;
+
+    expect(strips.map(({ output, effect }) => [output.type, effect])).toEqual([['virtual', 'energy']]);
+    expect(audioSource?.path).toBe(join(REPO_ROOT, 'config', 'audio', 'bouncer.wav'));
+  });
+
+  it('su fichero de audio está en el repositorio y el motor lo acepta', async () => {
+    const audio = await loadAudioFile(join(REPO_ROOT, 'config', 'audio', 'bouncer.wav'));
+
+    expect(audio.ok && audio.source.sampleRate).toBe(44_100);
   });
 });
