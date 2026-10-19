@@ -22,12 +22,19 @@ function fakeConnection() {
       return () => listeners.delete(listener);
     },
   } satisfies PanelConnection;
-  const setStatus = (status: ConnectionStatus, source?: SourceMessage) => {
-    connection.status = status;
-    connection.source = source;
+  const notify = () => {
     for (const listener of listeners) listener();
   };
-  return { connection, setStatus };
+  const setStatus = (status: ConnectionStatus) => {
+    connection.status = status;
+    notify();
+  };
+  /** Como la conexión real: la fuente llega en su propio aviso, después de conectarse. */
+  const setSource = (source: SourceMessage) => {
+    connection.source = source;
+    notify();
+  };
+  return { connection, setStatus, setSource };
 }
 
 describe('App', () => {
@@ -69,11 +76,15 @@ describe('App', () => {
   });
 
   it('con conexión y un fichero como fuente, la cabecera lo dice y muestra el vúmetro', () => {
-    const { connection, setStatus } = fakeConnection();
+    const { connection, setStatus, setSource } = fakeConnection();
     render(<App connection={connection} />);
+    act(() => {
+      setStatus('connected');
+    });
+    expect(screen.getByRole('banner')).not.toHaveTextContent('Fichero');
 
     act(() => {
-      setStatus('connected', { kind: 'file', name: 'golpes.wav' });
+      setSource({ kind: 'file', name: 'golpes.wav' });
     });
 
     const header = screen.getByRole('banner');

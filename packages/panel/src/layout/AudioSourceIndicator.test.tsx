@@ -72,14 +72,26 @@ describe('la fuente de audio de la cabecera', () => {
     expect(meter).toHaveAttribute('aria-valuemax', '0');
   });
 
-  it('al desmontarse, deja de pintar', () => {
-    const cancel = vi.spyOn(window, 'cancelAnimationFrame');
+  it('al desmontarse, deja de pintar: no lee más niveles ni pide más frames', () => {
+    let reads = 0;
+    const levels = {
+      get level() {
+        reads++;
+        return 0.5;
+      },
+    };
+    const request = vi.spyOn(window, 'requestAnimationFrame');
     const { unmount } = render(
-      <AudioSourceIndicator source={{ kind: 'file', name: 'golpes.wav' }} levels={{ level: 0 }} />,
+      <AudioSourceIndicator source={{ kind: 'file', name: 'golpes.wav' }} levels={levels} />,
     );
+    nextAnimationFrame();
 
     unmount();
+    const [readsBefore, requestsBefore] = [reads, request.mock.calls.length];
+    nextAnimationFrame();
+    nextAnimationFrame();
 
-    expect(cancel).toHaveBeenCalled();
+    expect(reads).toBe(readsBefore);
+    expect(request.mock.calls).toHaveLength(requestsBefore);
   });
 });
