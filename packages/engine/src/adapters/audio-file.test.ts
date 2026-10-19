@@ -36,6 +36,13 @@ describe('la fuente de audio fichero', () => {
     expect(again).toEqual(window);
   });
 
+  it('con el fichero de golpes (4 s), a los 5 s va por el segundo 1', async () => {
+    const result = await loadAudioFile(GOLPES);
+    if (!result.ok) throw new Error(result.error);
+
+    expect(result.source.positionAt?.(5)).toBeCloseTo(1, 3);
+  });
+
   it('si el fichero no existe, lo dice con la ruta', async () => {
     const path = join(dir, 'no-existe.wav');
 

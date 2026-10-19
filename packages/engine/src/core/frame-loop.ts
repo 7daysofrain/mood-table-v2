@@ -5,11 +5,12 @@
  *
  * Con fuente de audio, pide en cada pulso la ventana que acaba en su instante (la fuente es *pull*,
  * D50), mide el nivel y, solo si alguna tira tiene un efecto que usa audio, calcula las bandas, una
- * vez para todas (decisiones 4 y 11 del change virtual-strip-audio-file).
+ * vez para todas (decisiones 4 y 11 del change virtual-strip-audio-file). Si la fuente sabe en qué
+ * punto está, entrega esa posición en cada pulso (decisión 9 del change panel-audio-playback).
  */
 import type { StripConfig } from '@moodtable/shared';
 
-import { createAudioAnalyzer } from './audio/analysis.ts';
+import { type AudioAnalyzer, createAudioAnalyzer } from './audio/analysis.ts';
 import type { AudioSource } from './audio/audio-source.ts';
 import { defaultParams, type Effect, type FrameContext } from './effects/effect.ts';
 import { type AnyEffect, EFFECTS } from './effects/registry.ts';
@@ -46,6 +47,15 @@ export interface LevelOutput {
   write(level: number, tick: Tick): void;
 }
 
+/**
+ * Puerto de salida de la **posición del fichero de audio** (decisión 9 del change
+ * panel-audio-playback): en cada pulso, el punto del fichero en segundos con el pulso al que
+ * pertenece. Síncrono y sin bloquear, como `LevelOutput`.
+ */
+export interface PositionOutput {
+  write(position: number, tick: Tick): void;
+}
+
 export interface FrameLoopOptions {
   /** Los efectos entre los que elige cada tira. Por defecto, el registro del motor. */
   effects?: readonly AnyEffect[];
@@ -53,6 +63,8 @@ export interface FrameLoopOptions {
   audioSource?: AudioSource;
   /** Quién recibe el nivel de la fuente en cada pulso: el visor, los tests… */
   levelOutputs?: readonly LevelOutput[];
+  /** Quién recibe la posición del fichero en cada pulso, si la fuente la sabe. */
+  positionOutputs?: readonly PositionOutput[];
 }
 
 export interface FrameLoop {
@@ -85,10 +97,38 @@ function createSlot<P, M>(strip: LoopStrip, effect: Effect<P, M>): StripSlot {
   };
 }
 
+/** Lo que el bucle necesita para escuchar la fuente de audio en cada pulso. */
+interface Listener {
+  source: AudioSource;
+  analyzer: AudioAnalyzer;
+  /** Alguna tira tiene un efecto reactivo: hace falta analizar las bandas. */
+  needsBands: boolean;
+  levelOutputs: readonly LevelOutput[];
+  positionOutputs: readonly PositionOutput[];
+}
+
+/**
+ * Lee la ventana del pulso, mide el nivel, deja en `ctx.audio` las bandas si alguna tira las usa y
+ * entrega el nivel y, si la fuente la sabe, la posición del fichero. No crea objetos.
+ */
+function listen(
+  { source, analyzer, needsBands, levelOutputs, positionOutputs }: Listener,
+  tick: Tick,
+  ctx: FrameContext,
+): void {
+  source.read(tick.time, analyzer.window);
+  const level = analyzer.level();
+  ctx.audio = needsBands ? analyzer.update(ctx.dt) : null;
+  for (const output of levelOutputs) output.write(level, tick);
+  if (!source.positionAt) return;
+  const position = source.positionAt(tick.time);
+  for (const output of positionOutputs) output.write(position, tick);
+}
+
 export function createFrameLoop(
   strips: readonly LoopStrip[],
   fps: number,
-  { effects = EFFECTS, audioSource, levelOutputs = [] }: FrameLoopOptions = {},
+  { effects = EFFECTS, audioSource, levelOutputs = [], positionOutputs = [] }: FrameLoopOptions = {},
 ): FrameLoop {
   // Cada tira arranca con el efecto que declara el fichero (specs/effects). El fichero ya valida el
   // id contra el catálogo, y un test comprueba que el registro tiene los mismos.
@@ -102,8 +142,13 @@ export function createFrameLoop(
     return createSlot(strip, effect);
   });
   // El nivel se mide siempre que hay fuente; las bandas, solo si alguna tira las usa (decisión 4).
-  const analyzer = audioSource && createAudioAnalyzer(audioSource.sampleRate);
-  const needsBands = slots.some((slot) => slot.usesAudio);
+  const listener: Listener | undefined = audioSource && {
+    source: audioSource,
+    analyzer: createAudioAnalyzer(audioSource.sampleRate),
+    needsBands: slots.some((slot) => slot.usesAudio),
+    levelOutputs,
+    positionOutputs,
+  };
   // Se reutilizan en cada pulso: dentro del bucle no se crean objetos (README §2.2).
   const tick: Tick = { seq: -1, time: 0 };
   const ctx: FrameContext = { time: 0, dt: 0, audio: null };
@@ -122,12 +167,7 @@ export function createFrameLoop(
       tick.seq = seq;
       tick.time = time;
 
-      if (audioSource && analyzer) {
-        audioSource.read(time, analyzer.window);
-        const level = analyzer.level();
-        ctx.audio = needsBands ? analyzer.update(ctx.dt) : null;
-        for (const output of levelOutputs) output.write(level, tick);
-      }
+      if (listener) listen(listener, tick, ctx);
 
       for (const slot of slots) {
         slot.render(ctx, slot.frame);

@@ -12,4 +12,9 @@ export interface AudioSource {
    * segundos del pulso desde el arranque. No crea objetos.
    */
   read(time: number, out: Float32Array): void;
+  /**
+   * El punto de la fuente, en segundos desde su principio, en el que acaba la ventana de
+   * `read(time, …)`. Solo lo tiene una fuente que recorre un fichero; la tarjeta de sonido, no.
+   */
+  positionAt?(time: number): number;
 }

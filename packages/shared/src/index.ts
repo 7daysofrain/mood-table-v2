@@ -28,9 +28,11 @@ export {
 export {
   decodeFrame,
   decodeLevel,
+  decodePosition,
   decodeSource,
   encodeFrame,
   encodeLevel,
+  encodePosition,
   encodeSource,
   FRAME_HEADER_BYTES,
   FRAME_MESSAGE_TYPE,
@@ -38,6 +40,8 @@ export {
   LEVEL_MESSAGE_TYPE,
   type LevelMessage,
   MAX_STRIPS,
+  POSITION_MESSAGE_TYPE,
+  type PositionMessage,
   SOURCE_MESSAGE_TYPE,
   type SourceMessage,
 } from './viewer-protocol.ts';

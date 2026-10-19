@@ -9,37 +9,37 @@
 
 ## 1. MOO-56 · engine
 
-- [ ] 1.1 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de posición (tipo `4`)
+- [x] 1.1 **(test en rojo)** Tests del protocolo en `packages/shared`: el mensaje de posición (tipo `4`)
   lleva `seq` (`u32`) y posición (`f64`) en big-endian y ocupa 13 bytes; se codifica y se decodifica
   igual con posiciones de 0, de un fichero largo (una hora) y con `seq` cerca de 2³²; se rechazan una
   longitud distinta, otro tipo y una posición negativa o no finita; `decodeFrame`, `decodeLevel` y
   `decodeSource` rechazan el tipo `4` (`specs/audio-playback`, decisión 2).
   Verificar: los tests nuevos fallan porque el mensaje no existe; el resto sigue en verde.
-- [ ] 1.2 Codificador y decodificador del mensaje de posición en `packages/shared`;
+- [x] 1.2 Codificador y decodificador del mensaje de posición en `packages/shared`;
   `docs/instructions/viewer-protocol.md` con el mensaje byte a byte y su ejemplo, y la fila del
   documento en el índice de `AGENTS.md` si cambia su descripción.
   Verificar: los tests de 1.1 pasan y el documento describe exactamente lo que hace el código.
-- [ ] 1.3 **(test en rojo)** Tests del núcleo: `positionAt(time)` de la fuente en memoria da, en
+- [x] 1.3 **(test en rojo)** Tests del núcleo: `positionAt(time)` de la fuente en memoria da, en
   segundos, la muestra en la que acaba la ventana de `read(time, …)`, y vuelve a casi 0 al pasar el
   final; con el fichero de golpes (4 s), `positionAt(5)` ronda 1 s. Tests del bucle: con una fuente con
   `positionAt`, una `PositionOutput` recibe en cada pulso la posición con el `seq` del pulso; con una
   fuente sin `positionAt` o sin fuente, no recibe nada (decisión 9).
   Verificar: los tests nuevos fallan porque ni el método ni el puerto existen.
-- [ ] 1.4 `positionAt` opcional en el puerto `AudioSource`, implementado en `MemoryAudioSource` con la
+- [x] 1.4 `positionAt` opcional en el puerto `AudioSource`, implementado en `MemoryAudioSource` con la
   misma cuenta que `read`; puerto `PositionOutput` en `core/frame-loop.ts` y entrega en cada pulso, sin
   crear objetos.
   Verificar: los tests de 1.3 pasan y los frames dorados no cambian.
-- [ ] 1.5 **(test en rojo)** Tests de integración del servidor: con dos clientes WebSocket y un fichero
+- [x] 1.5 **(test en rojo)** Tests de integración del servidor: con dos clientes WebSocket y un fichero
   como fuente, los dos reciben en cada pulso un mensaje de posición con el mismo `seq` que los frames;
   sin fuente, ninguno. `GET /audio` con un fichero como fuente devuelve el fichero byte a byte con
   `Content-Type: audio/wav`, y sin fuente, 404; ni el cuerpo del 404 ni las cabeceras llevan la ruta en
   disco (`specs/audio-playback`, decisión 6).
   Verificar: los tests nuevos fallan porque el servidor no envía la posición ni sirve `/audio`.
-- [ ] 1.6 El servidor da una `PositionOutput` que envía la posición a todos los paneles y sirve
+- [x] 1.6 El servidor da una `PositionOutput` que envía la posición a todos los paneles y sirve
   `/audio` con la ruta del fichero que le pasa `main.ts`; `main.ts` lo conecta todo.
   Verificar: los tests de 1.5 pasan; con `pnpm dev`, `curl -sI http://127.0.0.1:8080/audio` da
   `200` y `audio/wav`, y un cliente WebSocket de prueba recibe mensajes de tipo `4`.
-- [ ] 1.7 Documentación:
+- [x] 1.7 Documentación:
   - README §2.2: adaptador *Visor* (también la posición del fichero, tipo `4`), adaptador *Fichero
     WAV* (`positionAt`) y *Reproductor* (el motor sirve el fichero en `/audio`);
   - `docs/idea-mood-table.md` §10: D53 (sincronizar contra el visor, con la posición del fichero que

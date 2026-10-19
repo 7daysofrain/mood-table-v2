@@ -122,3 +122,39 @@ export function decodeLevel(message: Uint8Array): LevelMessage | undefined {
   if (!(level >= 0 && level <= 1)) return undefined;
   return { seq: view.getUint32(1, false), level };
 }
+
+/** Tipo del mensaje de la posición del fichero (decisión 2 del change panel-audio-playback). */
+export const POSITION_MESSAGE_TYPE = 4;
+
+export interface PositionMessage {
+  /** El pulso al que pertenece, como el `seq` de los frames. */
+  seq: number;
+  /** Punto del fichero, en segundos desde su principio, en el que acaba la ventana del pulso. */
+  position: number;
+}
+
+/** Tipo (1 byte) + `seq` (4 bytes, big-endian) + posición (`float64`, big-endian). */
+const POSITION_MESSAGE_BYTES = 13;
+
+/** El mensaje de la posición del fichero en un pulso. Es nuevo en cada llamada. */
+export function encodePosition(seq: number, position: number): Uint8Array {
+  if (!(position >= 0 && Number.isFinite(position))) {
+    throw new RangeError(`La posición es un número de segundos desde 0: ${position}`);
+  }
+  const message = new Uint8Array(POSITION_MESSAGE_BYTES);
+  const view = new DataView(message.buffer);
+  view.setUint8(0, POSITION_MESSAGE_TYPE);
+  view.setUint32(1, seq, false);
+  view.setFloat64(5, position, false);
+  return message;
+}
+
+/** La posición que lleva `message`, o `undefined` si no es un mensaje de posición bien formado. */
+export function decodePosition(message: Uint8Array): PositionMessage | undefined {
+  if (message.length !== POSITION_MESSAGE_BYTES) return undefined;
+  const view = new DataView(message.buffer, message.byteOffset, message.byteLength);
+  if (view.getUint8(0) !== POSITION_MESSAGE_TYPE) return undefined;
+  const position = view.getFloat64(5, false);
+  if (!(position >= 0 && Number.isFinite(position))) return undefined;
+  return { seq: view.getUint32(1, false), position };
+}

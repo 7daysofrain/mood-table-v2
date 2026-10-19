@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   decodeFrame,
   decodeLevel,
+  decodePosition,
   decodeSource,
   encodeFrame,
   encodeLevel,
+  encodePosition,
   encodeSource,
 } from './viewer-protocol.ts';
 
@@ -137,5 +139,55 @@ describe('los mensajes de fuente y de nivel no son frames', () => {
     // 9 bytes: la cabecera de un frame y un LED.
     expect(decodeFrame(encodeLevel(1, 0.5))).toBeUndefined();
     expect(decodeFrame(encodeSource({ kind: 'file', name: 'abc.wav' }))).toBeUndefined();
+  });
+});
+
+describe('el mensaje de la posición del fichero', () => {
+  it('lleva el tipo 4, el seq y la posición en float64, los dos en big-endian', () => {
+    expect(hexOf(encodePosition(260, 1.5))).toBe('04 00 00 01 04 3f f8 00 00 00 00 00 00');
+  });
+
+  it('ocupa 13 bytes', () => {
+    expect(encodePosition(1, 93.8)).toHaveLength(13);
+  });
+
+  it.each([
+    ['al principio del fichero', 7, 0],
+    ['en un fichero de una hora, sin perder precisión', 123_456, 3599.987_654_321],
+    ['con el seq cerca de 2³²', 2 ** 32 - 1, 2.25],
+  ])('%s, se decodifica igual que se codificó', (_name, seq, position) => {
+    expect(decodePosition(encodePosition(seq, position))).toEqual({ seq, position });
+  });
+
+  it('no admite una posición negativa o que no es un número finito', () => {
+    expect(() => encodePosition(1, -0.001)).toThrow(RangeError);
+    expect(() => encodePosition(1, Number.NaN)).toThrow(RangeError);
+    expect(() => encodePosition(1, Number.POSITIVE_INFINITY)).toThrow(RangeError);
+  });
+
+  it('decodifica un mensaje que es una vista sobre un búfer más grande', () => {
+    const buffer = new Uint8Array(30);
+    buffer.set(encodePosition(9, 3.5), 4);
+
+    expect(decodePosition(buffer.subarray(4, 4 + 13))).toEqual({ seq: 9, position: 3.5 });
+  });
+
+  it.each([
+    ['corto', [4, 0, 0, 1, 4, 0x3f, 0xf8, 0, 0, 0, 0, 0]],
+    ['largo', [4, 0, 0, 1, 4, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0, 0]],
+    ['de otro tipo', [3, 0, 0, 1, 4, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0]],
+    ['con una posición negativa (−1,5)', [4, 0, 0, 1, 4, 0xbf, 0xf8, 0, 0, 0, 0, 0, 0]],
+    ['con una posición infinita', [4, 0, 0, 1, 4, 0x7f, 0xf0, 0, 0, 0, 0, 0, 0]],
+    ['con una posición que no es un número', [4, 0, 0, 1, 4, 0x7f, 0xf8, 0, 0, 0, 0, 0, 0]],
+  ])('%s, se rechaza', (_name, bytes) => {
+    expect(decodePosition(Uint8Array.from(bytes))).toBeUndefined();
+  });
+
+  it('no lo decodifican como frame, nivel ni fuente', () => {
+    const message = encodePosition(1, 1.5);
+
+    expect(decodeFrame(message)).toBeUndefined();
+    expect(decodeLevel(message)).toBeUndefined();
+    expect(decodeSource(message)).toBeUndefined();
   });
 });

@@ -1,13 +1,16 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   decodeFrame,
   decodeLevel,
+  decodePosition,
   decodeSource,
   type FrameMessage,
   type LevelMessage,
+  type PositionMessage,
   type SourceMessage,
 } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -15,6 +18,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createFrameLoop } from '../core/frame-loop.ts';
 import { MemoryAudioSource } from './memory-audio-source.ts';
 import { type EngineServer, startServer } from './server.ts';
+
+const GOLPES = fileURLToPath(new URL('../../test/fixtures/golpes.wav', import.meta.url));
 
 const strip = {
   id: 'demo',
@@ -45,11 +50,12 @@ interface Received {
   frames: FrameMessage[];
   sources: SourceMessage[];
   levels: LevelMessage[];
+  positions: PositionMessage[];
 }
 
 /** Un navegador conectado al WebSocket del motor, que guarda los mensajes que recibe. */
 async function connectAll(url: string): Promise<Received> {
-  const received: Received = { frames: [], sources: [], levels: [] };
+  const received: Received = { frames: [], sources: [], levels: [], positions: [] };
   const client = new WebSocket(`${url.replace('http', 'ws')}/ws`);
   client.binaryType = 'arraybuffer';
   client.addEventListener('message', (event) => {
@@ -60,6 +66,8 @@ async function connectAll(url: string): Promise<Received> {
     if (source) received.sources.push(source);
     const level = decodeLevel(message);
     if (level) received.levels.push(level);
+    const position = decodePosition(message);
+    if (position) received.positions.push(position);
   });
   clients.push(client);
   await new Promise((resolve, reject) => {
@@ -125,6 +133,14 @@ describe('el servidor del motor', () => {
 
     expect(() => {
       server?.levelOutput.write(0.5, { seq: 0, time: 0 });
+    }).not.toThrow();
+  });
+
+  it('sin navegadores conectados, la salida de la posición no envía nada ni falla', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
+
+    expect(() => {
+      server?.positionOutput.write(1.5, { seq: 0, time: 0 });
     }).not.toThrow();
   });
 
@@ -212,7 +228,10 @@ describe('el servidor del motor', () => {
     });
 
     for (let pulse = 0; pulse < 3; pulse++) loop.tick((pulse * 1000) / 60);
-    await until(() => first.levels.length === 3 && second.levels.length === 3);
+    // El nivel de un pulso sale antes que sus frames: se esperan los dos.
+    await until(
+      () => first.levels.length === 3 && second.levels.length === 3 && first.frames.length === 3,
+    );
 
     expect(first.levels.map(({ seq }) => seq)).toEqual(first.frames.map(({ seq }) => seq));
     expect(first.levels.every(({ level }) => Math.abs(level - Math.SQRT1_2) < 0.01)).toBe(true);
@@ -230,5 +249,97 @@ describe('el servidor del motor', () => {
     await until(() => received.frames.length === 3);
 
     expect(received.levels).toEqual([]);
+  });
+
+  it('en cada pulso, los dos navegadores reciben la misma posición, con el seq de los frames', async () => {
+    server = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      source: { kind: 'file', name: 'rampa.wav' },
+    });
+    const first = await connectAll(server.url);
+    const second = await connectAll(server.url);
+    // Un fichero de 1 s a 60 Hz: la posición de cada pulso es su instante.
+    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60, {
+      audioSource: new MemoryAudioSource(new Float32Array(60), 60),
+      positionOutputs: [server.positionOutput],
+    });
+
+    for (let pulse = 0; pulse < 3; pulse++) loop.tick((pulse * 1000) / 60);
+    // La posición de un pulso sale antes que sus frames: se esperan los dos.
+    await until(
+      () =>
+        first.positions.length === 3 && second.positions.length === 3 && first.frames.length === 3,
+    );
+
+    expect(first.positions.map(({ seq }) => seq)).toEqual(first.frames.map(({ seq }) => seq));
+    expect(first.positions.map(({ position }) => position)).toEqual([0, 1 / 60, 2 / 60]);
+    expect(second.positions).toEqual(first.positions);
+  });
+
+  it('sin fuente de audio, ningún mensaje de posición', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
+    const received = await connectAll(server.url);
+    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60, {
+      positionOutputs: [server.positionOutput],
+    });
+
+    for (let pulse = 0; pulse < 3; pulse++) loop.tick((pulse * 1000) / 60);
+    await until(() => received.frames.length === 3);
+
+    expect(received.positions).toEqual([]);
+  });
+});
+
+/** Las cabeceras y el cuerpo de una respuesta, juntos, para buscar en ellos la ruta del fichero. */
+async function everythingIn(response: Response): Promise<string> {
+  return [...response.headers.entries()].flat().join('\n') + (await response.text());
+}
+
+describe('el fichero de audio en /audio', () => {
+  it('con un fichero como fuente, es el fichero, byte a byte, como audio WAV', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioFile: GOLPES });
+
+    const response = await fetch(`${server.url}/audio`);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('audio/wav');
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(
+      new Uint8Array(await readFile(GOLPES)),
+    );
+  });
+
+  it('las cabeceras no dicen dónde está el fichero en el disco', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioFile: GOLPES });
+
+    const response = await fetch(`${server.url}/audio`);
+    const headers = [...response.headers.entries()].flat().join('\n');
+    await response.arrayBuffer();
+
+    expect(headers).not.toContain('fixtures');
+  });
+
+  it('sin fuente de audio, responde que no existe, sin rutas del disco', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
+
+    const response = await fetch(`${server.url}/audio`);
+
+    expect(response.status).toBe(404);
+    expect(await everythingIn(response)).not.toContain(panelDir);
+  });
+
+  it('si el fichero ya no se puede leer, falla sin decir su ruta', async () => {
+    const audioFile = join(panelDir, 'se-borra.wav');
+    await copyFile(GOLPES, audioFile);
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioFile });
+    await rm(audioFile);
+
+    const response = await fetch(`${server.url}/audio`);
+
+    expect(response.status).toBeGreaterThanOrEqual(400);
+    const everything = await everythingIn(response);
+    expect(everything).not.toContain(panelDir);
+    expect(everything).not.toContain('se-borra.wav');
   });
 });

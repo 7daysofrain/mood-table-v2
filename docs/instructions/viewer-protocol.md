@@ -6,12 +6,14 @@
 > el formato, cambian este documento y ese código en la misma PR.
 >
 > Origen: change `virtual-strip-breathing`, `design.md` decisiones 10 y 11 (`MOO-17`). Los mensajes
-> de fuente y de nivel: change `virtual-strip-audio-file`, `design.md` decisión 5 (`MOO-20`).
+> de fuente y de nivel: change `virtual-strip-audio-file`, `design.md` decisión 5 (`MOO-20`). El de
+> posición del fichero: change `panel-audio-playback`, `design.md` decisión 2 (`MOO-56`).
 
 ## Conexión
 
 - **Una sola conexión WebSocket por navegador**, en la ruta `/ws` del motor (la misma dirección que
-  sirve el panel). Por ella viajan los frames de todas las tiras, la fuente de audio y su nivel.
+  sirve el panel). Por ella viajan los frames de todas las tiras, la fuente de audio, su nivel y la
+  posición del fichero de audio.
 - Los mensajes van en **binario**. El primer byte dice de qué tipo es el mensaje.
 - El panel no necesita saber nada de antemano: cada mensaje dice de qué tira es y cuántos LEDs tiene.
 
@@ -74,6 +76,28 @@ Ejemplo: el nivel 0,5 del pulso 260:
 03  00 00 01 04  3f 00 00 00
 ```
 
+## Mensaje de posición del fichero (tipo `4`)
+
+Uno en cada pulso, solo si la fuente de audio es un fichero: el punto del fichero en el que acaba la
+ventana que ha analizado el motor en ese pulso, el mismo para todos los paneles. El motor es la única
+fuente de verdad de esa posición: el panel no la calcula. Con ella, el panel hace sonar el fichero por
+el punto que muestra el visor.
+
+| Byte | Tamaño | Campo | Valor |
+|---|---|---|---|
+| 0 | 1 | Tipo de mensaje | `4` (posición) |
+| 1-4 | 4 | `seq` | El pulso al que pertenece, como el de los frames: entero sin signo de 32 bits, **big-endian** |
+| 5-12 | 8 | Posición | Segundos desde el principio del fichero, en coma flotante de 64 bits (IEEE 754), **big-endian**. Va de 0 hasta justo antes de la duración del fichero, que nunca alcanza, y vuelve a 0 con el bucle |
+
+Ejemplo: la posición 1,5 s del pulso 260:
+
+```
+04  00 00 01 04  3f f8 00 00 00 00 00 00
+```
+
+- **64 bits** para que un fichero largo no pierda precisión: con 32, a una hora la resolución bajaría a
+  unos 0,25 ms.
+
 ## Qué hace el panel con un mensaje que no entiende
 
 Lo ignora, también si es de un tipo que todavía no conoce. Se rechaza:
@@ -82,4 +106,6 @@ Lo ignora, también si es de un tipo que todavía no conoce. Se rechaza:
   entero de LEDs (al menos uno);
 - un mensaje de fuente con una clase que no es `0` ni `1`, sin fuente pero con nombre, de un fichero
   sin nombre o con un nombre que no es UTF-8 válido;
-- un mensaje de nivel que no mide 9 bytes o cuyo nivel no es un número de 0 a 1.
+- un mensaje de nivel que no mide 9 bytes o cuyo nivel no es un número de 0 a 1;
+- un mensaje de posición que no mide 13 bytes o cuya posición no es un número finito mayor o igual
+  que 0.

@@ -57,3 +57,34 @@ describe('la fuente de audio en memoria', () => {
     expect(Array.from(out)).toEqual([0, 0]);
   });
 });
+
+describe('la posición de la fuente en memoria', () => {
+  it('es el punto, en segundos, en el que acaba la ventana de read(time)', () => {
+    const source = ramp();
+
+    // La ventana de read(2, …) acaba justo antes de la muestra 20: el punto 2 s.
+    expect(source.positionAt(2)).toBe(2);
+    expect(source.positionAt(2.04)).toBe(2);
+    expect(source.positionAt(2.06)).toBe(2.1);
+  });
+
+  it('dice la misma muestra que read: la siguiente a la última de la ventana', () => {
+    const source = ramp();
+    const last = positionsAt(source, 3.7, 1)[0] ?? Number.NaN;
+
+    expect(source.positionAt(3.7) * source.sampleRate).toBe((last + 1) % 100);
+  });
+
+  it('al pasar el final, vuelve a casi 0', () => {
+    const source = ramp();
+
+    expect(source.positionAt(9.9)).toBe(9.9);
+    expect(source.positionAt(10)).toBe(0);
+    expect(source.positionAt(10.1)).toBe(0.1);
+    expect(source.positionAt(1002)).toBe(2);
+  });
+
+  it('sin muestras, es 0', () => {
+    expect(new MemoryAudioSource(new Float32Array(0), 44_100).positionAt(1)).toBe(0);
+  });
+});
