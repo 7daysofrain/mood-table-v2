@@ -9,7 +9,12 @@ import type { Config, SourceMessage, StripConfig } from '@moodtable/shared';
 
 import { startTicker, type Ticker } from './adapters/ticker.ts';
 import type { AudioSource } from './core/audio/audio-source.ts';
-import { createFrameLoop, type LevelOutput, type LightOutput } from './core/frame-loop.ts';
+import {
+  createFrameLoop,
+  type LevelOutput,
+  type LightOutput,
+  type PositionOutput,
+} from './core/frame-loop.ts';
 
 export interface EngineOptions {
   config: Config;
@@ -22,6 +27,8 @@ export interface EngineOptions {
   audioSource?: AudioSource;
   /** Quién recibe el nivel de la fuente en cada pulso. */
   levelOutputs?: LevelOutput[];
+  /** Quién recibe la posición del fichero de audio en cada pulso. */
+  positionOutputs?: PositionOutput[];
   /** Reloj monótono en milisegundos. Por defecto, `performance.now()`. */
   clock?: () => number;
 }
@@ -31,12 +38,13 @@ export function startEngine({
   createOutputs,
   audioSource,
   levelOutputs,
+  positionOutputs,
   clock,
 }: EngineOptions): Ticker {
   const loop = createFrameLoop(
     config.strips.map((strip, index) => ({ config: strip, outputs: createOutputs(strip, index) })),
     config.fps,
-    { audioSource, levelOutputs },
+    { audioSource, levelOutputs, positionOutputs },
   );
   return startTicker(
     config.fps,

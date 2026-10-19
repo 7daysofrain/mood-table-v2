@@ -3,19 +3,28 @@
  * conexión por navegador (decisión 10), en la dirección y el puerto de la configuración (decisión
  * 13). Cada tira tiene su salida del visor, que codifica cada frame con el protocolo de
  * `@moodtable/shared` y lo envía a todos los navegadores conectados. Por la misma conexión, cada
- * navegador recibe la fuente de audio al conectarse y su nivel en cada pulso.
+ * navegador recibe la fuente de audio al conectarse y su nivel y la posición del fichero en cada
+ * pulso. Con un fichero como fuente, lo sirve en `/audio` para que el panel lo oiga (decisión 6 del
+ * change panel-audio-playback).
  *
  * Sin contramedida para un navegador que no recibe (riesgo aceptado en el design): sus mensajes se
  * acumulan en su conexión hasta que se da por muerta.
  */
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import type { AddressInfo } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { join } from 'node:path';
 
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
-import { encodeFrame, encodeLevel, encodeSource, type SourceMessage } from '@moodtable/shared';
+import {
+  encodeFrame,
+  encodeLevel,
+  encodePosition,
+  encodeSource,
+  type SourceMessage,
+} from '@moodtable/shared';
 import Fastify from 'fastify';
 
 import type { LevelOutput, LightOutput, PositionOutput } from '../core/frame-loop.ts';
@@ -46,6 +55,9 @@ export interface EngineServer {
 /** Ruta del WebSocket del visor (`docs/instructions/viewer-protocol.md`). */
 export const VIEWER_PATH = '/ws';
 
+/** Ruta del fichero de audio. Fija y sin el nombre: la ruta en disco no sale del motor (D51). */
+export const AUDIO_PATH = '/audio';
+
 const PANEL_NOT_BUILT =
   'El panel no está construido. Constrúyelo con `pnpm --filter @moodtable/panel build` y recarga, ' +
   'o abre el panel de desarrollo que arranca `pnpm dev` en http://localhost:5173.';
@@ -69,6 +81,7 @@ export async function startServer({
   port,
   panelDir,
   source = { kind: 'none' },
+  audioFile,
 }: ServerOptions): Promise<EngineServer> {
   const app = Fastify();
   await app.register(fastifyWebsocket);
@@ -83,10 +96,29 @@ export async function startServer({
   app.get(VIEWER_PATH, { websocket: true }, (socket) => {
     socket.send(sourceMessage);
   });
+  // El fichero entero, tal cual: el panel lo pide una vez por conexión. Ni las respuestas ni los
+  // errores llevan la ruta en disco.
+  app.get(AUDIO_PATH, async (_request, reply) => {
+    if (!audioFile) return reply.code(404).type('text/plain').send('Sin fichero de audio');
+    let bytes: Buffer;
+    try {
+      bytes = await readFile(audioFile);
+    } catch {
+      return reply.code(500).type('text/plain').send('No se puede leer el fichero de audio');
+    }
+    return reply.type('audio/wav').send(bytes);
+  });
   await app.listen({ host, port });
 
   const browsers = app.websocketServer.clients;
   const address = app.server.address() as AddressInfo;
+
+  /** Envía `message` a todos los navegadores conectados. */
+  function broadcast(message: Uint8Array): void {
+    for (const browser of browsers) {
+      if (browser.readyState === browser.OPEN) browser.send(message);
+    }
+  }
 
   return {
     url: `http://${panelHost(address)}:${address.port}`,
@@ -95,24 +127,19 @@ export async function startServer({
         if (browsers.size === 0) return;
         // Un mensaje nuevo por frame: la conexión puede guardarlo hasta enviarlo, y el frame es
         // del bucle y cambia en el pulso siguiente.
-        const message = encodeFrame(tick.seq, stripIndex, frame);
-        for (const browser of browsers) {
-          if (browser.readyState === browser.OPEN) browser.send(message);
-        }
+        broadcast(encodeFrame(tick.seq, stripIndex, frame));
       },
     }),
     levelOutput: {
       write(level, tick) {
         if (browsers.size === 0) return;
-        const message = encodeLevel(tick.seq, level);
-        for (const browser of browsers) {
-          if (browser.readyState === browser.OPEN) browser.send(message);
-        }
+        broadcast(encodeLevel(tick.seq, level));
       },
     },
     positionOutput: {
       write(position, tick) {
-        throw new Error(`Sin implementar (${position}, ${tick.seq})`);
+        if (browsers.size === 0) return;
+        broadcast(encodePosition(tick.seq, position));
       },
     },
     close: () => app.close(),

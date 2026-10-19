@@ -35,7 +35,7 @@
   `Content-Type: audio/wav`, y sin fuente, 404; ni el cuerpo del 404 ni las cabeceras llevan la ruta en
   disco (`specs/audio-playback`, decisión 6).
   Verificar: los tests nuevos fallan porque el servidor no envía la posición ni sirve `/audio`.
-- [ ] 1.6 El servidor da una `PositionOutput` que envía la posición a todos los paneles y sirve
+- [x] 1.6 El servidor da una `PositionOutput` que envía la posición a todos los paneles y sirve
   `/audio` con la ruta del fichero que le pasa `main.ts`; `main.ts` lo conecta todo.
   Verificar: los tests de 1.5 pasan; con `pnpm dev`, `curl -sI http://127.0.0.1:8080/audio` da
   `200` y `audio/wav`, y un cliente WebSocket de prueba recibe mensajes de tipo `4`.

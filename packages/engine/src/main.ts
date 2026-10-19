@@ -1,7 +1,8 @@
 /**
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
  * adaptadores. Carga la configuración y la fuente de audio, si la declara, arranca el servidor del
- * panel (que anuncia la fuente y envía su nivel) y el motor, y da a cada tira sus salidas: el visor
+ * panel (que anuncia la fuente, envía su nivel y la posición del fichero y sirve el fichero) y el
+ * motor, y da a cada tira sus salidas: el visor
  * siempre (D43); la salida Adalight de las tiras físicas llega con H3. Si la configuración no sirve,
  * el fichero de audio no se puede leer o su formato no vale, o el servidor no puede escuchar, el
  * motor no arranca: dice qué falla y termina con código 1.
@@ -33,6 +34,7 @@ async function main(): Promise<string | undefined> {
       port,
       panelDir: PANEL_DIR,
       source: sourceMessage(loaded.config),
+      audioFile: audioSource?.path,
     });
   } catch (error) {
     return `No puede escuchar en ${host}:${port} (${(error as Error).message})`;
@@ -44,6 +46,7 @@ async function main(): Promise<string | undefined> {
     createOutputs: (_strip, index) => [server.viewerOutput(index)],
     audioSource: audio?.ok ? audio.source : undefined,
     levelOutputs: [server.levelOutput],
+    positionOutputs: [server.positionOutput],
   });
   return undefined;
 }
