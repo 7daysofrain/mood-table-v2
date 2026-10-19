@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { render } from '../test/render.tsx';
 import { App, type PanelConnection } from './App.tsx';
+import type { SourceMessage } from '@moodtable/shared';
+
 import type { ConnectionStatus } from './engine/connection.ts';
 
 /** Una conexión falsa: el test decide cuándo cambia de estado. */
@@ -11,6 +13,8 @@ function fakeConnection() {
   const connection = {
     status: 'disconnected' as ConnectionStatus,
     frames: new Map<number, Uint8Array>(),
+    source: undefined as SourceMessage | undefined,
+    level: undefined as number | undefined,
     start: vi.fn(),
     stop: vi.fn(),
     subscribe: (listener: () => void) => {
@@ -18,8 +22,9 @@ function fakeConnection() {
       return () => listeners.delete(listener);
     },
   } satisfies PanelConnection;
-  const setStatus = (status: ConnectionStatus) => {
+  const setStatus = (status: ConnectionStatus, source?: SourceMessage) => {
     connection.status = status;
+    connection.source = source;
     for (const listener of listeners) listener();
   };
   return { connection, setStatus };
@@ -61,5 +66,27 @@ describe('App', () => {
     render(<App connection={fakeConnection().connection} />);
 
     expect(screen.getByRole('img', { name: 'Tiras del visor' })).toBeInTheDocument();
+  });
+
+  it('con conexión y un fichero como fuente, la cabecera lo dice y muestra el vúmetro', () => {
+    const { connection, setStatus } = fakeConnection();
+    render(<App connection={connection} />);
+
+    act(() => {
+      setStatus('connected', { kind: 'file', name: 'golpes.wav' });
+    });
+
+    const header = screen.getByRole('banner');
+    expect(header).toHaveTextContent('Fichero: golpes.wav');
+    expect(screen.getByRole('meter', { name: 'Nivel de la fuente de audio' })).toBeInTheDocument();
+  });
+
+  it('sin conexión, la cabecera no muestra fuente ni vúmetro', () => {
+    render(<App connection={fakeConnection().connection} />);
+
+    const header = screen.getByRole('banner');
+    expect(header).not.toHaveTextContent('Fichero');
+    expect(header).not.toHaveTextContent('Sin fuente de audio');
+    expect(screen.queryByRole('meter')).not.toBeInTheDocument();
   });
 });

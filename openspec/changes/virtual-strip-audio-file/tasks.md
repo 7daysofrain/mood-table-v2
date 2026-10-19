@@ -168,7 +168,7 @@
 - [x] 3.2 La conexión decodifica los mensajes de fuente y de nivel con el protocolo de
   `@moodtable/shared`, avisa de los cambios de fuente a quien se suscriba y expone el último nivel.
   Verificar: los tests de 3.1 pasan.
-- [ ] 3.3 **(test en rojo)** Tests de la cabecera con Testing Library: con un fichero, dice
+- [x] 3.3 **(test en rojo)** Tests de la cabecera con Testing Library: con un fichero, dice
   «Fichero: golpes.wav» y tiene un vúmetro con nombre «Nivel de la fuente de audio»; sin fuente, dice
   «Sin fuente de audio» y no hay vúmetro; sin conexión, ni fuente ni vúmetro; el vúmetro va vacío a
   −60 dB o menos y lleno a 0 dB (`specs/audio-source`, decisión 14).

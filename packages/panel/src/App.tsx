@@ -7,7 +7,7 @@ import { Viewer } from './viewer/Viewer.tsx';
 /** Lo que el panel usa de la conexión con el motor: así los tests pueden darle una falsa. */
 export type PanelConnection = Pick<
   EngineConnection,
-  'status' | 'frames' | 'subscribe' | 'start' | 'stop'
+  'status' | 'frames' | 'source' | 'level' | 'subscribe' | 'start' | 'stop'
 >;
 
 /**
