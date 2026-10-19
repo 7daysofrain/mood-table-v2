@@ -107,9 +107,39 @@
   unos minutos, deja de oírlo y vuelve, y juzga si la tira va al ritmo de lo que oye (caso feliz de
   `MOO-22`). Si el salto de la corrección se nota, se anota para pasar a `playbackRate` (decisión 4).
   Verificar: el resultado queda en la descripción de la PR.
-- [ ] 2.12 Documentación y cierre de la historia:
+
+> Pasos 2.12-2.17: lo que salió de la code review de la PR (19-oct), con `design.md` revisado
+> (decisiones 3, 4, 7 y 8, y riesgos).
+
+- [ ] 2.12 **(test en rojo)** Tests del reproductor con el `AudioContext` falso: expone cuántos saltos
+  lleva desde el último «Oír» y el error medido antes de corregir; el primer arranque sale de la
+  mediana de las posiciones llegadas mientras se preparaba, no de la primera tras decodificar; con el
+  contexto parado, no corrige; si `resume()` falla, vuelve a callado; el nodo nuevo se programa ~50 ms
+  por delante en el punto de ese instante y el viejo se para en el mismo instante; la simulación de
+  deriva de `sync.test.ts` pasa aquí, con el reproductor real, un reloj de audio 50 ppm más rápido,
+  temporizadores falsos y el oráculo de lo que se oye (decisiones 3, 4 y 8).
+  Verificar: los tests nuevos fallan por lo que falta, y el resto sigue en verde.
+- [ ] 2.13 `player.ts` con lo de 2.12; `jumps` en `window.moodTableAudio`; fuera `Sync.reset()`, que no
+  usa nadie, con su test.
+  Verificar: los tests de 2.12 pasan.
+- [ ] 2.14 **(test en rojo)** Tests del ciclo de vida del reproductor: crearlo no lo suscribe a la
+  conexión; `start()` y `stop()` se pueden repetir (doble montaje de `StrictMode`); `stop()` cierra el
+  contexto de audio y el siguiente «Oír» crea otro (decisión 3).
+  Verificar: los tests nuevos fallan porque el constructor se suscribe y nadie cierra el contexto.
+- [ ] 2.15 `AudioPlayer.start()` y `stop()`, y `App` los llama desde un efecto, como la conexión.
+  Verificar: los tests de 2.14 pasan y los de `App` siguen en verde.
+- [ ] 2.16 Iconos de escucha en `AudioControl.tsx`: altavoz tachado callado y altavoz con ondas
+  sonando, dos SVG de un trazo como ahora (decisión 7). Los nombres accesibles no cambian.
+  Verificar: captura del control en los tres estados con `pnpm dev`.
+- [ ] 2.17 E2E de sincronía con los saltos: *Oír* y *Volver a oír*, sin saltos tras arrancar; *El
+  bucle* (~10 s), como mucho uno. Avisos de Sonar `S2925` en `e2e/playback.spec.ts`: «no suena solo» y
+  «al volver el motor» esperan a que el visor cambie en vez de un tiempo fijo; las esperas de «el motor
+  lleva un rato» y «dejó de oír hace un rato» son de tiempo por definición y se marcan con
+  `// NOSONAR` y su motivo.
+  Verificar: `pnpm test:e2e` pasa en local tres veces seguidas y en la CI, y `sonar-issues` pasa.
+- [ ] 2.18 Documentación y cierre de la historia:
   - README §1.3 (*Cabecera*: el control de oír) y §2.2 (*Reproductor*: Web Audio, sincronía contra el
-    visor y corrección con salto);
+    visor y corrección con salto); «pulsa play» pasa a «pulsa Oír» en el README (también en H1);
   - `docs/idea-mood-table.md` §10: D54 (Web Audio con salto al pasar 20 ms) y D55 (solo el retraso de
     salida declarado), si el usuario las aprueba;
   - `prompts.md`: entrada de la implementación de la historia, con el formato de `course.md` §5;
