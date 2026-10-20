@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeContext, type FakeNode } from '../../test/fake-audio-context.ts';
 import type { ConnectionStatus, PositionListener } from '../engine/connection.ts';
 import { AudioPlayer, type PlayerConnection } from './player.ts';
-import { circularDifference } from './sync.ts';
+import { circularDifference, JUMP_THRESHOLD } from './sync.ts';
 
 /** El retraso de salida del contexto falso: `outputLatency` + `baseLatency`. */
 const LATENCY = 0.04;
@@ -270,6 +270,47 @@ describe('el reproductor del fichero de audio', () => {
     expect(player.error).toBeCloseTo(0.015, 3);
   });
 
+  it('dejar de oír durante un salto programado para también el nodo viejo, ya', async () => {
+    const point = { value: 1 };
+    player.play();
+    await settle();
+    advance(500, point);
+    const first = lastNode();
+    context.currentTime += 0.025;
+    for (let frame = 0; frame < 15 && player.jumps === 0; frame++) advance(1, point);
+    // El viejo iba a parar dentro de 50 ms, cuando arrancase el nuevo.
+    expect(first.stoppedAt).toBeGreaterThan(context.currentTime);
+
+    player.stop();
+
+    expect(first.stoppedAt).toBe(0);
+    expect(first.connected).toBe(false);
+    expect(lastNode().stoppedAt).toBe(0);
+  });
+
+  it('un salto que no llega a arrancar no se cuenta', async () => {
+    // El navegador da el instante de salida mientras suena.
+    let ready = true;
+    context.getOutputTimestamp = () => ({
+      contextTime: context.currentTime,
+      performanceTime: ready ? now : 0,
+    });
+    const point = { value: 1 };
+    player.play();
+    await settle();
+    advance(100, point);
+    expect(context.nodes).toHaveLength(1);
+
+    // Antes de 1 s, deja de darlo y el error pasa del umbral (80 ms, menos los 40 del retraso
+    // declarado que vuelve a contar): no puede arrancar otro nodo.
+    ready = false;
+    context.currentTime += 0.08;
+    advance(500, point);
+
+    expect(context.nodes).toHaveLength(1);
+    expect(player.jumps).toBe(0);
+  });
+
   it('cuenta los saltos desde que el maker pide oír: al volver a oír, empieza de 0', async () => {
     const point = { value: 1 };
     player.play();
@@ -376,9 +417,11 @@ describe('muchas vueltas del bucle con deriva entre los relojes', () => {
   /**
    * El fichero de golpes (4 s) sonando 10 minutos con el reproductor de verdad: el reloj de audio va
    * 50 partes por millón más deprisa que el del motor (3 ms por minuto). Cada 250 ms se compara lo que
-   * se oye con lo que muestra el visor en ese momento.
+   * se oye con lo que muestra el visor en ese momento. Se acota al umbral de salto, no a la tolerancia
+   * de la spec (45/125 ms): con la tolerancia, un sesgo común del arranque y la corrección (un
+   * retraso de salida mal contado) pasaría en verde.
    */
-  it('lo que se oye nunca va 45 ms por delante ni 125 ms por detrás, y salta una sola vez', async () => {
+  it('lo que se oye se separa del visor como mucho el umbral de salto, y salta una sola vez', async () => {
     const point = { value: 0 };
     connection.position(point.value, now);
     player.play();
@@ -393,8 +436,9 @@ describe('muchas vueltas del bucle con deriva entre los relojes', () => {
     }
 
     expect(errors.length).toBeGreaterThan(2000);
-    expect(Math.max(...errors)).toBeLessThanOrEqual(0.045);
-    expect(Math.min(...errors)).toBeGreaterThanOrEqual(-0.125);
+    // Medio milisegundo de margen: el reloj avanza a saltos de un frame.
+    expect(Math.max(...errors)).toBeLessThanOrEqual(JUMP_THRESHOLD + 0.0005);
+    expect(Math.min(...errors)).toBeGreaterThanOrEqual(-0.0005);
     // 3 ms por minuto en 10 minutos son 30 ms: salta una vez, al pasar de 20 ms, no en cada vuelta.
     expect(player.jumps).toBe(1);
   });
@@ -503,5 +547,23 @@ describe('el primer arranque espera al reloj de audio en marcha', () => {
     // Arrancó a mitad del avance: el punto, contado desde el reloj de ahora.
     const { when, offset } = lastNode().started ?? { when: 0, offset: 0 };
     expect(offset).toBeCloseTo(point.value + (when - context.currentTime) + LATENCY, 3);
+  });
+
+  it('al volver a oír con el contexto ya usado, el segundo de espera cuenta desde que se pide', async () => {
+    const point = { value: 1 };
+    player.play();
+    await settle();
+    advance(100, point);
+    player.stop();
+    // El contexto lleva más de 1 s de reloj, y al volver no da el instante de salida.
+    context.getOutputTimestamp = () => ({ contextTime: 0, performanceTime: 0 });
+
+    player.play();
+    advance(900, point);
+    expect(context.nodes).toHaveLength(1);
+
+    advance(200, point);
+    expect(context.nodes).toHaveLength(2);
+    expect(player.state).toBe('playing');
   });
 });

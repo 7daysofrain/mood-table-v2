@@ -114,12 +114,15 @@ reproduce con un `AudioBufferSourceNode` en bucle (`loop = true`), arrancado en 
   perderla (el motor puede volver con otro fichero).
 - **Mientras se descarga y decodifica**, el control indica que está preparando el audio *(asumido)*.
   En local es inmediato; en la demo, unos segundos.
-- **El primer arranque espera al reloj de audio en marcha:** contexto `running` y
+- **El arranque espera al reloj de audio en marcha:** contexto `running` y
   `getOutputTimestamp()` con `performanceTime > 0`. Recién creado, el reloj del contexto aún no va al
   paso de `performance.now()` y el retraso declarado puede valer 0; arrancar entonces sonaba ~94 ms
   tarde en Chromium sin pantalla y la corrección saltaba enseguida. Como las posiciones llegan a 60 Hz,
-  la espera es de unas decenas de ms dentro de «Preparando». Si tras 1 s de reloj el navegador no da
-  el instante, o no tiene la API, arranca con el retraso declarado: nunca se queda preparando.
+  la espera es de unas decenas de ms dentro de «Preparando». Si 1 s de reloj después de pedir oír el
+  navegador sigue sin dar el instante, o no tiene la API, arranca con el retraso declarado; el segundo
+  se cuenta desde que se pide oír, porque al volver a oír el contexto ya es viejo. Lo que no cubre: un
+  contexto que nunca llega a `running` (Safari interrumpido) deja el control en «Preparando» hasta
+  perder la conexión; es un caso de móvil, fuera de `MOO-22`.
 - **Con el contexto de audio parado** (Safari lo interrumpe con una llamada o al bloquear el móvil) no
   se corrige nada: su reloj no avanza y el error crecería solo. Si el navegador no deja reanudarlo, el
   control vuelve a callado. Reanudarlo solo o avisar al maker queda fuera de `MOO-22`.
@@ -283,7 +286,8 @@ packages/panel/src/audio/
   implementar; no cambia la spec.
 - **[El reproductor se mide contra su propia estimación]** → Arranque y corrección usan el mismo
   cálculo, así que un sesgo común no se vería en su error. Lo cubre la simulación de deriva con su
-  oráculo (decisión 8). Lo que ningún test cubre es que *posición del fichero* signifique lo mismo en el
+  oráculo (decisión 8), que acota lo que se oye al umbral de salto y no a la tolerancia de la spec:
+  con la tolerancia, un sesgo común de 40 ms pasaba en verde. Lo que ningún test cubre es que *posición del fichero* signifique lo mismo en el
   motor y en el panel: eso solo se juzga oyendo luz y sonido a la vez (la comprobación a oído).
 
 ## Migration Plan

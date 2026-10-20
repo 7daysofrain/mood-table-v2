@@ -157,3 +157,18 @@
 
   Verificar: la tabla de escenarios de `MOO-22` → test está en la descripción de la PR, y
   `pnpm exec openspec validate panel-audio-playback --strict` pasa.
+
+> Pasos 2.21-2.23: lo que salió de la segunda code review de la PR (20-oct).
+
+- [x] 2.21 **(test en rojo)** Tests del reproductor: la simulación de deriva acota lo que se oye al
+  umbral de salto (unos ±20 ms), no a la tolerancia de la spec, para que vea un sesgo común; dejar de
+  oír durante un salto programado para también el nodo viejo, ya; al volver a oír con el contexto
+  reutilizado, la espera al reloj de audio cuenta el segundo desde que se pide oír; un salto que no
+  llega a arrancar no se cuenta (decisiones 3, 4 y 8).
+  Verificar: los tests nuevos fallan por lo que falta, y el resto sigue en verde.
+- [ ] 2.22 `player.ts` con lo de 2.21.
+  Verificar: los tests de 2.21 pasan.
+- [ ] 2.23 E2E y textos: «el visor recibe frames» mira 2 s y no 1, porque `golpes.wav` tiene ~1,9 s de
+  silencio digital; D54 dice que el usuario no señaló ningún salto audible; `globals.d.ts` describe el
+  error medido y los saltos; `prompts.md` 6.19 recoge la segunda revisión.
+  Verificar: `pnpm test:e2e` pasa en local y en la CI.
