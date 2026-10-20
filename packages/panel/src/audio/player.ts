@@ -61,8 +61,8 @@ const CHECK_MS = 250;
 const LEAD = 0.05;
 
 /**
- * Cuánto reloj de audio (s) se espera, como mucho, a que el navegador diga cuándo se oye lo que suena
- * antes del primer arranque. Pasado, se arranca con el retraso que declara.
+ * Cuánto reloj de audio (s), desde que el maker pide oír, se espera como mucho a que el navegador diga
+ * cuándo se oye lo que suena. Pasado, se arranca con el retraso que declara.
  */
 const STARTUP = 1;
 
@@ -98,15 +98,16 @@ interface Track {
  * Si el reloj de audio ya va al paso del panel (decisión 3). Recién creado, el contexto aún no suena:
  * su reloj no va al paso de `performance.now()`, el retraso declarado puede valer 0 y
  * `getOutputTimestamp()` da `performanceTime = 0`. Arrancar entonces suena tarde y la corrección
- * salta enseguida. Si tras `STARTUP` el navegador sigue sin dar el instante, o no tiene la API, vale el
+ * salta enseguida. Si `STARTUP` después de `requestedAt` (el reloj cuando se pidió oír: al volver a
+ * oír, el contexto ya es viejo) el navegador sigue sin dar el instante, o no tiene la API, vale el
  * retraso declarado.
  */
-function running(context: AudioContextLike, clock: AudioClock): boolean {
+function running(context: AudioContextLike, clock: AudioClock, requestedAt: number): boolean {
   if (context.state !== 'running') return false;
   return (
     clock.timestamp === undefined ||
     clock.timestamp.performanceTime > 0 ||
-    clock.contextTime >= STARTUP
+    clock.contextTime - requestedAt >= STARTUP
   );
 }
 
@@ -122,6 +123,10 @@ export class AudioPlayer {
   /** Sin fichero aún, el último segundo de posiciones: el primer arranque sale de su mediana. */
   private arrivals: Arrival[] = [];
   private playing: Playing | undefined;
+  /** El nodo de antes de un salto, que aún suena hasta que arranque el nuevo. */
+  private ending: AudioBufferSourceNode | undefined;
+  /** El reloj de audio cuando el maker pidió oír. */
+  private requestedAt = 0;
   private check: ReturnType<typeof setInterval> | undefined;
   private current: PlayerState = 'silent';
   private lastError: number | undefined;
@@ -195,6 +200,7 @@ export class AudioPlayer {
     const request = ++this.request;
     this.jumpCount = 0;
     this.context ??= this.createContext();
+    this.requestedAt = this.context.currentTime;
     this.context.resume().catch(() => {
       // El navegador no deja sonar: vuelve a callado y el maker puede pedirlo otra vez.
       if (request === this.request) this.stop();
@@ -255,18 +261,21 @@ export class AudioPlayer {
     if (!context || !track) return;
     const clock = this.clock(context);
     // Arranca con la siguiente posición que llegue, cuando el reloj ya vaya.
-    if (!running(context, clock)) return;
+    if (!running(context, clock, this.requestedAt)) return;
     const when = clock.contextTime + LEAD;
     const offset = track.sync.pointAt(audibleAt(clock, when));
     // Sin posiciones todavía: arrancará con la primera que llegue.
     if (offset === undefined) return;
 
-    const previous = this.playing;
+    const previous = this.playing?.node;
     if (previous) {
-      previous.node.onended = () => {
-        previous.node.disconnect();
+      this.jumpCount++;
+      this.ending = previous;
+      previous.onended = () => {
+        previous.disconnect();
+        if (this.ending === previous) this.ending = undefined;
       };
-      previous.node.stop(when);
+      previous.stop(when);
     }
     const node = context.createBufferSource();
     node.buffer = track.buffer;
@@ -294,9 +303,7 @@ export class AudioPlayer {
     const viewer = track.sync.pointAt(audibleAt(clock, clock.contextTime));
     if (viewer === undefined) return;
     this.lastError = circularDifference(sounding, viewer, track.buffer.duration);
-    if (!shouldJump(this.lastError)) return;
-    this.jumpCount++;
-    this.start();
+    if (shouldJump(this.lastError)) this.start();
   }
 
   private clock(context: AudioContextLike): AudioClock {
@@ -314,16 +321,20 @@ export class AudioPlayer {
     };
   }
 
-  /** Para el nodo que suena, si hay alguno, y la comprobación de la deriva. */
+  /** Para los nodos que suenan, si hay alguno, y la comprobación de la deriva. */
   private silence(): void {
-    const { playing } = this;
+    const { playing, ending } = this;
     this.playing = undefined;
+    this.ending = undefined;
     this.lastError = undefined;
     clearInterval(this.check);
     this.check = undefined;
-    if (!playing) return;
-    playing.node.stop();
-    playing.node.disconnect();
+    // El de antes de un salto también, ya: no puede seguir sonando hasta que arrancase el nuevo.
+    for (const node of [ending, playing?.node]) {
+      if (!node) continue;
+      node.stop();
+      node.disconnect();
+    }
   }
 
   /** Sin conexión: calla y suelta el fichero, que el motor de después puede no tener. */

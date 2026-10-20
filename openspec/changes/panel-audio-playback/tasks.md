@@ -166,7 +166,7 @@
   reutilizado, la espera al reloj de audio cuenta el segundo desde que se pide oír; un salto que no
   llega a arrancar no se cuenta (decisiones 3, 4 y 8).
   Verificar: los tests nuevos fallan por lo que falta, y el resto sigue en verde.
-- [ ] 2.22 `player.ts` con lo de 2.21.
+- [x] 2.22 `player.ts` con lo de 2.21.
   Verificar: los tests de 2.21 pasan.
 - [ ] 2.23 E2E y textos: «el visor recibe frames» mira 2 s y no 1, porque `golpes.wav` tiene ~1,9 s de
   silencio digital; D54 dice que el usuario no señaló ningún salto audible; `globals.d.ts` describe el
