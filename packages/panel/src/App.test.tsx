@@ -1,14 +1,17 @@
 import type { SourceMessage } from '@moodtable/shared';
-import { act, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { FakeContext } from '../test/fake-audio-context.ts';
 import { render } from '../test/render.tsx';
 import { App, type PanelConnection } from './App.tsx';
-import type { ConnectionStatus } from './engine/connection.ts';
+import { AudioPlayer } from './audio/player.ts';
+import type { ConnectionStatus, PositionListener } from './engine/connection.ts';
 
 /** Una conexión falsa: el test decide cuándo cambia de estado. */
 function fakeConnection() {
   const listeners = new Set<() => void>();
+  const positionListeners = new Set<PositionListener>();
   const connection = {
     status: 'disconnected' as ConnectionStatus,
     frames: new Map<number, Uint8Array>(),
@@ -19,6 +22,10 @@ function fakeConnection() {
     subscribe: (listener: () => void) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+    subscribePositions: (listener: PositionListener) => {
+      positionListeners.add(listener);
+      return () => positionListeners.delete(listener);
     },
   } satisfies PanelConnection;
   const notify = () => {
@@ -33,7 +40,11 @@ function fakeConnection() {
     connection.source = source;
     notify();
   };
-  return { connection, setStatus, setSource };
+  /** Una posición del fichero que llega del motor en el instante `arrivedAt` (ms). */
+  const sendPosition = (position: number, arrivedAt: number) => {
+    for (const listener of positionListeners) listener({ seq: 0, position }, arrivedAt);
+  };
+  return { connection, setStatus, setSource, sendPosition };
 }
 
 describe('App', () => {
@@ -98,5 +109,115 @@ describe('App', () => {
     expect(header).not.toHaveTextContent('Fichero');
     expect(header).not.toHaveTextContent('Sin fuente de audio');
     expect(screen.queryByRole('meter')).not.toBeInTheDocument();
+  });
+});
+
+const LISTEN = { name: 'Oír el fichero de audio' };
+const PREPARING = { name: 'Preparando el audio' };
+const STOP = { name: 'Dejar de oír el fichero de audio' };
+
+/**
+ * El panel conectado, con el reproductor de verdad sobre un `AudioContext` falso y una descarga que
+ * el test termina cuando quiere.
+ */
+function panelWithAudio() {
+  const fake = fakeConnection();
+  const context = new FakeContext();
+  let finishDownload: (data: ArrayBuffer) => void = () => undefined;
+  const player = new AudioPlayer(fake.connection, {
+    fetchAudio: () =>
+      new Promise<ArrayBuffer>((resolve) => {
+        finishDownload = resolve;
+      }),
+    createContext: () => context,
+    now: () => 1000,
+  });
+  render(<App connection={fake.connection} player={player} />);
+  act(() => {
+    fake.setStatus('connected');
+  });
+  /** Termina la descarga y llega una posición: el reproductor ya puede sonar. */
+  const download = async () => {
+    await act(async () => {
+      finishDownload(new ArrayBuffer(8));
+      await Promise.resolve();
+    });
+    act(() => {
+      fake.sendPosition(1, 1000);
+    });
+  };
+  return { ...fake, player, download };
+}
+
+describe('oír el fichero de audio desde la cabecera', () => {
+  it('con un fichero como fuente: oír, preparando, dejar de oír y otra vez oír', async () => {
+    const panel = panelWithAudio();
+    act(() => {
+      panel.setSource({ kind: 'file', name: 'golpes.wav' });
+    });
+    const header = screen.getByRole('banner');
+
+    fireEvent.click(screen.getByRole('button', LISTEN));
+    expect(header).toContainElement(screen.getByRole('button', PREPARING));
+
+    await panel.download();
+    fireEvent.click(screen.getByRole('button', STOP));
+
+    expect(screen.getByRole('button', LISTEN)).toBeInTheDocument();
+  });
+
+  it('sin fuente de audio, no ofrece oír nada', () => {
+    const panel = panelWithAudio();
+    act(() => {
+      panel.setSource({ kind: 'none' });
+    });
+
+    expect(screen.queryByRole('button', LISTEN)).not.toBeInTheDocument();
+  });
+
+  it('sin conexión, no ofrece oír nada', () => {
+    render(<App connection={fakeConnection().connection} />);
+
+    expect(screen.queryByRole('button', LISTEN)).not.toBeInTheDocument();
+  });
+
+  it('si se pierde la conexión mientras suena, calla, y al volver ofrece oír', async () => {
+    const panel = panelWithAudio();
+    act(() => {
+      panel.setSource({ kind: 'file', name: 'golpes.wav' });
+    });
+    fireEvent.click(screen.getByRole('button', LISTEN));
+    await panel.download();
+    expect(panel.player.state).toBe('playing');
+
+    act(() => {
+      panel.connection.source = undefined;
+      panel.setStatus('disconnected');
+    });
+    expect(panel.player.state).toBe('silent');
+    expect(screen.queryByRole('button', STOP)).not.toBeInTheDocument();
+
+    act(() => {
+      panel.setStatus('connected');
+      panel.setSource({ kind: 'file', name: 'golpes.wav' });
+    });
+    expect(screen.getByRole('button', LISTEN)).toBeInTheDocument();
+  });
+
+  it('deja leer en window, de solo lectura, el estado, el error de sincronía y los saltos', async () => {
+    const panel = panelWithAudio();
+    act(() => {
+      panel.setSource({ kind: 'file', name: 'golpes.wav' });
+    });
+    expect(window.moodTableAudio).toEqual({ state: 'silent', error: undefined, jumps: 0 });
+
+    fireEvent.click(screen.getByRole('button', LISTEN));
+    await panel.download();
+
+    // Aún no ha comparado lo que suena con el visor: no hay error medido.
+    expect(window.moodTableAudio).toEqual({ state: 'playing', error: undefined, jumps: 0 });
+    expect(() => {
+      Object.assign(window, { moodTableAudio: { state: 'silent' } });
+    }).toThrow();
   });
 });

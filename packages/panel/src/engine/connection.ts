@@ -4,9 +4,18 @@
  * tira, decodificado con el protocolo de `@moodtable/shared`, además de la fuente de audio y su último
  * nivel (decisión 5 del change virtual-strip-audio-file). No sabe nada de React: el visor lee los
  * frames y el vúmetro el nivel cuando dibujan, y la cabecera se suscribe a los cambios de estado y de
- * fuente.
+ * fuente. La posición del fichero de audio no se guarda: se avisa de cada una con su instante de
+ * llegada, porque la sincronía del reproductor necesita la serie (decisión 8 del change
+ * panel-audio-playback).
  */
-import { decodeFrame, decodeLevel, decodeSource, type SourceMessage } from '@moodtable/shared';
+import {
+  decodeFrame,
+  decodeLevel,
+  decodePosition,
+  decodeSource,
+  type PositionMessage,
+  type SourceMessage,
+} from '@moodtable/shared';
 
 export type ConnectionStatus = 'connected' | 'disconnected';
 
@@ -15,6 +24,12 @@ export type SocketLike = Pick<
   WebSocket,
   'binaryType' | 'readyState' | 'onopen' | 'onclose' | 'onmessage' | 'close'
 >;
+
+/**
+ * Quien escucha la posición del fichero de audio: cada mensaje, con el instante en que llegó
+ * (milisegundos del reloj de la conexión, `performance.now()` por defecto).
+ */
+export type PositionListener = (message: PositionMessage, arrivedAt: number) => void;
 
 /** `WebSocket.CONNECTING`, sin depender de que exista `WebSocket` (en los tests no hay). */
 const CONNECTING = 0;
@@ -29,7 +44,9 @@ export class EngineConnection {
   private readonly url: string;
   private readonly createSocket: (url: string) => SocketLike;
   private readonly retryMs: number;
+  private readonly now: () => number;
   private readonly listeners = new Set<() => void>();
+  private readonly positionListeners = new Set<PositionListener>();
   private readonly lastFrames = new Map<number, Uint8Array>();
   private socket: SocketLike | undefined;
   private retry: ReturnType<typeof setTimeout> | undefined;
@@ -41,10 +58,12 @@ export class EngineConnection {
     url: string,
     createSocket: (url: string) => SocketLike = (address) => new WebSocket(address),
     retryMs = 1000,
+    now: () => number = () => performance.now(),
   ) {
     this.url = url;
     this.createSocket = createSocket;
     this.retryMs = retryMs;
+    this.now = now;
   }
 
   get status(): ConnectionStatus {
@@ -70,6 +89,12 @@ export class EngineConnection {
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /** Avisa de cada posición del fichero de audio que llega. Devuelve la función para darse de baja. */
+  subscribePositions(listener: PositionListener): () => void {
+    this.positionListeners.add(listener);
+    return () => this.positionListeners.delete(listener);
   }
 
   start(): void {
@@ -107,7 +132,8 @@ export class EngineConnection {
       this.setStatus('connected');
     };
     socket.onmessage = ({ data }) => {
-      if (!(data instanceof ArrayBuffer)) return;
+      // Lo que llegue por una conexión ya cerrada no cuenta: el motor de ahora puede ser otro.
+      if (this.socket !== socket || !(data instanceof ArrayBuffer)) return;
       const message = new Uint8Array(data);
       const frame = decodeFrame(message);
       // Cada mensaje es un búfer nuevo: los colores se guardan sin copiarlos.
@@ -118,6 +144,12 @@ export class EngineConnection {
       const level = decodeLevel(message);
       if (level) {
         this.lastLevel = level.level;
+        return;
+      }
+      const position = decodePosition(message);
+      if (position) {
+        const arrivedAt = this.now();
+        for (const listener of this.positionListeners) listener(position, arrivedAt);
         return;
       }
       const source = decodeSource(message);

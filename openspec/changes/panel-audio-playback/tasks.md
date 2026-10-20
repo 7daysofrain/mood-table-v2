@@ -52,48 +52,48 @@
 
 ## 2. MOO-57 · panel
 
-- [ ] 2.1 Comprobación del riesgo de `design.md`: un E2E mínimo en `e2e/playback.spec.ts` que, tras un
+- [x] 2.1 Comprobación del riesgo de `design.md`: un E2E mínimo en `e2e/playback.spec.ts` que, tras un
   clic, crea un `AudioContext` en Chromium sin pantalla y ve avanzar `currentTime` durante 1 s, en
   local y en la CI. Si pasa, se queda como primer test del fichero; si no, se para y se decide con el
   usuario la alternativa (navegador con pantalla con `xvfb` o reducir el E2E de sincronía).
   Verificar: el test pasa en local y en la CI, o la decisión queda anotada en `design.md`.
-- [ ] 2.2 **(test en rojo)** Tests de la conexión con un WebSocket falso: decodifica el mensaje de
+- [x] 2.2 **(test en rojo)** Tests de la conexión con un WebSocket falso: decodifica el mensaje de
   tipo `4` y avisa a quien escuche de cada posición con su instante de llegada; ignora un mensaje de
   posición mal formado; al cerrarse, deja de avisar; frames, fuente y nivel siguen igual.
   Verificar: los tests nuevos fallan porque la conexión no decodifica la posición.
-- [ ] 2.3 La conexión decodifica la posición con el protocolo de `@moodtable/shared` y la entrega a sus
+- [x] 2.3 La conexión decodifica la posición con el protocolo de `@moodtable/shared` y la entrega a sus
   suscriptores con `performance.now()` de la llegada.
   Verificar: los tests de 2.2 pasan.
-- [ ] 2.4 **(test en rojo)** Tests de `sync.ts`, sin navegador ni temporizadores: el punto de arranque
+- [x] 2.4 **(test en rojo)** Tests de `sync.ts`, sin navegador ni temporizadores: el punto de arranque
   es la posición del visor más la latencia declarada; sin latencia declarada, se toma 0; el error es
   circular (93,7 s frente a 0,1 s en un fichero de 93,8 s es +0,2 s); unas pocas llegadas retrasadas
   por *jitter* no mueven la referencia filtrada; a 19 ms de error no salta y a 21 ms sí; tras muchas
   vueltas simuladas con una deriva de 3 ms/min, el error nunca pasa de los 45/125 ms de la spec
   (decisiones 4 y 5).
   Verificar: los tests nuevos fallan porque `sync.ts` no existe.
-- [ ] 2.5 `packages/panel/src/audio/sync.ts`: filtro de mediana circular sobre la última ventana de
+- [x] 2.5 `packages/panel/src/audio/sync.ts`: filtro de mediana circular sobre la última ventana de
   posiciones, error circular, punto de arranque con latencia y decisión de salto con umbral de 20 ms.
   Verificar: los tests de 2.4 pasan.
-- [ ] 2.6 **(test en rojo)** Tests del reproductor con un `AudioContext` falso: descarga `/audio` una
+- [x] 2.6 **(test en rojo)** Tests del reproductor con un `AudioContext` falso: descarga `/audio` una
   sola vez por conexión y decodifica; suena en bucle desde el punto que le pide la sincronía; dejar de
   oír para el nodo; volver a oír crea uno nuevo en el punto del momento sin volver a descargar; un error
   por encima del umbral para el nodo y arranca otro; al perder la conexión, deja de sonar y suelta el
   buffer (decisión 3).
   Verificar: los tests nuevos fallan porque el reproductor no existe.
-- [ ] 2.7 `packages/panel/src/audio/player.ts`: Web Audio (`decodeAudioData`, `AudioBufferSourceNode`
+- [x] 2.7 `packages/panel/src/audio/player.ts`: Web Audio (`decodeAudioData`, `AudioBufferSourceNode`
   con `loop`, `start(cuando, desde)`, `getOutputTimestamp` y `outputLatency`), con la sincronía de 2.5
   comprobada unas pocas veces por segundo.
   Verificar: los tests de 2.6 pasan.
-- [ ] 2.8 **(test en rojo)** Tests del control con Testing Library: con un fichero como fuente, un
+- [x] 2.8 **(test en rojo)** Tests del control con Testing Library: con un fichero como fuente, un
   botón «Oír el fichero de audio» en la cabecera; al pulsarlo, «Preparando el audio» y después «Dejar
   de oír el fichero de audio»; al pulsar este, vuelve a «Oír…»; sin fuente de audio o sin conexión,
   ningún botón; al perder la conexión mientras suena, vuelve a «Oír…» (decisión 7).
   Verificar: los tests nuevos fallan porque el control no existe.
-- [ ] 2.9 `AudioControl.tsx` en la cabecera, junto a la fuente, con iconos de *play* y *pause* de
+- [x] 2.9 `AudioControl.tsx` en la cabecera, junto a la fuente, con iconos de *play* y *pause* de
   Mantine; el objeto de solo lectura en `window` con el error de sincronía estimado y el estado del
   reproductor (decisión 8).
   Verificar: los tests de 2.8 pasan; con `pnpm dev`, el botón suena y calla `bouncer.wav`.
-- [ ] 2.10 E2E de `MOO-22` en `e2e/playback.spec.ts`, con un motor con `golpes.wav` y una tira con
+- [x] 2.10 E2E de `MOO-22` en `e2e/playback.spec.ts`, con un motor con `golpes.wav` y una tira con
   *energía* (`e2e/engine.ts`). Escenarios: *Oír el fichero de audio mientras la tira virtual reacciona*
   (tras unos segundos de motor, pedir oír: el error queda dentro de la tolerancia); *El panel no suena
   solo*; *Dejar de oír* (el reproductor calla y el visor sigue cambiando); *Volver a oír tras dejar de
@@ -103,13 +103,53 @@
   tarda en llegar* (`page.route` retrasa `/audio`: se ve «Preparando el audio»); *El motor se para
   mientras el maker oye* (calla y, al volver, no suena solo). Los E2E de HU1 y HU2 siguen pasando.
   Verificar: `pnpm test:e2e` pasa en local y en la CI.
-- [ ] 2.11 Comprobación a oído con el usuario: con `pnpm dev` y `bouncer.wav`, el usuario oye el panel
+- [x] 2.11 Comprobación a oído con el usuario: con `pnpm dev` y `bouncer.wav`, el usuario oye el panel
   unos minutos, deja de oírlo y vuelve, y juzga si la tira va al ritmo de lo que oye (caso feliz de
   `MOO-22`). Si el salto de la corrección se nota, se anota para pasar a `playbackRate` (decisión 4).
   Verificar: el resultado queda en la descripción de la PR.
-- [ ] 2.12 Documentación y cierre de la historia:
+
+> Pasos 2.12-2.19: lo que salió de la code review de la PR (19-oct), con `design.md` revisado
+> (decisiones 3, 4, 7 y 8, y riesgos).
+
+- [x] 2.12 **(test en rojo)** Tests del reproductor con el `AudioContext` falso: expone cuántos saltos
+  lleva desde el último «Oír» y el error medido antes de corregir; el primer arranque sale de la
+  mediana de las posiciones llegadas mientras se preparaba, no de la primera tras decodificar; con el
+  contexto parado, no corrige; si `resume()` falla, vuelve a callado; el nodo nuevo se programa ~50 ms
+  por delante en el punto de ese instante y el viejo se para en el mismo instante; la simulación de
+  deriva de `sync.test.ts` pasa aquí, con el reproductor real, un reloj de audio 50 ppm más rápido,
+  temporizadores falsos y el oráculo de lo que se oye (decisiones 3, 4 y 8).
+  Verificar: los tests nuevos fallan por lo que falta, y el resto sigue en verde.
+- [x] 2.13 `player.ts` con lo de 2.12; `jumps` en `window.moodTableAudio`; fuera `Sync.reset()`, que no
+  usa nadie, con su test.
+  Verificar: los tests de 2.12 pasan.
+- [x] 2.14 **(test en rojo)** Tests del ciclo de vida del reproductor: crearlo no lo suscribe a la
+  conexión; `open()` y `close()` se pueden repetir (doble montaje de `StrictMode`); `close()` cierra el
+  contexto de audio y el siguiente «Oír» crea otro (decisión 3).
+  Verificar: los tests nuevos fallan porque el constructor se suscribe y nadie cierra el contexto.
+- [x] 2.15 `AudioPlayer.open()` y `close()` (sustituye a `dispose()`), y `App` los llama desde un
+  efecto, como la conexión.
+  Verificar: los tests de 2.14 pasan y los de `App` siguen en verde.
+- [x] 2.16 Iconos de escucha en `AudioControl.tsx`: altavoz tachado callado y altavoz con ondas
+  sonando, dos SVG de un trazo como ahora (decisión 7). Los nombres accesibles no cambian.
+  Verificar: captura del control en los tres estados con `pnpm dev`.
+- [x] 2.17 **(test en rojo)** Tests del primer arranque: con el contexto aún sin `running`, o con
+  `getOutputTimestamp()` que todavía da `performanceTime = 0`, no arranca; arranca con la siguiente
+  posición cuando el reloj ya está en marcha, en el punto que da `getOutputTimestamp()`; si tras 1 s de
+  reloj de audio sigue sin darlo, o el navegador no tiene la API, arranca con el retraso declarado
+  (decisión 3). Lo destapó el E2E del 2.19: en Chromium sin pantalla, arrancar con el contexto naciendo
+  sonaba 94 ms tarde y la corrección saltaba a los 250 ms.
+  Verificar: los tests nuevos fallan porque arranca en cuanto tiene el fichero.
+- [x] 2.18 `player.ts` espera al reloj de audio en marcha para el primer arranque.
+  Verificar: los tests de 2.17 pasan.
+- [x] 2.19 E2E de sincronía con los saltos: *Oír* y *Volver a oír*, sin saltos tras arrancar; *El
+  bucle* (~10 s), como mucho uno. Avisos de Sonar `S2925` en `e2e/playback.spec.ts`: «no suena solo» y
+  «al volver el motor» esperan a que el visor cambie en vez de un tiempo fijo; las esperas de «el motor
+  lleva un rato» y «dejó de oír hace un rato» son de tiempo por definición y se marcan con
+  `// NOSONAR` y su motivo.
+  Verificar: `pnpm test:e2e` pasa en local tres veces seguidas y en la CI, y `sonar-issues` pasa.
+- [x] 2.20 Documentación y cierre de la historia:
   - README §1.3 (*Cabecera*: el control de oír) y §2.2 (*Reproductor*: Web Audio, sincronía contra el
-    visor y corrección con salto);
+    visor y corrección con salto); «pulsa play» pasa a «pulsa Oír» en el README (también en H1);
   - `docs/idea-mood-table.md` §10: D54 (Web Audio con salto al pasar 20 ms) y D55 (solo el retraso de
     salida declarado), si el usuario las aprueba;
   - `prompts.md`: entrada de la implementación de la historia, con el formato de `course.md` §5;
@@ -117,3 +157,18 @@
 
   Verificar: la tabla de escenarios de `MOO-22` → test está en la descripción de la PR, y
   `pnpm exec openspec validate panel-audio-playback --strict` pasa.
+
+> Pasos 2.21-2.23: lo que salió de la segunda code review de la PR (20-oct).
+
+- [x] 2.21 **(test en rojo)** Tests del reproductor: la simulación de deriva acota lo que se oye al
+  umbral de salto (unos ±20 ms), no a la tolerancia de la spec, para que vea un sesgo común; dejar de
+  oír durante un salto programado para también el nodo viejo, ya; al volver a oír con el contexto
+  reutilizado, la espera al reloj de audio cuenta el segundo desde que se pide oír; un salto que no
+  llega a arrancar no se cuenta (decisiones 3, 4 y 8).
+  Verificar: los tests nuevos fallan por lo que falta, y el resto sigue en verde.
+- [x] 2.22 `player.ts` con lo de 2.21.
+  Verificar: los tests de 2.21 pasan.
+- [x] 2.23 E2E y textos: «el visor recibe frames» mira 2 s y no 1, porque `golpes.wav` tiene ~1,9 s de
+  silencio digital; D54 dice que el usuario no señaló ningún salto audible; `globals.d.ts` describe el
+  error medido y los saltos; `prompts.md` 6.19 recoge la segunda revisión.
+  Verificar: `pnpm test:e2e` pasa en local y en la CI.

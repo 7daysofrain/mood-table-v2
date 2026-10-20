@@ -860,6 +860,33 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La deriva: entre saltar al pasar un umbral, ajustar la velocidad o programar cada vuelta, el humano eligió el salto por simplicidad, con la velocidad como plan B si el salto se oye.*
 - *El cambio se aprobó con el commit del change en su PR, y la implementación de `MOO-56` empezó en una rama encima sin esperar a integrarla, por decisión del humano.*
 
+#### 6.19 Oír el fichero en el panel: implementación y code review (`MOO-56` y `MOO-57`)
+
+**Prompt 1:**
+
+> mira la PR, las quality gates y en paralelo lanza un subagente de codereview
+
+*Claude Code (`claude-opus-5-5`, 19-oct), con `MOO-56` integrada y `MOO-57` implementada por `/opsx:apply` y comprobada a oído. Las puertas estaban en verde salvo `sonar-issues`, por cuatro esperas fijas en los E2E. El subagente encontró siete cosas. La más seria: el error que leían los E2E en `window.moodTableAudio` era el de después de corregir, siempre por debajo de 20 ms, así que los escenarios de sincronía no podían fallar. El humano pidió repasarlas una a una antes de tocar nada; con la recomendación de la IA, aceptó seis (saltos contados y error medido, mediana desde el principio, guardas del contexto, arranque programado con margen, ciclo de vida `open()`/`close()` y simulación de deriva con el reproductor real) y dejó la segunda como riesgo cubierto por la simulación (que una segunda revisión encontró que no lo cubría, ver abajo).*
+
+**Prompt 2:**
+
+> que es window.moodTableAudio
+
+*Durante el repaso, la IA hablaba del objeto que leen los E2E sin haberlo presentado. Lo explicó desde la decisión 8 del change (los E2E no pueden oír, así que el panel deja leer su estado y su error), con su coste aceptado, y volvió a la propuesta pendiente.*
+
+**Prompt 3:**
+
+> si, pero hay que añadir otra cosa, ahora mismo los iconos de "play" y "stop" no me casan con lo que hacen ya que el audio, obviamente, sigue resproduciendose. Deberian ser iconos con "oir" y "mute"
+
+*Al cerrar el plan, el humano vio lo que ni el design ni la revisión habían visto: el botón es un control de escucha, no de transporte. La IA propuso altavoces con la convención de los reproductores de vídeo (el icono muestra el estado y el nombre accesible la acción) porque, al revés, un altavoz tachado mientras suena se leería como «silenciado». Los textos accesibles no cambiaron, así que los tests tampoco.*
+
+*Ajustes durante la implementación:*
+- *Con los E2E ya comprobando los saltos, falló el primero: en Chromium sin pantalla el panel arrancaba con el contexto de audio naciendo, sonaba 94 ms tarde y la corrección saltaba enseguida. La IA lo midió con un test temporal y paró para proponer el arreglo; el humano lo aprobó (esperar al reloj de audio en marcha, con una salvaguarda de 1 s), con su test en rojo antes que el E2E.*
+- *`stop()` ya era «dejar de oír», así que el ciclo de vida se llamó `open()`/`close()` y no `start()`/`stop()` como la conexión; el `design.md` se corrigió en el mismo commit.*
+- *Dos de las esperas que marcaba Sonar pasaron a esperar a que el visor reciba frames; las otras dos son tiempo por definición («el motor lleva un rato») y llevan `NOSONAR` con su motivo.*
+- *El humano repitió la prueba a oído tras los cambios: «perfecto, mejor que antes». El registro de medidas se perdió con una recarga de la página, y la PR lo dice en lugar de dar números.*
+- *Con la PR lista para revisión, el humano pidió otra pasada del subagente. Encontró que la simulación de deriva acotaba con la tolerancia de la spec y no veía un sesgo común: lo demostró quitando el retraso declarado del reproductor, y el test seguía en verde. Así, lo que `design.md`, esta entrada y la PR daban por cubierto no lo estaba. La IA acotó la simulación al umbral de salto, comprobó con la misma mutación que ahora falla y arregló otros tres fallos pequeños del reproductor que también vio la revisión. El humano aprobó todo de una vez.*
+
 ---
 
 ### 7. Pull Requests

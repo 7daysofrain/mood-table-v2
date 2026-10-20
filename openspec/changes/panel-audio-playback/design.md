@@ -114,6 +114,21 @@ reproduce con un `AudioBufferSourceNode` en bucle (`loop = true`), arrancado en 
   perderla (el motor puede volver con otro fichero).
 - **Mientras se descarga y decodifica**, el control indica que está preparando el audio *(asumido)*.
   En local es inmediato; en la demo, unos segundos.
+- **El arranque espera al reloj de audio en marcha:** contexto `running` y
+  `getOutputTimestamp()` con `performanceTime > 0`. Recién creado, el reloj del contexto aún no va al
+  paso de `performance.now()` y el retraso declarado puede valer 0; arrancar entonces sonaba ~94 ms
+  tarde en Chromium sin pantalla y la corrección saltaba enseguida. Como las posiciones llegan a 60 Hz,
+  la espera es de unas decenas de ms dentro de «Preparando». Si 1 s de reloj después de pedir oír el
+  navegador sigue sin dar el instante, o no tiene la API, arranca con el retraso declarado; el segundo
+  se cuenta desde que se pide oír, porque al volver a oír el contexto ya es viejo. Lo que no cubre: un
+  contexto que nunca llega a `running` (Safari interrumpido) deja el control en «Preparando» hasta
+  perder la conexión; es un caso de móvil, fuera de `MOO-22`.
+- **Con el contexto de audio parado** (Safari lo interrumpe con una llamada o al bloquear el móvil) no
+  se corrige nada: su reloj no avanza y el error crecería solo. Si el navegador no deja reanudarlo, el
+  control vuelve a callado. Reanudarlo solo o avisar al maker queda fuera de `MOO-22`.
+- **Ciclo de vida:** el reproductor no hace nada al crearse; se conecta y se desconecta con
+  `open()` y `close()` desde un efecto de React, como la conexión con `start()` y `stop()` (que en el
+  reproductor ya es dejar de oír), y `close()` cierra el contexto de audio. Así sobrevive al doble montaje de `StrictMode` sin dejar suscripciones colgadas.
 
 **Alternativa descartada:** `<audio loop>`. Empieza a sonar antes (descarga por partes), pero el
 salto con `currentTime` es aproximado y distinto en cada navegador, el bucle puede tener un pequeño
@@ -144,7 +159,12 @@ error = punto que suena - punto del visor        (circular, filtrado)
 - **Filtrado:** las posiciones llegan con *jitter* de red (despreciable en local, 5-30 ms en la demo).
   El visor pinta lo que llega y tiembla con él, pero el sonido no puede: se oirían saltos. La
   referencia es la **mediana** de las estimaciones de la última ventana (~1 s de mensajes), en
-  aritmética circular.
+  aritmética circular. Las posiciones que llegan mientras se prepara el audio también cuentan, para
+  que el primer arranque salga ya de la mediana y no de una sola llegada.
+- **Arranque y salto programados:** el nodo nuevo se programa unos 50 ms por delante del reloj de
+  audio, en el punto que mostrará el visor en ese instante, y el viejo se para en el mismo instante.
+  Arrancar «ya» empieza un poco después con el mismo punto (un sesgo fijo de unos ms), y el empalme
+  programado cae en la misma muestra, así que el salto apenas se oye.
 - **20 ms** deja margen dentro de los 45 ms para el pintado (hasta 17 ms), y con ~3 ms/min de deriva
   salta como mucho cada 6-7 minutos: un saltito de unos ms en música con bombo apenas se nota.
 - **La comprobación** se hace unas pocas veces por segundo, no en cada mensaje; el valor exacto se fija
@@ -187,9 +207,13 @@ existe cuando la fuente es un fichero. Es un botón con tres estados:
 
 | Estado | Muestra | Al pulsarlo |
 |---|---|---|
-| Callado | Icono de *play*, nombre accesible «Oír el fichero de audio» | Prepara el audio (si hace falta) y suena |
+| Callado | Altavoz tachado, nombre accesible «Oír el fichero de audio» | Prepara el audio (si hace falta) y suena |
 | Preparando | Indicador de carga, «Preparando el audio» | Nada |
-| Sonando | Icono de *pause*, «Dejar de oír el fichero de audio» | Deja de sonar |
+| Sonando | Altavoz con ondas, «Dejar de oír el fichero de audio» | Deja de sonar |
+
+Iconos de escucha, no de transporte: el fichero sigue sonando en el motor aunque el panel calle, así
+que *play* y *pause* dirían algo falso. Como en los reproductores de vídeo, el icono muestra el estado
+(¿suena el panel?) y el nombre accesible, la acción.
 
 La zona *Controles* no sirve: es la de los parámetros del efecto de la tira seleccionada (H2).
 
@@ -209,10 +233,16 @@ packages/panel/src/audio/
 - **La conexión** (`engine/connection.ts`) decodifica el mensaje tipo `4` y avisa a quien escuche de
   cada posición con su instante de llegada (`performance.now()`), en lugar de guardar solo la última:
   el filtro necesita la serie.
-- **El E2E no puede oír**, así que el panel expone, de solo lectura, el error de sincronía estimado y el
-  estado del reproductor *(asumido)*: un objeto en `window` que el test lee con `page.evaluate`. Es una
-  concesión a la testabilidad; la alternativa, no probar la sincronía en el E2E, deja la integración
-  real sin probar.
+- **El E2E no puede oír**, así que el panel expone, de solo lectura, el estado del reproductor, el
+  último error de sincronía **medido antes de corregir** y cuántos saltos lleva desde que el maker pidió
+  oír *(asumido)*: un objeto en `window` que el test lee con `page.evaluate`. El error después de
+  corregir siempre cabe en el umbral, así que solo el medido y los saltos delatan una sincronía rota.
+  Es una concesión a la testabilidad; la alternativa, no probar la sincronía en el E2E, deja la
+  integración real sin probar.
+- **La deriva se simula con el reproductor real** (`player.test.ts`, contexto de audio falso con un
+  reloj 50 ppm más rápido que el del motor y temporizadores falsos), y se mide con un oráculo propio:
+  lo que se oye (lo que salió del contexto hace el retraso de salida) frente a lo que muestra el visor
+  ahora. Así la medida no sale de la estimación del propio reproductor.
 - **El fichero de los E2E** es `golpes.wav` (4 s): varias vueltas del bucle en unos 10 s, sin fichero
   nuevo.
 - **El juicio a oído** (*al ritmo de lo que oye*) lo hace el usuario con `bouncer.wav`, como último
@@ -254,6 +284,11 @@ packages/panel/src/audio/
   permite controlar nada. Aceptado por testabilidad (decisión 8).
 - **[El *jitter* de la demo pasa de lo que absorbe la mediana de 1 s]** → Se ajusta la ventana al
   implementar; no cambia la spec.
+- **[El reproductor se mide contra su propia estimación]** → Arranque y corrección usan el mismo
+  cálculo, así que un sesgo común no se vería en su error. Lo cubre la simulación de deriva con su
+  oráculo (decisión 8), que acota lo que se oye al umbral de salto y no a la tolerancia de la spec:
+  con la tolerancia, un sesgo común de 40 ms pasaba en verde. Lo que ningún test cubre es que *posición del fichero* signifique lo mismo en el
+  motor y en el panel: eso solo se juzga oyendo luz y sonido a la vez (la comprobación a oído).
 
 ## Migration Plan
 
@@ -262,5 +297,5 @@ Sin migración: el fichero de configuración no cambia, y un panel antiguo ignor
 
 ## Open Questions
 
-- Cada cuánto se comprueba el error (decisión 4) y el tamaño exacto de la ventana del filtro: se fijan
-  al implementar, con los tests de `sync.ts`.
+- ~~Cada cuánto se comprueba el error (decisión 4) y el tamaño exacto de la ventana del filtro~~:
+  resuelta al implementar, cada 250 ms y una ventana de 1 s.

@@ -1,7 +1,12 @@
-import { encodeFrame, encodeLevel, encodeSource } from '@moodtable/shared';
+import { encodeFrame, encodeLevel, encodePosition, encodeSource } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { EngineConnection, type SocketLike, viewerUrl } from './connection.ts';
+import {
+  EngineConnection,
+  type PositionListener,
+  type SocketLike,
+  viewerUrl,
+} from './connection.ts';
 
 /** Un WebSocket falso: el test decide cuándo se abre, se cierra o llega un mensaje. */
 class FakeSocket implements SocketLike {
@@ -318,5 +323,97 @@ describe('la fuente de audio y su nivel', () => {
     lastSocket().receive(encodeLevel(1, 0.5));
 
     expect(connection.frames).toEqual(new Map([[0, Uint8Array.of(1, 2, 3)]]));
+  });
+});
+
+describe('la posición del fichero de audio', () => {
+  /** El reloj de la conexión, en milisegundos: el test lo avanza a mano. */
+  let now: number;
+  let positions: Parameters<PositionListener>[];
+
+  beforeEach(() => {
+    now = 1000;
+    positions = [];
+    connection.stop();
+    connection = new EngineConnection(
+      'ws://motor/ws',
+      () => {
+        const socket = new FakeSocket();
+        sockets.push(socket);
+        return socket;
+      },
+      1000,
+      () => now,
+    );
+    connection.subscribePositions((position, arrivedAt) => {
+      positions.push([position, arrivedAt]);
+    });
+    connection.start();
+    lastSocket().open();
+  });
+
+  it('avisa de cada posición con el instante en que llega, sin guardar solo la última', () => {
+    lastSocket().receive(encodePosition(1, 1.5));
+    now = 1016.5;
+    lastSocket().receive(encodePosition(2, 1.5 + 1 / 60));
+
+    expect(positions).toEqual([
+      [{ seq: 1, position: 1.5 }, 1000],
+      [{ seq: 2, position: 1.5 + 1 / 60 }, 1016.5],
+    ]);
+  });
+
+  it('ignora un mensaje de posición mal formado', () => {
+    // Una posición negativa (−1,5) y un mensaje corto.
+    lastSocket().receive(Uint8Array.of(4, 0, 0, 1, 4, 0xbf, 0xf8, 0, 0, 0, 0, 0, 0));
+    lastSocket().receive(Uint8Array.of(4, 0, 0, 1, 4, 0x3f, 0xf8, 0, 0, 0, 0, 0));
+
+    expect(positions).toEqual([]);
+  });
+
+  it('al cerrarse la conexión, deja de avisar aunque llegue algo tarde', () => {
+    const closed = lastSocket();
+    closed.drop();
+
+    closed.receive(encodePosition(1, 1.5));
+
+    expect(positions).toEqual([]);
+  });
+
+  it('al reconectar, vuelve a avisar', () => {
+    lastSocket().drop();
+    vi.advanceTimersByTime(1000);
+    lastSocket().open();
+
+    lastSocket().receive(encodePosition(7, 0.25));
+
+    expect(positions).toEqual([[{ seq: 7, position: 0.25 }, 1000]]);
+  });
+
+  it('al darse de baja, un oyente deja de recibir posiciones', () => {
+    const other: number[] = [];
+    const unsubscribe = connection.subscribePositions(({ position }) => other.push(position));
+    lastSocket().receive(encodePosition(1, 1));
+
+    unsubscribe();
+    lastSocket().receive(encodePosition(2, 2));
+
+    expect(other).toEqual([1]);
+  });
+
+  it('no avisa a los oyentes del estado, y frames, fuente y nivel siguen igual', () => {
+    const listener = vi.fn();
+    connection.subscribe(listener);
+
+    lastSocket().receive(encodeSource({ kind: 'file', name: 'golpes.wav' }));
+    listener.mockClear();
+    lastSocket().receive(encodePosition(1, 1.5));
+    lastSocket().receive(encodeFrame(1, 0, Uint8Array.of(1, 2, 3)));
+    lastSocket().receive(encodeLevel(1, 0.5));
+
+    expect(listener).not.toHaveBeenCalled();
+    expect(connection.source).toEqual({ kind: 'file', name: 'golpes.wav' });
+    expect(connection.frames).toEqual(new Map([[0, Uint8Array.of(1, 2, 3)]]));
+    expect(connection.level).toBe(0.5);
   });
 });
