@@ -151,7 +151,8 @@ test('el panel no suena solo', async ({ page }) => {
     await openPanel(page, engine);
 
     // Llegan frames y posiciones: lo que haría sonar a un panel que no esperase al maker.
-    expect(await viewerBrightnesses(page, 1000), 'el visor recibe frames').toBeGreaterThan(1);
+    // 2 s, no 1: `golpes.wav` tiene ~1,9 s de silencio digital, en el que la tira está apagada.
+    expect(await viewerBrightnesses(page, 2000), 'el visor recibe frames').toBeGreaterThan(1);
 
     expect(await playback(page)).toEqual({ state: 'silent', error: undefined, jumps: 0 });
     await expect(page.getByRole('button', LISTEN)).toBeVisible();
@@ -245,7 +246,8 @@ test('el motor se para mientras el maker oye', async ({ page }) => {
     await expect(page.getByRole('banner').getByRole('status')).toHaveText('Conectado');
     await expect(page.getByRole('banner')).toContainText('Fichero: golpes.wav');
     // Vuelven a llegar frames y posiciones: lo que haría sonar a un panel que no esperase al maker.
-    expect(await viewerBrightnesses(page, 1000), 'el visor recibe frames').toBeGreaterThan(1);
+    // 2 s, no 1: `golpes.wav` tiene ~1,9 s de silencio digital, en el que la tira está apagada.
+    expect(await viewerBrightnesses(page, 2000), 'el visor recibe frames').toBeGreaterThan(1);
 
     // Al volver el motor no suena solo: el maker tiene que pedirlo otra vez.
     expect((await playback(page))?.state).toBe('silent');

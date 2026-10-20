@@ -168,7 +168,7 @@
   Verificar: los tests nuevos fallan por lo que falta, y el resto sigue en verde.
 - [x] 2.22 `player.ts` con lo de 2.21.
   Verificar: los tests de 2.21 pasan.
-- [ ] 2.23 E2E y textos: «el visor recibe frames» mira 2 s y no 1, porque `golpes.wav` tiene ~1,9 s de
+- [x] 2.23 E2E y textos: «el visor recibe frames» mira 2 s y no 1, porque `golpes.wav` tiene ~1,9 s de
   silencio digital; D54 dice que el usuario no señaló ningún salto audible; `globals.d.ts` describe el
   error medido y los saltos; `prompts.md` 6.19 recoge la segunda revisión.
   Verificar: `pnpm test:e2e` pasa en local y en la CI.

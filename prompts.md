@@ -866,7 +866,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 > mira la PR, las quality gates y en paralelo lanza un subagente de codereview
 
-*Claude Code (`claude-opus-5-5`, 19-oct), con `MOO-56` integrada y `MOO-57` implementada por `/opsx:apply` y comprobada a oído. Las puertas estaban en verde salvo `sonar-issues`, por cuatro esperas fijas en los E2E. El subagente encontró siete cosas. La más seria: el error que leían los E2E en `window.moodTableAudio` era el de después de corregir, siempre por debajo de 20 ms, así que los escenarios de sincronía no podían fallar. El humano pidió repasarlas una a una antes de tocar nada; con la recomendación de la IA, aceptó seis (saltos contados y error medido, mediana desde el principio, guardas del contexto, arranque programado con margen, ciclo de vida `open()`/`close()` y simulación de deriva con el reproductor real) y dejó la segunda como riesgo cubierto por la simulación.*
+*Claude Code (`claude-opus-5-5`, 19-oct), con `MOO-56` integrada y `MOO-57` implementada por `/opsx:apply` y comprobada a oído. Las puertas estaban en verde salvo `sonar-issues`, por cuatro esperas fijas en los E2E. El subagente encontró siete cosas. La más seria: el error que leían los E2E en `window.moodTableAudio` era el de después de corregir, siempre por debajo de 20 ms, así que los escenarios de sincronía no podían fallar. El humano pidió repasarlas una a una antes de tocar nada; con la recomendación de la IA, aceptó seis (saltos contados y error medido, mediana desde el principio, guardas del contexto, arranque programado con margen, ciclo de vida `open()`/`close()` y simulación de deriva con el reproductor real) y dejó la segunda como riesgo cubierto por la simulación (que una segunda revisión encontró que no lo cubría, ver abajo).*
 
 **Prompt 2:**
 
@@ -885,6 +885,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *`stop()` ya era «dejar de oír», así que el ciclo de vida se llamó `open()`/`close()` y no `start()`/`stop()` como la conexión; el `design.md` se corrigió en el mismo commit.*
 - *Dos de las esperas que marcaba Sonar pasaron a esperar a que el visor reciba frames; las otras dos son tiempo por definición («el motor lleva un rato») y llevan `NOSONAR` con su motivo.*
 - *El humano repitió la prueba a oído tras los cambios: «perfecto, mejor que antes». El registro de medidas se perdió con una recarga de la página, y la PR lo dice en lugar de dar números.*
+- *Con la PR lista para revisión, el humano pidió otra pasada del subagente. Encontró que la simulación de deriva acotaba con la tolerancia de la spec y no veía un sesgo común: lo demostró quitando el retraso declarado del reproductor, y el test seguía en verde. Así, lo que `design.md`, esta entrada y la PR daban por cubierto no lo estaba. La IA acotó la simulación al umbral de salto, comprobó con la misma mutación que ahora falla y arregló otros tres fallos pequeños del reproductor que también vio la revisión. El humano aprobó todo de una vez.*
 
 ---
 
