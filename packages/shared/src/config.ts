@@ -39,11 +39,24 @@ export const StripConfigSchema = Type.Object(
 );
 
 /**
- * Fuente de audio, discriminada por `type` como `output` (decisión 12). Solo existe `file`: un WAV
- * con ruta absoluta o relativa a la raíz del repositorio. La tarjeta de sonido llega con `MOO-15`.
+ * Fuente de audio, discriminada por `type` como `output` (decisión 12). `file` es un WAV con ruta
+ * absoluta o relativa a la raíz del repositorio. `soundcard` es una tarjeta de ALSA: `name` es lo que
+ * muestra el panel y `device`, la cadena que recibe `arecord -D`, sin comprobar aquí si existe
+ * (decisión 3 del change soundcard-audio-source). Su `silenceThreshold` (dBFS) es el nivel por debajo
+ * del cual el ruido de fondo cuenta como silencio (decisión 7): −120 ya es menos que el ruido de 16
+ * bits, y por encima de 0 no hay señal.
  */
 export const AudioSourceConfigSchema = Type.Union([
   Type.Object({ type: Type.Literal('file'), path: Type.String({ minLength: 1 }) }, CLOSED),
+  Type.Object(
+    {
+      type: Type.Literal('soundcard'),
+      name: Type.String({ minLength: 1 }),
+      device: Type.String({ minLength: 1 }),
+      silenceThreshold: Type.Optional(Type.Number({ minimum: -120, maximum: 0, default: -60 })),
+    },
+    CLOSED,
+  ),
 ]);
 
 /** Por defecto, solo local: el panel no tiene contraseña (README §2.5, decisión 13). */
@@ -107,7 +120,7 @@ export function parseConfig(text: string): ConfigResult {
   }
 
   const withDefaults = Value.Default(ConfigFileSchema, structuredClone(data));
-  const errors = Value.Errors(ConfigFileSchema, withDefaults);
+  const errors = withAudioSourceErrors(Value.Errors(ConfigFileSchema, withDefaults), withDefaults);
   // Un campo mal escrito da dos errores (el que no existe y el que falta): se nombra el que no existe.
   const error = errors.find((each) => isUnknownField(each)) ?? errors[0];
   if (error) return fail(describeError(error, errors, data));
@@ -145,6 +158,40 @@ interface SchemaError {
   instancePath: string;
   params: object;
   message: string;
+}
+
+/**
+ * Una unión da los errores de todas sus variantes mezclados: con una tarjeta sin `name`, la variante
+ * `file` diría que `name` no existe. Así que los errores de `audioSource` se sustituyen, en su sitio,
+ * por los de la variante que nombra su `type`; si no nombra ninguna, solo se habla del `type`.
+ */
+function withAudioSourceErrors(errors: SchemaError[], config: unknown): SchemaError[] {
+  const inSource = (error: SchemaError): boolean =>
+    error.instancePath === '/audioSource' || error.instancePath.startsWith('/audioSource/');
+  const first = errors.findIndex(inSource);
+  if (first === -1) return errors;
+
+  const source = isObject(config) ? config.audioSource : undefined;
+  const variant = isObject(source)
+    ? AudioSourceConfigSchema.anyOf.find((each) => each.properties.type.const === source.type)
+    : undefined;
+  let replacement: SchemaError[];
+  if (variant) {
+    replacement = Value.Errors(variant, source).map((error) => ({
+      ...error,
+      instancePath: `/audioSource${error.instancePath}`,
+    }));
+  } else {
+    // Sin objeto, que lo sea; sin `type`, que falta; con uno que no existe, los que se admiten.
+    const keep = !isObject(source)
+      ? (error: SchemaError) => error.keyword === 'type'
+      : 'type' in source
+        ? (error: SchemaError) => error.instancePath === '/audioSource/type'
+        : (error: SchemaError) => error.keyword === 'required';
+    replacement = errors.filter((error) => inSource(error) && keep(error));
+  }
+  const others = errors.filter((error) => !inSource(error));
+  return [...others.slice(0, first), ...replacement, ...others.slice(first)];
 }
 
 /**

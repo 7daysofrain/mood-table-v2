@@ -259,6 +259,8 @@ describe('la fuente de audio', () => {
     ],
     [{ type: 'file' }, 'campo `audioSource.path`: falta y es obligatorio'],
     [{ type: 'file', path: '' }, 'campo `audioSource.path`: no puede estar vacío'],
+    [{ path: 'musica.wav' }, 'campo `audioSource.type`: falta y es obligatorio'],
+    ['musica.wav', 'campo `audioSource`: debe ser un objeto'],
   ])('con %j, nombra el campo y dice qué falla', (audioSource, message) => {
     expect(errorOf(text({ audioSource, strips: [demoStrip] }))).toBe(message);
   });

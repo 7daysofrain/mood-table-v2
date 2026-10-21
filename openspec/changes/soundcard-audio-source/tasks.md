@@ -17,7 +17,7 @@
   y «soundcard»; un efecto reactivo con una tarjeta como fuente arranca (`specs/engine-config`,
   decisión 3).
   Verificar: los tests nuevos fallan porque el tipo `soundcard` no existe; el resto sigue en verde.
-- [ ] 1.2 `AudioSourceConfigSchema` con la variante `soundcard` (cerrada, como la de `file`) y el
+- [x] 1.2 `AudioSourceConfigSchema` con la variante `soundcard` (cerrada, como la de `file`) y el
   valor por defecto de `silenceThreshold`.
   Verificar: los tests de 1.1 pasan.
 - [ ] 1.3 **(test en rojo)** Tests del protocolo en `packages/shared/src/viewer-protocol.test.ts`:

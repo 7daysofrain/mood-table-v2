@@ -70,7 +70,7 @@ export function startupMessage(file: string, config: Config, panelUrl: string): 
  * virtual-strip-audio-file).
  */
 export function sourceMessage(config: Config): SourceMessage {
-  return config.audioSource
+  return config.audioSource?.type === 'file'
     ? { kind: 'file', name: basename(config.audioSource.path) }
     : { kind: 'none' };
 }

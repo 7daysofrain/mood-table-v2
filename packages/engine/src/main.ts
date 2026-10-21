@@ -23,7 +23,7 @@ async function main(): Promise<string | undefined> {
 
   // La fuente se lee antes de abrir el servidor, para no arrancar a medias.
   const { audioSource } = loaded.config;
-  const audio = audioSource ? await loadAudioFile(audioSource.path) : undefined;
+  const audio = audioSource?.type === 'file' ? await loadAudioFile(audioSource.path) : undefined;
   if (audio && !audio.ok) return audio.error;
 
   const { host, port } = loaded.config.server;
