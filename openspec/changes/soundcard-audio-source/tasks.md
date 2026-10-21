@@ -69,7 +69,7 @@
   fichero), con el log de la pérdida en `console.error`, y no sirve `/audio` con ella.
   Verificar: los tests de 1.9 pasan; en el Mac, con una tarjeta declarada, `pnpm dev` no arranca y
   dice que necesita Linux con ALSA.
-- [ ] 1.11 Comprobación en la Pi (excepción al DoD de la historia; el usuario está en la mesa):
+- [x] 1.11 Comprobación en la Pi (excepción al DoD de la historia; el usuario está en la mesa):
   - con la cadena de la tarjeta de la mesa, el motor arranca aunque no le llegue nada;
   - con la tarjeta desconectada, y con una cadena que no existe, no arranca y lo dice (los dos
     ejemplos del esquema de `MOO-15`);

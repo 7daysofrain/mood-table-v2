@@ -362,25 +362,31 @@ vúmetro de la cabecera del panel como medidor.
    ```
 
 2. **Apaga el control automático de ganancia.** Sube lo flojo y baja lo fuerte: aplana justo la
-   dinámica que tiene que mostrar *energía*. ⏳ Comprobar que de verdad actúa sobre la grabación
-   (`amixer` lo lista como control de reproducción).
+   dinámica que tiene que mostrar *energía*. ✅ En la de la mesa, comprobado el 21-oct, no cambia el
+   nivel de la grabación (`amixer` lo lista como control de reproducción); se apaga igualmente.
 
    ```bash
    amixer -c Device sset 'Auto Gain Control' off
    ```
 
-3. **Ajusta la ganancia de grabación** con música real desde el mixer: súbela hasta que los picos
-   queden cerca del máximo del vúmetro sin tocarlo. Por ejemplo, `amixer -c Device sset Mic 8 cap`.
+3. **Ajusta la ganancia de grabación** con música real desde el mixer, por ejemplo
+   `amixer -c Device sset Mic 8 cap` (cada paso son unos 1,5 dB). El vúmetro mide el nivel medio
+   (RMS) cada 40 ms, y los picos de la música quedan unos 4-10 dB por encima: apunta a que, en lo más
+   fuerte, el vúmetro llegue a unos −12 dBFS, no al máximo. ✅ En la mesa, con la salida booth, `Mic`
+   a 8 (+11,9 dB): unos −17 dBFS de mediana y −12 de máximo, con los picos de muestra en −8 dBFS y
+   ninguno recortado (medido el 21-oct con `arecord`).
 4. **Guárdalo**, para que sobreviva a un reinicio: `sudo alsactl store`.
 5. **Elige el umbral de silencio** con el mixer conectado y en silencio. El vúmetro empieza en −60 dBFS,
    el umbral por defecto (`silenceThreshold`, README §3): si con el mixer en silencio el vúmetro se
    mueve, el ruido pasa del umbral y una tira con *energía* parpadearía. Sube `silenceThreshold` en
    `config/local.json` (por ejemplo, a −50) y reinicia el motor hasta que la tira se quede apagada.
-   Con la entrada vacía, la tarjeta de la mesa da unos −80 dBFS de ruido.
+   Con la entrada vacía, la tarjeta de la mesa da unos −80 dBFS de ruido. ✅ Con el mixer de la mesa
+   conectado y en silencio, y `Mic` a 8, unos −77 dBFS: el −60 por defecto sirve (21-oct).
 
 - Estas tarjetas suelen tener **entrada de micrófono**, y la salida booth es de **nivel de línea**:
-  puede saturar y los efectos reaccionarían a tope todo el rato. ⏳ Comprobar con música real y, si
-  satura con la ganancia al mínimo, usar un cable atenuador
+  podría saturar, y los efectos reaccionarían a tope todo el rato. Si satura con la ganancia al
+  mínimo, usa un cable atenuador. ✅ En la mesa no satura: con `Mic` a 0, la música llega a −24 dBFS
+  de máximo, y hay que subirla (paso 3)
   ([MOO-53](https://linear.app/7daysofrain/issue/MOO-53)).
 - La tarjeta captura en **mono**: del RCA solo se usa un canal (normalmente el izquierdo). Para analizar
   la música basta.
@@ -392,4 +398,5 @@ vúmetro de la cabecera del panel como medidor.
 - ⏳ Resistencia de 330 Ω en serie con `Din` (§2).
 - ⏳ Conexión fija entre el Arduino y el cable de datos, sin pines Dupont en la regleta (§2).
 - ⏳ Medidas 1, 2 y 4 de §5.
-- ⏳ Nivel de audio con música real: [MOO-53](https://linear.app/7daysofrain/issue/MOO-53).
+- ✅ ~~Nivel de audio con música real~~: comprobado el 21-oct (§8),
+  [MOO-53](https://linear.app/7daysofrain/issue/MOO-53).
