@@ -49,7 +49,7 @@
     fallo;
   - los bytes s16le se convierten a muestras de −1 a 1, también con bloques de longitud impar que
     parten una muestra;
-  - los primeros 14 400 bytes (300 ms) no llegan al búfer;
+  - las primeras 14 400 muestras (28 800 bytes, 300 ms) no llegan al búfer;
   - `read` da las últimas muestras, con ceros por delante si aún no hay bastantes, sin mirar `time`;
   - si el proceso termina en plena sesión, `read` da ceros desde ese momento y el log recibe una sola
     línea con el nombre, la cadena y el motivo;
