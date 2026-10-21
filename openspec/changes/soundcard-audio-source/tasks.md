@@ -105,13 +105,13 @@
 - [x] 2.2 `AudioSourceIndicator` distingue la tarjeta del fichero.
   Verificar: los tests de 2.1 pasan, y los E2E de HU1 y HU2 siguen pasando (no hay E2E nuevo: la CI no
   tiene tarjeta de sonido, `MOO-24`).
-- [ ] 2.3 Comprobación en la mesa del caso feliz de `MOO-15` (excepción al DoD): con música desde el
+- [x] 2.3 Comprobación en la mesa del caso feliz de `MOO-15` (excepción al DoD): con música desde el
   mixer y una tira virtual con *energía*, el usuario abre el panel desde el portátil, ve la tira
   reaccionar, la cabecera dice «Tarjeta de sonido: \<nombre\>» con el nivel moviéndose, y juzga a ojo
   que la luz no llega tarde a los golpes (decisión 1). Con el mixer en silencio, la tira se queda
   apagada.
   Verificar: el resultado («verificado visualmente», sin cifra) queda en la descripción de la PR.
-- [ ] 2.4 Documentación y cierre de la historia:
+- [x] 2.4 Documentación y cierre de la historia:
   - README §1.3 (*Cabecera*: la tarjeta de sonido) y la ficha de la historia en §5 (*Tareas*: `MOO-23`
     y `MOO-60`, sin la frase de que no hay tarea de panel; el escenario del retraso con 45 ms);
   - `prompts.md`: la entrada de la tarea;
