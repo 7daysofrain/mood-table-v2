@@ -215,9 +215,10 @@ describe('un efecto reactivo sin fuente de audio', () => {
     );
   });
 
-  it('con fuente de audio, arranca', () => {
-    const audioSource = { type: 'file', path: 'config/audio/bouncer.wav' };
-
+  it.each([
+    { type: 'file', path: 'config/audio/bouncer.wav' },
+    { type: 'soundcard', name: 'Mixer de la mesa', device: 'plughw:CARD=Device,DEV=0' },
+  ])('con la fuente de audio %j, arranca', (audioSource) => {
     expect(parseConfig(text({ audioSource, strips: [{ ...demoStrip, effect: 'energy' }] })).ok).toBe(
       true,
     );
@@ -250,7 +251,7 @@ describe('la fuente de audio', () => {
   it.each([
     [
       { type: 'mp3', path: 'musica.mp3' },
-      'campo `audioSource.type`: «mp3» no es un valor válido (se admite «file»)',
+      'campo `audioSource.type`: «mp3» no es un valor válido (se admite «file» o «soundcard»)',
     ],
     [
       { type: 'file', path: 'musica.wav', volume: 1 },
@@ -258,6 +259,56 @@ describe('la fuente de audio', () => {
     ],
     [{ type: 'file' }, 'campo `audioSource.path`: falta y es obligatorio'],
     [{ type: 'file', path: '' }, 'campo `audioSource.path`: no puede estar vacío'],
+  ])('con %j, nombra el campo y dice qué falla', (audioSource, message) => {
+    expect(errorOf(text({ audioSource, strips: [demoStrip] }))).toBe(message);
+  });
+});
+
+describe('la tarjeta de sonido como fuente de audio', () => {
+  const soundcard = {
+    type: 'soundcard',
+    name: 'Mixer de la mesa',
+    device: 'plughw:CARD=Device,DEV=0',
+  };
+
+  function audioSourceOf(audioSource: unknown): unknown {
+    const result = parseConfig(text({ audioSource, strips: [demoStrip] }));
+    if (!result.ok) throw new Error(result.error);
+    return result.config.audioSource;
+  }
+
+  it('acepta su nombre y su cadena de ALSA, con el umbral de silencio por defecto a -60 dBFS', () => {
+    expect(audioSourceOf(soundcard)).toEqual({ ...soundcard, silenceThreshold: -60 });
+  });
+
+  it.each([-120, 0, -45.5])('acepta un umbral de silencio de %d dBFS', (silenceThreshold) => {
+    expect(audioSourceOf({ ...soundcard, silenceThreshold })).toEqual({
+      ...soundcard,
+      silenceThreshold,
+    });
+  });
+
+  it.each([
+    [{ ...soundcard, name: undefined }, 'campo `audioSource.name`: falta y es obligatorio'],
+    [{ ...soundcard, device: undefined }, 'campo `audioSource.device`: falta y es obligatorio'],
+    [{ ...soundcard, name: '' }, 'campo `audioSource.name`: no puede estar vacío'],
+    [{ ...soundcard, device: '' }, 'campo `audioSource.device`: no puede estar vacío'],
+    [
+      { ...soundcard, silenceThreshold: -121 },
+      'campo `audioSource.silenceThreshold`: debe ser -120 o más',
+    ],
+    [
+      { ...soundcard, silenceThreshold: 1 },
+      'campo `audioSource.silenceThreshold`: debe ser 0 o menos',
+    ],
+    [
+      { ...soundcard, silenceThreshold: '-60' },
+      'campo `audioSource.silenceThreshold`: debe ser un número',
+    ],
+    [
+      { ...soundcard, path: 'musica.wav' },
+      'campo `audioSource.path`: no existe (¿está bien escrito?)',
+    ],
   ])('con %j, nombra el campo y dice qué falla', (audioSource, message) => {
     expect(errorOf(text({ audioSource, strips: [demoStrip] }))).toBe(message);
   });

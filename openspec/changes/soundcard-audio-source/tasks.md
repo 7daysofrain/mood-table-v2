@@ -9,7 +9,7 @@
 
 ## 1. MOO-23 · engine
 
-- [ ] 1.1 **(test en rojo)** Tests del esquema en `packages/shared/src/config.test.ts`: acepta
+- [x] 1.1 **(test en rojo)** Tests del esquema en `packages/shared/src/config.test.ts`: acepta
   `{ "type": "soundcard", "name", "device" }` y aplica `silenceThreshold: -60`; acepta un
   `silenceThreshold` de −120, de 0 y de −45,5; rechaza, nombrando el campo, una tarjeta sin `name` o
   sin `device`, con alguno vacío, con `silenceThreshold` fuera de −120 a 0 o que no es un número, y
