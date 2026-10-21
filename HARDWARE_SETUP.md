@@ -21,7 +21,7 @@ fichero de configuración y el servicio) está en el [README §1.4](readme.md#3-
 | **Tira** | 173 LEDs direccionables de 5 V tipo WS2812B, orden de color GRB (pistas `+5V`, `Din`, `GND`; una flecha marca el sentido de los datos) | ✅ |
 | **Fuente de la tira** | Adaptador AC/DC YU0508: **5 V · 8 A**, clavija de barril con el **positivo en el centro**. Mide 5,36 V en la entrada de la tira, con la tira apagada | ✅ |
 | **Audio** | Tarjeta de sonido USB C-Media "USB PnP Sound Device" (`08bb:2902`), captura **mono**, 44,1/48 kHz | ✅ |
-| **Cable de audio** | RCA → minijack, desde la salida **booth** del mixer | ✅ |
+| **Cable de audio** | RCA → minijack **de 3 contactos (TRS) o mono**, desde la salida **booth** del mixer; no uno de auriculares con micrófono (4 contactos, TRRS): §8 | ⏳ |
 
 **Cualquier controlador Adalight sirve.** La tira, el Light Box y el adaptador vinieron en un kit
 "Dream Color"; el **Light Box** era un controlador Adalight con el mismo chip CH340, pero **se averió**
@@ -381,7 +381,19 @@ vúmetro de la cabecera del panel como medidor.
    mueve, el ruido pasa del umbral y una tira con *energía* parpadearía. Sube `silenceThreshold` en
    `config/local.json` (por ejemplo, a −50) y reinicia el motor hasta que la tira se quede apagada.
    Con la entrada vacía, la tarjeta de la mesa da unos −80 dBFS de ruido. ✅ Con el mixer de la mesa
-   conectado y en silencio, y `Mic` a 8, unos −77 dBFS: el −60 por defecto sirve (21-oct).
+   conectado y en silencio, y `Mic` a 8, unos −77 dBFS: el −60 por defecto sirve (21-oct), **con el
+   cable bien conectado** (aviso siguiente).
+
+- **Si el vúmetro se mueve con la música parada y cambia al tocar el cable, es el cable, no el
+  umbral.** No subas `silenceThreshold` para taparlo: quedaría por encima de los pasajes suaves de
+  la música y la tira se apagaría con ellos. En la mesa (21-oct), con un cable RCA → minijack con
+  soporte de micrófono (jack de 4 contactos, TRRS) en la entrada de micro de la tarjeta (3
+  contactos), el fondo con la música parada iba de −77 a −44 dBFS según cómo asentaba el jack: un
+  zumbido de 100 Hz con sus armónicos, y chasquidos de hasta −2 dBFS al moverlo. El jack de 4
+  contactos cruza la masa con la línea del micro, que además lleva la alimentación de los micros
+  *electret*. Usa un cable de 3 contactos o mono, encajado hasta el fondo. Si con él sigue un
+  zumbido estable de 100 Hz, es un lazo de masa: enchufa la Pi y el mixer a la misma regleta o
+  pon un aislador de masa en la salida booth.
 
 - Estas tarjetas suelen tener **entrada de micrófono**, y la salida booth es de **nivel de línea**:
   podría saturar, y los efectos reaccionarían a tope todo el rato. Si satura con la ganancia al
@@ -400,3 +412,5 @@ vúmetro de la cabecera del panel como medidor.
 - ⏳ Medidas 1, 2 y 4 de §5.
 - ✅ ~~Nivel de audio con música real~~: comprobado el 21-oct (§8),
   [MOO-53](https://linear.app/7daysofrain/issue/MOO-53).
+- ⏳ Cable de audio de 3 contactos (TRS) o mono en lugar del de micrófono (TRRS), y medir de nuevo el
+  fondo con la música parada (§8).
