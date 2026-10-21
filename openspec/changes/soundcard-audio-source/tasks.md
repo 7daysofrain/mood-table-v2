@@ -25,7 +25,7 @@
   en UTF-8, y `decodeSource` lo devuelve igual; rechaza la clase `2` sin nombre o con un UTF-8
   inválido; las clases `0` y `1` no cambian (decisión 9).
   Verificar: los tests nuevos fallan porque la clase `2` no existe.
-- [ ] 1.4 `SourceMessage` con `kind: 'soundcard'` y la clase `2` en `encodeSource` y `decodeSource`;
+- [x] 1.4 `SourceMessage` con `kind: 'soundcard'` y la clase `2` en `encodeSource` y `decodeSource`;
   `docs/instructions/viewer-protocol.md` con la clase nueva y su ejemplo.
   Verificar: los tests de 1.3 pasan, el documento describe exactamente lo que hace el código, y
   `pnpm typecheck` pasa también en `panel` (la cabecera aún dice «Fichero:» para la tarjeta: estado
