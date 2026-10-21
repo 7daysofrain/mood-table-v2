@@ -80,11 +80,42 @@ function expectInTolerance(errors: number[]): void {
   expect(Math.min(...errors), 'ni 125 ms por detrás').toBeGreaterThanOrEqual(-BEHIND);
 }
 
-/** Abre el panel de `engine` y espera a que esté conectado y con el fichero de golpes como fuente. */
+/**
+ * La ventana de posiciones de la sincronía del reproductor (`WINDOW_MS` de
+ * `packages/panel/src/audio/sync.ts`), en milisegundos, con un margen.
+ */
+const SYNC_WINDOW_MS = 1000 + 200;
+
+/**
+ * Abre el panel de `engine` y espera a que esté conectado, con el fichero de golpes como fuente, y
+ * asentado: ha terminado de cargar y la sincronía ya no tiene posiciones de la carga.
+ */
 async function openPanel(page: Page, engine: TestEngine): Promise<void> {
   await page.goto(engine.url);
   await expect(page.getByRole('banner').getByRole('status')).toHaveText('Conectado');
   await expect(page.getByRole('banner')).toContainText('Fichero: golpes.wav');
+  await settle(page);
+}
+
+/**
+ * Mientras el panel se carga, el hilo principal va ocupado y las posiciones del visor se procesan
+ * tarde, con la hora de llegada retrasada. Si el test pide oír enseguida, el primer arranque sale de
+ * la mediana de esas posiciones y va unos 45 ms por detrás, y la corrección salta (`MOO-62`). Se
+ * espera a que el visor pinte 30 fotogramas seguidos sin parones (la carga ha acabado) y a que pase
+ * una ventana de la sincronía, para que las posiciones de la carga salgan de ella. El salto del
+ * producto si el maker pide oír al abrir el panel queda como está, por decisión del usuario.
+ */
+async function settle(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    let steady = 0;
+    let last = await new Promise<number>(requestAnimationFrame);
+    while (steady < 30) {
+      const now = await new Promise<number>(requestAnimationFrame);
+      steady = now - last < 34 ? steady + 1 : 0;
+      last = now;
+    }
+  });
+  await page.waitForTimeout(SYNC_WINDOW_MS); // NOSONAR: vaciar la ventana de la sincronía es tiempo
 }
 
 /** Pide oír y espera a que suene. */
