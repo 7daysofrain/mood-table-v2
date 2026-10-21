@@ -30,7 +30,7 @@
   Verificar: los tests de 1.3 pasan, el documento describe exactamente lo que hace el código, y
   `pnpm typecheck` pasa también en `panel` (la cabecera aún dice «Fichero:» para la tarjeta: estado
   intermedio de la decisión 2).
-- [ ] 1.5 **(test en rojo)** Tests del núcleo: con una fuente en memoria que declara
+- [x] 1.5 **(test en rojo)** Tests del núcleo: con una fuente en memoria que declara
   `silenceThreshold: -60`, un ruido de −80 dBFS RMS cuenta como silencio y *energía* deja la tira a 0;
   una señal de −30 dBFS no, y la tira reacciona; una fuente sin `silenceThreshold` y ese mismo ruido
   no es silencio (la puerta digital sigue igual); los frames dorados de `energy` no cambian

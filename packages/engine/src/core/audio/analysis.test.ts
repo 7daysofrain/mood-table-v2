@@ -20,6 +20,11 @@ function fillTone(
   }
 }
 
+/** La amplitud de un seno cuyo nivel (su RMS) es `dbfs`. */
+function dbfsToSineAmplitude(dbfs: number): number {
+  return Math.SQRT2 * 10 ** (dbfs / 20);
+}
+
 /** Las bandas tras dos segundos de un tono a 50 pulsos por segundo. */
 function bandsAfterTone(frequency: number, rate = RATE): number[] {
   const analyzer = createAudioAnalyzer(rate);
@@ -91,6 +96,22 @@ describe('el análisis del audio', () => {
 
     expect(analyzer.update(PULSE).silent).toBe(true);
     analyzer.window[100] = 1 / 32_768;
+    expect(analyzer.update(PULSE).silent).toBe(false);
+  });
+
+  it('con un umbral de silencio, una ventana con el nivel por debajo es silencio', () => {
+    const analyzer = createAudioAnalyzer(RATE, -60);
+
+    fillTone(analyzer, 1000, 1, dbfsToSineAmplitude(-80));
+    expect(analyzer.update(PULSE).silent).toBe(true);
+    fillTone(analyzer, 1000, 1, dbfsToSineAmplitude(-30));
+    expect(analyzer.update(PULSE).silent).toBe(false);
+  });
+
+  it('sin umbral de silencio, una ventana a -80 dBFS no es silencio: solo lo es el digital', () => {
+    const analyzer = createAudioAnalyzer(RATE);
+
+    fillTone(analyzer, 1000, 1, dbfsToSineAmplitude(-80));
     expect(analyzer.update(PULSE).silent).toBe(false);
   });
 
