@@ -243,6 +243,16 @@ describe('la fuente', () => {
     expect(read(source, 4)).toEqual([0, 0, 0.25, 0.25]);
   });
 
+  it('una muestra partida entre bloques en el límite del descarte no se cuela', async () => {
+    const loud = s16le(Array.from({ length: DISCARDED }, () => 20_000));
+    // El primer bloque acaba a mitad de la última muestra descartada.
+    const { capture, source } = await opened(loud.subarray(0, loud.length - 1));
+
+    capture.emit(Uint8Array.from([...loud.subarray(loud.length - 1), ...s16le([8192])]));
+
+    expect(read(source, 2)).toEqual([0, 0.25]);
+  });
+
   it('da las últimas muestras sin mirar el instante, con ceros delante si faltan', async () => {
     const { capture, source } = await opened();
 
@@ -263,6 +273,18 @@ describe('la fuente', () => {
     expect(window.at(0)).toBe(0.25);
     expect(window.at(-1)).toBe(0.5);
     expect(window.filter((sample) => sample === 0.5)).toHaveLength(1);
+  });
+
+  it('con una ventana mayor que el búfer, da todo el búfer con ceros delante', async () => {
+    const { capture, source } = await opened();
+    capture.emit(s16le(Array.from({ length: 24_000 }, () => 8192)));
+    capture.emit(s16le([16_384]));
+
+    const window = read(source, 24_010);
+
+    expect(window.slice(0, 10)).toEqual(Array.from({ length: 10 }, () => 0));
+    expect(window.at(10)).toBe(0.25);
+    expect(window.at(-1)).toBe(0.5);
   });
 });
 
