@@ -61,7 +61,8 @@ const GAIN_FLOOR = 1e-12;
  */
 export function createAudioAnalyzer(sampleRate: number, silenceThreshold?: number): AudioAnalyzer {
   const window = new Float32Array(Math.round(WINDOW_SECONDS * sampleRate));
-  const silenceLevel = silenceThreshold === undefined ? 0 : 10 ** (silenceThreshold / 20);
+  // Sin umbral (un fichero), solo cuenta el silencio digital y no hace falta medir el nivel.
+  const silenceLevel = silenceThreshold === undefined ? undefined : 10 ** (silenceThreshold / 20);
   const fftSize = 2 ** Math.ceil(Math.log2(window.length));
   const hamming = Float64Array.from(
     { length: window.length },
@@ -93,7 +94,8 @@ export function createAudioAnalyzer(sampleRate: number, silenceThreshold?: numbe
 
     update(dt) {
       // Puerta de silencio de la v1: en silencio no se actualiza nada.
-      features.silent = isSilent(window) || rms(window) < silenceLevel;
+      features.silent =
+        isSilent(window) || (silenceLevel !== undefined && rms(window) < silenceLevel);
       if (features.silent) return features;
 
       for (let index = 0; index < window.length; index++) {
