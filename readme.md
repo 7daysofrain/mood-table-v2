@@ -107,7 +107,7 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 
 #### Zonas del panel
 
-- **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», o «Sin fuente de audio») con un vúmetro de su nivel y, si la fuente es un fichero, el botón de oírlo en el panel: un altavoz tachado mientras el panel calla y con ondas mientras suena. Más adelante, los fps reales del motor. Sin conexión no muestra fuente, nivel ni botón.
+- **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», «Tarjeta de sonido: Mixer de la mesa», con el nombre que le da la configuración y nunca su cadena de ALSA, o «Sin fuente de audio») con un vúmetro de su nivel y, si la fuente es un fichero, el botón de oírlo en el panel: un altavoz tachado mientras el panel calla y con ondas mientras suena. Más adelante, los fps reales del motor. Sin conexión no muestra fuente, nivel ni botón.
 - **Visor:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
 - **Tiras:** lista de las tiras declaradas en el fichero de configuración, en solo lectura: nombre, número de LEDs y salida (virtual o Adalight con su puerto). Al seleccionar una, el resto del panel actúa sobre ella.
 - **Efectos:** los efectos disponibles para la tira seleccionada, etiquetados como *reactivo* o *ambiente*, con el activo marcado.
@@ -179,7 +179,7 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 > **Montaje del hardware:** el cableado de la tira, su alimentación, el controlador Adalight (un Arduino con el sketch Adalight; el Light Box de la mesa se averió) y la tarjeta de sonido están paso a paso en [`HARDWARE_SETUP.md`](HARDWARE_SETUP.md), en la raíz del repositorio, con las comprobaciones con polímetro y cómo diagnosticar una tira que no enciende. Los pasos siguientes dan por hecho que el hardware ya está montado.
 
 1. En la Pi, instala `git` (Raspberry Pi OS Lite no lo trae: `sudo apt install -y git`), clona el repositorio y ejecuta `sudo deploy/install.sh`. Crea el usuario `moodtable`, instala Node.js y deja el motor como servicio `systemd` (§2.4).
-2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Si algo está mal, el motor no arranca y dice qué campo falla.
+2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Declara también la tarjeta de sonido como fuente de audio (`audioSource`, §3), con la cadena que da `arecord -l` (`HARDWARE_SETUP.md` §7). Si algo está mal, el motor no arranca y dice qué campo falla, o qué tarjeta no puede abrir.
 3. `sudo systemctl start moodtable`.
 4. Desde cualquier dispositivo de la red local, abre `http://<ip-de-la-pi>:8080`. Lo que ves en el visor lo pinta la tira real (**H3**).
 5. Desenchufa la Pi y vuelve a enchufarla: arranca sola y vuelve al último estado (**H5**).
@@ -205,7 +205,7 @@ flowchart LR
     direction LR
     subgraph adIn["Adaptadores de entrada"]
       direction TB
-      alsa["Tarjeta de sonido<br/>arecord → stdin"]
+      alsa["Tarjeta de sonido<br/>arecord → stdout"]
       wav["Fichero WAV<br/>(simulador)"]
     end
 
@@ -281,7 +281,7 @@ El núcleo define **cuatro puertos** (interfaces de TypeScript) y no sabe qué h
 
 | Puerto | Para qué | Adaptadores en el MVP | Adaptadores previstos |
 |---|---|---|---|
-| `AudioSource` | Entregar la ventana de audio que pide el bucle en cada pulso (*pull*: el ritmo lo marca el motor, D50) | Tarjeta de sonido (`arecord` → `stdin`) · Fichero WAV | — |
+| `AudioSource` | Entregar la ventana de audio que pide el bucle en cada pulso (*pull*: el ritmo lo marca el motor, D50) | Tarjeta de sonido (`arecord` → `stdout`) · Fichero WAV | — |
 | `LightOutput` | Recibir los frames de una tira | Adalight por serie (una instancia por tira física) · Visor (WebSocket: una instancia por tira, todas por la misma conexión de cada navegador; D43) | Firmware propio ESP8266/ESP32 (should-have) |
 | `Commands` | Cambiar el efecto y los parámetros de una tira | API HTTP del panel | Traktor F1 (HID) · pantalla táctil |
 | `StateStore` | Guardar y recuperar el estado de cada tira | SQLite (ver §3) · En memoria (tests) | — |
@@ -380,7 +380,7 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 
 | Adaptador | Puerto | Tecnología | Qué hace |
 |---|---|---|---|
-| **Tarjeta de sonido** | `AudioSource` | `arecord` (ALSA) como proceso hijo | Lee PCM crudo (16 bits, mono) por `stdout` y guarda las últimas muestras en un búfer circular: cuando el bucle pide la ventana, da las más recientes. Sin binarios nativos en Node. |
+| **Tarjeta de sonido** | `AudioSource` | `arecord` (ALSA) como proceso hijo | Lanza `arecord` con la cadena de dispositivo declarada (16 bits, mono, 48 kHz, periodos de 10 ms) y guarda lo que entrega por `stdout` en un búfer circular de medio segundo: cuando el bucle pide la ventana, da las últimas muestras, sin mirar el instante (D50). Tira los primeros 300 ms, el chasquido que hace la tarjeta al abrirse. El motor solo no arranca si `arecord` termina antes de entregar nada (no puede abrir la tarjeta, o no hay `arecord`: solo Linux); si termina en plena sesión, la fuente da silencio y lo dice una vez en el log, sin reconectar (D57). Declara su umbral de silencio, para que el ruido de fondo no encienda los efectos reactivos (D58). Sin binarios nativos en Node: lanzar el proceso está en `soundcard.hardware.ts`, y el resto, con tests. |
 | **Fichero WAV** | `AudioSource` | Lector WAV en TypeScript | Lee y decodifica el fichero entero al arrancar (PCM de 16 bits, mono o estéreo, que se mezcla a mono). Suena en bucle con el reloj del motor: en cada pulso da el audio de ese instante, contado desde el arranque, y al llegar al final vuelve a empezar. También dice en qué punto del fichero acaba la ventana de cada pulso (`positionAt`), con la misma cuenta, para que el panel lo oiga por ese punto (D53). Guarda los bytes que leyó, que el servidor sirve en `/audio` sin volver a leer el disco. Es la fuente del simulador y de los tests. |
 | **Adalight serie** | `LightOutput` | `serialport` | Una instancia **por tira física**, en su puerto. Añade la cabecera Adalight (`Ada` + número de LEDs + checksum), reordena los canales según el orden de color de la tira (RGB, GRB…) y escribe por USB serie. Si el puerto sigue ocupado con el frame anterior, descarta el nuevo en lugar de encolarlo. |
 | **Visor** | `LightOutput` | WebSocket (`@fastify/websocket`) | Una instancia **por tira** (D43). Codifica cada frame con el [protocolo del visor](docs/instructions/viewer-protocol.md) y lo envía en binario a todos los navegadores conectados, por una sola conexión por navegador (D45). Por la misma conexión, cada navegador recibe la fuente de audio al conectarse y, en cada pulso, su nivel (D51) y, si la fuente es un fichero, el punto del fichero por el que va el motor (D53); más adelante, también los cambios de estado. |
@@ -710,7 +710,23 @@ Se documenta aquí porque es la otra mitad del modelo. Su esquema TypeBox vive e
 | `maxCurrentMa` | entero | > 0 | Consumo máximo permitido (mA) según su fuente de alimentación. Lo usa el límite de potencia. |
 | `ledMaxMa` | entero | > 0, por defecto 60 | Consumo de un LED en blanco a máximo brillo (mA), para estimar el consumo de cada frame. |
 
-Además de las tiras, el fichero declara la **fuente de audio**, opcional (`audioSource`). Se discrimina por `type`, como `output`: `file` es un fichero WAV con su `path`, absoluta o relativa a la raíz del repositorio (como `config/local.json`, D44); la tarjeta de sonido llega con `MOO-15`. Sin fuente de audio, solo funcionan los efectos de ambiente.
+Además de las tiras, el fichero declara la **fuente de audio**, opcional (`audioSource`). Se discrimina por `type`, como `output`: `file` es un fichero WAV con su `path`, absoluta o relativa a la raíz del repositorio (como `config/local.json`, D44). `soundcard` es la tarjeta de sonido (solo Linux, D56):
+
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `name` | string | Obligatorio, no vacío | Nombre que muestra el panel. La cadena de dispositivo no sale del motor. |
+| `device` | string | Obligatorio, no vacío | Cadena de dispositivo de ALSA, la que recibe `arecord -D`. Mejor por el nombre de la tarjeta que por su número, que puede cambiar: `plughw:CARD=Device,DEV=0` (`HARDWARE_SETUP.md` §7). |
+| `silenceThreshold` | número | De −120 a 0; por defecto −60 | Umbral de silencio en dBFS: por debajo, el ruido de fondo cuenta como silencio y los efectos reactivos se apagan (D58). |
+
+```json
+"audioSource": {
+  "type": "soundcard",
+  "name": "Mixer de la mesa",
+  "device": "plughw:CARD=Device,DEV=0"
+}
+```
+
+Sin fuente de audio, solo funcionan los efectos de ambiente.
 
 #### Reconciliación al arrancar
 
@@ -940,7 +956,7 @@ Escenario: La tira no llega tarde a la música
   Dado que a la tarjeta de sonido le llega música con golpes marcados
     Y la tira virtual tiene el efecto "energía"
   Cuando suena un golpe
-  Entonces la tira se ilumina menos de 100 ms después del golpe (asumido; la spec fija el umbral)
+  Entonces la tira se ilumina con el golpe, sin que se note retraso (umbral de referencia: 45 ms, E2)
 
 Escenario: Con varias tarjetas de sonido, usa la declarada
   Dado que hay varias tarjetas de sonido conectadas
@@ -955,9 +971,9 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 - La fuente de audio no se elige desde el panel ni se cambia en caliente: se declara en configuración *(asumido)*.
 - Sin conexión directa por GPIO (PRD §6.2).
 - Solo Linux (ALSA): en macOS y Windows el simulador usa el fichero. En la demo pública no hay tarjeta de sonido.
-- Si la tarjeta se desconecta en plena sesión, no se reconecta sola *(asumido)*.
+- Si la tarjeta se desconecta en plena sesión, no se reconecta sola: el motor sigue con silencio. La reconexión y el aviso en el panel van en `MOO-59`.
 
-**Tareas:** `MOO-23` Leer la tarjeta de sonido como fuente de audio (`engine`). No hay tarea de panel: la cabecera de HU2 ya muestra la fuente y su nombre de forma genérica.
+**Tareas:** `MOO-23` Leer la tarjeta de sonido como fuente de audio (`engine`, con el esquema y el protocolo del visor en `shared`) · `MOO-60` Mostrar la tarjeta de sonido en la cabecera (`panel`). La exploración separó la cabecera en su propia tarea, por la regla de un área por tarea (`design.md` del change `soundcard-audio-source`, decisión 2).
 
 **Estimación.** Humano 3 / IA 5. La IA contaba montar el *loopback* de ALSA en CI para probar los escenarios sin hardware. Se saca como deuda técnica (`MOO-24`) y el escenario del retraso se verifica a mano en la mesa, como **excepción explícita al DoD**. **Bloqueada por** `MOO-14`.
 

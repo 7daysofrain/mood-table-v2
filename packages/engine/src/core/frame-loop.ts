@@ -144,7 +144,7 @@ export function createFrameLoop(
   // El nivel se mide siempre que hay fuente; las bandas, solo si alguna tira las usa (decisión 4).
   const listener: Listener | undefined = audioSource && {
     source: audioSource,
-    analyzer: createAudioAnalyzer(audioSource.sampleRate),
+    analyzer: createAudioAnalyzer(audioSource.sampleRate, audioSource.silenceThreshold),
     needsBands: slots.some((slot) => slot.usesAudio),
     levelOutputs,
     positionOutputs,

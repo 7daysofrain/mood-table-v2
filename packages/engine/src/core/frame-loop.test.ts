@@ -6,6 +6,7 @@ import type { AudioFeatures } from './audio/analysis.ts';
 import type { AudioSource } from './audio/audio-source.ts';
 import { breathing } from './effects/breathing.ts';
 import { defaultParams, type Effect } from './effects/effect.ts';
+import { energy } from './effects/energy.ts';
 import {
   createFrameLoop,
   type LevelOutput,
@@ -374,5 +375,53 @@ describe('el bucle con una fuente que sabe su posición', () => {
     loop.tick(FRAME_MS);
 
     expect(position.positions).toEqual([]);
+  });
+});
+
+/**
+ * Una fuente de prueba como la tarjeta de sonido: ruido blanco con el nivel `dbfs` y, si se da, su
+ * umbral de silencio. El ruido es siempre el mismo (generador congruencial con semilla fija).
+ */
+function noiseSource(dbfs: number, silenceThreshold?: number): AudioSource {
+  // Un ruido uniforme entre -a y a tiene un RMS de a / √3.
+  const amplitude = Math.sqrt(3) * 10 ** (dbfs / 20);
+  let seed = 1;
+  return {
+    sampleRate: 48_000,
+    ...(silenceThreshold === undefined ? {} : { silenceThreshold }),
+    read(_time, out) {
+      for (let index = 0; index < out.length; index++) {
+        seed = (seed * 1_103_515_245 + 12_345) % 2 ** 31;
+        out[index] = amplitude * ((seed / 2 ** 31) * 2 - 1);
+      }
+    },
+  };
+}
+
+/** Los frames de una tira de 60 LEDs con *energía* durante dos segundos. */
+function energyFrames(source: AudioSource): Uint8Array[] {
+  const { output, frames } = recorder();
+  const loop = createFrameLoop(
+    [{ config: { ...strip('energia', 60), effect: 'energy' }, outputs: [output] }],
+    60,
+    { effects: [energy], audioSource: source },
+  );
+  for (let pulse = 0; pulse <= 120; pulse++) loop.tick(pulse * FRAME_MS);
+  return frames.map(({ colors }) => colors);
+}
+
+const isDark = (colors: Uint8Array): boolean => colors.every((value) => value === 0);
+
+describe('el umbral de silencio de la fuente (specs/effects)', () => {
+  it('con un umbral de -60 dBFS, el ruido a -80 es silencio y energía deja la tira a 0', () => {
+    expect(energyFrames(noiseSource(-80, -60)).every(isDark)).toBe(true);
+  });
+
+  it('con un umbral de -60 dBFS, una señal a -30 no es silencio y la tira reacciona', () => {
+    expect(energyFrames(noiseSource(-30, -60)).some((colors) => !isDark(colors))).toBe(true);
+  });
+
+  it('sin umbral, el mismo ruido no es silencio: la ganancia automática lo sube hasta verse', () => {
+    expect(energyFrames(noiseSource(-80)).some((colors) => !isDark(colors))).toBe(true);
   });
 });

@@ -62,8 +62,14 @@ export const SOURCE_MESSAGE_TYPE = 2;
 /** Tipo del mensaje del nivel de la fuente de audio. */
 export const LEVEL_MESSAGE_TYPE = 3;
 
-/** La fuente de audio del instrumento, como la ve el panel: sin la ruta del fichero. */
-export type SourceMessage = { kind: 'none' } | { kind: 'file'; name: string };
+/**
+ * La fuente de audio del instrumento, como la ve el panel: sin la ruta del fichero ni la cadena de
+ * ALSA de la tarjeta, solo su nombre (decisión 9 del change soundcard-audio-source).
+ */
+export type SourceMessage =
+  | { kind: 'none' }
+  | { kind: 'file'; name: string }
+  | { kind: 'soundcard'; name: string };
 
 export interface LevelMessage {
   /** El pulso al que pertenece, como el `seq` de los frames. */
@@ -75,16 +81,25 @@ export interface LevelMessage {
 /** Clase de la fuente: el segundo byte del mensaje de fuente. */
 const SOURCE_NONE = 0;
 const SOURCE_FILE = 1;
+const SOURCE_SOUNDCARD = 2;
+
+const SOURCE_CLASS = { none: SOURCE_NONE, file: SOURCE_FILE, soundcard: SOURCE_SOUNDCARD } as const;
+
+/** Las clases de fuente que llevan nombre, por su byte. */
+const NAMED_SOURCE: Partial<Record<number, 'file' | 'soundcard'>> = {
+  [SOURCE_FILE]: 'file',
+  [SOURCE_SOUNDCARD]: 'soundcard',
+};
 
 /** Tipo (1 byte) + `seq` (4 bytes, big-endian) + nivel (`float32`, big-endian). */
 const LEVEL_MESSAGE_BYTES = 9;
 
 /** El mensaje de la fuente de audio: lo recibe cada panel al conectarse. */
 export function encodeSource(source: SourceMessage): Uint8Array {
-  const name = source.kind === 'file' ? new TextEncoder().encode(source.name) : new Uint8Array(0);
+  const name = source.kind === 'none' ? new Uint8Array(0) : new TextEncoder().encode(source.name);
   const message = new Uint8Array(2 + name.length);
   message[0] = SOURCE_MESSAGE_TYPE;
-  message[1] = source.kind === 'file' ? SOURCE_FILE : SOURCE_NONE;
+  message[1] = SOURCE_CLASS[source.kind];
   message.set(name, 2);
   return message;
 }
@@ -93,10 +108,11 @@ export function encodeSource(source: SourceMessage): Uint8Array {
 export function decodeSource(message: Uint8Array): SourceMessage | undefined {
   if (message.length < 2 || message[0] !== SOURCE_MESSAGE_TYPE) return undefined;
   if (message[1] === SOURCE_NONE) return message.length === 2 ? { kind: 'none' } : undefined;
-  if (message[1] !== SOURCE_FILE || message.length === 2) return undefined;
+  const kind = NAMED_SOURCE[message[1] ?? SOURCE_NONE];
+  if (!kind || message.length === 2) return undefined;
   try {
     const name = new TextDecoder('utf-8', { fatal: true }).decode(message.subarray(2));
-    return { kind: 'file', name };
+    return { kind, name };
   } catch {
     return undefined;
   }

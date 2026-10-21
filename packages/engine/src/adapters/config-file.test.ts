@@ -171,7 +171,10 @@ describe('el config/demo.json del repositorio', () => {
     const { strips, audioSource } = result.config;
 
     expect(strips.map(({ output, effect }) => [output.type, effect])).toEqual([['virtual', 'energy']]);
-    expect(audioSource?.path).toBe(join(REPO_ROOT, 'config', 'audio', 'bouncer.wav'));
+    expect(audioSource).toEqual({
+      type: 'file',
+      path: join(REPO_ROOT, 'config', 'audio', 'bouncer.wav'),
+    });
   });
 
   it('su fichero de audio está en el repositorio y el motor lo acepta', async () => {

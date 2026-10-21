@@ -38,6 +38,26 @@ describe('la fuente de audio de la cabecera', () => {
     expect(screen.getByText(`Fichero: ${name}`)).toHaveAttribute('title', name);
   });
 
+  it('con una tarjeta, dice «Tarjeta de sonido: Mixer de la mesa» y tiene un vúmetro', () => {
+    render(
+      <AudioSourceIndicator
+        source={{ kind: 'soundcard', name: 'Mixer de la mesa' }}
+        levels={{ level: 0 }}
+      />,
+    );
+
+    expect(screen.getByText('Tarjeta de sonido: Mixer de la mesa')).toBeInTheDocument();
+    expect(screen.queryByText(/Fichero/)).not.toBeInTheDocument();
+    expect(screen.getByRole('meter', METER)).toBeInTheDocument();
+  });
+
+  it('con una tarjeta de nombre largo, lo recorta y deja el completo como título', () => {
+    const name = 'Mixer de la mesa del salón, salida booth del canal izquierdo';
+    render(<AudioSourceIndicator source={{ kind: 'soundcard', name }} levels={{ level: 0 }} />);
+
+    expect(screen.getByText(`Tarjeta de sonido: ${name}`)).toHaveAttribute('title', name);
+  });
+
   it('sin fuente, dice «Sin fuente de audio» y no hay vúmetro', () => {
     render(<AudioSourceIndicator source={{ kind: 'none' }} levels={{ level: undefined }} />);
 

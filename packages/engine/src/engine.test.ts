@@ -87,6 +87,20 @@ describe('la fuente de audio que se anuncia a los paneles', () => {
     expect(sourceMessage({ ...config, audioSource })).toEqual({ kind: 'file', name: 'bouncer.wav' });
   });
 
+  it('de una tarjeta de sonido, da su nombre y nunca la cadena de dispositivo', () => {
+    const audioSource = {
+      type: 'soundcard' as const,
+      name: 'Mixer de la mesa',
+      device: 'plughw:CARD=Device,DEV=0',
+      silenceThreshold: -60,
+    };
+
+    expect(sourceMessage({ ...config, audioSource })).toEqual({
+      kind: 'soundcard',
+      name: 'Mixer de la mesa',
+    });
+  });
+
   it('sin fuente de audio, dice que no hay ninguna', () => {
     expect(sourceMessage(config)).toEqual({ kind: 'none' });
   });

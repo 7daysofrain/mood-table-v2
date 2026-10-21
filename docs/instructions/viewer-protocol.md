@@ -48,13 +48,19 @@ otra, el panel reconecta y la recibe de nuevo. También se envía si no hay fuen
 | Byte | Tamaño | Campo | Valor |
 |---|---|---|---|
 | 0 | 1 | Tipo de mensaje | `2` (fuente) |
-| 1 | 1 | Clase de fuente | `0` sin fuente de audio, `1` fichero |
-| 2… | resto | Nombre | Solo si es un fichero: su nombre en UTF-8, **sin la ruta**. Sin fuente, el mensaje acaba en el byte 1 |
+| 1 | 1 | Clase de fuente | `0` sin fuente de audio, `1` fichero, `2` tarjeta de sonido |
+| 2… | resto | Nombre | Con un fichero, su nombre en UTF-8, **sin la ruta**. Con una tarjeta de sonido, el nombre que le da el fichero de configuración, en UTF-8, **sin la cadena de dispositivo de ALSA**. Nunca vacío. Sin fuente, el mensaje acaba en el byte 1 |
 
 Ejemplo: la fuente es el fichero `golpes.wav`:
 
 ```
 02  01  67 6f 6c 70 65 73 2e 77 61 76
+```
+
+La fuente es la tarjeta de sonido llamada «Mixer de la mesa»:
+
+```
+02  02  4d 69 78 65 72 20 64 65 20 6c 61 20 6d 65 73 61
 ```
 
 Sin fuente de audio: `02 00`.

@@ -904,6 +904,56 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes durante la implementación:*
 - *El servidor ya no lee el disco en cada petición: sirve los bytes que leyó `loadAudioFile` al arrancar. El test antiguo («si el fichero ya no se puede leer, falla sin decir su ruta») se sustituyó, porque ese fallo deja de existir.*
 
+#### 6.21 La tarjeta de sonido como fuente: exploración con medida en la Pi, spec e implementación (`MOO-15` y `MOO-23`)
+
+**Prompt 1:**
+
+> No, no me parece bien. El motor tiene que arrancar siempre que no haya un problema de conexion fisica, es decir, que el dispositivo no exista. Pero puede estar tranquilamente sin enviar nada de audio porque la fuente, por ejemplo, está apagada
+
+*Claude Code (`claude-opus-5-5`, 21-oct), `/opsx:explore MOO-15`, decisión a decisión. La IA proponía no arrancar si en 2 s no llegaba ningún bloque de audio; el humano separó el fallo físico de la fuente apagada, y luego descartó también el margen de 500 ms que la IA propuso a cambio («yo solo fallaria en caso de arecord con error»). Quedó D57: el único fallo es que `arecord` termine antes del primer bloque, y si termina en plena sesión, silencio y una línea de log; el aviso en el panel pasó a la historia nueva de reconexión (`MOO-59`).*
+
+**Prompt 2:**
+
+> Puedes verificar que esto es real? ahora mismo tenemos la tarjeta de sonido conectada a la PI, puedes meterme y medir si llega ruido o no llega nada?
+
+*Durante el `/opsx:propose`, la IA afirmaba que una tarjeta nunca entrega ceros y que la puerta de silencio digital de `MOO-14` no bastaría. El humano pidió medirlo. La IA grabó 3 s por SSH con la entrada vacía y los analizó en ventanas de 40 ms: un chasquido de unos 250 ms al abrirla y después unos −80 dBFS de ruido estable; la puerta actual no daba por silencio ninguna de las 72 ventanas. De ahí salen el descarte de 300 ms al arrancar y el umbral de silencio.*
+
+**Prompt 3:**
+
+> yo creo que deberiamos poder ajustar ese humbral desde la config, al añadir la fuente
+
+*La IA proponía una constante en el código, fijada tras medir en la mesa. El humano la llevó a la configuración, porque el ruido depende de cada instalación: `silenceThreshold` en dBFS, −60 por defecto (D58).*
+
+*Ajustes durante la exploración, la spec y la implementación:*
+- *El umbral de retraso de la historia (100 ms, el de E1) pasó a los 45 ms de E2. El humano lo aceptó, pero descartó medirlo con el móvil a cámara lenta: «verificaré visualmente que va en sincro».*
+- *Para declarar la tarjeta, la IA recomendaba un campo con solo su nombre de ALSA; el humano prefirió la cadena completa, con un campo `name` para el panel (D56). El panel, que la historia decía que no tenía trabajo, se llevó su propia tarea (`MOO-60`) por la regla de un área por tarea.*
+- *En `/opsx:apply`, la IA vio que el change no se había integrado en `main` y preguntó antes de seguir: el humano eligió abrir la PR de la spec y empezar `MOO-23` en una rama encima.*
+- *El esquema con dos tipos de fuente hizo que TypeBox mezclara los errores de las dos variantes (una tarjeta sin `name` daba «`name` no existe»): la IA valida cada fuente contra la variante de su `type`. Y al implementar el descarte vio una cuenta mal en el `design.md`: 14 400 bytes son 150 ms, no 300; eran 14 400 muestras, y lo corrigió en un commit aparte.*
+- *La comprobación en la mesa la pidió el humano a la IA («eso lo puedes hacer tu, por favor conectate y haz el setup necesario»): la IA preparó la Pi por SSH, midió por el WebSocket del visor y con `arecord`, y el humano solo desenchufó la tarjeta y tecleó la contraseña de `sudo`. Primero se ajustó con un reproductor FiiO M21 por comodidad; un zumbido intermitente resultó ser su cable de micrófono (TRRS), y el humano aclaró después que el umbral que importa es el del mixer real, una Pioneer XDJ-AZ. Con ella, la salida *booth* saturaba la entrada incluso con la ganancia al mínimo: quedó el mando a un tercio, `Mic` a 5 y, con la recomendación de la IA, `silenceThreshold` a −65 (el ruido, −72 estable; la música floja, −61).*
+
+#### 6.22 Code review de la tarjeta de sonido, una *chore* de CI y la cabecera (`MOO-23`, `MOO-61` y `MOO-60`)
+
+**Prompt 1:**
+
+> pasale un subagente de code-review
+
+*Claude Code (`claude-opus-5-5`, 21-oct), con la #52 de `MOO-23` recién sacada de borrador. El subagente, de solo lectura, confirmó un fallo real que no veían los tests: si el servidor no podía escuchar después de abrir la tarjeta, el motor decía que no arrancaba pero no terminaba, porque el `arecord` vivo mantenía el proceso. También vio que una línea vieja de `stderr` podía pasar por motivo de una pérdida, un cálculo de más en cada pulso y huecos en los tests. La IA los repasó con su recomendación y el humano aprobó todo: arreglar tres, dos tests nuevos comprobados con mutaciones, y dejar sin cambio el −60 por defecto en el adaptador (sería el mismo valor en dos sitios). El arreglo del proceso se comprobó en la Pi con el puerto ocupado.*
+
+**Prompt 2:**
+
+> porque en una chore y no aqui directamente?
+
+*Un test de `/audio` (`MOO-58`) se pasaba de 5 s en la CI y la puerta `test` fallaba en `main` y en todas las PR. La IA proponía arreglarlo en una *chore* aparte y el humano preguntó por qué. La IA dio tres motivos: es otra tarea, la trazabilidad del fallo y, sobre todo, que dentro de la #52 no desbloqueaba la #51 ni la #50. El humano la aceptó, y antes de crearla la IA midió la causa (`toEqual` sobre 345 KB, 300 ms por comparación) en lugar de suponerla. Quedó `MOO-61`.*
+
+**Prompt 3:**
+
+> que quieres que mire? Si va bien sincronizado con la musica? Esa parte la he visto super
+
+*`MOO-60` (la cabecera dice «Tarjeta de sonido: \<nombre\>»). En la comprobación del caso feliz, la IA había comprobado ella misma la cabecera en el navegador y la tira apagada en pausa, y le pidió al humano lo único que no se puede medir desde fuera: si la luz llega tarde a los golpes. Verificado a ojo con la XDJ-AZ, sin cifra, como fija la decisión 1 del change.*
+
+*Ajustes:*
+- *Al integrar la #51, `sonar-issues` marcó dos ternarios anidados del código de la IA; los arregló en vez de aceptarlos. El conflicto que GitHub mostró después era falso (el commit del change había llegado a `main` por otro camino), y se resolvió trayendo `main` a la rama.*
+
 ---
 
 ### 7. Pull Requests
