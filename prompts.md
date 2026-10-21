@@ -931,6 +931,29 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El esquema con dos tipos de fuente hizo que TypeBox mezclara los errores de las dos variantes (una tarjeta sin `name` daba «`name` no existe»): la IA valida cada fuente contra la variante de su `type`. Y al implementar el descarte vio una cuenta mal en el `design.md`: 14 400 bytes son 150 ms, no 300; eran 14 400 muestras, y lo corrigió en un commit aparte.*
 - *La comprobación en la mesa la pidió el humano a la IA («eso lo puedes hacer tu, por favor conectate y haz el setup necesario»): la IA preparó la Pi por SSH, midió por el WebSocket del visor y con `arecord`, y el humano solo desenchufó la tarjeta y tecleó la contraseña de `sudo`. Primero se ajustó con un reproductor FiiO M21 por comodidad; un zumbido intermitente resultó ser su cable de micrófono (TRRS), y el humano aclaró después que el umbral que importa es el del mixer real, una Pioneer XDJ-AZ. Con ella, la salida *booth* saturaba la entrada incluso con la ganancia al mínimo: quedó el mando a un tercio, `Mic` a 5 y, con la recomendación de la IA, `silenceThreshold` a −65 (el ruido, −72 estable; la música floja, −61).*
 
+#### 6.22 Code review de la tarjeta de sonido, una *chore* de CI y la cabecera (`MOO-23`, `MOO-61` y `MOO-60`)
+
+**Prompt 1:**
+
+> pasale un subagente de code-review
+
+*Claude Code (`claude-opus-5-5`, 21-oct), con la #52 de `MOO-23` recién sacada de borrador. El subagente, de solo lectura, confirmó un fallo real que no veían los tests: si el servidor no podía escuchar después de abrir la tarjeta, el motor decía que no arrancaba pero no terminaba, porque el `arecord` vivo mantenía el proceso. También vio que una línea vieja de `stderr` podía pasar por motivo de una pérdida, un cálculo de más en cada pulso y huecos en los tests. La IA los repasó con su recomendación y el humano aprobó todo: arreglar tres, dos tests nuevos comprobados con mutaciones, y dejar sin cambio el −60 por defecto en el adaptador (sería el mismo valor en dos sitios). El arreglo del proceso se comprobó en la Pi con el puerto ocupado.*
+
+**Prompt 2:**
+
+> porque en una chore y no aqui directamente?
+
+*Un test de `/audio` (`MOO-58`) se pasaba de 5 s en la CI y la puerta `test` fallaba en `main` y en todas las PR. La IA proponía arreglarlo en una *chore* aparte y el humano preguntó por qué. La IA dio tres motivos: es otra tarea, la trazabilidad del fallo y, sobre todo, que dentro de la #52 no desbloqueaba la #51 ni la #50. El humano la aceptó, y antes de crearla la IA midió la causa (`toEqual` sobre 345 KB, 300 ms por comparación) en lugar de suponerla. Quedó `MOO-61`.*
+
+**Prompt 3:**
+
+> que quieres que mire? Si va bien sincronizado con la musica? Esa parte la he visto super
+
+*`MOO-60` (la cabecera dice «Tarjeta de sonido: \<nombre\>»). En la comprobación del caso feliz, la IA había comprobado ella misma la cabecera en el navegador y la tira apagada en pausa, y le pidió al humano lo único que no se puede medir desde fuera: si la luz llega tarde a los golpes. Verificado a ojo con la XDJ-AZ, sin cifra, como fija la decisión 1 del change.*
+
+*Ajustes:*
+- *Al integrar la #51, `sonar-issues` marcó dos ternarios anidados del código de la IA; los arregló en vez de aceptarlos. El conflicto que GitHub mostró después era falso (el commit del change había llegado a `main` por otro camino), y se resolvió trayendo `main` a la rama.*
+
 ---
 
 ### 7. Pull Requests

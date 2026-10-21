@@ -107,7 +107,7 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 
 #### Zonas del panel
 
-- **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», o «Sin fuente de audio») con un vúmetro de su nivel y, si la fuente es un fichero, el botón de oírlo en el panel: un altavoz tachado mientras el panel calla y con ondas mientras suena. Más adelante, los fps reales del motor. Sin conexión no muestra fuente, nivel ni botón.
+- **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», «Tarjeta de sonido: Mixer de la mesa», con el nombre que le da la configuración y nunca su cadena de ALSA, o «Sin fuente de audio») con un vúmetro de su nivel y, si la fuente es un fichero, el botón de oírlo en el panel: un altavoz tachado mientras el panel calla y con ondas mientras suena. Más adelante, los fps reales del motor. Sin conexión no muestra fuente, nivel ni botón.
 - **Visor:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
 - **Tiras:** lista de las tiras declaradas en el fichero de configuración, en solo lectura: nombre, número de LEDs y salida (virtual o Adalight con su puerto). Al seleccionar una, el resto del panel actúa sobre ella.
 - **Efectos:** los efectos disponibles para la tira seleccionada, etiquetados como *reactivo* o *ambiente*, con el activo marcado.
@@ -956,7 +956,7 @@ Escenario: La tira no llega tarde a la música
   Dado que a la tarjeta de sonido le llega música con golpes marcados
     Y la tira virtual tiene el efecto "energía"
   Cuando suena un golpe
-  Entonces la tira se ilumina menos de 100 ms después del golpe (asumido; la spec fija el umbral)
+  Entonces la tira se ilumina con el golpe, sin que se note retraso (umbral de referencia: 45 ms, E2)
 
 Escenario: Con varias tarjetas de sonido, usa la declarada
   Dado que hay varias tarjetas de sonido conectadas
@@ -971,9 +971,9 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 - La fuente de audio no se elige desde el panel ni se cambia en caliente: se declara en configuración *(asumido)*.
 - Sin conexión directa por GPIO (PRD §6.2).
 - Solo Linux (ALSA): en macOS y Windows el simulador usa el fichero. En la demo pública no hay tarjeta de sonido.
-- Si la tarjeta se desconecta en plena sesión, no se reconecta sola *(asumido)*.
+- Si la tarjeta se desconecta en plena sesión, no se reconecta sola: el motor sigue con silencio. La reconexión y el aviso en el panel van en `MOO-59`.
 
-**Tareas:** `MOO-23` Leer la tarjeta de sonido como fuente de audio (`engine`). No hay tarea de panel: la cabecera de HU2 ya muestra la fuente y su nombre de forma genérica.
+**Tareas:** `MOO-23` Leer la tarjeta de sonido como fuente de audio (`engine`, con el esquema y el protocolo del visor en `shared`) · `MOO-60` Mostrar la tarjeta de sonido en la cabecera (`panel`). La exploración separó la cabecera en su propia tarea, por la regla de un área por tarea (`design.md` del change `soundcard-audio-source`, decisión 2).
 
 **Estimación.** Humano 3 / IA 5. La IA contaba montar el *loopback* de ALSA en CI para probar los escenarios sin hardware. Se saca como deuda técnica (`MOO-24`) y el escenario del retraso se verifica a mano en la mesa, como **excepción explícita al DoD**. **Bloqueada por** `MOO-14`.
 

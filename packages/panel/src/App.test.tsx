@@ -175,6 +175,16 @@ describe('oír el fichero de audio desde la cabecera', () => {
     expect(screen.queryByRole('button', LISTEN)).not.toBeInTheDocument();
   });
 
+  it('con una tarjeta de sonido como fuente, no ofrece oírla', () => {
+    const panel = panelWithAudio();
+    act(() => {
+      panel.setSource({ kind: 'soundcard', name: 'Mixer de la mesa' });
+    });
+
+    expect(screen.getByText('Tarjeta de sonido: Mixer de la mesa')).toBeInTheDocument();
+    expect(screen.queryByRole('button', LISTEN)).not.toBeInTheDocument();
+  });
+
   it('sin conexión, no ofrece oír nada', () => {
     render(<App connection={fakeConnection().connection} />);
 
