@@ -1,7 +1,8 @@
 # Design
 
 > Decisiones tomadas en la exploración del 19-oct con el usuario (`/opsx:explore`, tras refinar
-> `MOO-22`). Por tarea: `MOO-56` (engine) 2, 6 y 9 · `MOO-57` (panel) 1, 3, 4, 5, 7 y 8. La 2 la
+> `MOO-22`). Por tarea: `MOO-56` (engine) 2, 6 y 9 · `MOO-57` (panel) 1, 3, 4, 5, 7 y 8 · `MOO-58`
+> (engine) 6. La 2 la
 > empieza `MOO-56` (el motor envía) y la acaba `MOO-57` (el panel la usa). Los detalles marcados
 > *(asumido)* se propusieron por defecto al cerrar la exploración y se revisan con este change.
 
@@ -196,8 +197,13 @@ navegador, se toma 0.
   fichero como fuente, 404.
 - La dirección es fija y no lleva el nombre ni la ruta: el nombre ya llega en el mensaje de fuente, y
   la ruta en disco no sale del motor (D51).
-- Lo sirve el adaptador del servidor (`packages/engine/src/adapters/server.ts`); `main.ts` le pasa la
-  ruta ya resuelta, igual que hoy le pasa la fuente.
+- Lo sirve el adaptador del servidor (`packages/engine/src/adapters/server.ts`) desde memoria:
+  `main.ts` le pasa los bytes que leyó `loadAudioFile` al arrancar, los mismos que decodificó, y el
+  servidor no vuelve a leer el disco. Así el panel oye exactamente el fichero que analiza el motor
+  aunque alguien lo cambie o lo borre con el motor en marcha, y desaparece el fallo de lectura en cada
+  petición. Coste: los bytes del WAV se quedan en memoria junto a las muestras decodificadas (unos
+  16,5 MB con `bouncer.wav`). *(`MOO-58`, de la revisión de la PR de `MOO-56`; hasta entonces,
+  `main.ts` le pasaba la ruta y el servidor la leía en cada petición.)*
 - Sin rangos ni caché especial: Web Audio lo pide entero, una vez por conexión (decisión 3).
 
 ### 7. El control de oír va en la cabecera, junto a la fuente *(asumido)*
@@ -267,7 +273,10 @@ packages/panel/src/audio/
 - **`MOO-57` · panel**: la conexión decodifica la posición, `sync.ts`, el reproductor, el control y
   los E2E de los escenarios de la historia.
 
-`MOO-57` parte de `MOO-56` ya integrada.
+- **`MOO-58` · engine**: `/audio` desde los bytes leídos al arrancar (decisión 6). Salió de la revisión
+  de la PR de `MOO-56`.
+
+`MOO-57` parte de `MOO-56` ya integrada. `MOO-58` no depende de ninguna.
 
 ## Risks / Trade-offs
 
@@ -294,6 +303,7 @@ packages/panel/src/audio/
 
 Sin migración: el fichero de configuración no cambia, y un panel antiguo ignora el mensaje tipo `4`.
 `MOO-56` se puede integrar sola: el motor envía la posición y sirve `/audio`, y el panel aún no los usa.
+`MOO-58` también: el panel descarga `/audio` igual.
 
 ## Open Questions
 

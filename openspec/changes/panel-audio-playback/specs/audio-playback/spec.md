@@ -111,15 +111,22 @@ lo está preparando.
 
 ### Requirement: El motor sirve el fichero de audio
 Con un fichero como fuente, el motor SHALL servir ese mismo fichero, tal cual, en una dirección propia
-(`/audio`). Sin fichero como fuente, esa dirección MUST responder que no existe. La respuesta MUST NOT
-revelar la ruta del fichero en el disco.
+(`/audio`): el que leyó al arrancar y analiza, aunque cambie después en el disco. Sin fichero como
+fuente, esa dirección MUST responder que no existe. La respuesta MUST NOT revelar la ruta del fichero en
+el disco.
 
 > Traza: *(asumido)*, `design.md`, decisión 6. Que no salga la ruta, como el mensaje de fuente (D51).
+> Que sea el leído al arrancar: descripción de `MOO-58`.
 
 #### Scenario: El panel descarga el fichero (asumido)
 - **GIVEN** el motor con `config/audio/bouncer.wav` como fuente de audio
 - **WHEN** se pide `/audio` al motor
 - **THEN** la respuesta es el fichero, byte a byte, como audio WAV
+
+#### Scenario: El fichero cambia en disco con el motor en marcha
+- **GIVEN** el motor arrancado con un fichero de audio como fuente
+- **WHEN** el fichero se sustituye en el disco y se pide `/audio` al motor
+- **THEN** la respuesta es el fichero que el motor leyó al arrancar, el mismo que analiza
 
 #### Scenario: Sin fichero como fuente (asumido)
 - **GIVEN** el motor sin fuente de audio
