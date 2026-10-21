@@ -24,6 +24,7 @@ class FakeCapture implements CaptureProcess {
   private data?: (chunk: Uint8Array) => void;
   private stderr?: (chunk: Uint8Array) => void;
   private exit?: (exit: CaptureExit) => void;
+  stopped = false;
 
   spawn = (command: string, args: readonly string[]): CaptureProcess => {
     this.spawned.push({ command, args });
@@ -40,6 +41,10 @@ class FakeCapture implements CaptureProcess {
 
   onExit(listener: (exit: CaptureExit) => void): void {
     this.exit = listener;
+  }
+
+  stop(): void {
+    this.stopped = true;
   }
 
   emit(chunk: Uint8Array): void {
@@ -71,7 +76,7 @@ async function opened(first: Uint8Array = new Uint8Array(2 * DISCARDED)) {
   capture.emit(first);
   const result = await pending;
   if (!result.ok) throw new Error(result.error);
-  return { capture, logs, source: result.source };
+  return { capture, logs, source: result.source, stop: result.stop };
 }
 
 function read(source: { read(time: number, out: Float32Array): void }, length: number): number[] {
@@ -276,5 +281,43 @@ describe('si se pierde la tarjeta en plena sesión', () => {
       'Se ha perdido la tarjeta de sonido «Mixer de la mesa» (plughw:CARD=Device,DEV=0): ' +
         'arecord: pcm_read:2221: read error: No such device. El motor sigue con silencio.',
     ]);
+  });
+
+  it('el motivo no es una línea de stderr anterior al último bloque', async () => {
+    const { capture, logs } = await opened();
+    capture.emitStderr('overrun!!! (at least 1.234 ms long)\n');
+    capture.emit(s16le([8192, 8192]));
+
+    capture.terminate({ code: 1 });
+
+    expect(logs).toEqual([
+      'Se ha perdido la tarjeta de sonido «Mixer de la mesa» (plughw:CARD=Device,DEV=0): ' +
+        'arecord ha terminado con el código 1. El motor sigue con silencio.',
+    ]);
+  });
+
+  it('si a arecord lo para una señal, la nombra', async () => {
+    const { capture, logs } = await opened();
+
+    capture.terminate({ code: null, signal: 'SIGKILL' });
+
+    expect(logs).toEqual([
+      'Se ha perdido la tarjeta de sonido «Mixer de la mesa» (plughw:CARD=Device,DEV=0): ' +
+        'arecord ha terminado por la señal SIGKILL. El motor sigue con silencio.',
+    ]);
+  });
+});
+
+describe('al parar la fuente', () => {
+  it('para arecord, da silencio y no lo cuenta como una pérdida', async () => {
+    const { capture, source, logs, stop } = await opened();
+    capture.emit(s16le([8192, 8192]));
+
+    stop();
+    capture.terminate({ code: null, signal: 'SIGTERM' });
+
+    expect(capture.stopped).toBe(true);
+    expect(read(source, 2)).toEqual([0, 0]);
+    expect(logs).toEqual([]);
   });
 });
