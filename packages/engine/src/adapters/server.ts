@@ -11,7 +11,6 @@
  * acumulan en su conexión hasta que se da por muerta.
  */
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
 import type { AddressInfo } from 'node:net';
 import { networkInterfaces } from 'node:os';
 import { join } from 'node:path';
@@ -36,8 +35,11 @@ export interface ServerOptions {
   panelDir: string;
   /** La fuente de audio que se anuncia a cada panel al conectarse. Por defecto, ninguna. */
   source?: SourceMessage;
-  /** Ruta ya resuelta del fichero de audio que se sirve en `/audio`. Sin ella, `/audio` no existe. */
-  audioFile?: string;
+  /**
+   * Los bytes del fichero de audio que leyó el motor al arrancar, que se sirven en `/audio`. Sin
+   * ellos, `/audio` no existe.
+   */
+  audioBytes?: Uint8Array;
 }
 
 export interface EngineServer {
@@ -81,7 +83,7 @@ export async function startServer({
   port,
   panelDir,
   source = { kind: 'none' },
-  audioFile,
+  audioBytes,
 }: ServerOptions): Promise<EngineServer> {
   const app = Fastify();
   await app.register(fastifyWebsocket);
@@ -96,17 +98,13 @@ export async function startServer({
   app.get(VIEWER_PATH, { websocket: true }, (socket) => {
     socket.send(sourceMessage);
   });
-  // El fichero entero, tal cual: el panel lo pide una vez por conexión. Ni las respuestas ni los
-  // errores llevan la ruta en disco.
-  app.get(AUDIO_PATH, async (_request, reply) => {
-    if (!audioFile) return reply.code(404).type('text/plain').send('Sin fichero de audio');
-    let bytes: Buffer;
-    try {
-      bytes = await readFile(audioFile);
-    } catch {
-      return reply.code(500).type('text/plain').send('No se puede leer el fichero de audio');
-    }
-    return reply.type('audio/wav').send(bytes);
+  // El fichero entero, tal cual: el panel lo pide una vez por conexión. Son los bytes que el motor
+  // leyó al arrancar, no el disco de ahora, así que se oye lo mismo que se analiza aunque el
+  // fichero cambie (decisión 6). La respuesta no lleva la ruta en disco.
+  app.get(AUDIO_PATH, (_request, reply) => {
+    if (!audioBytes) return reply.code(404).type('text/plain').send('Sin fichero de audio');
+    const body = Buffer.from(audioBytes.buffer, audioBytes.byteOffset, audioBytes.byteLength);
+    return reply.type('audio/wav').send(body);
   });
   await app.listen({ host, port });
 

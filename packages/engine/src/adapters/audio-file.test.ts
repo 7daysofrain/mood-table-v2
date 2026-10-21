@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,6 +34,13 @@ describe('la fuente de audio fichero', () => {
     const again = new Float32Array(2205);
     result.source.read(5.05, again);
     expect(again).toEqual(window);
+  });
+
+  it('devuelve también los bytes que leyó, tal cual: los que sirve /audio', async () => {
+    const result = await loadAudioFile(GOLPES);
+    if (!result.ok) throw new Error(result.error);
+
+    expect(new Uint8Array(result.bytes)).toEqual(new Uint8Array(await readFile(GOLPES)));
   });
 
   it('con el fichero de golpes (4 s), a los 5 s va por el segundo 1', async () => {

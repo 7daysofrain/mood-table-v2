@@ -1,7 +1,8 @@
 # Tasks
 
-> Dos tareas de Linear, dos secciones y dos PR contra `main`, en orden: `MOO-57` parte de `MOO-56` ya
-> integrada (`design.md`, decisión 10). Cada paso es un commit con `Refs MOO-n` de su tarea; la PR
+> Tres tareas de Linear, tres secciones y tres PR contra `main`: `MOO-57` parte de `MOO-56` ya
+> integrada, y `MOO-58`, que salió de la revisión de la PR de `MOO-56`, no depende de ninguna
+> (`design.md`, decisión 10). Cada paso es un commit con `Refs MOO-n` de su tarea; la PR
 > lleva `Fixes MOO-n`. Los pasos marcados **(test en rojo)** dejan a propósito tests que fallan, y el
 > paso siguiente los pone en verde. Antes de dar una sección por terminada: `pnpm lint`,
 > `pnpm typecheck`, `pnpm test` y `pnpm test:e2e` en verde. El `openspec archive` va tras integrar la
@@ -172,3 +173,19 @@
   silencio digital; D54 dice que el usuario no señaló ningún salto audible; `globals.d.ts` describe el
   error medido y los saltos; `prompts.md` 6.19 recoge la segunda revisión.
   Verificar: `pnpm test:e2e` pasa en local y en la CI.
+
+## 3. MOO-58 · engine
+
+- [x] 3.1 **(test en rojo)** `loadAudioFile` devuelve también los bytes que leyó. Tests del servidor:
+  `/audio` sirve, byte a byte, los bytes que recibe al arrancar, aunque el fichero se sustituya o se
+  borre en el disco después (`specs/audio-playback`, *El fichero cambia en disco con el motor en
+  marcha*; decisión 6). El test «si el fichero ya no se puede leer, falla sin decir su ruta» se
+  sustituye por este: ese fallo deja de existir.
+  Verificar: los tests nuevos fallan porque el servidor lee el disco en cada petición.
+- [x] 3.2 `startServer` recibe `audioBytes` en vez de `audioFile`, y `main.ts` le pasa los de
+  `loadAudioFile`.
+  Verificar: los tests de 3.1 pasan; con `pnpm dev`, `curl -sI http://127.0.0.1:8080/audio` da `200`
+  y `audio/wav`.
+- [x] 3.3 Documentación: README §2.2 (*Fichero WAV* y *Reproductor*: `/audio` se sirve desde memoria,
+  con los bytes leídos al arrancar) y la entrada de `prompts.md`, con el formato de `course.md` §5.
+  Verificar: `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm test:e2e` en verde.

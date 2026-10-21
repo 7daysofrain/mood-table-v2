@@ -2,8 +2,9 @@
 
 > **Origen:** historia [`MOO-22`](https://linear.app/7daysofrain/issue/MOO-22/oir-el-fichero-de-audio-en-el-panel-mientras-la-tira-reacciona)
 > · Oír el fichero de audio en el panel mientras la tira reacciona · épica **H1** · expectativas **E7**
-> y **E2**. Tareas: `MOO-56` (servir el fichero de audio y el punto por el que va el motor) y `MOO-57`
-> (oír el fichero de audio en el panel al ritmo del motor).
+> y **E2**. Tareas: `MOO-56` (servir el fichero de audio y el punto por el que va el motor), `MOO-57`
+> (oír el fichero de audio en el panel al ritmo del motor) y `MOO-58` (servir en `/audio` el fichero
+> leído al arrancar).
 
 ## Why
 

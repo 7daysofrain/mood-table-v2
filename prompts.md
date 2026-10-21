@@ -887,6 +887,23 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El humano repitió la prueba a oído tras los cambios: «perfecto, mejor que antes». El registro de medidas se perdió con una recarga de la página, y la PR lo dice en lugar de dar números.*
 - *Con la PR lista para revisión, el humano pidió otra pasada del subagente. Encontró que la simulación de deriva acotaba con la tolerancia de la spec y no veía un sesgo común: lo demostró quitando el retraso declarado del reproductor, y el test seguía en verde. Así, lo que `design.md`, esta entrada y la PR daban por cubierto no lo estaba. La IA acotó la simulación al umbral de salto, comprobó con la misma mutación que ahora falla y arregló otros tres fallos pequeños del reproductor que también vio la revisión. El humano aprobó todo de una vez.*
 
+#### 6.20 Servir en `/audio` el fichero leído al arrancar, y un archivo a destiempo (`MOO-58`)
+
+**Prompt 1:**
+
+> igual hemos archivado demasiado pronto? No queda la MOO.22?
+
+*Claude Code (`claude-opus-5-5`, 20-21 oct). Con `MOO-57` integrada, el humano pidió «sync y archive» y la IA archivó el change: 30 de 30 tareas en el `tasks.md`. No había mirado las subtareas de la historia en Linear, donde seguía en Backlog `MOO-58`, salida de la revisión de la PR de `MOO-56`, con sus pasos previstos en ese mismo change. La IA lo reconoció, propuso cerrar sin mergear la PR del archivo (nada había llegado a `main`) en lugar de dejar `MOO-58` como *chore*, y guardó en su memoria comprobar las subtareas antes de archivar.*
+
+**Prompt 2:**
+
+> si hagamos eso, vuelta atrás
+
+*Con la PR cerrada y la rama borrada, `MOO-58` siguió el flujo previsto: `/opsx:update` de la decisión 6, un escenario nuevo en la spec («El fichero cambia en disco con el motor en marcha», trazado a la descripción de la tarea) y la sección 3 del `tasks.md`. La IA recomendó el escenario porque es comportamiento observable desde la API; el humano lo aceptó.*
+
+*Ajustes durante la implementación:*
+- *El servidor ya no lee el disco en cada petición: sirve los bytes que leyó `loadAudioFile` al arrancar. El test antiguo («si el fichero ya no se puede leer, falla sin decir su ruta») se sustituyó, porque ese fallo deja de existir.*
+
 ---
 
 ### 7. Pull Requests
