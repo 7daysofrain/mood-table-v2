@@ -21,7 +21,8 @@ fichero de configuración y el servicio) está en el [README §1.4](readme.md#3-
 | **Tira** | 173 LEDs direccionables de 5 V tipo WS2812B, orden de color GRB (pistas `+5V`, `Din`, `GND`; una flecha marca el sentido de los datos) | ✅ |
 | **Fuente de la tira** | Adaptador AC/DC YU0508: **5 V · 8 A**, clavija de barril con el **positivo en el centro**. Mide 5,36 V en la entrada de la tira, con la tira apagada | ✅ |
 | **Audio** | Tarjeta de sonido USB C-Media "USB PnP Sound Device" (`08bb:2902`), captura **mono**, 44,1/48 kHz | ✅ |
-| **Cable de audio** | RCA → minijack, desde la salida **booth** del mixer | ✅ |
+| **Mixer** | Pioneer XDJ-AZ: salida **Booth** (dos jacks de 6,35 mm TRS balanceados, L y R, con su propio mando de nivel) | ✅ |
+| **Cable de audio** | Minijack **de 3 contactos (TRS)** a dos jacks mono de 6,35 mm; solo el **izquierdo**, a *Booth L*. No uno de auriculares con micrófono (4 contactos, TRRS): §8 | ✅ |
 
 **Cualquier controlador Adalight sirve.** La tira, el Light Box y el adaptador vinieron en un kit
 "Dream Color"; el **Light Box** era un controlador Adalight con el mismo chip CH340, pero **se averió**
@@ -39,7 +40,7 @@ flowchart LR
   red1["🔌 Red 230 V"] --> trafoPi["Transformador USB-C<br/>de la Pi"]
   red2["🔌 Red 230 V"] --> fuente["Adaptador 5 V · 8 A"]
   trafoPi -->|USB-C| pi["Raspberry Pi 4"]
-  mixer["🎚️ Mixer · salida booth"] -->|RCA → minijack| tarjeta["Tarjeta de sonido USB"]
+  mixer["🎚️ XDJ-AZ · Booth L"] -->|jack mono → minijack| tarjeta["Tarjeta de sonido USB"]
   tarjeta -->|USB| pi
   pi -->|USB| uno["Arduino Uno<br/>(CH340 · Adalight)"]
   uno -->|"pin 6 → datos<br/>GND → masa"| tira["Tira LED 5 V<br/>extremo Din"]
@@ -115,8 +116,10 @@ Haz todo **con todo desenchufado de la red** y enchufa solo cuando lo diga el pa
    (§5, medidas 1 y 2). Después conecta el adaptador a la clavija hembra de la tira y enchúfalo.
 4. **Tira, datos (lo último).** Conecta el cable de datos al Arduino: rojo al pin 6, negro a `GND`. Va
    después de la alimentación para proteger el primer LED (§2).
-5. **Audio.** Conecta la tarjeta de sonido por USB a la Pi y el cable RCA → minijack desde la salida
-   **booth** del mixer a la **entrada** de la tarjeta.
+5. **Audio.** Conecta la tarjeta de sonido por USB a la Pi, y el jack mono **izquierdo** del cable a
+   la salida *Booth L* del mixer y su minijack a la **entrada** de la tarjeta, hasta el fondo. El
+   izquierdo va por la punta del minijack, que es lo que lee la entrada de micro; el anillo (el
+   derecho) lleva la alimentación de los micros *electret* y se queda sin conectar.
 6. **Comprueba** que la Pi ve todo (§7) y sigue con la instalación del software (README §1.4).
 
 ### 4.1. Cargar Adalight en el Arduino
@@ -313,9 +316,27 @@ serie.
 arecord -l
 ```
 
-La tarjeta aparece como `card N: Device [USB PnP Sound Device]`. Usa su nombre,
-`plughw:CARD=Device,DEV=0`, no el número `N`, que también puede cambiar: en este montaje pasó de la
-`card 2` a la `card 1` al reinstalar la Pi sin la pantalla de la v1.
+La tarjeta aparece como `card N: Device [USB PnP Sound Device], device 0: …`. La cadena que va en el
+`device` de la fuente de audio (`audioSource`, README §3) se arma con el nombre que sale antes de los
+corchetes y el número de `device`: `plughw:CARD=Device,DEV=0`.
+
+- **El nombre, no el número `N`**, que puede cambiar: en este montaje pasó de la `card 2` a la `card 1`
+  al reinstalar la Pi sin la pantalla de la v1.
+- **`plughw`, no `hw`**: el motor pide 16 bits, mono, a 48 kHz, y `plughw` convierte en ALSA si la
+  tarjeta no lo graba así. La de la mesa sí, pero muchas USB baratas solo graban en estéreo, y con
+  `hw` el motor no arrancaría.
+- **Dos tarjetas iguales** se llaman igual, y ALSA renombra la segunda (`Device_1`) según el orden en
+  que las detecta, que puede cambiar. Para fijarlo, una regla de udev que dé a cada una un nombre por
+  el puerto USB en el que está (atributo `id` del dispositivo de sonido). No está automatizado.
+
+Para comprobar que el motor podrá leerla, graba 3 segundos con los mismos parámetros que usa:
+
+```bash
+arecord -D plughw:CARD=Device,DEV=0 -t raw -f S16_LE -c 1 -r 48000 -d 3 > /dev/null
+```
+
+Si no dice nada, la tarjeta se abre. Si dice `audio open error`, la cadena no existe o la tarjeta no
+está conectada: es lo mismo que dirá el motor al no arrancar.
 
 **Permisos:** el usuario que ejecuta el motor tiene que estar en los grupos `dialout` (puerto serie) y
 `audio` (tarjeta de sonido).
@@ -333,12 +354,65 @@ Si las dos horas son distintas, se está escribiendo.
 
 ## 8. Audio: nivel de entrada
 
+El motor no toca el mezclador de la tarjeta (D59): se ajusta una vez, al montar la mesa, con el
+vúmetro de la cabecera del panel como medidor.
+
+1. **Mira sus controles.** Cada tarjeta tiene los suyos; la de la mesa, `Mic` (la ganancia de
+   grabación, de 0 a 16) y `Auto Gain Control`:
+
+   ```bash
+   amixer -c Device scontents
+   ```
+
+2. **Apaga el control automático de ganancia.** Sube lo flojo y baja lo fuerte: aplana justo la
+   dinámica que tiene que mostrar *energía*. ✅ En la de la mesa, comprobado el 21-oct, no cambia el
+   nivel de la grabación (`amixer` lo lista como control de reproducción); se apaga igualmente.
+
+   ```bash
+   amixer -c Device sset 'Auto Gain Control' off
+   ```
+
+3. **Ajusta el nivel** con música real: primero el mando *booth* del mixer, y luego la ganancia de
+   grabación, por ejemplo `amixer -c Device sset Mic 5 cap` (cada paso son unos 1,5 dB). El vúmetro
+   mide el nivel medio (RMS) cada 40 ms, y los picos de la música quedan bastante por encima: lo
+   seguro es mirar los picos de verdad con el motor parado, grabando unos segundos con `arecord`
+   (§7), y dejar 5 dB de margen hasta 0 dBFS. ✅ En la mesa (21-oct), la salida *booth* de la XDJ-AZ
+   es de línea profesional: con el mando a medio recorrido **recortaba incluso con `Mic` a 0**. Con
+   el mando **a un tercio** y **`Mic` a 5** (+7,4 dB), la música queda en unos −33 dBFS de mediana y
+   −17 de máximo en el vúmetro; con `Mic` a 6, los picos de muestra llegaban a −4,1 dBFS sin
+   recortar, así que con 5 quedan hacia −5,6. El
+   mando es muy progresivo: de medio recorrido a un tercio baja unos 16 dB.
+4. **Guárdalo**, para que sobreviva a un reinicio: `sudo alsactl store`.
+5. **Elige el umbral de silencio** con el mixer conectado y en silencio. El vúmetro empieza en −60 dBFS,
+   el umbral por defecto (`silenceThreshold`, README §3): si con el mixer en silencio el vúmetro se
+   mueve, el ruido pasa del umbral y una tira con *energía* parpadearía. Sube `silenceThreshold` en
+   `config/local.json` (por ejemplo, a −50) y reinicia el motor hasta que la tira se quede apagada.
+   Si el ruido queda muy por debajo, puedes **bajar** el umbral para no perder los pasajes suaves de
+   la música: déjalo unos 6 dB por encima del ruido. Con la entrada vacía, la tarjeta de la mesa da
+   unos −80 dBFS de ruido. ✅ En la mesa (21-oct), con la XDJ-AZ en pausa, el *booth* a un tercio y
+   `Mic` a 5, el ruido es de **−72 dBFS**, muy estable (no se mueve más de 1,5 dB), y no depende del
+   mando *booth*. La música más floja de un tema rondaba −61: con −60, *energía* se apagaba en ella.
+   Elegido **`silenceThreshold: −65`**: con la música, *energía* enciende el 92-97 % de los frames
+   (el resto son los huecos entre golpes), y en pausa, ninguno.
+
+- **Si el vúmetro se mueve con la música parada y cambia al tocar el cable, es el cable, no el
+  umbral.** No subas `silenceThreshold` para taparlo: quedaría por encima de los pasajes suaves de
+  la música y la tira se apagaría con ellos. En una prueba con un reproductor FiiO M21 y un cable
+  con soporte de micrófono (jack de 4 contactos, TRRS) en la entrada de micro de la tarjeta (3
+  contactos), el fondo con la música parada iba de −77 a −44 dBFS según cómo asentaba el jack: un
+  zumbido de 100 Hz con sus armónicos, y chasquidos de hasta −2 dBFS al moverlo. Con el cable de
+  la mesa (TRS), al moverlo hay chasquidos, pero al soltarlo vuelve al mismo fondo. El jack de 4
+  contactos cruza la masa con la línea del micro, que además lleva la alimentación de los micros
+  *electret*. Usa un cable de 3 contactos o mono, encajado hasta el fondo. Si con él sigue un
+  zumbido estable de 100 Hz, es un lazo de masa: enchufa la Pi y el mixer a la misma regleta o
+  pon un aislador de masa en la salida booth.
+
 - Estas tarjetas suelen tener **entrada de micrófono**, y la salida booth es de **nivel de línea**:
-  puede saturar y los efectos reaccionarían a tope todo el rato. ⏳ Comprobar con música real y, si
-  satura, bajar la ganancia de captura con `alsamixer` (tecla `F4`) o usar un cable atenuador
-  ([MOO-53](https://linear.app/7daysofrain/issue/MOO-53)).
-- La tarjeta captura en **mono**: del RCA solo se usa un canal (normalmente el izquierdo). Para analizar
-  la música basta.
+  satura, y los efectos reaccionarían a tope todo el rato. Si satura con la ganancia al mínimo, baja
+  el mando *booth*, y si no basta, usa un cable atenuador. ✅ En la mesa satura con el *booth* a medio
+  recorrido; a un tercio, no (paso 3, [MOO-53](https://linear.app/7daysofrain/issue/MOO-53)).
+- La tarjeta captura en **mono**: solo se usa el canal izquierdo del *booth*. Para analizar la música
+  basta.
 - **El mando booth del mixer cambia cuánto reaccionan los efectos.** Ajústalo una vez y no lo toques
   durante la sesión.
 
@@ -347,4 +421,7 @@ Si las dos horas son distintas, se está escribiendo.
 - ⏳ Resistencia de 330 Ω en serie con `Din` (§2).
 - ⏳ Conexión fija entre el Arduino y el cable de datos, sin pines Dupont en la regleta (§2).
 - ⏳ Medidas 1, 2 y 4 de §5.
-- ⏳ Nivel de audio con música real: [MOO-53](https://linear.app/7daysofrain/issue/MOO-53).
+- ✅ ~~Nivel de audio con música real~~: comprobado el 21-oct (§8),
+  [MOO-53](https://linear.app/7daysofrain/issue/MOO-53).
+- ✅ ~~Cable de audio de 3 contactos (TRS) en lugar del de micrófono (TRRS)~~: con la XDJ-AZ, el fondo
+  es estable (§8).

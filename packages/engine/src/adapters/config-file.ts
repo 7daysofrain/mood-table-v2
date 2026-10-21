@@ -54,6 +54,8 @@ export async function loadConfig(
   if (!result.ok) return { ok: false, error: `${path}: ${result.error}` };
 
   const { config } = result;
-  if (config.audioSource) config.audioSource.path = resolve(root, config.audioSource.path);
+  if (config.audioSource?.type === 'file') {
+    config.audioSource.path = resolve(root, config.audioSource.path);
+  }
   return { ok: true, config, path, file: override || CONFIG_FILE };
 }

@@ -23,7 +23,7 @@ import { blur, follow, gaussianKernel } from './dsp.ts';
 export interface AudioFeatures {
   /** Energía de cada banda mel, de graves a agudos, ya normalizada. */
   readonly bands: Float32Array;
-  /** La ventana es silencio digital: un efecto reactivo se apaga. */
+  /** La ventana es silencio, digital o por debajo del umbral: un efecto reactivo se apaga. */
   silent: boolean;
 }
 
@@ -55,8 +55,14 @@ const GAIN_BLUR_SIGMA = 1;
 /** Para no dividir por 0 si la ganancia llegara a apagarse del todo (no está en la v1). */
 const GAIN_FLOOR = 1e-12;
 
-export function createAudioAnalyzer(sampleRate: number): AudioAnalyzer {
+/**
+ * `silenceThreshold` (dBFS), si la fuente lo tiene: una ventana cuyo nivel queda por debajo también
+ * es silencio (decisión 7 del change soundcard-audio-source). Sin él, solo el silencio digital.
+ */
+export function createAudioAnalyzer(sampleRate: number, silenceThreshold?: number): AudioAnalyzer {
   const window = new Float32Array(Math.round(WINDOW_SECONDS * sampleRate));
+  // Sin umbral (un fichero), solo cuenta el silencio digital y no hace falta medir el nivel.
+  const silenceLevel = silenceThreshold === undefined ? undefined : 10 ** (silenceThreshold / 20);
   const fftSize = 2 ** Math.ceil(Math.log2(window.length));
   const hamming = Float64Array.from(
     { length: window.length },
@@ -83,14 +89,13 @@ export function createAudioAnalyzer(sampleRate: number): AudioAnalyzer {
     fftSize,
 
     level() {
-      let sum = 0;
-      for (const sample of window) sum += sample * sample;
-      return Math.sqrt(sum / window.length);
+      return rms(window);
     },
 
     update(dt) {
-      // Puerta de silencio de la v1: en silencio digital no se actualiza nada.
-      features.silent = isSilent(window);
+      // Puerta de silencio de la v1: en silencio no se actualiza nada.
+      features.silent =
+        isSilent(window) || (silenceLevel !== undefined && rms(window) < silenceLevel);
       if (features.silent) return features;
 
       for (let index = 0; index < window.length; index++) {
@@ -132,6 +137,12 @@ export function createAudioAnalyzer(sampleRate: number): AudioAnalyzer {
 function isSilent(window: Float32Array): boolean {
   for (const sample of window) if (Math.abs(sample) >= SILENCE_THRESHOLD) return false;
   return true;
+}
+
+function rms(window: Float32Array): number {
+  let sum = 0;
+  for (const sample of window) sum += sample * sample;
+  return Math.sqrt(sum / window.length);
 }
 
 function peak(values: Float64Array): number {

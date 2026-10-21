@@ -90,9 +90,16 @@ describe('el mensaje de la fuente de audio', () => {
     );
   });
 
+  it('con una tarjeta de sonido, lleva la clase 2 y su nombre en UTF-8, como en el documento', () => {
+    expect(hexOf(encodeSource({ kind: 'soundcard', name: 'Mixer de la mesa' }))).toBe(
+      '02 02 4d 69 78 65 72 20 64 65 20 6c 61 20 6d 65 73 61',
+    );
+  });
+
   it.each([
     [{ kind: 'none' as const }],
     [{ kind: 'file' as const, name: 'Canción del año (versión ñ).wav' }],
+    [{ kind: 'soundcard' as const, name: 'Mixer de la mesa' }],
   ])('%j se decodifica igual que se codificó', (source) => {
     expect(decodeSource(encodeSource(source))).toEqual(source);
   });
@@ -104,6 +111,8 @@ describe('el mensaje de la fuente de audio', () => {
     ['sin fuente pero con nombre', [2, 0, 0x61]],
     ['de un fichero sin nombre', [2, 1]],
     ['con un nombre que no es UTF-8 válido', [2, 1, 0xff, 0xfe]],
+    ['de una tarjeta de sonido sin nombre', [2, 2]],
+    ['de una tarjeta de sonido con un nombre que no es UTF-8 válido', [2, 2, 0xff, 0xfe]],
   ])('%s, se rechaza', (_name, bytes) => {
     expect(decodeSource(Uint8Array.from(bytes))).toBeUndefined();
   });

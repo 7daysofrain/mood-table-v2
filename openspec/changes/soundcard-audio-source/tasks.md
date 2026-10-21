@@ -9,7 +9,7 @@
 
 ## 1. MOO-23 · engine
 
-- [ ] 1.1 **(test en rojo)** Tests del esquema en `packages/shared/src/config.test.ts`: acepta
+- [x] 1.1 **(test en rojo)** Tests del esquema en `packages/shared/src/config.test.ts`: acepta
   `{ "type": "soundcard", "name", "device" }` y aplica `silenceThreshold: -60`; acepta un
   `silenceThreshold` de −120, de 0 y de −45,5; rechaza, nombrando el campo, una tarjeta sin `name` o
   sin `device`, con alguno vacío, con `silenceThreshold` fuera de −120 a 0 o que no es un número, y
@@ -17,29 +17,29 @@
   y «soundcard»; un efecto reactivo con una tarjeta como fuente arranca (`specs/engine-config`,
   decisión 3).
   Verificar: los tests nuevos fallan porque el tipo `soundcard` no existe; el resto sigue en verde.
-- [ ] 1.2 `AudioSourceConfigSchema` con la variante `soundcard` (cerrada, como la de `file`) y el
+- [x] 1.2 `AudioSourceConfigSchema` con la variante `soundcard` (cerrada, como la de `file`) y el
   valor por defecto de `silenceThreshold`.
   Verificar: los tests de 1.1 pasan.
-- [ ] 1.3 **(test en rojo)** Tests del protocolo en `packages/shared/src/viewer-protocol.test.ts`:
+- [x] 1.3 **(test en rojo)** Tests del protocolo en `packages/shared/src/viewer-protocol.test.ts`:
   `encodeSource` con `{ kind: 'soundcard', name: 'Mixer de la mesa' }` da `02 02` seguido del nombre
   en UTF-8, y `decodeSource` lo devuelve igual; rechaza la clase `2` sin nombre o con un UTF-8
   inválido; las clases `0` y `1` no cambian (decisión 9).
   Verificar: los tests nuevos fallan porque la clase `2` no existe.
-- [ ] 1.4 `SourceMessage` con `kind: 'soundcard'` y la clase `2` en `encodeSource` y `decodeSource`;
+- [x] 1.4 `SourceMessage` con `kind: 'soundcard'` y la clase `2` en `encodeSource` y `decodeSource`;
   `docs/instructions/viewer-protocol.md` con la clase nueva y su ejemplo.
   Verificar: los tests de 1.3 pasan, el documento describe exactamente lo que hace el código, y
   `pnpm typecheck` pasa también en `panel` (la cabecera aún dice «Fichero:» para la tarjeta: estado
   intermedio de la decisión 2).
-- [ ] 1.5 **(test en rojo)** Tests del núcleo: con una fuente en memoria que declara
+- [x] 1.5 **(test en rojo)** Tests del núcleo: con una fuente en memoria que declara
   `silenceThreshold: -60`, un ruido de −80 dBFS RMS cuenta como silencio y *energía* deja la tira a 0;
   una señal de −30 dBFS no, y la tira reacciona; una fuente sin `silenceThreshold` y ese mismo ruido
   no es silencio (la puerta digital sigue igual); los frames dorados de `energy` no cambian
   (`specs/effects`, decisión 7).
   Verificar: los tests nuevos fallan porque el análisis no conoce el umbral.
-- [ ] 1.6 `silenceThreshold` opcional (dBFS) en el puerto `AudioSource`; el análisis lo recibe al
+- [x] 1.6 `silenceThreshold` opcional (dBFS) en el puerto `AudioSource`; el análisis lo recibe al
   crearse y da por silencio la ventana con silencio digital o con nivel RMS por debajo del umbral.
   Verificar: los tests de 1.5 pasan y los dorados no cambian.
-- [ ] 1.7 **(test en rojo)** Tests de `packages/engine/src/adapters/soundcard.ts` con un proceso falso
+- [x] 1.7 **(test en rojo)** Tests de `packages/engine/src/adapters/soundcard.ts` con un proceso falso
   en memoria (decisiones 4, 5 y 6):
   - los argumentos de `arecord` salen de `device` (`-q -D … -t raw -f S16_LE -c 1 -r 48000
     --period-time=10000 --buffer-time=40000`);
@@ -49,7 +49,7 @@
     fallo;
   - los bytes s16le se convierten a muestras de −1 a 1, también con bloques de longitud impar que
     parten una muestra;
-  - los primeros 14 400 bytes (300 ms) no llegan al búfer;
+  - las primeras 14 400 muestras (28 800 bytes, 300 ms) no llegan al búfer;
   - `read` da las últimas muestras, con ceros por delante si aún no hay bastantes, sin mirar `time`;
   - si el proceso termina en plena sesión, `read` da ceros desde ese momento y el log recibe una sola
     línea con el nombre, la cadena y el motivo;
@@ -57,19 +57,19 @@
     `positionAt`.
 
   Verificar: los tests nuevos fallan porque el adaptador no existe.
-- [ ] 1.8 `soundcard.ts` (la parte pura de 1.7) y `soundcard.hardware.ts` (`child_process.spawn` de
+- [x] 1.8 `soundcard.ts` (la parte pura de 1.7) y `soundcard.hardware.ts` (`child_process.spawn` de
   `arecord`, que implementa el proceso).
   Verificar: los tests de 1.7 pasan; `soundcard.hardware.ts` queda fuera de la cobertura por su
   nombre.
-- [ ] 1.9 **(test en rojo)** Tests de `engine.ts`: `sourceMessage` con una tarjeta como fuente da
+- [x] 1.9 **(test en rojo)** Tests de `engine.ts`: `sourceMessage` con una tarjeta como fuente da
   `{ kind: 'soundcard', name }`, sin la cadena de dispositivo; con un fichero, igual que ahora
   (`specs/audio-source`, *Un panel se conecta con la tarjeta de sonido como fuente*).
   Verificar: los tests nuevos fallan porque `sourceMessage` solo conoce el fichero.
-- [ ] 1.10 `sourceMessage` con la tarjeta; `main.ts` abre la tarjeta antes que el servidor (como el
+- [x] 1.10 `sourceMessage` con la tarjeta; `main.ts` abre la tarjeta antes que el servidor (como el
   fichero), con el log de la pérdida en `console.error`, y no sirve `/audio` con ella.
   Verificar: los tests de 1.9 pasan; en el Mac, con una tarjeta declarada, `pnpm dev` no arranca y
   dice que necesita Linux con ALSA.
-- [ ] 1.11 Comprobación en la Pi (excepción al DoD de la historia; el usuario está en la mesa):
+- [x] 1.11 Comprobación en la Pi (excepción al DoD de la historia; el usuario está en la mesa):
   - con la cadena de la tarjeta de la mesa, el motor arranca aunque no le llegue nada;
   - con la tarjeta desconectada, y con una cadena que no existe, no arranca y lo dice (los dos
     ejemplos del esquema de `MOO-15`);
@@ -80,7 +80,7 @@
 
   Verificar: lo comprobado, y los valores de ganancia y umbral elegidos, quedan en la descripción de
   la PR.
-- [ ] 1.12 Documentación:
+- [x] 1.12 Documentación:
   - README §2.2 (adaptador *Tarjeta de sonido*: `arecord`, búfer circular, descarte inicial, arranque
     y pérdida, umbral de silencio) y §3 (el tipo `soundcard` de `audioSource`, con un ejemplo);
   - `HARDWARE_SETUP.md`: cómo sacar la cadena con `arecord -l`, por qué `plughw` y el nombre en vez
