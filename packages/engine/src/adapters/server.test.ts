@@ -302,6 +302,18 @@ async function everythingIn(response: Response): Promise<string> {
   return [...response.headers.entries()].flat().join('\n') + (await response.text());
 }
 
+/**
+ * Que el cuerpo de `response` sea, byte a byte, `expected`. Con `Buffer.equals` y no con `toEqual`,
+ * que recorre los bytes uno a uno: con un WAV de 345 KB tardaba segundos en la CI con cobertura.
+ */
+async function expectBytes(response: Response, expected: Uint8Array): Promise<void> {
+  const received = Buffer.from(await response.arrayBuffer());
+  expect(
+    received.equals(expected),
+    `los bytes no coinciden (${received.length} recibidos, ${expected.length} esperados)`,
+  ).toBe(true);
+}
+
 describe('el fichero de audio en /audio', () => {
   it('con un fichero como fuente, es el fichero, byte a byte, como audio WAV', async () => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioBytes: await golpes() });
@@ -310,9 +322,7 @@ describe('el fichero de audio en /audio', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('audio/wav');
-    expect(new Uint8Array(await response.arrayBuffer())).toEqual(
-      new Uint8Array(await readFile(GOLPES)),
-    );
+    await expectBytes(response, await readFile(GOLPES));
   });
 
   it('las cabeceras no dicen dónde está el fichero en el disco', async () => {
@@ -348,7 +358,7 @@ describe('el fichero de audio en /audio', () => {
 
     for (const response of [changed, removed]) {
       expect(response.status).toBe(200);
-      expect(new Uint8Array(await response.arrayBuffer())).toEqual(audioBytes);
+      await expectBytes(response, audioBytes);
     }
   });
 });
