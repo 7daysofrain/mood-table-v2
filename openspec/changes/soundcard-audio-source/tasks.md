@@ -96,7 +96,7 @@
 
 ## 2. MOO-60 · panel
 
-- [ ] 2.1 **(test en rojo)** Tests de `AudioSourceIndicator` con Testing Library: con
+- [x] 2.1 **(test en rojo)** Tests de `AudioSourceIndicator` con Testing Library: con
   `{ kind: 'soundcard', name: 'Mixer de la mesa' }`, la cabecera dice «Tarjeta de sonido: Mixer de la
   mesa» y muestra el vúmetro; un nombre largo se recorta y el completo va en el `title`, como el del
   fichero. Test de `App`: con una tarjeta como fuente no aparece el control de oír
