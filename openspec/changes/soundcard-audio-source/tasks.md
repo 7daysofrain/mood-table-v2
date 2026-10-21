@@ -102,7 +102,7 @@
   fichero. Test de `App`: con una tarjeta como fuente no aparece el control de oír
   (`specs/audio-source`, *La cabecera nombra la tarjeta de sonido*; decisión 9).
   Verificar: los tests nuevos fallan porque la cabecera escribe «Fichero:».
-- [ ] 2.2 `AudioSourceIndicator` distingue la tarjeta del fichero.
+- [x] 2.2 `AudioSourceIndicator` distingue la tarjeta del fichero.
   Verificar: los tests de 2.1 pasan, y los E2E de HU1 y HU2 siguen pasando (no hay E2E nuevo: la CI no
   tiene tarjeta de sonido, `MOO-24`).
 - [ ] 2.3 Comprobación en la mesa del caso feliz de `MOO-15` (excepción al DoD): con música desde el

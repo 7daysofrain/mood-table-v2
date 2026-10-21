@@ -9,10 +9,14 @@ export interface LevelSource {
   readonly level: number | undefined;
 }
 
+/** Cómo se presenta cada fuente con nombre en la cabecera. */
+const SOURCE_LABEL = { file: 'Fichero', soundcard: 'Tarjeta de sonido' } as const;
+
 /**
  * Fuente de audio de la cabecera (specs/audio-source, decisión 14 del change
- * virtual-strip-audio-file): «Fichero: nombre» con su vúmetro, o «Sin fuente de audio». Sin conexión
- * no se sabe cuál es, así que no muestra nada.
+ * virtual-strip-audio-file y 9 del change soundcard-audio-source): «Fichero: nombre» o «Tarjeta de
+ * sonido: nombre» con su vúmetro, o «Sin fuente de audio». Sin conexión no se sabe cuál es, así que
+ * no muestra nada.
  */
 export function AudioSourceIndicator({
   source,
@@ -30,7 +34,7 @@ export function AudioSourceIndicator({
     <Group gap="xs" wrap="nowrap">
       {/* Un nombre largo se recorta para no desbordar la cabecera; el completo, al pasar el ratón. */}
       <Text size="sm" truncate="end" maw={260} title={source.name}>
-        {`Fichero: ${source.name}`}
+        {`${SOURCE_LABEL[source.kind]}: ${source.name}`}
       </Text>
       <LevelMeter levels={levels} />
     </Group>
