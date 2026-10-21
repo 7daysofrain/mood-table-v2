@@ -186,6 +186,6 @@
   `loadAudioFile`.
   Verificar: los tests de 3.1 pasan; con `pnpm dev`, `curl -sI http://127.0.0.1:8080/audio` da `200`
   y `audio/wav`.
-- [ ] 3.3 Documentación: README §2.2 (*Fichero WAV* y *Reproductor*: `/audio` se sirve desde memoria,
+- [x] 3.3 Documentación: README §2.2 (*Fichero WAV* y *Reproductor*: `/audio` se sirve desde memoria,
   con los bytes leídos al arrancar) y la entrada de `prompts.md`, con el formato de `course.md` §5.
   Verificar: `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm test:e2e` en verde.
