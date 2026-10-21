@@ -46,6 +46,8 @@ async function main(): Promise<string | undefined> {
       audioBytes: audio?.ok ? audio.bytes : undefined,
     });
   } catch (error) {
+    // Un `arecord` vivo mantendría el proceso en marcha, y el motor no terminaría.
+    soundcard?.stop();
     return `No puede escuchar en ${host}:${port} (${(error as Error).message})`;
   }
 

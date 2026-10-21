@@ -25,5 +25,6 @@ export const spawnCapture: SpawnCapture = (command, args) => {
       child.on('error', (error) => once({ code: null, error }));
       child.on('close', (code) => once({ code }));
     },
+    stop: () => child.kill(),
   };
 };

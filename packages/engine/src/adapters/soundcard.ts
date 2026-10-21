@@ -9,7 +9,9 @@
  *
  * El motor solo no arranca si `arecord` termina antes de entregar el primer bloque: no puede abrir
  * el dispositivo. Que no llegue música no es un fallo. Si termina con el motor en marcha, la fuente
- * da silencio desde ese momento y lo dice una vez en el log; no se vuelve a abrir (`MOO-59`).
+ * da silencio desde ese momento y lo dice una vez en el log; no se vuelve a abrir (`MOO-59`). Si el
+ * motor no llega a arrancar por otra cosa (el servidor no puede escuchar), para la fuente: un
+ * `arecord` vivo mantendría el proceso en marcha.
  */
 import type { AudioSourceConfig } from '@moodtable/shared';
 
@@ -29,11 +31,16 @@ export interface CaptureProcess {
   onStderr(listener: (chunk: Uint8Array) => void): void;
   /** Se llama una sola vez. */
   onExit(listener: (exit: CaptureExit) => void): void;
+  /** Termina el proceso. */
+  stop(): void;
 }
 
 export type SpawnCapture = (command: string, args: readonly string[]) => CaptureProcess;
 
-export type OpenedSoundcard = { ok: true; source: AudioSource } | { ok: false; error: string };
+/** `stop` para `arecord` y deja la fuente en silencio, sin contarlo como una pérdida. */
+export type OpenedSoundcard =
+  | { ok: true; source: AudioSource; stop: () => void }
+  | { ok: false; error: string };
 
 /** Lo que la tarjeta de la mesa graba sin conversión (design.md, contexto). */
 const SAMPLE_RATE = 48_000;
@@ -87,7 +94,14 @@ export function openSoundcard(
       source.write(chunk);
       if (started) return;
       started = true;
-      resolve({ ok: true, source });
+      resolve({
+        ok: true,
+        source,
+        stop() {
+          source.lose();
+          capture.stop();
+        },
+      });
     });
     capture.onExit((exit) => {
       if (started) {

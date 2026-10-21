@@ -210,8 +210,9 @@ de ambiente y, con el despliegue, acaba en el bucle de reinicios.
 - **Descarte de 300 ms**: el chasquido que se midió al abrir la tarjeta dura unos 250 ms. Durante los
   primeras 14 400 muestras (28 800 bytes), el adaptador no escribe en el búfer. El primer bloque sigue
   confirmando el arranque (decisión 4): el descarte no lo retrasa.
-- **El proceso es una interfaz mínima** (`onData`, `onStderr` y `onExit` con el código o el error al
-  lanzarlo; la última línea de `stderr` la guarda la parte pura), que `soundcard.hardware.ts` implementa con `child_process.spawn` y los tests con un falso
+- **El proceso es una interfaz mínima** (`onData`, `onStderr`, `onExit` con el código, la señal o el
+  error al lanzarlo, y `stop`; la última línea de `stderr` la guarda la parte pura), que
+  `soundcard.hardware.ts` implementa con `child_process.spawn` y los tests con un falso
   en memoria. El test decide cuándo llegan los bloques y cuándo termina el proceso, sin temporizadores
   ni un guion de shell en el `PATH`. Lo que no cubre (que `arecord` acepte esos argumentos y entregue
   ese formato) se comprueba en la mesa, y algún día en la CI con `MOO-24`.
