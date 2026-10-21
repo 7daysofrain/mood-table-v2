@@ -170,9 +170,8 @@ describe('el arranque', () => {
     expect(await pending).toEqual({
       ok: false,
       error:
-        'tarjeta de sonido «Mixer de la mesa» (plughw:CARD=Device,DEV=0): la tarjeta de sonido ' +
-        'necesita Linux con ALSA (no se encuentra arecord); ' +
-        'en este equipo, usa un fichero de audio',
+        'tarjeta de sonido «Mixer de la mesa» (plughw:CARD=Device,DEV=0): necesita Linux con ALSA ' +
+        '(no se encuentra arecord); en este equipo, usa un fichero de audio',
     });
   });
 

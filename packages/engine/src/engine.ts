@@ -67,10 +67,13 @@ export function startupMessage(file: string, config: Config, panelUrl: string): 
 /**
  * La fuente de audio tal como se anuncia a los paneles: si es un fichero, solo su nombre, nunca la
  * ruta, que en la demo pública es la del disco de la instancia (decisión 5 del change
- * virtual-strip-audio-file).
+ * virtual-strip-audio-file); si es una tarjeta de sonido, el nombre que le da la configuración, nunca
+ * su cadena de ALSA (decisión 9 del change soundcard-audio-source).
  */
 export function sourceMessage(config: Config): SourceMessage {
-  return config.audioSource?.type === 'file'
-    ? { kind: 'file', name: basename(config.audioSource.path) }
-    : { kind: 'none' };
+  const { audioSource } = config;
+  if (!audioSource) return { kind: 'none' };
+  return audioSource.type === 'file'
+    ? { kind: 'file', name: basename(audioSource.path) }
+    : { kind: 'soundcard', name: audioSource.name };
 }

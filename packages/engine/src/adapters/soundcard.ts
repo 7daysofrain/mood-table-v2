@@ -104,7 +104,7 @@ export function openSoundcard(
 function startupProblem(exit: CaptureExit, stderr: LastLine): string {
   if (exit.error?.code === 'ENOENT') {
     return (
-      'la tarjeta de sonido necesita Linux con ALSA (no se encuentra arecord); ' +
+      'necesita Linux con ALSA (no se encuentra arecord); ' +
       'en este equipo, usa un fichero de audio'
     );
   }

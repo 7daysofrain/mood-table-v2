@@ -65,7 +65,7 @@
   `{ kind: 'soundcard', name }`, sin la cadena de dispositivo; con un fichero, igual que ahora
   (`specs/audio-source`, *Un panel se conecta con la tarjeta de sonido como fuente*).
   Verificar: los tests nuevos fallan porque `sourceMessage` solo conoce el fichero.
-- [ ] 1.10 `sourceMessage` con la tarjeta; `main.ts` abre la tarjeta antes que el servidor (como el
+- [x] 1.10 `sourceMessage` con la tarjeta; `main.ts` abre la tarjeta antes que el servidor (como el
   fichero), con el log de la pérdida en `console.error`, y no sirve `/audio` con ella.
   Verificar: los tests de 1.9 pasan; en el Mac, con una tarjeta declarada, `pnpm dev` no arranca y
   dice que necesita Linux con ALSA.
