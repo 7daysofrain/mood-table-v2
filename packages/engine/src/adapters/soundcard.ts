@@ -19,9 +19,13 @@ import type { AudioSource } from '../core/audio/audio-source.ts';
 
 export type SoundcardConfig = Extract<AudioSourceConfig, { type: 'soundcard' }>;
 
-/** Cómo termina el proceso: con su código, o con el error al lanzarlo (sin `arecord`, `ENOENT`). */
+/**
+ * Cómo termina el proceso: con su código, con la señal que lo paró, o con el error al lanzarlo (sin
+ * `arecord`, `ENOENT`).
+ */
 export interface CaptureExit {
   code: number | null;
+  signal?: string | null;
   error?: Error & { code?: string };
 }
 
@@ -91,6 +95,8 @@ export function openSoundcard(
     let started = false;
     capture.onStderr((chunk) => stderr.push(chunk));
     capture.onData((chunk) => {
+      // Lo que `arecord` dijo antes de este bloque no explica cómo acabe (un *overrun*, y sigue).
+      stderr.forget();
       source.write(chunk);
       if (started) return;
       started = true;
@@ -125,16 +131,18 @@ function startupProblem(exit: CaptureExit, stderr: LastLine): string {
   return `no se puede abrir (${reasonOf(exit, stderr)})`;
 }
 
-/** Lo que dice `arecord` al terminar; si no dice nada, su código. */
+/** Lo que dice `arecord` al terminar; si no dice nada, su código o la señal que lo paró. */
 function reasonOf(exit: CaptureExit, stderr: LastLine): string {
   if (exit.error) return exit.error.message;
-  return (
-    stderr.line ||
-    (exit.code === null ? 'arecord ha terminado' : `arecord ha terminado con el código ${exit.code}`)
-  );
+  if (stderr.line) return stderr.line;
+  if (exit.code !== null) return `arecord ha terminado con el código ${exit.code}`;
+  return exit.signal ? `arecord ha terminado por la señal ${exit.signal}` : 'arecord ha terminado';
 }
 
-/** La última línea no vacía de `stderr`, aunque llegue partida en varios bloques. */
+/**
+ * La última línea no vacía de `stderr` desde el último bloque de audio, aunque llegue partida en
+ * varios bloques.
+ */
 class LastLine {
   line = '';
   private readonly decoder = new TextDecoder();
@@ -144,6 +152,10 @@ class LastLine {
     const lines = (this.pending + this.decoder.decode(chunk, { stream: true })).split('\n');
     this.pending = lines.pop() ?? '';
     for (const each of [...lines, this.pending]) if (each.trim()) this.line = each.trim();
+  }
+
+  forget(): void {
+    this.line = '';
   }
 }
 

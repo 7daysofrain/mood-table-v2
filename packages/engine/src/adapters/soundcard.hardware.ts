@@ -23,7 +23,7 @@ export const spawnCapture: SpawnCapture = (command, args) => {
         listener(exit);
       };
       child.on('error', (error) => once({ code: null, error }));
-      child.on('close', (code) => once({ code }));
+      child.on('close', (code, signal) => once({ code, signal }));
     },
     stop: () => child.kill(),
   };
