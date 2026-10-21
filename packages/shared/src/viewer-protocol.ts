@@ -85,6 +85,12 @@ const SOURCE_SOUNDCARD = 2;
 
 const SOURCE_CLASS = { none: SOURCE_NONE, file: SOURCE_FILE, soundcard: SOURCE_SOUNDCARD } as const;
 
+/** Las clases de fuente que llevan nombre, por su byte. */
+const NAMED_SOURCE: Partial<Record<number, 'file' | 'soundcard'>> = {
+  [SOURCE_FILE]: 'file',
+  [SOURCE_SOUNDCARD]: 'soundcard',
+};
+
 /** Tipo (1 byte) + `seq` (4 bytes, big-endian) + nivel (`float32`, big-endian). */
 const LEVEL_MESSAGE_BYTES = 9;
 
@@ -102,8 +108,7 @@ export function encodeSource(source: SourceMessage): Uint8Array {
 export function decodeSource(message: Uint8Array): SourceMessage | undefined {
   if (message.length < 2 || message[0] !== SOURCE_MESSAGE_TYPE) return undefined;
   if (message[1] === SOURCE_NONE) return message.length === 2 ? { kind: 'none' } : undefined;
-  const kind =
-    message[1] === SOURCE_FILE ? 'file' : message[1] === SOURCE_SOUNDCARD ? 'soundcard' : undefined;
+  const kind = NAMED_SOURCE[message[1] ?? SOURCE_NONE];
   if (!kind || message.length === 2) return undefined;
   try {
     const name = new TextDecoder('utf-8', { fatal: true }).decode(message.subarray(2));

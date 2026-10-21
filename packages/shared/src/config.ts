@@ -182,16 +182,21 @@ function withAudioSourceErrors(errors: SchemaError[], config: unknown): SchemaEr
       instancePath: `/audioSource${error.instancePath}`,
     }));
   } else {
-    // Sin objeto, que lo sea; sin `type`, que falta; con uno que no existe, los que se admiten.
-    const keep = !isObject(source)
-      ? (error: SchemaError) => error.keyword === 'type'
-      : 'type' in source
-        ? (error: SchemaError) => error.instancePath === '/audioSource/type'
-        : (error: SchemaError) => error.keyword === 'required';
+    const keep = withoutVariant(source);
     replacement = errors.filter((error) => inSource(error) && keep(error));
   }
   const others = errors.filter((error) => !inSource(error));
   return [...others.slice(0, first), ...replacement, ...others.slice(first)];
+}
+
+/**
+ * Qué errores de `audioSource` se cuentan cuando su `type` no nombra ninguna variante: sin objeto,
+ * que lo sea; sin `type`, que falta; con uno que no existe, los valores que se admiten.
+ */
+function withoutVariant(source: unknown): (error: SchemaError) => boolean {
+  if (!isObject(source)) return (error) => error.keyword === 'type';
+  if ('type' in source) return (error) => error.instancePath === '/audioSource/type';
+  return (error) => error.keyword === 'required';
 }
 
 /**
