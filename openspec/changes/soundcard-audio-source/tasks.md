@@ -80,7 +80,7 @@
 
   Verificar: lo comprobado, y los valores de ganancia y umbral elegidos, quedan en la descripción de
   la PR.
-- [ ] 1.12 Documentación:
+- [x] 1.12 Documentación:
   - README §2.2 (adaptador *Tarjeta de sonido*: `arecord`, búfer circular, descarte inicial, arranque
     y pérdida, umbral de silencio) y §3 (el tipo `soundcard` de `audioSource`, con un ejemplo);
   - `HARDWARE_SETUP.md`: cómo sacar la cadena con `arecord -l`, por qué `plughw` y el nombre en vez

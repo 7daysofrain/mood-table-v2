@@ -313,9 +313,27 @@ serie.
 arecord -l
 ```
 
-La tarjeta aparece como `card N: Device [USB PnP Sound Device]`. Usa su nombre,
-`plughw:CARD=Device,DEV=0`, no el número `N`, que también puede cambiar: en este montaje pasó de la
-`card 2` a la `card 1` al reinstalar la Pi sin la pantalla de la v1.
+La tarjeta aparece como `card N: Device [USB PnP Sound Device], device 0: …`. La cadena que va en el
+`device` de la fuente de audio (`audioSource`, README §3) se arma con el nombre que sale antes de los
+corchetes y el número de `device`: `plughw:CARD=Device,DEV=0`.
+
+- **El nombre, no el número `N`**, que puede cambiar: en este montaje pasó de la `card 2` a la `card 1`
+  al reinstalar la Pi sin la pantalla de la v1.
+- **`plughw`, no `hw`**: el motor pide 16 bits, mono, a 48 kHz, y `plughw` convierte en ALSA si la
+  tarjeta no lo graba así. La de la mesa sí, pero muchas USB baratas solo graban en estéreo, y con
+  `hw` el motor no arrancaría.
+- **Dos tarjetas iguales** se llaman igual, y ALSA renombra la segunda (`Device_1`) según el orden en
+  que las detecta, que puede cambiar. Para fijarlo, una regla de udev que dé a cada una un nombre por
+  el puerto USB en el que está (atributo `id` del dispositivo de sonido). No está automatizado.
+
+Para comprobar que el motor podrá leerla, graba 3 segundos con los mismos parámetros que usa:
+
+```bash
+arecord -D plughw:CARD=Device,DEV=0 -t raw -f S16_LE -c 1 -r 48000 -d 3 > /dev/null
+```
+
+Si no dice nada, la tarjeta se abre. Si dice `audio open error`, la cadena no existe o la tarjeta no
+está conectada: es lo mismo que dirá el motor al no arrancar.
 
 **Permisos:** el usuario que ejecuta el motor tiene que estar en los grupos `dialout` (puerto serie) y
 `audio` (tarjeta de sonido).
@@ -333,9 +351,36 @@ Si las dos horas son distintas, se está escribiendo.
 
 ## 8. Audio: nivel de entrada
 
+El motor no toca el mezclador de la tarjeta (D59): se ajusta una vez, al montar la mesa, con el
+vúmetro de la cabecera del panel como medidor.
+
+1. **Mira sus controles.** Cada tarjeta tiene los suyos; la de la mesa, `Mic` (la ganancia de
+   grabación, de 0 a 16) y `Auto Gain Control`:
+
+   ```bash
+   amixer -c Device scontents
+   ```
+
+2. **Apaga el control automático de ganancia.** Sube lo flojo y baja lo fuerte: aplana justo la
+   dinámica que tiene que mostrar *energía*. ⏳ Comprobar que de verdad actúa sobre la grabación
+   (`amixer` lo lista como control de reproducción).
+
+   ```bash
+   amixer -c Device sset 'Auto Gain Control' off
+   ```
+
+3. **Ajusta la ganancia de grabación** con música real desde el mixer: súbela hasta que los picos
+   queden cerca del máximo del vúmetro sin tocarlo. Por ejemplo, `amixer -c Device sset Mic 8 cap`.
+4. **Guárdalo**, para que sobreviva a un reinicio: `sudo alsactl store`.
+5. **Elige el umbral de silencio** con el mixer conectado y en silencio. El vúmetro empieza en −60 dBFS,
+   el umbral por defecto (`silenceThreshold`, README §3): si con el mixer en silencio el vúmetro se
+   mueve, el ruido pasa del umbral y una tira con *energía* parpadearía. Sube `silenceThreshold` en
+   `config/local.json` (por ejemplo, a −50) y reinicia el motor hasta que la tira se quede apagada.
+   Con la entrada vacía, la tarjeta de la mesa da unos −80 dBFS de ruido.
+
 - Estas tarjetas suelen tener **entrada de micrófono**, y la salida booth es de **nivel de línea**:
   puede saturar y los efectos reaccionarían a tope todo el rato. ⏳ Comprobar con música real y, si
-  satura, bajar la ganancia de captura con `alsamixer` (tecla `F4`) o usar un cable atenuador
+  satura con la ganancia al mínimo, usar un cable atenuador
   ([MOO-53](https://linear.app/7daysofrain/issue/MOO-53)).
 - La tarjeta captura en **mono**: del RCA solo se usa un canal (normalmente el izquierdo). Para analizar
   la música basta.
