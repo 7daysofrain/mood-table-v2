@@ -21,6 +21,11 @@ import { type EngineServer, startServer } from './server.ts';
 
 const GOLPES = fileURLToPath(new URL('../../test/fixtures/golpes.wav', import.meta.url));
 
+/** Los bytes del fichero de golpes, como los lee el motor al arrancar. */
+async function golpes(): Promise<Uint8Array> {
+  return new Uint8Array(await readFile(GOLPES));
+}
+
 const strip = {
   id: 'demo',
   name: 'demo',
@@ -299,7 +304,7 @@ async function everythingIn(response: Response): Promise<string> {
 
 describe('el fichero de audio en /audio', () => {
   it('con un fichero como fuente, es el fichero, byte a byte, como audio WAV', async () => {
-    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioFile: GOLPES });
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioBytes: await golpes() });
 
     const response = await fetch(`${server.url}/audio`);
 
@@ -311,7 +316,7 @@ describe('el fichero de audio en /audio', () => {
   });
 
   it('las cabeceras no dicen dónde está el fichero en el disco', async () => {
-    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioFile: GOLPES });
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioBytes: await golpes() });
 
     const response = await fetch(`${server.url}/audio`);
     const headers = [...response.headers.entries()].flat().join('\n');
@@ -329,17 +334,21 @@ describe('el fichero de audio en /audio', () => {
     expect(await everythingIn(response)).not.toContain(panelDir);
   });
 
-  it('si el fichero ya no se puede leer, falla sin decir su ruta', async () => {
-    const audioFile = join(panelDir, 'se-borra.wav');
+  it('sirve los bytes que recibió al arrancar, aunque el fichero cambie o se borre en el disco', async () => {
+    const audioFile = join(panelDir, 'cambia.wav');
     await copyFile(GOLPES, audioFile);
-    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioFile });
+    // Los bytes que leyó el motor al arrancar, los mismos que analiza.
+    const audioBytes = new Uint8Array(await readFile(audioFile));
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, audioBytes });
+
+    await writeFile(audioFile, 'otro fichero');
+    const changed = await fetch(`${server.url}/audio`);
     await rm(audioFile);
+    const removed = await fetch(`${server.url}/audio`);
 
-    const response = await fetch(`${server.url}/audio`);
-
-    expect(response.status).toBeGreaterThanOrEqual(400);
-    const everything = await everythingIn(response);
-    expect(everything).not.toContain(panelDir);
-    expect(everything).not.toContain('se-borra.wav');
+    for (const response of [changed, removed]) {
+      expect(response.status).toBe(200);
+      expect(new Uint8Array(await response.arrayBuffer())).toEqual(audioBytes);
+    }
   });
 });

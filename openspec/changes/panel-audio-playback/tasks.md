@@ -176,7 +176,7 @@
 
 ## 3. MOO-58 · engine
 
-- [ ] 3.1 **(test en rojo)** `loadAudioFile` devuelve también los bytes que leyó. Tests del servidor:
+- [x] 3.1 **(test en rojo)** `loadAudioFile` devuelve también los bytes que leyó. Tests del servidor:
   `/audio` sirve, byte a byte, los bytes que recibe al arrancar, aunque el fichero se sustituya o se
   borre en el disco después (`specs/audio-playback`, *El fichero cambia en disco con el motor en
   marcha*; decisión 6). El test «si el fichero ya no se puede leer, falla sin decir su ruta» se
