@@ -61,7 +61,7 @@
   `arecord`, que implementa el proceso).
   Verificar: los tests de 1.7 pasan; `soundcard.hardware.ts` queda fuera de la cobertura por su
   nombre.
-- [ ] 1.9 **(test en rojo)** Tests de `engine.ts`: `sourceMessage` con una tarjeta como fuente da
+- [x] 1.9 **(test en rojo)** Tests de `engine.ts`: `sourceMessage` con una tarjeta como fuente da
   `{ kind: 'soundcard', name }`, sin la cadena de dispositivo; con un fichero, igual que ahora
   (`specs/audio-source`, *Un panel se conecta con la tarjeta de sonido como fuente*).
   Verificar: los tests nuevos fallan porque `sourceMessage` solo conoce el fichero.
