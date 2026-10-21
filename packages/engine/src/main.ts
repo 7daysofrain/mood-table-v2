@@ -34,7 +34,7 @@ async function main(): Promise<string | undefined> {
       port,
       panelDir: PANEL_DIR,
       source: sourceMessage(loaded.config),
-      audioFile: audioSource?.path,
+      audioBytes: audio?.ok ? audio.bytes : undefined,
     });
   } catch (error) {
     return `No puede escuchar en ${host}:${port} (${(error as Error).message})`;

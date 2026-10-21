@@ -40,7 +40,7 @@ describe('la fuente de audio fichero', () => {
     const result = await loadAudioFile(GOLPES);
     if (!result.ok) throw new Error(result.error);
 
-    expect(result.bytes).toEqual(new Uint8Array(await readFile(GOLPES)));
+    expect(new Uint8Array(result.bytes)).toEqual(new Uint8Array(await readFile(GOLPES)));
   });
 
   it('con el fichero de golpes (4 s), a los 5 s va por el segundo 1', async () => {

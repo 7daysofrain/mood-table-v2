@@ -182,7 +182,7 @@
   marcha*; decisión 6). El test «si el fichero ya no se puede leer, falla sin decir su ruta» se
   sustituye por este: ese fallo deja de existir.
   Verificar: los tests nuevos fallan porque el servidor lee el disco en cada petición.
-- [ ] 3.2 `startServer` recibe `audioBytes` en vez de `audioFile`, y `main.ts` le pasa los de
+- [x] 3.2 `startServer` recibe `audioBytes` en vez de `audioFile`, y `main.ts` le pasa los de
   `loadAudioFile`.
   Verificar: los tests de 3.1 pasan; con `pnpm dev`, `curl -sI http://127.0.0.1:8080/audio` da `200`
   y `audio/wav`.
