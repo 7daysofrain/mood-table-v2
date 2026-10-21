@@ -20,7 +20,7 @@
 - [x] 1.2 `AudioSourceConfigSchema` con la variante `soundcard` (cerrada, como la de `file`) y el
   valor por defecto de `silenceThreshold`.
   Verificar: los tests de 1.1 pasan.
-- [ ] 1.3 **(test en rojo)** Tests del protocolo en `packages/shared/src/viewer-protocol.test.ts`:
+- [x] 1.3 **(test en rojo)** Tests del protocolo en `packages/shared/src/viewer-protocol.test.ts`:
   `encodeSource` con `{ kind: 'soundcard', name: 'Mixer de la mesa' }` da `02 02` seguido del nombre
   en UTF-8, y `decodeSource` lo devuelve igual; rechaza la clase `2` sin nombre o con un UTF-8
   inválido; las clases `0` y `1` no cambian (decisión 9).
