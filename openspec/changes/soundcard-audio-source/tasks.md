@@ -57,7 +57,7 @@
     `positionAt`.
 
   Verificar: los tests nuevos fallan porque el adaptador no existe.
-- [ ] 1.8 `soundcard.ts` (la parte pura de 1.7) y `soundcard.hardware.ts` (`child_process.spawn` de
+- [x] 1.8 `soundcard.ts` (la parte pura de 1.7) y `soundcard.hardware.ts` (`child_process.spawn` de
   `arecord`, que implementa el proceso).
   Verificar: los tests de 1.7 pasan; `soundcard.hardware.ts` queda fuera de la cobertura por su
   nombre.

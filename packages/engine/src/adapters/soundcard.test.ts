@@ -64,7 +64,7 @@ function s16le(samples: readonly number[]): Uint8Array {
 }
 
 /** Abre la tarjeta con el proceso falso y le hace entregar `first` para que arranque. */
-async function opened(first = new Uint8Array(2 * DISCARDED)) {
+async function opened(first: Uint8Array = new Uint8Array(2 * DISCARDED)) {
   const capture = new FakeCapture();
   const logs: string[] = [];
   const pending = openSoundcard(MIXER, capture.spawn, (line) => logs.push(line));
@@ -146,6 +146,20 @@ describe('el arranque', () => {
     });
   });
 
+  it('si a arecord lo para una señal, sin código, lo dice', async () => {
+    const capture = new FakeCapture();
+    const pending = openSoundcard(MIXER, capture.spawn, () => {});
+
+    capture.terminate({ code: null });
+
+    expect(await pending).toEqual({
+      ok: false,
+      error:
+        'tarjeta de sonido «Mixer de la mesa» (plughw:CARD=Device,DEV=0): no se puede abrir ' +
+        '(arecord ha terminado)',
+    });
+  });
+
   it('sin arecord en el sistema, dice que la tarjeta necesita Linux con ALSA', async () => {
     const capture = new FakeCapture();
     const pending = openSoundcard(MIXER, capture.spawn, () => {});
@@ -193,7 +207,7 @@ describe('la fuente', () => {
 
     expect(source.sampleRate).toBe(48_000);
     expect(source.silenceThreshold).toBe(-60);
-    expect(source.positionAt).toBeUndefined();
+    expect('positionAt' in source).toBe(false);
   });
 
   it('convierte los s16le en muestras de -1 a 1', async () => {
