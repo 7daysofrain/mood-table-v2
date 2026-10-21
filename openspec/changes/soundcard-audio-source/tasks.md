@@ -39,7 +39,7 @@
 - [x] 1.6 `silenceThreshold` opcional (dBFS) en el puerto `AudioSource`; el análisis lo recibe al
   crearse y da por silencio la ventana con silencio digital o con nivel RMS por debajo del umbral.
   Verificar: los tests de 1.5 pasan y los dorados no cambian.
-- [ ] 1.7 **(test en rojo)** Tests de `packages/engine/src/adapters/soundcard.ts` con un proceso falso
+- [x] 1.7 **(test en rojo)** Tests de `packages/engine/src/adapters/soundcard.ts` con un proceso falso
   en memoria (decisiones 4, 5 y 6):
   - los argumentos de `arecord` salen de `device` (`-q -D … -t raw -f S16_LE -c 1 -r 48000
     --period-time=10000 --buffer-time=40000`);
