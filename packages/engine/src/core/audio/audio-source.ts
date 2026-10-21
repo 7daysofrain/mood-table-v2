@@ -17,4 +17,10 @@ export interface AudioSource {
    * `read(time, …)`. Solo lo tiene una fuente que recorre un fichero; la tarjeta de sonido, no.
    */
   positionAt?(time: number): number;
+  /**
+   * Nivel, en dBFS, por debajo del cual una ventana cuenta como silencio. Lo tiene la tarjeta de
+   * sonido, que nunca entrega ceros (decisión 7 del change soundcard-audio-source); sin él, solo es
+   * silencio el digital, el de un fichero.
+   */
+  readonly silenceThreshold?: number;
 }

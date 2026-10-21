@@ -36,7 +36,7 @@
   no es silencio (la puerta digital sigue igual); los frames dorados de `energy` no cambian
   (`specs/effects`, decisión 7).
   Verificar: los tests nuevos fallan porque el análisis no conoce el umbral.
-- [ ] 1.6 `silenceThreshold` opcional (dBFS) en el puerto `AudioSource`; el análisis lo recibe al
+- [x] 1.6 `silenceThreshold` opcional (dBFS) en el puerto `AudioSource`; el análisis lo recibe al
   crearse y da por silencio la ventana con silencio digital o con nivel RMS por debajo del umbral.
   Verificar: los tests de 1.5 pasan y los dorados no cambian.
 - [ ] 1.7 **(test en rojo)** Tests de `packages/engine/src/adapters/soundcard.ts` con un proceso falso
