@@ -16,6 +16,11 @@
   historias para empezar (monorepo, CI, layout del panel) y no sale de ninguna historia del PRD, así que
   **cuelga tareas directamente, sin historia**. Esas tareas llevan etiqueta de tipo (`Chore`) además de la
   de área, porque no heredan el DoD de ninguna historia.
+- **Segunda épica técnica:** `PB · PR Babysitter`, el sistema que conduce cada PR hasta dejarla lista
+  para integrar. Es herramienta de desarrollo, no producto, pero es demasiado grande para tareas
+  sueltas: **sí tiene historias** (BH1-BH4), con sus tareas debajo como cualquier otra. Sus historias y
+  criterios salen de [`docs/pr-babysitter.md`](../pr-babysitter.md) (expectativas BE#, glosario
+  propio), no del PRD. Prioridad **Low** (*should*).
 - **Historia = sub-issue de su épica. Tarea = sub-issue de su historia** (tres niveles de anidación).
 - **Sin cycles** (una sola persona). Must/should: prioridad de la épica (**High** = must, **Low** =
   should). Dentro del backlog, el orden lo da la **prioridad** nativa de cada historia.

@@ -10,7 +10,7 @@
 | Nivel | Dónde vive | Qué es | Tamaño | Quién lo escribe |
 |---|---|---|---|---|
 | **PRD** | `docs/PRD.md` | Qué y por qué del producto: historias H1-H5 y S1-S2, expectativas E1-E9, alcance, glosario | — | Joseba (la IA ayuda) |
-| **Épica** | Linear · **issue padre** en el proyecto *Mood Table* (una por H# / S# del PRD, más la épica técnica de *enablers*, que cuelga tareas sin historia: `linear.md` §1) | Bloque grande de capacidad = una historia del PRD | Días/semanas | Se crea desde el PRD |
+| **Épica** | Linear · **issue padre** en el proyecto *Mood Table* (una por H# / S# del PRD, más dos épicas técnicas: la de *enablers*, que cuelga tareas sin historia, y *PR Babysitter*, con historias que salen de su propio documento: `linear.md` §1) | Bloque grande de capacidad = una historia del PRD (las épicas técnicas, no: `linear.md` §1) | Días/semanas | Se crea desde el PRD; las técnicas, desde su necesidad o su documento |
 | **Historia** | Linear · **sub-issue** de su épica | Comportamiento observable, INVEST, criterios de aceptación en GIVEN/WHEN/THEN | 1-2 días | Joseba describe el caso feliz; la IA lo traduce a GIVEN/WHEN/THEN y busca huecos |
 | **Tarea** | Linear · **sub-issue** de su historia | Cambio coherente de **un área** (backend, frontend, BD, infra…) que se revisa e integra: **una tarea = una PR** | Horas | Se planifica con la historia; la puede proponer el agente |
 | **OpenSpec change** | `openspec/changes/<id>/` | El *cómo*: propuesta, delta de spec (requisitos SHALL/MUST + escenarios), diseño y `tasks.md` con **una sección por tarea**; **cada paso = un commit** | Uno por historia | La propone el agente; la revisa Joseba |
@@ -47,6 +47,7 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
 | Sitio | Guarda | No guarda |
 |---|---|---|
 | **PRD** | Qué y por qué | Estado del trabajo, criterios detallados, arquitectura |
+| **`docs/pr-babysitter.md`** | Qué y por qué de la épica técnica *PR Babysitter* (hace de PRD para ella) | Lo mismo que el PRD |
 | **Linear** | Backlog, jerarquía, prioridad, estimación, estado y los **criterios de aceptación de cada historia (GIVEN/WHEN/THEN)** | El contrato técnico |
 | **OpenSpec** | Contrato técnico de cada cambio: requisitos y escenarios derivados de los criterios de la historia, diseño y tareas de implementación | Prioridad ni estado del backlog |
 | **README** | Diseño del sistema y lo que exige la entrega del máster | Requisitos de producto (si discrepa del PRD, **manda el PRD**) |
@@ -97,9 +98,9 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
 ## 5. Reglas para agentes
 
 - **El nivel del prompt es la historia, nunca la épica.**
-- **No inventar criterios:** marca como *(asumido)* lo que no tenga evidencia en el PRD, la historia o
-  el código.
-- **Vocabulario del glosario** (PRD §8). Un término nuevo se añade al glosario antes de usarlo.
+- **No inventar criterios:** marca como *(asumido)* lo que no tenga evidencia en el PRD (o en
+  `docs/pr-babysitter.md`, para su épica), la historia o el código.
+- **Vocabulario del glosario** (PRD §8; para *PR Babysitter*, también el de su documento, §8). Un término nuevo se añade al glosario antes de usarlo.
 - **No duplicar:** si algo ya está en otro sitio de la tabla del §3, enlázalo.
 - **Tarea → PR, paso → commit:** no mezclar dos tareas en una PR ni dos pasos en un commit.
 

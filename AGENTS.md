@@ -8,6 +8,8 @@ Repo: `github.com/7daysofrain/mood-table-v2` (public).
 Read before working on product or design questions: [`docs/PRD.md`](docs/PRD.md) (source of truth for
 *what* and *why*; glossary in §8), [`readme.md`](readme.md) (architecture, data model, stories, tickets)
 and [`docs/idea-mood-table.md`](docs/idea-mood-table.md) §10 (decisions D1-D39 with their rationale).
+For the *PR Babysitter* technical epic (development tooling, not product), the *what* and *why* live in
+[`docs/pr-babysitter.md`](docs/pr-babysitter.md) instead of the PRD.
 
 Stack (rationale in README §2.1): pnpm workspaces monorepo (`packages/shared`, `engine`, `panel`) ·
 TypeScript strict · Fastify + TypeBox (OpenAPI from schemas) · React + Vite · SQLite for instrument
