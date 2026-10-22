@@ -39,7 +39,8 @@ export function AudioSourceIndicator({
       <Text size="sm" truncate="end" maw={260} title={source.name}>
         {`${SOURCE_LABEL[source.kind]}: ${source.name}`}
       </Text>
-      {lost && <AlertTag label="Desconectada" />}
+      {/* Solo la tarjeta de sonido se pierde: un fichero no avisa nunca (decisión 3). */}
+      {lost && source.kind === 'soundcard' && <AlertTag label="Desconectada" />}
       <LevelMeter levels={levels} />
     </Group>
   );

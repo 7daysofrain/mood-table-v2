@@ -173,6 +173,18 @@ describe('el aviso de tarjeta desconectada', () => {
     expect(screen.queryByText('Desconectada')).not.toBeInTheDocument();
   });
 
+  it('con un fichero, no avisa aunque llegue que la fuente está perdida', () => {
+    render(
+      <AudioSourceIndicator
+        source={{ kind: 'file', name: 'golpes.wav' }}
+        lost
+        levels={{ level: 0 }}
+      />,
+    );
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('al recuperarla, el aviso desaparece', () => {
     const { rerender } = render(
       <AudioSourceIndicator source={SOUNDCARD} lost levels={{ level: 0 }} />,
