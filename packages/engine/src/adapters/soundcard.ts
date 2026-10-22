@@ -9,11 +9,19 @@
  *
  * El motor solo no arranca si `arecord` termina antes de entregar el primer bloque: no puede abrir
  * el dispositivo. Que no llegue música no es un fallo. Si termina con el motor en marcha, la fuente
- * da silencio desde ese momento y lo dice una vez en el log; no se vuelve a abrir (`MOO-59`). Si el
- * motor no llega a arrancar por otra cosa (el servidor no puede escuchar), para la fuente: un
- * `arecord` vivo mantendría el proceso en marcha.
+ * da silencio desde ese momento y lo dice una vez en el log. Después, cada segundo vuelve a lanzar
+ * `arecord` con la misma cadena, sin límite: el primer bloque la recupera, se dice en el log y se
+ * empieza de cero, con el búfer vacío y otros 300 ms descartados; un intento que termina antes no
+ * dice nada (decisiones 1 y 2 del change soundcard-reconnect). Quien se suscribe sabe si está
+ * conectada o perdida. Si el motor no llega a arrancar por otra cosa (el servidor no puede
+ * escuchar), para la fuente: un `arecord` vivo, o un intento pendiente, mantendría el proceso en
+ * marcha.
+ *
+ *   grabando --arecord termina--> perdida --cada 1 s--> intento --primer bloque--> grabando
+ *                                    ^                     |
+ *                                    +--termina antes------+
  */
-import type { AudioSourceConfig } from '@moodtable/shared';
+import type { AudioSourceConfig, SourceStatus } from '@moodtable/shared';
 
 import type { AudioSource } from '../core/audio/audio-source.ts';
 
@@ -41,9 +49,21 @@ export interface CaptureProcess {
 
 export type SpawnCapture = (command: string, args: readonly string[]) => CaptureProcess;
 
-/** `stop` para `arecord` y deja la fuente en silencio, sin contarlo como una pérdida. */
+/** Programa `callback` dentro de `ms` milisegundos y devuelve cómo cancelarlo. */
+export type Schedule = (callback: () => void, ms: number) => () => void;
+
+/**
+ * `stop` para `arecord` y el intento pendiente, y deja la fuente en silencio, sin contarlo como una
+ * pérdida. `onStatus` da el estado actual al momento y después cada cambio, hasta llamar a lo que
+ * devuelve.
+ */
 export type OpenedSoundcard =
-  | { ok: true; source: AudioSource; stop: () => void }
+  | {
+      ok: true;
+      source: AudioSource;
+      stop: () => void;
+      onStatus: (listener: (status: SourceStatus) => void) => () => void;
+    }
   | { ok: false; error: string };
 
 /** Lo que la tarjeta de la mesa graba sin conversión (design.md, contexto). */
@@ -54,6 +74,13 @@ const DISCARD_SAMPLES = 0.3 * SAMPLE_RATE;
 const BUFFER_SAMPLES = 0.5 * SAMPLE_RATE;
 /** Escala de s16le a muestras de -1 a 1. */
 const FULL_SCALE = 32_768;
+/** Entre dos intentos de recuperar la tarjeta (decisión 1 del change soundcard-reconnect). */
+const RETRY_MS = 1000;
+
+const scheduleTimeout: Schedule = (callback, ms) => {
+  const timeout = setTimeout(callback, ms);
+  return () => clearTimeout(timeout);
+};
 
 /**
  * Mono a 48 kHz en s16le. Periodos de 10 ms para que el audio llegue pronto (decisión 1) y un búfer
@@ -79,45 +106,93 @@ export function arecordArgs(device: string): string[] {
 
 /**
  * Lanza `arecord` con la tarjeta de `config` y se resuelve en cuanto llega el primer bloque, o con el
- * error si termina antes. `log` recibe la línea de la pérdida en plena sesión.
+ * error si termina antes. `log` recibe la línea de cada pérdida en plena sesión y de cada
+ * recuperación; `schedule` programa los intentos de recuperarla.
  */
 export function openSoundcard(
   config: SoundcardConfig,
   spawn: SpawnCapture,
   log: (line: string) => void,
+  schedule: Schedule = scheduleTimeout,
 ): Promise<OpenedSoundcard> {
   const label = `tarjeta de sonido «${config.name}» (${config.device})`;
   const source = new SoundcardSource(config.silenceThreshold);
-  const stderr = new LastLine();
-  const capture = spawn('arecord', arecordArgs(config.device));
+  const listeners = new Set<(status: SourceStatus) => void>();
+  let status: SourceStatus = 'connected';
+  let capture: CaptureProcess | undefined;
+  let cancelRetry: (() => void) | undefined;
+  let stopped = false;
+
+  function setStatus(next: SourceStatus): void {
+    status = next;
+    for (const listener of listeners) listener(next);
+  }
+
+  const opened: OpenedSoundcard = {
+    ok: true,
+    source,
+    stop() {
+      stopped = true;
+      cancelRetry?.();
+      source.lose();
+      capture?.stop();
+    },
+    onStatus(listener) {
+      listeners.add(listener);
+      listener(status);
+      return () => listeners.delete(listener);
+    },
+  };
 
   return new Promise((resolve) => {
-    let started = false;
-    capture.onStderr((chunk) => stderr.push(chunk));
-    capture.onData((chunk) => {
-      // Lo que `arecord` dijo antes de este bloque no explica cómo acabe (un *overrun*, y sigue).
-      stderr.forget();
-      source.write(chunk);
-      if (started) return;
-      started = true;
-      resolve({
-        ok: true,
-        source,
-        stop() {
-          source.lose();
-          capture.stop();
-        },
+    /** Lanza `arecord`. El primero decide el arranque; los demás, si se recupera la tarjeta. */
+    function attempt(startup: boolean): void {
+      const current = spawn('arecord', arecordArgs(config.device));
+      capture = current;
+      const stderr = new LastLine();
+      let recording = false;
+      let exited = false;
+      current.onStderr((chunk) => stderr.push(chunk));
+      current.onData((chunk) => {
+        if (exited || stopped) return;
+        // Lo que `arecord` dijo antes de este bloque no explica cómo acabe (un *overrun*, y sigue).
+        stderr.forget();
+        if (!recording) {
+          recording = true;
+          if (startup) {
+            resolve(opened);
+          } else {
+            source.restart();
+            log(`Se ha recuperado la ${label}.`);
+            setStatus('connected');
+          }
+        }
+        source.write(chunk);
       });
-    });
-    capture.onExit((exit) => {
-      if (started) {
-        if (source.isLost) return;
-        source.lose();
-        log(`Se ha perdido la ${label}: ${reasonOf(exit, stderr)}. El motor sigue con silencio.`);
-        return;
-      }
-      resolve({ ok: false, error: `${label}: ${startupProblem(exit, stderr)}` });
-    });
+      current.onExit((exit) => {
+        if (exited || stopped) return;
+        exited = true;
+        if (recording) {
+          source.lose();
+          log(`Se ha perdido la ${label}: ${reasonOf(exit, stderr)}. El motor sigue con silencio.`);
+          setStatus('lost');
+          retry();
+        } else if (startup) {
+          resolve({ ok: false, error: `${label}: ${startupProblem(exit, stderr)}` });
+        } else {
+          retry();
+        }
+      });
+    }
+
+    function retry(): void {
+      cancelRetry = schedule(() => {
+        cancelRetry = undefined;
+        attempt(false);
+      }, RETRY_MS);
+    }
+
+    attempt(true);
   });
 }
 
@@ -198,12 +273,17 @@ class SoundcardSource implements AudioSource {
     }
   }
 
-  get isLost(): boolean {
-    return this.lost;
-  }
-
   lose(): void {
     this.lost = true;
+  }
+
+  /** Empieza como al abrir la tarjeta: sin nada de antes del corte y descartando otros 300 ms. */
+  restart(): void {
+    this.lost = false;
+    this.next = 0;
+    this.filled = 0;
+    this.toDiscard = DISCARD_SAMPLES;
+    this.low = undefined;
   }
 
   /** Las últimas `out.length` muestras, sin mirar `time` (D50); ceros delante si aún no hay. */

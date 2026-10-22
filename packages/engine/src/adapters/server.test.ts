@@ -8,10 +8,12 @@ import {
   decodeLevel,
   decodePosition,
   decodeSource,
+  decodeSourceStatus,
   type FrameMessage,
   type LevelMessage,
   type PositionMessage,
   type SourceMessage,
+  type SourceStatus,
 } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -56,15 +58,26 @@ interface Received {
   sources: SourceMessage[];
   levels: LevelMessage[];
   positions: PositionMessage[];
+  statuses: SourceStatus[];
+  /** El tipo de cada mensaje (su primer byte), en el orden en que llega. */
+  types: number[];
 }
 
 /** Un navegador conectado al WebSocket del motor, que guarda los mensajes que recibe. */
 async function connectAll(url: string): Promise<Received> {
-  const received: Received = { frames: [], sources: [], levels: [], positions: [] };
+  const received: Received = {
+    frames: [],
+    sources: [],
+    levels: [],
+    positions: [],
+    statuses: [],
+    types: [],
+  };
   const client = new WebSocket(`${url.replace('http', 'ws')}/ws`);
   client.binaryType = 'arraybuffer';
   client.addEventListener('message', (event) => {
     const message = new Uint8Array(event.data as ArrayBuffer);
+    received.types.push(message[0] ?? -1);
     const frame = decodeFrame(message);
     if (frame) received.frames.push({ ...frame, colors: frame.colors.slice() });
     const source = decodeSource(message);
@@ -73,6 +86,8 @@ async function connectAll(url: string): Promise<Received> {
     if (level) received.levels.push(level);
     const position = decodePosition(message);
     if (position) received.positions.push(position);
+    const status = decodeSourceStatus(message);
+    if (status) received.statuses.push(status);
   });
   clients.push(client);
   await new Promise((resolve, reject) => {
@@ -294,6 +309,127 @@ describe('el servidor del motor', () => {
     await until(() => received.frames.length === 3);
 
     expect(received.positions).toEqual([]);
+  });
+});
+
+/** El estado de una tarjeta de sonido falsa: el test decide cuándo cambia. */
+class FakeSoundcardStatus {
+  private status: SourceStatus;
+  private listeners: ((status: SourceStatus) => void)[] = [];
+
+  constructor(status: SourceStatus) {
+    this.status = status;
+  }
+
+  /** Como `onStatus` del adaptador: el estado actual al momento, después cada cambio, y la baja. */
+  watch = (listener: (status: SourceStatus) => void): (() => void) => {
+    this.listeners.push(listener);
+    listener(this.status);
+    return () => {
+      this.listeners = this.listeners.filter((each) => each !== listener);
+    };
+  };
+
+  get watchers(): number {
+    return this.listeners.length;
+  }
+
+  set(status: SourceStatus): void {
+    this.status = status;
+    for (const listener of this.listeners) listener(status);
+  }
+}
+
+const SOUNDCARD = { kind: 'soundcard' as const, name: 'Mixer de la mesa' };
+
+describe('el estado de la tarjeta de sonido', () => {
+  it.each(['connected', 'lost'] as const)(
+    'al conectarse, un panel recibe la fuente y después el estado (%s)',
+    async (status) => {
+      const card = new FakeSoundcardStatus(status);
+      server = await startServer({
+        host: '127.0.0.1',
+        port: 0,
+        panelDir,
+        source: SOUNDCARD,
+        watchSourceStatus: card.watch,
+      });
+      const received = await connectAll(server.url);
+
+      await until(() => received.statuses.length === 1);
+
+      expect(received.sources).toEqual([SOUNDCARD]);
+      expect(received.statuses).toEqual([status]);
+      expect(received.types).toEqual([2, 5]);
+    },
+  );
+
+  it('un panel que se conecta tras perderla recibe que está perdida', async () => {
+    const card = new FakeSoundcardStatus('connected');
+    server = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      source: SOUNDCARD,
+      watchSourceStatus: card.watch,
+    });
+
+    card.set('lost');
+    const received = await connectAll(server.url);
+    await until(() => received.statuses.length === 1);
+
+    expect(received.statuses).toEqual(['lost']);
+  });
+
+  it('cada cambio llega a todos los paneles conectados', async () => {
+    const card = new FakeSoundcardStatus('lost');
+    server = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      source: SOUNDCARD,
+      watchSourceStatus: card.watch,
+    });
+    const first = await connectAll(server.url);
+    const second = await connectAll(server.url);
+    await until(() => first.statuses.length === 1 && second.statuses.length === 1);
+
+    card.set('connected');
+    await until(() => first.statuses.length === 2 && second.statuses.length === 2);
+
+    expect(first.statuses).toEqual(['lost', 'connected']);
+    expect(second.statuses).toEqual(['lost', 'connected']);
+  });
+
+  it('al cerrar el servidor, deja de escuchar el estado de la tarjeta', async () => {
+    const card = new FakeSoundcardStatus('connected');
+    const closing = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      source: SOUNDCARD,
+      watchSourceStatus: card.watch,
+    });
+    expect(card.watchers).toBe(1);
+
+    await closing.close();
+
+    expect(card.watchers).toBe(0);
+  });
+
+  it.each([
+    ['con un fichero', { kind: 'file' as const, name: 'golpes.wav' }],
+    ['sin fuente', undefined],
+  ])('%s, ningún mensaje de estado', async (_name, source) => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir, source });
+    const received = await connectAll(server.url);
+    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60);
+
+    loop.tick(0);
+    await until(() => received.frames.length === 1);
+
+    expect(received.statuses).toEqual([]);
+    expect(received.types).toEqual([2, 1]);
   });
 });
 

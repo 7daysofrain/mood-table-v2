@@ -7,13 +7,14 @@
 >
 > Origen: change `virtual-strip-breathing`, `design.md` decisiones 10 y 11 (`MOO-17`). Los mensajes
 > de fuente y de nivel: change `virtual-strip-audio-file`, `design.md` decisión 5 (`MOO-20`). El de
-> posición del fichero: change `panel-audio-playback`, `design.md` decisión 2 (`MOO-56`).
+> posición del fichero: change `panel-audio-playback`, `design.md` decisión 2 (`MOO-56`). El de estado
+> de la fuente: change `soundcard-reconnect`, `design.md` decisión 3 (`MOO-63`).
 
 ## Conexión
 
 - **Una sola conexión WebSocket por navegador**, en la ruta `/ws` del motor (la misma dirección que
-  sirve el panel). Por ella viajan los frames de todas las tiras, la fuente de audio, su nivel y la
-  posición del fichero de audio.
+  sirve el panel). Por ella viajan los frames de todas las tiras, la fuente de audio, su nivel, la
+  posición del fichero de audio y el estado de la tarjeta de sonido.
 - Los mensajes van en **binario**. El primer byte dice de qué tipo es el mensaje.
 - El panel no necesita saber nada de antemano: cada mensaje dice de qué tira es y cuántos LEDs tiene.
 
@@ -104,14 +105,36 @@ Ejemplo: la posición 1,5 s del pulso 260:
 - **64 bits** para que un fichero largo no pierda precisión: con 32, a una hora la resolución bajaría a
   unos 0,25 ms.
 
+## Mensaje de estado de la fuente (tipo `5`)
+
+Solo si la fuente de audio es la tarjeta de sonido: si entrega audio o se ha perdido. Lo recibe cada
+panel al conectarse, justo después del mensaje de fuente, y todos los paneles cada vez que cambia. Con
+un fichero o sin fuente no se envía: un fichero no se pierde. El panel no deduce el estado del nivel,
+porque un silencio también da nivel cero.
+
+| Byte | Tamaño | Campo | Valor |
+|---|---|---|---|
+| 0 | 1 | Tipo de mensaje | `5` (estado de la fuente) |
+| 1 | 1 | Estado | `0` conectada, `1` perdida |
+
+Ejemplo: la tarjeta de sonido, perdida:
+
+```
+05 01
+```
+
+- **Un tipo aparte del de fuente:** el de fuente dice *qué* fuente hay y no cambia mientras el motor
+  corre; el estado sí cambia. Un panel que no conoce el tipo `5` lo ignora.
+
 ## Qué hace el panel con un mensaje que no entiende
 
 Lo ignora, también si es de un tipo que todavía no conoce. Se rechaza:
 
 - un frame cuyo tipo no es `1`, más corto que la cabecera (6 bytes) o cuyos colores no son un número
   entero de LEDs (al menos uno);
-- un mensaje de fuente con una clase que no es `0` ni `1`, sin fuente pero con nombre, de un fichero
-  sin nombre o con un nombre que no es UTF-8 válido;
+- un mensaje de fuente con una clase que no es `0`, `1` ni `2`, sin fuente pero con nombre, de un
+  fichero o una tarjeta de sonido sin nombre o con un nombre que no es UTF-8 válido;
 - un mensaje de nivel que no mide 9 bytes o cuyo nivel no es un número de 0 a 1;
 - un mensaje de posición que no mide 13 bytes o cuya posición no es un número finito mayor o igual
-  que 0.
+  que 0;
+- un mensaje de estado de la fuente que no mide 2 bytes o cuyo estado no es `0` ni `1`.
