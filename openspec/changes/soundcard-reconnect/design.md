@@ -160,6 +160,12 @@ Los dos se añaden a `docs/umbrales-para-specs.md`.
   test que lo comprueba.
 - **[`arecord` abre la tarjeta pero aún no entrega audio]** → no cuenta como recuperada hasta el primer
   bloque. Si termina antes, es un intento fallido más.
+- **[Un `arecord` de reintento se queda colgado: ni entrega audio ni termina]** → la tarjeta no se
+  recuperaría nunca, porque el siguiente intento solo se programa cuando `arecord` termina. Aceptado
+  sin código: no se ha visto en la medición del 22-oct ni en la prueba en la mesa (siempre falla o
+  graba), y el arranque tiene el mismo hueco desde `MOO-23`. Si se ve en la mesa, la salida es un
+  límite de tiempo por intento (p. ej., parar el `arecord` que no entrega nada en 2 s). Lo vio la
+  code review de `MOO-63`.
 - **[Un panel antiguo, en caché, no entiende el tipo `5`]** → lo ignora (regla del protocolo) y se
   queda sin aviso hasta recargar. No hay riesgo de que falle.
 - **[La prueba física solo se hace a mano]** → los escenarios se cubren con el `arecord` falso. La
