@@ -48,7 +48,7 @@
   `docs/idea-mood-table.md` §10, con «No se reconecta (`MOO-59`)» de D57 tachado y apuntando a D60;
   README §2.2 (el adaptador *Tarjeta de sonido* recupera la tarjeta) y `prompts.md`.
   Verificar: los enlaces y los números de D# cuadran con `design.md`.
-- [ ] 1.8 Prueba a mano en la mesa: con el motor de la rama en la Pi y una tira con «energía»,
+- [x] 1.8 Prueba a mano en la mesa: con el motor de la rama en la Pi y una tira con «energía»,
   desenchufar la tarjeta (el log dice la pérdida y la tira se apaga), enchufarla en otro puerto (en
   menos de 3 s desde que aparece en `arecord -l` la tira vuelve a seguir la música, y el log dice la
   recuperación) y dejarla un rato desenchufada sin que el log crezca.
