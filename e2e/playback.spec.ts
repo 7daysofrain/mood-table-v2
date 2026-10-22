@@ -148,16 +148,30 @@ test('tras un gesto, el reloj de Web Audio avanza en Chromium sin pantalla', asy
   const clock = await page.evaluate(async () => {
     const context = new AudioContext();
     await context.resume();
-    const start = context.currentTime;
+    // `resume()` se resuelve con el reloj aún en 0: corre cuando el hilo de audio entrega su primer
+    // bloque, decenas de milisegundos después, o cientos con el navegador en frío. Ese arranque no es
+    // el ritmo: se espera a que se mueva, con un límite para que un reloj parado no cuelgue el test.
+    const deadline = performance.now() + 2000;
+    while (context.currentTime === 0 && performance.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    const start = { audio: context.currentTime, wall: performance.now() };
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    const result = { state: context.state, elapsed: context.currentTime - start };
+    // El ritmo frente al reloj real medido, no frente al segundo pedido: el temporizador llega tarde.
+    const wall = (performance.now() - start.wall) / 1000;
+    const result = {
+      state: context.state,
+      started: start.audio > 0,
+      rate: (context.currentTime - start.audio) / wall,
+    };
     await context.close();
     return result;
   });
 
   expect(clock.state).toBe('running');
-  expect(clock.elapsed).toBeGreaterThan(0.8);
-  expect(clock.elapsed).toBeLessThan(1.2);
+  expect(clock.started, 'el reloj empieza a correr').toBe(true);
+  expect(clock.rate).toBeGreaterThan(0.8);
+  expect(clock.rate).toBeLessThan(1.2);
 });
 
 test('oír el fichero de audio mientras la tira virtual reacciona', async ({ page }) => {
