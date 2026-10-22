@@ -62,7 +62,7 @@
   Verificar: los tests nuevos fallan porque la conexión no decodifica el tipo `5`.
 - [x] 2.2 El estado de la fuente en `packages/panel/src/engine/connection.ts`.
   Verificar: los tests de 2.1 pasan.
-- [ ] 2.3 **(test en rojo)** Tests de la cabecera en
+- [x] 2.3 **(test en rojo)** Tests de la cabecera en
   `packages/panel/src/layout/AudioSourceIndicator.test.tsx` (y `App.test.tsx` si la unión pasa por
   ahí): con la tarjeta perdida, «Desconectada» junto a «Tarjeta de sonido: \<nombre\>», anunciado a los
   lectores de pantalla y con el vúmetro aún visible; con la tarjeta conectada o con silencio, sin

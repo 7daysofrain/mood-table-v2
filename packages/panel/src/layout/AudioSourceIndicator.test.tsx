@@ -12,6 +12,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 /** Avanza un frame de pantalla: un `requestAnimationFrame`. */
@@ -121,5 +122,64 @@ describe('la fuente de audio de la cabecera', () => {
 
     expect(reads).toBe(readsBefore);
     expect(request.mock.calls).toHaveLength(requestsBefore);
+  });
+});
+
+const SOUNDCARD = { kind: 'soundcard' as const, name: 'Mixer de la mesa' };
+
+/** Simula que el sistema pide menos movimiento (`prefers-reduced-motion: reduce`). */
+function preferReducedMotion() {
+  vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
+    matches: query.includes('prefers-reduced-motion'),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
+describe('el aviso de tarjeta desconectada', () => {
+  it('con la tarjeta perdida, avisa «Desconectada» junto a la tarjeta, y el vúmetro sigue', () => {
+    render(<AudioSourceIndicator source={SOUNDCARD} lost levels={{ level: 0 }} />);
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('Desconectada');
+    expect(screen.getByText('Tarjeta de sonido: Mixer de la mesa')).toBeInTheDocument();
+    expect(screen.getByRole('meter', METER)).toBeInTheDocument();
+  });
+
+  it('parpadea para que salte a la vista', () => {
+    render(<AudioSourceIndicator source={SOUNDCARD} lost levels={{ level: 0 }} />);
+
+    expect(screen.getByRole('alert')).toHaveAttribute('data-blink');
+  });
+
+  it('si el sistema pide menos movimiento, no parpadea', () => {
+    preferReducedMotion();
+
+    render(<AudioSourceIndicator source={SOUNDCARD} lost levels={{ level: 0 }} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Desconectada');
+    expect(screen.getByRole('alert')).not.toHaveAttribute('data-blink');
+  });
+
+  it('con la tarjeta conectada, aunque esté en silencio, no hay aviso', () => {
+    render(<AudioSourceIndicator source={SOUNDCARD} lost={false} levels={{ level: 0 }} />);
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('Desconectada')).not.toBeInTheDocument();
+  });
+
+  it('al recuperarla, el aviso desaparece', () => {
+    const { rerender } = render(
+      <AudioSourceIndicator source={SOUNDCARD} lost levels={{ level: 0 }} />,
+    );
+
+    rerender(<AudioSourceIndicator source={SOUNDCARD} lost={false} levels={{ level: 0 }} />);
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
