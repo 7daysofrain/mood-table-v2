@@ -72,7 +72,7 @@ Se construye por tres razones:
 | BE7 | **Se recupera solo.** | Si la máquina se apaga, al volver retoma cada PR donde estaba. |
 | BE8 | **Coste acotado y visible.** | Cada PR tiene un tope de gasto y su coste queda registrado. |
 | BE9 | **Me entero cuando una PR está lista.** | Cuando una PR llega a *lista para integrar*, el sistema avisa al mantenedor por el mismo canal que cuando escala. |
-| BE10 | **Sus arreglos no rompen nada.** | Ningún arreglo se publica sin pasar antes las comprobaciones en local. |
+| BE10 | **Sus arreglos no rompen nada.** | Ningún arreglo se publica sin pasar antes, en local, `lint`, `typecheck`, `test` y `e2e`; SonarQube lo comprueba la PR después, como en cualquier otra. |
 | BE11 | **Puedo pararlo.** | El mantenedor puede detener el sistema en una PR concreta o del todo, y vuelve a ponerlo en marcha cuando quiere. |
 
 Como en el PRD del producto, las expectativas no llevan números: los umbrales (cuánto es "lo
