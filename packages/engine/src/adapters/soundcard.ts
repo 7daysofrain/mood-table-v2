@@ -145,7 +145,7 @@ export function openSoundcard(
   };
 
   return new Promise((resolve) => {
-    /** Lanza `arecord`. El primero decide el arranque; los demás, si se ha recuperado la tarjeta. */
+    /** Lanza `arecord`. El primero decide el arranque; los demás, si se recupera la tarjeta. */
     function attempt(startup: boolean): void {
       const current = spawn('arecord', arecordArgs(config.device));
       capture = current;
@@ -277,7 +277,7 @@ class SoundcardSource implements AudioSource {
     this.lost = true;
   }
 
-  /** Vuelve a empezar como al abrir la tarjeta: sin nada de antes del corte y descartando 300 ms. */
+  /** Empieza como al abrir la tarjeta: sin nada de antes del corte y descartando otros 300 ms. */
   restart(): void {
     this.lost = false;
     this.next = 0;

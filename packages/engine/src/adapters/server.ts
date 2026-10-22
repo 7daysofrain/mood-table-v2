@@ -4,9 +4,9 @@
  * 13). Cada tira tiene su salida del visor, que codifica cada frame con el protocolo de
  * `@moodtable/shared` y lo envía a todos los navegadores conectados. Por la misma conexión, cada
  * navegador recibe la fuente de audio al conectarse y su nivel y la posición del fichero en cada
- * pulso. Con la tarjeta de sonido, también su estado: al conectarse y cada vez que cambia (decisión 3
- * del change soundcard-reconnect). Con un fichero como fuente, lo sirve en `/audio` para que el panel lo oiga (decisión 6 del
- * change panel-audio-playback).
+ * pulso. Con la tarjeta de sonido, también su estado: al conectarse y cada vez que cambia
+ * (decisión 3 del change soundcard-reconnect). Con un fichero como fuente, lo sirve en `/audio`
+ * para que el panel lo oiga (decisión 6 del change panel-audio-playback).
  *
  * Sin contramedida para un navegador que no recibe (riesgo aceptado en el design): sus mensajes se
  * acumulan en su conexión hasta que se da por muerta.
@@ -45,8 +45,8 @@ export interface ServerOptions {
   audioBytes?: Uint8Array;
   /**
    * Cómo enterarse del estado de la tarjeta de sonido: da el actual al momento y después cada
-   * cambio, y devuelve cómo dejar de escucharlo, que se llama al cerrar. Sin él, como con un fichero
-   * o sin fuente, no se envía ningún mensaje de estado.
+   * cambio, y devuelve cómo dejar de escucharlo, que se llama al cerrar. Sin él, como con un
+   * fichero o sin fuente, no se envía ningún mensaje de estado.
    */
   watchSourceStatus?: (listener: (status: SourceStatus) => void) => () => void;
 }
