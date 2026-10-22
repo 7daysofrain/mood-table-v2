@@ -19,7 +19,7 @@
   `encodeSourceStatus`, `decodeSourceStatus`) y su sección en `docs/instructions/viewer-protocol.md`,
   con su ejemplo y la regla de rechazo.
   Verificar: los tests de 1.1 pasan y el documento describe exactamente lo que hace el código.
-- [ ] 1.3 **(test en rojo)** Tests de la reconexión en `packages/engine/src/adapters/soundcard.test.ts`,
+- [x] 1.3 **(test en rojo)** Tests de la reconexión en `packages/engine/src/adapters/soundcard.test.ts`,
   con el `arecord` falso y un reloj falso: tras perderla, cada segundo lanza `arecord` con la misma
   cadena; un intento que termina antes del primer bloque no escribe en el log y programa otro; el
   primer bloque la recupera, escribe una línea con nombre y cadena y vuelve a entregar audio; tras
