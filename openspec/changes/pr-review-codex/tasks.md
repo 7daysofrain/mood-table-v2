@@ -34,7 +34,7 @@
 
   Verificar: `grep -n -i copilot readme.md` no encuentra nada, y D41 conserva su texto original
   tachado.
-- [ ] 1.4 Entrada en `prompts.md` sobre el cambio de revisor, con el formato de `course.md` §5.
+- [x] 1.4 Entrada en `prompts.md` sobre el cambio de revisor, con el formato de `course.md` §5.
   Verificar: tiene como mucho 3 prompts literales y la línea en cursiva.
 - [ ] 1.5 **Verificación en GitHub** (sin commit; *Risks* de `design.md`):
   - con la PR de esta tarea en borrador, un push no recibe revisión de Codex; al marcarla como

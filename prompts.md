@@ -979,6 +979,19 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Para el estado de la tarjeta, la IA propuso un mensaje nuevo del protocolo (tipo `5`) en lugar de ampliar el de fuente o deducirlo del nivel, porque un silencio también da nivel cero. El humano lo aceptó, y también que no se envíe con un fichero (D61).*
 - *En `/opsx:apply` (`MOO-63`), el `arecord` falso de los tests devolvía siempre el mismo proceso, y la IA lo cambió para que cada reintento lance uno nuevo, como el de verdad. El reloj se inyecta para que los tests avancen el tiempo sin esperar.*
 
+#### 6.24 Cambiar la revisión automática de las PR de Copilot a Codex (`MOO-66`)
+
+**Prompt 1:**
+
+> He cambiado la revisión de Copilot por una de Codex. No tenia sentido copilot, nuestro budget es demasiado bajo
+
+*Claude Code (`claude-opus-5-5`, 22-oct). El humano había cambiado el revisor en GitHub, pero las instrucciones seguían mandando pedir y esperar a Copilot. La IA lo guardó en su memoria y propuso actualizar las instrucciones en una tarea aparte. Al buscar las menciones vio que también lo decía un requisito de la spec `quality-gates`, así que no bastaba una *chore* de documentación: según `workflow.md` §6, tocar un requisito lleva change. Antes de escribir nada preguntó al humano si hacerlo con change o solo con documentación, y cómo había configurado Codex. Consultó el *ruleset* con `gh api` y comprobó que la regla de Copilot ya no estaba.*
+
+*Ajustes:*
+- *En la primera revisión de Codex (PR #59, sin hallazgos), la IA vio que no deja una revisión de GitHub sino un comentario con el commit revisado. Con eso cambió la comprobación del agente antes de integrar: comparar ese SHA con el último commit, porque si se agota el límite de uso Codex no avisa (D62).*
+- *`openspec validate` rechazó el primer delta: un escenario no se puede renombrar dentro de un MODIFIED. La IA quitó el requisito de los hilos y lo volvió a añadir con otro nombre, como se hizo en `MOO-42`.*
+- *Que Codex no revise borradores quedó como «(asumido)»: la documentación no lo aclara. Se comprueba con la propia PR, abierta en borrador.*
+
 ---
 
 ### 7. Pull Requests
