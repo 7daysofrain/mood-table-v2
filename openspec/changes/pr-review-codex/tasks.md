@@ -26,7 +26,7 @@
 
   Verificar: `grep -n -i copilot docs/instructions/workflow.md` no encuentra nada, y los enlaces a
   `linear.md` §7 siguen apuntando a una sección que existe.
-- [ ] 1.3 Registrar la decisión (decisión 3):
+- [x] 1.3 Registrar la decisión (decisión 3):
   - D62 en `docs/idea-mood-table.md` §10;
   - en D41, «revisión automática de Copilot» tachado y **Obsoleto (22-oct)** con un puntero a D62,
     sin borrar ni renumerar;
