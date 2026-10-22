@@ -97,16 +97,16 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia. Una *chore*
   no recibe tareas: al cerrar la entrega se abre una PR `main` → `feature/entrega-N-JA`, que el usuario
   integra con **merge commit** (no *squash* ni *rebase*), y después su contenido coincide con `main`.
   Su enlace `…/tree/` es el del Typeform.
-- **Puertas de la PR**, en el *ruleset* «ramas de integración» (`main` y `feature/entrega-*`), que
-  configura el usuario:
-  - comprobaciones requeridas: `lint`, `typecheck`, `test`, `e2e`, *SonarCloud Code Analysis* y
-    `sonar-issues` (incidencias nuevas de SonarQube; solo se ejecuta en las PR contra `main`, y
-    saltada cuenta como superada);
-  - **revisión automática de Copilot** (`copilot_code_review`) en cada PR que no es borrador y en cada
-    push. Si el plan de GitHub no la permite, se pide al abrir la PR con
-    `gh pr edit <n> --add-reviewer @copilot`;
-  - **conversaciones resueltas** (`required_review_thread_resolution`): no se integra con un hilo
-    abierto, incluidos los de Copilot. Qué hace el agente con cada hallazgo: `workflow.md` §4.4.
+- **Puertas de la PR**, que configura el usuario:
+  - en el *ruleset* «ramas de integración» (`main` y `feature/entrega-*`):
+    - comprobaciones requeridas: `lint`, `typecheck`, `test`, `e2e`, *SonarCloud Code Analysis* y
+      `sonar-issues` (incidencias nuevas de SonarQube; solo se ejecuta en las PR contra `main`, y
+      saltada cuenta como superada);
+    - **conversaciones resueltas** (`required_review_thread_resolution`): no se integra con un hilo
+      abierto, incluidos los de Codex. Qué hace el agente con cada hallazgo: `workflow.md` §4.4.
+  - en los ajustes de Codex (*Code review*), no en el *ruleset*, que no tiene regla para él:
+    **revisión automática de Codex** (*Automatic review*) en cada PR que no es borrador y en cada push
+    (D62). Si no ha revisado el último push, se pide con un comentario `@codex review`.
 - PR: `Fixes MOO-n` con el ID de la **tarea**. Commits: `Refs MOO-n` (nunca `Fixes`).
 - *Linkbacks* activados también en **repos públicos**, con descripción: la PR muestra la historia de la
   que sale (trazabilidad pública para la evaluación). *Link commits to issues* desactivado (no hace falta).

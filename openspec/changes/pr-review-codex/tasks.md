@@ -6,7 +6,7 @@
 
 ## 1. MOO-66 · infra
 
-- [ ] 1.1 Documentar la puerta de Codex en `linear.md` §7 (decisión 1 de `design.md`):
+- [x] 1.1 Documentar la puerta de Codex en `linear.md` §7 (decisión 1 de `design.md`):
   - revisión automática de Codex en cada PR que no es borrador y en cada push, activada en los
     ajustes de Codex, no en el *ruleset*;
   - fuera el sustituto `gh pr edit <n> --add-reviewer @copilot`; si hace falta pedirla, `@codex review`;

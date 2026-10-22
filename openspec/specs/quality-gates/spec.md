@@ -7,7 +7,7 @@ de integración** (lint, tipos, tests, E2E, cobertura y *quality gate* de SonarQ
 entorno local y la CI usan las mismas herramientas en las mismas versiones. Son ramas de integración
 `main`, adonde van las PR de las tareas, y las ramas de entrega `feature/entrega-*`, que solo reciben
 la foto de `main` al cerrar cada entrega (`linear.md` §7). Incluye también las puertas de revisión:
-la de Copilot y los hilos sin resolver.
+la de Codex y los hilos sin resolver.
 
 ## Requirements
 
