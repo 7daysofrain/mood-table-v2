@@ -10,7 +10,7 @@
 | Nivel | Dónde vive | Qué es | Tamaño | Quién lo escribe |
 |---|---|---|---|---|
 | **PRD** | `docs/PRD.md` | Qué y por qué del producto: historias H1-H5 y S1-S2, expectativas E1-E9, alcance, glosario | — | Joseba (la IA ayuda) |
-| **Épica** | Linear · **issue padre** en el proyecto *Mood Table* (una por H# / S# del PRD, más dos épicas técnicas: la de *enablers*, que cuelga tareas sin historia, y *PR Babysitter*, con historias que salen de su propio documento: `linear.md` §1) | Bloque grande de capacidad = una historia del PRD | Días/semanas | Se crea desde el PRD |
+| **Épica** | Linear · **issue padre** en el proyecto *Mood Table* (una por H# / S# del PRD, más dos épicas técnicas: la de *enablers*, que cuelga tareas sin historia, y *PR Babysitter*, con historias que salen de su propio documento: `linear.md` §1) | Bloque grande de capacidad = una historia del PRD (las épicas técnicas, no: `linear.md` §1) | Días/semanas | Se crea desde el PRD; las técnicas, desde su necesidad o su documento |
 | **Historia** | Linear · **sub-issue** de su épica | Comportamiento observable, INVEST, criterios de aceptación en GIVEN/WHEN/THEN | 1-2 días | Joseba describe el caso feliz; la IA lo traduce a GIVEN/WHEN/THEN y busca huecos |
 | **Tarea** | Linear · **sub-issue** de su historia | Cambio coherente de **un área** (backend, frontend, BD, infra…) que se revisa e integra: **una tarea = una PR** | Horas | Se planifica con la historia; la puede proponer el agente |
 | **OpenSpec change** | `openspec/changes/<id>/` | El *cómo*: propuesta, delta de spec (requisitos SHALL/MUST + escenarios), diseño y `tasks.md` con **una sección por tarea**; **cada paso = un commit** | Uno por historia | La propone el agente; la revisa Joseba |
