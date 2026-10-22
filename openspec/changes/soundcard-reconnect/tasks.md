@@ -38,7 +38,7 @@
   (también si está perdida); un cambio de estado llega a todos los paneles conectados; con un fichero
   o sin fuente, ningún mensaje de estado (`specs/audio-source`, decisión 3).
   Verificar: los tests nuevos fallan porque el servidor no conoce el estado.
-- [ ] 1.6 El estado de la fuente en `packages/engine/src/adapters/server.ts` (lo guarda, lo envía al
+- [x] 1.6 El estado de la fuente en `packages/engine/src/adapters/server.ts` (lo guarda, lo envía al
   conectarse y lo difunde al cambiar) y la unión en `packages/engine/src/main.ts`: el estado inicial
   sale del adaptador, y cada cambio va al servidor.
   Verificar: los tests de 1.5 pasan, `pnpm lint` no da ningún error de fronteras y

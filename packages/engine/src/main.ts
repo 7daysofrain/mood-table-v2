@@ -1,11 +1,11 @@
 /**
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
  * adaptadores. Carga la configuración y la fuente de audio, si la declara, arranca el servidor del
- * panel (que anuncia la fuente, envía su nivel y la posición del fichero y sirve el fichero) y el
- * motor, y da a cada tira sus salidas: el visor siempre (D43); la salida Adalight de las tiras
- * físicas llega con H3. Si la configuración no sirve, el fichero de audio no se puede leer o su
- * formato no vale, la tarjeta de sonido no se puede abrir, o el servidor no puede escuchar, el motor
- * no arranca: dice qué falla y termina con código 1.
+ * panel (que anuncia la fuente y el estado de la tarjeta, envía su nivel y la posición del fichero y
+ * sirve el fichero) y el motor, y da a cada tira sus salidas: el visor siempre (D43); la salida
+ * Adalight de las tiras físicas llega con H3. Si la configuración no sirve, el fichero de audio no
+ * se puede leer o su formato no vale, la tarjeta de sonido no se puede abrir, o el servidor no puede
+ * escuchar, el motor no arranca: dice qué falla y termina con código 1.
  */
 import { join } from 'node:path';
 
@@ -24,8 +24,8 @@ async function main(): Promise<string | undefined> {
   if (!loaded.ok) return loaded.error;
 
   // La fuente se abre antes que el servidor, para no arrancar a medias. Con la tarjeta, su pérdida
-  // en plena sesión va al log de errores y el motor sigue (decisión 5 del change
-  // soundcard-audio-source); no hay fichero que servir en `/audio`.
+  // y su recuperación en plena sesión van al log de errores y el motor sigue (decisión 5 del change
+  // soundcard-audio-source, D60); su estado va a los paneles; no hay fichero que servir en `/audio`.
   const { audioSource } = loaded.config;
   const audio = audioSource?.type === 'file' ? await loadAudioFile(audioSource.path) : undefined;
   if (audio && !audio.ok) return audio.error;
@@ -44,9 +44,11 @@ async function main(): Promise<string | undefined> {
       panelDir: PANEL_DIR,
       source: sourceMessage(loaded.config),
       audioBytes: audio?.ok ? audio.bytes : undefined,
+      watchSourceStatus: soundcard?.onStatus,
     });
   } catch (error) {
-    // Un `arecord` vivo mantendría el proceso en marcha, y el motor no terminaría.
+    // Un `arecord` vivo, o un intento pendiente, mantendría el proceso en marcha, y el motor no
+    // terminaría.
     soundcard?.stop();
     return `No puede escuchar en ${host}:${port} (${(error as Error).message})`;
   }

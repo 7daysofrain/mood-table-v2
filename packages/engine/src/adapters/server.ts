@@ -4,7 +4,8 @@
  * 13). Cada tira tiene su salida del visor, que codifica cada frame con el protocolo de
  * `@moodtable/shared` y lo envía a todos los navegadores conectados. Por la misma conexión, cada
  * navegador recibe la fuente de audio al conectarse y su nivel y la posición del fichero en cada
- * pulso. Con un fichero como fuente, lo sirve en `/audio` para que el panel lo oiga (decisión 6 del
+ * pulso. Con la tarjeta de sonido, también su estado: al conectarse y cada vez que cambia (decisión 3
+ * del change soundcard-reconnect). Con un fichero como fuente, lo sirve en `/audio` para que el panel lo oiga (decisión 6 del
  * change panel-audio-playback).
  *
  * Sin contramedida para un navegador que no recibe (riesgo aceptado en el design): sus mensajes se
@@ -22,7 +23,9 @@ import {
   encodeLevel,
   encodePosition,
   encodeSource,
+  encodeSourceStatus,
   type SourceMessage,
+  type SourceStatus,
 } from '@moodtable/shared';
 import Fastify from 'fastify';
 
@@ -40,6 +43,11 @@ export interface ServerOptions {
    * ellos, `/audio` no existe.
    */
   audioBytes?: Uint8Array;
+  /**
+   * Cómo enterarse del estado de la tarjeta de sonido: da el actual al momento y después cada
+   * cambio. Sin él, como con un fichero o sin fuente, no se envía ningún mensaje de estado.
+   */
+  watchSourceStatus?: (listener: (status: SourceStatus) => void) => void;
 }
 
 export interface EngineServer {
@@ -84,6 +92,7 @@ export async function startServer({
   panelDir,
   source = { kind: 'none' },
   audioBytes,
+  watchSourceStatus,
 }: ServerOptions): Promise<EngineServer> {
   const app = Fastify();
   await app.register(fastifyWebsocket);
@@ -93,10 +102,13 @@ export async function startServer({
     app.get('/', (_request, reply) => reply.code(503).type('text/plain').send(PANEL_NOT_BUILT));
   }
   // El navegador solo recibe. Al conectarse, la fuente de audio, que no cambia mientras el motor
-  // corre (decisión 5 del change virtual-strip-audio-file); los frames y el nivel, en cada pulso.
+  // corre (decisión 5 del change virtual-strip-audio-file), y el último estado de la tarjeta, si lo
+  // hay; los frames y el nivel, en cada pulso.
   const sourceMessage = encodeSource(source);
+  let statusMessage: Uint8Array | undefined;
   app.get(VIEWER_PATH, { websocket: true }, (socket) => {
     socket.send(sourceMessage);
+    if (statusMessage) socket.send(statusMessage);
   });
   // El fichero entero, tal cual: el panel lo pide una vez por conexión. Son los bytes que el motor
   // leyó al arrancar, no el disco de ahora, así que se oye lo mismo que se analiza aunque el
@@ -117,6 +129,11 @@ export async function startServer({
       if (browser.readyState === browser.OPEN) browser.send(message);
     }
   }
+
+  watchSourceStatus?.((status) => {
+    statusMessage = encodeSourceStatus(status);
+    broadcast(statusMessage);
+  });
 
   return {
     url: `http://${panelHost(address)}:${address.port}`,
