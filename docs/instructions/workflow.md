@@ -76,15 +76,18 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
    la rama ni al push, solo a la PR).
 4. **PR** (una por tarea), **contra `main`**. En la descripción, `Fixes MOO-n` con el ID de la tarea.
    Puertas (`linear.md` §7): lint, tipos, tests, E2E, *quality gate* de SonarQube, incidencias nuevas
-   de SonarQube (`sonar-issues`), revisión de Copilot y todos los hilos resueltos. Se pasa a *lista
-   para revisar* cuando el `tasks.md` está completo: Copilot no revisa borradores.
-   - **Cada hallazgo de Copilot o de SonarQube**, el agente lo **verifica** contra el código (no lo da
+   de SonarQube (`sonar-issues`), revisión de Codex y todos los hilos resueltos. Se pasa a *lista
+   para revisar* cuando el `tasks.md` está completo: Codex no revisa borradores.
+   - **Cada hallazgo de Codex o de SonarQube**, el agente lo **verifica** contra el código (no lo da
      por bueno). Si es real, lo arregla con un commit y contesta en el hilo con el commit; si no aplica,
      contesta por qué. Luego resuelve el hilo. En SonarQube, lo que no aplica lo marca como aceptado
      el usuario, con el motivo.
    - Lo que exige criterio (cambiar el diseño o aceptar una incidencia) se le pregunta al usuario.
-   - Antes de integrar, el agente comprueba que hay una revisión de Copilot del último push. Si se ha
-     agotado la cuota, Copilot no revisa ni avisa: se pide a mano o se le dice al usuario.
+   - Antes de integrar, el agente comprueba que Codex ha revisado el último push. Sin hallazgos, Codex
+     no deja una revisión de GitHub, sino un comentario de `chatgpt-codex-connector` con el commit
+     revisado (`commit_sha` en su bloque `codex-review-state`): tiene que coincidir con el último commit
+     de la PR. Si no coincide o no hay comentario (p. ej., se ha agotado el límite de uso, y Codex no
+     avisa), se pide con un comentario `@codex review` o se le dice al usuario.
 5. **Integrar.** Joseba integra cada PR con el botón de GitHub y la tarea pasa sola a *Done*. Con la
    última, la historia queda completa: `/opsx:verify` comprueba la implementación contra el change y
    `/opsx:archive` la archiva. Como el *ruleset* no deja subir directo a `main`, el archivado va en

@@ -18,7 +18,7 @@
   Verificar: `grep -n -i copilot docs/instructions/linear.md openspec/specs/quality-gates/spec.md`
   solo encuentra los requisitos que el archivado sustituye, y `pnpm exec openspec validate --specs`
   pasa.
-- [ ] 1.2 Documentar el flujo en `workflow.md` §4.4 (decisión 2):
+- [x] 1.2 Documentar el flujo en `workflow.md` §4.4 (decisión 2):
   - puertas: revisión de Codex en lugar de Copilot; Codex no revisa borradores *(asumido)*;
   - el protocolo con cada hallazgo, de Codex o de SonarQube (sin otros cambios);
   - antes de integrar, el SHA del comentario de Codex coincide con el último commit; si no, `@codex
