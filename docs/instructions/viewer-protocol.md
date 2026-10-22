@@ -132,8 +132,8 @@ Lo ignora, también si es de un tipo que todavía no conoce. Se rechaza:
 
 - un frame cuyo tipo no es `1`, más corto que la cabecera (6 bytes) o cuyos colores no son un número
   entero de LEDs (al menos uno);
-- un mensaje de fuente con una clase que no es `0` ni `1`, sin fuente pero con nombre, de un fichero
-  sin nombre o con un nombre que no es UTF-8 válido;
+- un mensaje de fuente con una clase que no es `0`, `1` ni `2`, sin fuente pero con nombre, de un
+  fichero o una tarjeta de sonido sin nombre o con un nombre que no es UTF-8 válido;
 - un mensaje de nivel que no mide 9 bytes o cuyo nivel no es un número de 0 a 1;
 - un mensaje de posición que no mide 13 bytes o cuya posición no es un número finito mayor o igual
   que 0;
