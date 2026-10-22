@@ -174,3 +174,23 @@ export function decodePosition(message: Uint8Array): PositionMessage | undefined
   if (!(position >= 0 && Number.isFinite(position))) return undefined;
   return { seq: view.getUint32(1, false), position };
 }
+
+/** Tipo del mensaje del estado de la fuente (decisión 3 del change soundcard-reconnect). */
+export const SOURCE_STATUS_MESSAGE_TYPE = 5;
+
+/** Si la tarjeta de sonido entrega audio o se ha perdido. Solo lo tiene la tarjeta de sonido. */
+export type SourceStatus = 'connected' | 'lost';
+
+/** El estado, por su byte. */
+const SOURCE_STATUS: readonly SourceStatus[] = ['connected', 'lost'];
+
+/** El mensaje del estado de la fuente: al conectarse cada panel y a todos cuando cambia. */
+export function encodeSourceStatus(status: SourceStatus): Uint8Array {
+  return Uint8Array.of(SOURCE_STATUS_MESSAGE_TYPE, SOURCE_STATUS.indexOf(status));
+}
+
+/** El estado que lleva `message`, o `undefined` si no es un mensaje de estado bien formado. */
+export function decodeSourceStatus(message: Uint8Array): SourceStatus | undefined {
+  if (message.length !== 2 || message[0] !== SOURCE_STATUS_MESSAGE_TYPE) return undefined;
+  return SOURCE_STATUS[message[1] ?? -1];
+}

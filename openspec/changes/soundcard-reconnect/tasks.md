@@ -15,7 +15,7 @@
   devuelve igual y rechaza otro tipo, un estado que no es `0` ni `1` y un mensaje que no mide 2 bytes
   (decisión 3).
   Verificar: los tests nuevos fallan porque el tipo `5` no existe; el resto sigue en verde.
-- [ ] 1.2 El tipo `5` en `packages/shared/src/viewer-protocol.ts` (`SOURCE_STATUS_MESSAGE_TYPE`,
+- [x] 1.2 El tipo `5` en `packages/shared/src/viewer-protocol.ts` (`SOURCE_STATUS_MESSAGE_TYPE`,
   `encodeSourceStatus`, `decodeSourceStatus`) y su sección en `docs/instructions/viewer-protocol.md`,
   con su ejemplo y la regla de rechazo.
   Verificar: los tests de 1.1 pasan y el documento describe exactamente lo que hace el código.
