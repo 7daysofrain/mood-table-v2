@@ -353,6 +353,21 @@ describe('el estado de la tarjeta de sonido', () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
+  it('un estado igual al que ya tenía no avisa', () => {
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeSource(SOUNDCARD));
+    lastSocket().receive(encodeSourceStatus('lost'));
+    listener.mockClear();
+
+    lastSocket().receive(encodeSourceStatus('lost'));
+
+    expect(connection.sourceLost).toBe(true);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   it('un panel que se conecta con la tarjeta perdida lo sabe al momento', () => {
     connection.start();
     lastSocket().open();

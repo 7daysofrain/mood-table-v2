@@ -170,7 +170,7 @@ export class EngineConnection {
         return;
       }
       const sourceStatus = decodeSourceStatus(message);
-      if (sourceStatus) {
+      if (sourceStatus && (sourceStatus === 'lost') !== this.lost) {
         this.lost = sourceStatus === 'lost';
         this.notify();
       }
