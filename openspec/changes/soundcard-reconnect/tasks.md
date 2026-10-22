@@ -28,7 +28,7 @@
   líneas; quien se suscribe recibe el estado actual al momento y cada cambio después; `stop()` cancela
   el intento pendiente y no lanza más `arecord` (decisiones 1, 2 y 4, `specs/audio-source`).
   Verificar: los tests nuevos fallan porque la fuente no vuelve a abrirse.
-- [ ] 1.4 La reconexión en `packages/engine/src/adapters/soundcard.ts`: el reloj inyectable, el
+- [x] 1.4 La reconexión en `packages/engine/src/adapters/soundcard.ts`: el reloj inyectable, el
   reintento cada segundo, el reinicio del búfer y del descarte al recuperarla, la línea del log y la
   suscripción al estado. `soundcard.hardware.ts` no cambia. El comentario de cabecera deja de decir
   «no se vuelve a abrir».
