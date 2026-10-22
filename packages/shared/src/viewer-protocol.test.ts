@@ -5,10 +5,12 @@ import {
   decodeLevel,
   decodePosition,
   decodeSource,
+  decodeSourceStatus,
   encodeFrame,
   encodeLevel,
   encodePosition,
   encodeSource,
+  encodeSourceStatus,
 } from './viewer-protocol.ts';
 
 /** Los colores de una tira de `ledCount` LEDs, distintos en cada byte. */
@@ -198,5 +200,32 @@ describe('el mensaje de la posición del fichero', () => {
     expect(decodeFrame(message)).toBeUndefined();
     expect(decodeLevel(message)).toBeUndefined();
     expect(decodeSource(message)).toBeUndefined();
+  });
+});
+
+describe('el mensaje del estado de la fuente', () => {
+  it('son dos bytes: el tipo 5 y el estado, 0 si está conectada y 1 si está perdida', () => {
+    expect(hexOf(encodeSourceStatus('connected'))).toBe('05 00');
+    expect(hexOf(encodeSourceStatus('lost'))).toBe('05 01');
+  });
+
+  it.each(['connected', 'lost'] as const)('%s, se decodifica igual que se codificó', (status) => {
+    expect(decodeSourceStatus(encodeSourceStatus(status))).toBe(status);
+  });
+
+  it.each([
+    ['corto', [5]],
+    ['largo', [5, 0, 0]],
+    ['de otro tipo', [2, 0]],
+    ['con un estado que no es 0 ni 1', [5, 2]],
+  ])('%s, se rechaza', (_name, bytes) => {
+    expect(decodeSourceStatus(Uint8Array.from(bytes))).toBeUndefined();
+  });
+
+  it('no lo decodifican como fuente ni frame', () => {
+    const message = encodeSourceStatus('lost');
+
+    expect(decodeSource(message)).toBeUndefined();
+    expect(decodeFrame(message)).toBeUndefined();
   });
 });

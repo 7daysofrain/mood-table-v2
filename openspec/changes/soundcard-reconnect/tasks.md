@@ -10,7 +10,7 @@
 
 ## 1. MOO-63 · engine
 
-- [ ] 1.1 **(test en rojo)** Tests del protocolo en `packages/shared/src/viewer-protocol.test.ts`:
+- [x] 1.1 **(test en rojo)** Tests del protocolo en `packages/shared/src/viewer-protocol.test.ts`:
   `encodeSourceStatus` con conectada da `05 00` y con perdida `05 01`; `decodeSourceStatus` los
   devuelve igual y rechaza otro tipo, un estado que no es `0` ni `1` y un mensaje que no mide 2 bytes
   (decisión 3).
