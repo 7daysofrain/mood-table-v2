@@ -9,6 +9,6 @@ El PRD fija expectativas sin cifras; estas se derivan en la spec del motor y se 
 - **E2/E6 (la tarjeta de sonido se pierde en plena sesión, `MOO-59`):**
   - **Aviso en el panel:** < 1 s desde la pérdida, el límite de Nielsen para que una respuesta no corte el hilo del usuario (mismo artículo que E1). En la práctica son decenas de ms: `arecord` termina en el acto y el mensaje de estado sale enseguida (D61).
   - **Recuperación:** < 3 s desde que el sistema ve la tarjeta hasta que la luz vuelve a seguir la música. Medido en la Pi el 22-oct, en tres desconexiones: desde que la tarjeta aparece hasta el primer audio, 394, 414 y 434 ms (ALSA aún contesta `No such device` unos 100-140 ms, y `arecord` tarda unos 275 ms en entregar el primer bloque). El peor caso con un reintento por segundo (D60) son unos 1,6 s; el DJ fijó 3 s, con margen. No cuenta lo que tarda el USB en presentar la tarjeta (1,1-2,1 s en la prueba), que no depende del motor. Descartado: reintentar cada 0,5 s para bajar a unos 1,1 s.
-- **E7 (sin hardware):** de clonar a ver el simulador en ≤ 10 min siguiendo la documentación.
+- **E7 (sin hardware):** de clonar a ver el simulador sin ayuda, solo con la documentación. Los ≤ 10 min son orientativos (que sea rápido), no un umbral que se mida.
 - **E8:** ningún frame por encima del límite de potencia declarado (test automático).
 - **E9:** un efecto nuevo = un módulo y su test, sin cambios en motor, panel ni BD.
