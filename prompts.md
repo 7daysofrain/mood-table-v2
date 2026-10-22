@@ -4,7 +4,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ## Índice
 
-0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés) · [0.2 OpenSpec](#02-openspec-inicialización-y-configuración) · [0.3 Hook `validate-ac`](#03-hook-validate-ac-moo-36)
+0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés) · [0.2 OpenSpec](#02-openspec-inicialización-y-configuración) · [0.3 Hook `validate-ac`](#03-hook-validate-ac-moo-36) · [0.4 PR Babysitter](#04-pr-babysitter-exploración-moo-67)
 1. [Descripción general del producto](#1-descripción-general-del-producto)
 2. [Arquitectura del sistema](#2-arquitectura-del-sistema)
 3. [Modelo de datos](#3-modelo-de-datos)
@@ -112,6 +112,28 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 > si, sigue, pero prepara un worktree
 
 *La IA creó el worktree a mano desde la rama de la entrega (la herramienta de worktrees partía de `main`). Resultado: validador como función pura con 18 tests en `tooling/`, dentro de la cobertura y de Sonar, y una entrada de 25 líneas que lee la llamada y sale con código 2 si hay errores. Se probó a mano con Node 22 y 24: sin descripción pasa, bien formada pasa, sin `Then` bloquea con el escenario y el paso que falta. La IA no podía probarlo en su propia sesión (los hooks se cargan al arrancar), así que preparó un prompt autónomo para una sesión nueva de `claude -p` en el worktree: dos llamadas a `save_issue` contra una issue inexistente, sin riesgo de escribir porque en ese modo el `ask` se deniega solo. Salida: `RESULTADO: OK`.*
+
+### 0.4 PR Babysitter: exploración (`MOO-67`)
+
+**Prompt 1:**
+
+> En las últimas clases hemos estado haciendo laboratorios sobre sistemas agenticos. Usando LangChain, ADK, Ollama y cosas asi. Te pongo las técnolgías como referencia, no como requisito. El caso es que para H2 me gustaría montar un sistema autónomo multiagente para la parte de revision de codigo. Abro este chat para empezar a discutir sobre el tema. No quiero implementar nada todavia si no valorar si merece la pena (hay que tener en cuenta el alto valor pedagojico que tendria para mi). ¿podemos realizar una exploración del tema?
+
+*Claude Code (`claude-opus-5-5`, 22-oct). Exploración sin código. La IA leyó el flujo de PR (`workflow.md` §4.4, el intento de `MOO-50`) y planteó pros y contras: alto valor para aprender y para el eje 3, pero riesgo de plazo frente a la Entrega 3, ruido que bloquea la integración (cada falso positivo es un hilo que resolver) y Ollama sin GPU en la CI. Recomendó un revisor de conformidad con el proyecto (OpenSpec, D#) en vez de uno genérico.*
+
+**Prompt 2:**
+
+> antes de seguir con las preguntas hago algunas aclaraciones. Entraría en la epica de enablers, H2 se usuaria para la ejecución.
+> Por otro lado Codex no está orquestando nada, simplemente entra y revisa y deja comentarios. Igual que hacia copilot. No veo la competencia ahi.
+> El flujo a cubrir sería a partir de que se abre la PR. Se trataría de haber un babysit de la PR: Esperar a que pasen las QG y el revisor (o revisores de codigo) -> Evaluar los resultados y cuales son las cosas que merece la pena hacer y cuales no. Evaluar si se necesita intervención humana, realizar los fixes y terminar en merge. Es decir, que una vez que termine la parte de desarrollo automatizar toda esa parte y que solo tenga que intervenir en casos muy determinados
+
+*Ajuste humano que cambió el problema: no un revisor, sino un orquestador que conduce la PR hasta el final. La IA se opuso a que integrara: el merge es la única revisión humana del código y el sistema daría por bueno su propio trabajo. Se quedó en merge humano (D64), con la autonomía ganada con datos. Lo multiagente se justificó por separación de funciones (quien arregla no es quien juzga), no por paralelismo. El humano eligió TypeScript (apenas conoce Python) y, entre LangGraph.js y ADK, LangGraph.js tras una comparación con la documentación actual (D65).*
+
+**Prompt 3:**
+
+> Es que me parece que vamos demasiado rapido. No tiene sentido descomponer todo esto en tareas dentro de linear (infraestructura, arquitectura, implementación, pruebas) e ir una a una?
+
+*La IA estaba cerrando decisiones de diseño antes de tiempo, y lo reconoció. Propuso rebanadas verticales en lugar de fases (una tarea por fase rompe «una PR = código + tests») y dejar cada decisión abierta para la spec de la historia que la necesita. Resultado: épica técnica propia con historias (D63) y un documento de qué y porqué (`docs/pr-babysitter.md`), revisado sección por sección. Ajustes humanos: el problema no se mide, lo describe el mantenedor (tedioso, exige atención, propenso a fallos); las PR de Dependabot y las *chores* sin spec también entran; ejecutarlo en casa no es una restricción, puede ir a la nube; el nombre, *PR Babysitter*.*
 
 ---
 
