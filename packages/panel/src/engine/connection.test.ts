@@ -396,6 +396,23 @@ describe('el estado de la tarjeta de sonido', () => {
     expect(connection.sourceLost).toBe(false);
   });
 
+  it('un estado que llega tarde por una conexión ya cerrada no cuenta', () => {
+    connection.start();
+    const closed = lastSocket();
+    closed.open();
+    closed.receive(encodeSource(SOUNDCARD));
+    closed.drop();
+    vi.advanceTimersByTime(1000);
+    lastSocket().open();
+    const listener = vi.fn();
+    connection.subscribe(listener);
+
+    closed.receive(encodeSourceStatus('lost'));
+
+    expect(connection.sourceLost).toBe(false);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   it('ignora un mensaje de estado mal formado', () => {
     connection.start();
     lastSocket().open();
