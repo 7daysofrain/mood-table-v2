@@ -33,7 +33,7 @@
   suscripción al estado. `soundcard.hardware.ts` no cambia. El comentario de cabecera deja de decir
   «no se vuelve a abrir».
   Verificar: los tests de 1.3 pasan y los de arranque y pérdida de `MOO-23` siguen en verde.
-- [ ] 1.5 **(test en rojo)** Tests del servidor en `packages/engine/src/adapters/server.test.ts`: con
+- [x] 1.5 **(test en rojo)** Tests del servidor en `packages/engine/src/adapters/server.test.ts`: con
   una tarjeta como fuente, un panel que se conecta recibe el mensaje de fuente y después el de estado
   (también si está perdida); un cambio de estado llega a todos los paneles conectados; con un fichero
   o sin fuente, ningún mensaje de estado (`specs/audio-source`, decisión 3).
