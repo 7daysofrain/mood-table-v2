@@ -1,4 +1,10 @@
-import { encodeFrame, encodeLevel, encodePosition, encodeSource } from '@moodtable/shared';
+import {
+  encodeFrame,
+  encodeLevel,
+  encodePosition,
+  encodeSource,
+  encodeSourceStatus,
+} from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -323,6 +329,80 @@ describe('la fuente de audio y su nivel', () => {
     lastSocket().receive(encodeLevel(1, 0.5));
 
     expect(connection.frames).toEqual(new Map([[0, Uint8Array.of(1, 2, 3)]]));
+  });
+});
+
+describe('el estado de la tarjeta de sonido', () => {
+  const SOUNDCARD = { kind: 'soundcard' as const, name: 'Mixer de la mesa' };
+
+  it('guarda que la tarjeta se ha perdido y avisa al cambiar', () => {
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeSource(SOUNDCARD));
+    lastSocket().receive(encodeSourceStatus('connected'));
+    listener.mockClear();
+
+    lastSocket().receive(encodeSourceStatus('lost'));
+    expect(connection.sourceLost).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    lastSocket().receive(encodeSourceStatus('connected'));
+    expect(connection.sourceLost).toBe(false);
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it('un panel que se conecta con la tarjeta perdida lo sabe al momento', () => {
+    connection.start();
+    lastSocket().open();
+
+    lastSocket().receive(encodeSource(SOUNDCARD));
+    lastSocket().receive(encodeSourceStatus('lost'));
+
+    expect(connection.sourceLost).toBe(true);
+  });
+
+  it('sin mensaje de estado, la fuente no está perdida', () => {
+    connection.start();
+    expect(connection.sourceLost).toBe(false);
+
+    lastSocket().open();
+    lastSocket().receive(encodeSource({ kind: 'file', name: 'golpes.wav' }));
+    lastSocket().receive(encodeLevel(1, 0));
+
+    expect(connection.sourceLost).toBe(false);
+  });
+
+  it('al perder la conexión con el motor, lo olvida', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeSource(SOUNDCARD));
+    lastSocket().receive(encodeSourceStatus('lost'));
+
+    lastSocket().drop();
+
+    expect(connection.sourceLost).toBe(false);
+  });
+
+  it('al pararla, también lo olvida', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeSource(SOUNDCARD));
+    lastSocket().receive(encodeSourceStatus('lost'));
+
+    connection.stop();
+
+    expect(connection.sourceLost).toBe(false);
+  });
+
+  it('ignora un mensaje de estado mal formado', () => {
+    connection.start();
+    lastSocket().open();
+
+    lastSocket().receive(Uint8Array.of(5, 7));
+
+    expect(connection.sourceLost).toBe(false);
   });
 });
 

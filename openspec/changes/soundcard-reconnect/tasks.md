@@ -56,7 +56,7 @@
 
 ## 2. MOO-64 · panel
 
-- [ ] 2.1 **(test en rojo)** Tests de la conexión en `packages/panel/src/engine/connection.test.ts`:
+- [x] 2.1 **(test en rojo)** Tests de la conexión en `packages/panel/src/engine/connection.test.ts`:
   guarda el estado que llega por el tipo `5` y avisa al cambiar; sin mensaje de estado, la fuente no
   está perdida; lo olvida al perder la conexión con el motor (decisión 5).
   Verificar: los tests nuevos fallan porque la conexión no decodifica el tipo `5`.
