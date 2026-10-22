@@ -43,7 +43,7 @@
   sale del adaptador, y cada cambio va al servidor.
   Verificar: los tests de 1.5 pasan, `pnpm lint` no da ningún error de fronteras y
   `pnpm test:e2e` sigue en verde.
-- [ ] 1.7 Umbrales y decisiones: el aviso en menos de 1 s (Nielsen) y la recuperación en menos de 3 s (con la medición del 22-oct)
+- [x] 1.7 Umbrales y decisiones: el aviso en menos de 1 s (Nielsen) y la recuperación en menos de 3 s (con la medición del 22-oct)
   en `docs/umbrales-para-specs.md`; D60 (reconexión y log) y D61 (mensaje de estado) en
   `docs/idea-mood-table.md` §10, con «No se reconecta (`MOO-59`)» de D57 tachado y apuntando a D60;
   README §2.2 (el adaptador *Tarjeta de sonido* recupera la tarjeta) y `prompts.md`.

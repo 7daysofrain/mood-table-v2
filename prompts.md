@@ -954,6 +954,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *Al integrar la #51, `sonar-issues` marcó dos ternarios anidados del código de la IA; los arregló en vez de aceptarlos. El conflicto que GitHub mostró después era falso (el commit del change había llegado a `main` por otro camino), y se resolvió trayendo `main` a la rama.*
 
+#### 6.23 Recuperar la tarjeta de sonido: refinado, medida en la Pi, spec e implementación (`MOO-59` y `MOO-63`)
+
+**Prompt 1:**
+
+> hay alguna manera de probar con la PI es punto que se decide?
+
+*Claude Code (`claude-opus-5-5`, 22-oct), `/estimate-story MOO-59`. El humano puso un 2 («visualmente el cambio es muy pequeño») y el estimador, a ciegas, un 5: la incógnita era reconocer la tarjeta si volvía por otro puerto USB con otro número de ALSA. En vez de elegir entre las dos cartas, el humano pidió comprobarlo. La IA vio por SSH que la Pi la declara por nombre (`plughw:CARD=Device,DEV=0`, D56), y con un desenchufe real confirmó que `arecord` termina con `No such device`, que en otro puerto sigue llamándose `Device` y que la misma cadena vuelve a grabar. También vio que la tarjeta no tiene número de serie: otra del mismo modelo se tomaría por la declarada, y quedó como non-goal. Estimación final: 2.*
+
+**Prompt 2:**
+
+> hagamos una prueba, enchufo y desenchufo rapido, te parece?
+
+*Al revisar uno a uno los «(asumido)» del change, la IA proponía 2 s para la recuperación, sacados de sus propias cuentas. El humano pidió medirlo. La IA lanzó en la Pi un script de solo lectura que vigilaba `/proc/asound` cada 50 ms, y en tres desconexiones salieron 394, 414 y 434 ms desde que la tarjeta aparece hasta el primer audio (los primeros ~100 ms ALSA aún dice `No such device`). Peor caso con un reintento por segundo: unos 1,6 s. El humano añadió un segundo de margen («añadimos 1 segundo de margen») y el umbral quedó en 3 s, con la medición como fuente.*
+
+**Prompt 3:**
+
+> para mi es parte del criterio principal, siempre es larga
+
+*En `/refine-story`, `poke-holes` propuso un criterio aparte para una desconexión larga. El humano lo metió en el escenario principal («da igual cuánto tiempo»), y de ahí sale el reintento sin límite de D60. En la misma revisión descartó dos notas: añadir al PRD qué pasa si la Pi arranca sin la tarjeta tras un corte de luz («si se va la luz en medio de la sesión no tienes nada») y repetir como criterio lo que ya cubre la spec de `MOO-15`.*
+
+*Ajustes durante el refinado, la spec y la implementación:*
+- *El camino feliz pedía el aviso «en rojo parpadeando en la parte superior izquierda». La IA lo dejó en el criterio como «de forma que salta a la vista», para que sobreviva a un rediseño, y pasó el detalle visual al contexto técnico como indicación de diseño.*
+- *Para el estado de la tarjeta, la IA propuso un mensaje nuevo del protocolo (tipo `5`) en lugar de ampliar el de fuente o deducirlo del nivel, porque un silencio también da nivel cero. El humano lo aceptó, y también que no se envíe con un fichero (D61).*
+- *En `/opsx:apply` (`MOO-63`), el `arecord` falso de los tests devolvía siempre el mismo proceso, y la IA lo cambió para que cada reintento lance uno nuevo, como el de verdad. El reloj se inyecta para que los tests avancen el tiempo sin esperar.*
+
 ---
 
 ### 7. Pull Requests
