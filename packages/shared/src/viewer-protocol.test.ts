@@ -11,6 +11,7 @@ import {
   encodePosition,
   encodeSource,
   encodeSourceStatus,
+  type SourceStatus,
 } from './viewer-protocol.ts';
 
 /** Los colores de una tira de `ledCount` LEDs, distintos en cada byte. */
@@ -207,6 +208,10 @@ describe('el mensaje del estado de la fuente', () => {
   it('son dos bytes: el tipo 5 y el estado, 0 si está conectada y 1 si está perdida', () => {
     expect(hexOf(encodeSourceStatus('connected'))).toBe('05 00');
     expect(hexOf(encodeSourceStatus('lost'))).toBe('05 01');
+  });
+
+  it('no admite un estado que no es conectada ni perdida', () => {
+    expect(() => encodeSourceStatus('unplugged' as SourceStatus)).toThrow(RangeError);
   });
 
   it.each(['connected', 'lost'] as const)('%s, se decodifica igual que se codificó', (status) => {

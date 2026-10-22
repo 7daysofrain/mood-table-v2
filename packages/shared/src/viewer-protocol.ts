@@ -186,7 +186,9 @@ const SOURCE_STATUS: readonly SourceStatus[] = ['connected', 'lost'];
 
 /** El mensaje del estado de la fuente: al conectarse cada panel y a todos cuando cambia. */
 export function encodeSourceStatus(status: SourceStatus): Uint8Array {
-  return Uint8Array.of(SOURCE_STATUS_MESSAGE_TYPE, SOURCE_STATUS.indexOf(status));
+  const byte = SOURCE_STATUS.indexOf(status);
+  if (byte < 0) throw new RangeError(`El estado de la fuente no existe: ${String(status)}`);
+  return Uint8Array.of(SOURCE_STATUS_MESSAGE_TYPE, byte);
 }
 
 /** El estado que lleva `message`, o `undefined` si no es un mensaje de estado bien formado. */
