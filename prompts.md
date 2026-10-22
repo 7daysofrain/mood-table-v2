@@ -954,7 +954,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *Al integrar la #51, `sonar-issues` marcó dos ternarios anidados del código de la IA; los arregló en vez de aceptarlos. El conflicto que GitHub mostró después era falso (el commit del change había llegado a `main` por otro camino), y se resolvió trayendo `main` a la rama.*
 
-#### 6.23 Recuperar la tarjeta de sonido: refinado, medida en la Pi, spec e implementación (`MOO-59` y `MOO-63`)
+#### 6.23 Recuperar la tarjeta de sonido: refinado, medida en la Pi, spec e implementación (`MOO-59`, `MOO-63` y `MOO-64`)
 
 **Prompt 1:**
 
@@ -978,6 +978,9 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El camino feliz pedía el aviso «en rojo parpadeando en la parte superior izquierda». La IA lo dejó en el criterio como «de forma que salta a la vista», para que sobreviva a un rediseño, y pasó el detalle visual al contexto técnico como indicación de diseño.*
 - *Para el estado de la tarjeta, la IA propuso un mensaje nuevo del protocolo (tipo `5`) en lugar de ampliar el de fuente o deducirlo del nivel, porque un silencio también da nivel cero. El humano lo aceptó, y también que no se envíe con un fichero (D61).*
 - *En `/opsx:apply` (`MOO-63`), el `arecord` falso de los tests devolvía siempre el mismo proceso, y la IA lo cambió para que cada reintento lance uno nuevo, como el de verdad. El reloj se inyecta para que los tests avancen el tiempo sin esperar.*
+- *La prueba en la mesa de `MOO-63` la preparó la IA por SSH: un script en la propia Pi, con el mismo reloj que el log, que vigilaba ALSA y el WebSocket del visor. El humano solo desenchufó y enchufó la tarjeta; cuando la desconexión larga aún no aparecía en el log, la IA lo comprobó y la volvió a pedir antes de dar la prueba por buena.*
+- *La code review de `MOO-63` (skill `code-review`) dio cinco hallazgos. El humano decidió uno a uno: arreglar cuatro y dejar como riesgo anotado, sin código, un `arecord` de reintento que se quede colgado, porque no se ha visto nunca en la Pi.*
+- *En `MOO-64`, la IA comprobó el aviso en el navegador integrado contra el motor de la Pi (parpadeo medido por la opacidad, panel recargado durante el corte), y el humano solo desenchufó la tarjeta. Mantine pone en mayúsculas el texto del `Badge` («DESCONECTADA»); la IA lo señaló y el humano lo dio por bueno.*
 
 ---
 

@@ -73,6 +73,6 @@
   `prefers-reduced-motion`) y su uso en `AudioSourceIndicator.tsx`, con el estado que da la conexión.
   Verificar: los tests de 2.3 pasan y, con el motor de la rama y la tarjeta desenchufada, la cabecera
   muestra el aviso parpadeando y lo quita al reenchufarla.
-- [ ] 2.5 README §1.3 (la cabecera y su aviso, con una captura si cambia la de la sección) y
+- [x] 2.5 README §1.3 (la cabecera y su aviso, con una captura si cambia la de la sección) y
   `prompts.md`.
   Verificar: lo que describe el README coincide con lo que muestra el panel.
