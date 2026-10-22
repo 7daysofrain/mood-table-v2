@@ -2,9 +2,10 @@
  * Conexión del panel con el motor (specs/viewer): una única conexión WebSocket con el motor, que se
  * reintenta cada segundo mientras no hay conexión (decisión 15) y guarda el último frame de cada
  * tira, decodificado con el protocolo de `@moodtable/shared`, además de la fuente de audio y su último
- * nivel (decisión 5 del change virtual-strip-audio-file). No sabe nada de React: el visor lee los
- * frames y el vúmetro el nivel cuando dibujan, y la cabecera se suscribe a los cambios de estado y de
- * fuente. La posición del fichero de audio no se guarda: se avisa de cada una con su instante de
+ * nivel (decisión 5 del change virtual-strip-audio-file) y si la tarjeta de sonido está perdida
+ * (decisión 5 del change soundcard-reconnect). No sabe nada de React: el visor lee los frames y el
+ * vúmetro el nivel cuando dibujan, y la cabecera se suscribe a los cambios de estado, de fuente y de
+ * la tarjeta. La posición del fichero de audio no se guarda: se avisa de cada una con su instante de
  * llegada, porque la sincronía del reproductor necesita la serie (decisión 8 del change
  * panel-audio-playback).
  */
@@ -13,6 +14,7 @@ import {
   decodeLevel,
   decodePosition,
   decodeSource,
+  decodeSourceStatus,
   type PositionMessage,
   type SourceMessage,
 } from '@moodtable/shared';
@@ -53,6 +55,7 @@ export class EngineConnection {
   private current: ConnectionStatus = 'disconnected';
   private currentSource: SourceMessage | undefined;
   private lastLevel: number | undefined;
+  private lost = false;
 
   constructor(
     url: string,
@@ -83,6 +86,14 @@ export class EngineConnection {
   /** El último nivel de la fuente de audio, de 0 a 1. Sin conexión o sin fuente, `undefined`. */
   get level(): number | undefined {
     return this.lastLevel;
+  }
+
+  /**
+   * Si la tarjeta de sonido está perdida, según el último mensaje de estado del motor. Sin ese
+   * mensaje (otra fuente, o sin conexión), no lo está: el panel nunca lo deduce del nivel.
+   */
+  get sourceLost(): boolean {
+    return this.lost;
   }
 
   /** Avisa de cada cambio de estado. Devuelve la función para darse de baja. */
@@ -156,6 +167,12 @@ export class EngineConnection {
       if (source) {
         this.currentSource = source;
         this.notify();
+        return;
+      }
+      const sourceStatus = decodeSourceStatus(message);
+      if (sourceStatus) {
+        this.lost = sourceStatus === 'lost';
+        this.notify();
       }
     };
     // Un fallo al conectar también acaba en `close`: es el único sitio donde se reintenta.
@@ -171,14 +188,15 @@ export class EngineConnection {
   }
 
   /**
-   * Sin conexión no se sabe qué hay en el motor: ni frames, ni fuente, ni nivel. No avisa: la fuente
-   * solo llega con la conexión abierta, así que siempre se olvida a la vez que se pierde, y ese cambio
-   * de estado ya avisa.
+   * Sin conexión no se sabe qué hay en el motor: ni frames, ni fuente, ni nivel, ni si la tarjeta
+   * está perdida. No avisa: la fuente y su estado solo llegan con la conexión abierta, así que
+   * siempre se olvidan a la vez que se pierde, y ese cambio de estado ya avisa.
    */
   private forget(): void {
     this.lastFrames.clear();
     this.currentSource = undefined;
     this.lastLevel = undefined;
+    this.lost = false;
   }
 
   private setStatus(status: ConnectionStatus): void {
