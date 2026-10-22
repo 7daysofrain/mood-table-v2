@@ -4,9 +4,9 @@
  * tira, decodificado con el protocolo de `@moodtable/shared`, además de la fuente de audio y su último
  * nivel (decisión 5 del change virtual-strip-audio-file) y si la tarjeta de sonido está perdida
  * (decisión 5 del change soundcard-reconnect). No sabe nada de React: el visor lee los frames y el
- * vúmetro el nivel cuando dibujan, y la cabecera se suscribe a los cambios de estado, de fuente y de
- * la tarjeta. La posición del fichero de audio no se guarda: se avisa de cada una con su instante de
- * llegada, porque la sincronía del reproductor necesita la serie (decisión 8 del change
+ * vúmetro el nivel cuando dibujan, y la cabecera se suscribe a los cambios de estado, de fuente y
+ * de la tarjeta. La posición del fichero de audio no se guarda: se avisa de cada una con su
+ * instante de llegada, porque la sincronía del reproductor necesita la serie (decisión 8 del change
  * panel-audio-playback).
  */
 import {

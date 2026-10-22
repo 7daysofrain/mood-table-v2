@@ -17,8 +17,8 @@ const SOURCE_LABEL = { file: 'Fichero', soundcard: 'Tarjeta de sonido' } as cons
  * Fuente de audio de la cabecera (specs/audio-source, decisión 14 del change
  * virtual-strip-audio-file y 9 del change soundcard-audio-source): «Fichero: nombre» o «Tarjeta de
  * sonido: nombre» con su vúmetro, o «Sin fuente de audio». Sin conexión no se sabe cuál es, así que
- * no muestra nada. Si el motor dice que la tarjeta de sonido está perdida, avisa «Desconectada» a su
- * lado, y el vúmetro se queda, al mínimo (decisión 5 del change soundcard-reconnect).
+ * no muestra nada. Si el motor dice que la tarjeta de sonido está perdida, avisa «Desconectada» a
+ * su lado, y el vúmetro se queda, al mínimo (decisión 5 del change soundcard-reconnect).
  */
 export function AudioSourceIndicator({
   source,
