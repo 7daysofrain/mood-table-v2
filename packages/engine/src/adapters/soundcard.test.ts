@@ -527,6 +527,19 @@ describe('el estado de la tarjeta', () => {
     expect(statuses).toEqual(['connected', 'lost', 'connected']);
   });
 
+  it('quien se da de baja no recibe más cambios', async () => {
+    const { arecord, capture, clock, onStatus } = await opened();
+    const statuses: string[] = [];
+    const unsubscribe = onStatus((status) => statuses.push(status));
+
+    unsubscribe();
+    unplug(capture);
+    clock.advance(1000);
+    arecord.current.emit(AFTER_DISCARD);
+
+    expect(statuses).toEqual(['connected']);
+  });
+
   it('si se suscribe con la tarjeta perdida, recibe que está perdida', async () => {
     const { capture, onStatus } = await opened();
     unplug(capture);

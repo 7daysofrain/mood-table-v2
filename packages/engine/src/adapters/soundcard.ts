@@ -54,14 +54,15 @@ export type Schedule = (callback: () => void, ms: number) => () => void;
 
 /**
  * `stop` para `arecord` y el intento pendiente, y deja la fuente en silencio, sin contarlo como una
- * pérdida. `onStatus` da el estado actual al momento y después cada cambio.
+ * pérdida. `onStatus` da el estado actual al momento y después cada cambio, hasta llamar a lo que
+ * devuelve.
  */
 export type OpenedSoundcard =
   | {
       ok: true;
       source: AudioSource;
       stop: () => void;
-      onStatus: (listener: (status: SourceStatus) => void) => void;
+      onStatus: (listener: (status: SourceStatus) => void) => () => void;
     }
   | { ok: false; error: string };
 
@@ -116,7 +117,7 @@ export function openSoundcard(
 ): Promise<OpenedSoundcard> {
   const label = `tarjeta de sonido «${config.name}» (${config.device})`;
   const source = new SoundcardSource(config.silenceThreshold);
-  const listeners: ((status: SourceStatus) => void)[] = [];
+  const listeners = new Set<(status: SourceStatus) => void>();
   let status: SourceStatus = 'connected';
   let capture: CaptureProcess | undefined;
   let cancelRetry: (() => void) | undefined;
@@ -137,8 +138,9 @@ export function openSoundcard(
       capture?.stop();
     },
     onStatus(listener) {
-      listeners.push(listener);
+      listeners.add(listener);
       listener(status);
+      return () => listeners.delete(listener);
     },
   };
 

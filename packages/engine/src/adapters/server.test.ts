@@ -315,17 +315,24 @@ describe('el servidor del motor', () => {
 /** El estado de una tarjeta de sonido falsa: el test decide cuándo cambia. */
 class FakeSoundcardStatus {
   private status: SourceStatus;
-  private readonly listeners: ((status: SourceStatus) => void)[] = [];
+  private listeners: ((status: SourceStatus) => void)[] = [];
 
   constructor(status: SourceStatus) {
     this.status = status;
   }
 
-  /** Como `onStatus` del adaptador: el estado actual al momento y después cada cambio. */
-  watch = (listener: (status: SourceStatus) => void): void => {
+  /** Como `onStatus` del adaptador: el estado actual al momento, después cada cambio, y la baja. */
+  watch = (listener: (status: SourceStatus) => void): (() => void) => {
     this.listeners.push(listener);
     listener(this.status);
+    return () => {
+      this.listeners = this.listeners.filter((each) => each !== listener);
+    };
   };
+
+  get watchers(): number {
+    return this.listeners.length;
+  }
 
   set(status: SourceStatus): void {
     this.status = status;
@@ -392,6 +399,22 @@ describe('el estado de la tarjeta de sonido', () => {
 
     expect(first.statuses).toEqual(['lost', 'connected']);
     expect(second.statuses).toEqual(['lost', 'connected']);
+  });
+
+  it('al cerrar el servidor, deja de escuchar el estado de la tarjeta', async () => {
+    const card = new FakeSoundcardStatus('connected');
+    const closing = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      source: SOUNDCARD,
+      watchSourceStatus: card.watch,
+    });
+    expect(card.watchers).toBe(1);
+
+    await closing.close();
+
+    expect(card.watchers).toBe(0);
   });
 
   it.each([

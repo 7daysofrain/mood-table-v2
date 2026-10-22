@@ -45,9 +45,10 @@ export interface ServerOptions {
   audioBytes?: Uint8Array;
   /**
    * Cómo enterarse del estado de la tarjeta de sonido: da el actual al momento y después cada
-   * cambio. Sin él, como con un fichero o sin fuente, no se envía ningún mensaje de estado.
+   * cambio, y devuelve cómo dejar de escucharlo, que se llama al cerrar. Sin él, como con un fichero
+   * o sin fuente, no se envía ningún mensaje de estado.
    */
-  watchSourceStatus?: (listener: (status: SourceStatus) => void) => void;
+  watchSourceStatus?: (listener: (status: SourceStatus) => void) => () => void;
 }
 
 export interface EngineServer {
@@ -130,7 +131,7 @@ export async function startServer({
     }
   }
 
-  watchSourceStatus?.((status) => {
+  const unwatchSourceStatus = watchSourceStatus?.((status) => {
     statusMessage = encodeSourceStatus(status);
     broadcast(statusMessage);
   });
@@ -157,6 +158,9 @@ export async function startServer({
         broadcast(encodePosition(tick.seq, position));
       },
     },
-    close: () => app.close(),
+    close() {
+      unwatchSourceStatus?.();
+      return app.close();
+    },
   };
 }
