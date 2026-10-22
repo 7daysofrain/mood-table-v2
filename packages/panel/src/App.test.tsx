@@ -17,6 +17,7 @@ function fakeConnection() {
     frames: new Map<number, Uint8Array>(),
     source: undefined as SourceMessage | undefined,
     level: undefined as number | undefined,
+    sourceLost: false as boolean,
     start: vi.fn(),
     stop: vi.fn(),
     subscribe: (listener: () => void) => {
@@ -40,11 +41,16 @@ function fakeConnection() {
     connection.source = source;
     notify();
   };
+  /** El mensaje de estado de la tarjeta, que llega en su propio aviso. */
+  const setSourceLost = (lost: boolean) => {
+    connection.sourceLost = lost;
+    notify();
+  };
   /** Una posición del fichero que llega del motor en el instante `arrivedAt` (ms). */
   const sendPosition = (position: number, arrivedAt: number) => {
     for (const listener of positionListeners) listener({ seq: 0, position }, arrivedAt);
   };
-  return { connection, setStatus, setSource, sendPosition };
+  return { connection, setStatus, setSource, setSourceLost, sendPosition };
 }
 
 describe('App', () => {
@@ -100,6 +106,26 @@ describe('App', () => {
     const header = screen.getByRole('banner');
     expect(header).toHaveTextContent('Fichero: golpes.wav');
     expect(screen.getByRole('meter', { name: 'Nivel de la fuente de audio' })).toBeInTheDocument();
+  });
+
+  it('la cabecera avisa mientras la tarjeta de sonido está perdida, y lo quita al recuperarla', () => {
+    const { connection, setStatus, setSource, setSourceLost } = fakeConnection();
+    render(<App connection={connection} />);
+    act(() => {
+      setStatus('connected');
+      setSource({ kind: 'soundcard', name: 'Mixer de la mesa' });
+    });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    act(() => {
+      setSourceLost(true);
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent('Desconectada');
+
+    act(() => {
+      setSourceLost(false);
+    });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('sin conexión, la cabecera no muestra fuente ni vúmetro', () => {

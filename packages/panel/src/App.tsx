@@ -11,7 +11,15 @@ import { Viewer } from './viewer/Viewer.tsx';
 /** Lo que el panel usa de la conexión con el motor: así los tests pueden darle una falsa. */
 export type PanelConnection = Pick<
   EngineConnection,
-  'status' | 'frames' | 'source' | 'level' | 'subscribe' | 'subscribePositions' | 'start' | 'stop'
+  | 'status'
+  | 'frames'
+  | 'source'
+  | 'sourceLost'
+  | 'level'
+  | 'subscribe'
+  | 'subscribePositions'
+  | 'start'
+  | 'stop'
 >;
 
 /** Lo que el panel usa del reproductor del fichero de audio. */
@@ -60,13 +68,14 @@ export function App({
   const subscribe = useCallback((listener: () => void) => connection.subscribe(listener), [connection]);
   const status = useSyncExternalStore(subscribe, () => connection.status);
   const source = useSyncExternalStore(subscribe, () => connection.source);
+  const sourceLost = useSyncExternalStore(subscribe, () => connection.sourceLost);
 
   return (
     <PanelLayout
       status={status}
       audio={
         <Group gap="xs" wrap="nowrap">
-          <AudioSourceIndicator source={source} levels={connection} />
+          <AudioSourceIndicator source={source} lost={sourceLost} levels={connection} />
           {source?.kind === 'file' && <AudioControl player={player} />}
         </Group>
       }

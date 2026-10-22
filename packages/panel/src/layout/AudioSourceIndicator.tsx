@@ -2,6 +2,7 @@ import { Box, Group, Text } from '@mantine/core';
 import type { SourceMessage } from '@moodtable/shared';
 import { useEffect, useRef } from 'react';
 
+import { AlertTag } from './AlertTag.tsx';
 import { levelToDecibels, levelToFill, METER_MIN_DB } from './level.ts';
 
 /** De dónde lee el vúmetro el último nivel de la fuente de audio. */
@@ -16,12 +17,14 @@ const SOURCE_LABEL = { file: 'Fichero', soundcard: 'Tarjeta de sonido' } as cons
  * Fuente de audio de la cabecera (specs/audio-source, decisión 14 del change
  * virtual-strip-audio-file y 9 del change soundcard-audio-source): «Fichero: nombre» o «Tarjeta de
  * sonido: nombre» con su vúmetro, o «Sin fuente de audio». Sin conexión no se sabe cuál es, así que
- * no muestra nada.
+ * no muestra nada. Si el motor dice que la tarjeta de sonido está perdida, avisa «Desconectada» a
+ * su lado, y el vúmetro se queda, al mínimo (decisión 5 del change soundcard-reconnect).
  */
 export function AudioSourceIndicator({
   source,
+  lost = false,
   levels,
-}: Readonly<{ source?: SourceMessage; levels: LevelSource }>) {
+}: Readonly<{ source?: SourceMessage; lost?: boolean; levels: LevelSource }>) {
   if (!source) return null;
   if (source.kind === 'none') {
     return (
@@ -36,6 +39,8 @@ export function AudioSourceIndicator({
       <Text size="sm" truncate="end" maw={260} title={source.name}>
         {`${SOURCE_LABEL[source.kind]}: ${source.name}`}
       </Text>
+      {/* Solo la tarjeta de sonido se pierde: un fichero no avisa nunca (decisión 3). */}
+      {lost && source.kind === 'soundcard' && <AlertTag label="Desconectada" />}
       <LevelMeter levels={levels} />
     </Group>
   );
