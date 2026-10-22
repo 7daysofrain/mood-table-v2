@@ -69,7 +69,7 @@
   aviso; al recuperarla, el aviso desaparece; con `prefers-reduced-motion`, sin parpadeo
   (`specs/audio-source`, decisión 5).
   Verificar: los tests nuevos fallan porque la cabecera no conoce el estado.
-- [ ] 2.4 La etiqueta reutilizable (texto como parámetro, roja, parpadeo a 1 Hz salvo con
+- [x] 2.4 La etiqueta reutilizable (texto como parámetro, roja, parpadeo a 1 Hz salvo con
   `prefers-reduced-motion`) y su uso en `AudioSourceIndicator.tsx`, con el estado que da la conexión.
   Verificar: los tests de 2.3 pasan y, con el motor de la rama y la tarjeta desenchufada, la cabecera
   muestra el aviso parpadeando y lo quita al reenchufarla.

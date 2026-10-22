@@ -17,7 +17,7 @@ function fakeConnection() {
     frames: new Map<number, Uint8Array>(),
     source: undefined as SourceMessage | undefined,
     level: undefined as number | undefined,
-    sourceLost: false,
+    sourceLost: false as boolean,
     start: vi.fn(),
     stop: vi.fn(),
     subscribe: (listener: () => void) => {
