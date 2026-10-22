@@ -67,7 +67,7 @@ Se construye por tres razones:
 | BE2 | **El merge es mío.** | El sistema nunca integra una PR; no tiene permiso para hacerlo. |
 | BE3 | **Juzga bien antes de actuar.** | Antes de dejarle arreglar, su triaje se mide contra PR ya cerradas y acierta lo suficiente. |
 | BE4 | **Cada decisión se puede explicar.** | Para cada PR se ve qué decidió cada agente, por qué y cuánto costó. Sus comentarios en la PR se identifican como del sistema. |
-| BE5 | **Respeta las reglas del repo.** | Un commit por hallazgo con `Refs MOO-n` cuando hay tarea, respuesta en cada hilo y hilo resuelto (`workflow.md` §4.4); no se sale del alcance de la PR. |
+| BE5 | **Respeta las reglas del repo.** | Sigue el protocolo de la PR de `workflow.md` §4.4 y no se sale del alcance de la PR. |
 | BE6 | **Un comentario ajeno no lo controla.** | Solo atiende a Codex, SonarQube y el mantenedor; un comentario de otra persona no le hace cambiar código ni publicar nada. |
 | BE7 | **Se recupera solo.** | Si la máquina se apaga, al volver retoma cada PR donde estaba. |
 | BE8 | **Coste acotado y visible.** | Cada PR tiene un tope de gasto y su coste queda registrado. |
@@ -196,7 +196,7 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Alcance de la PR** | `prScope` | Lo que la PR debe cambiar: su tarea y su spec, el plan de la *chore* o la actualización de la dependencia. Salirse de él es motivo para escalar. |
 | **Hallazgo** | `finding` | Algo que una PR debe atender: un comentario del revisor, una incidencia nueva de SonarQube o una comprobación que falla. |
 | **Triaje** | `triage` | Clasificar un hallazgo en **real** (`valid`), **no aplica** (`notApplicable`) o **exige criterio** (`needsJudgment`). |
-| **Arreglo** | `fix` | Cambio que atiende un hallazgo; un commit por hallazgo. |
+| **Arreglo** | `fix` | Cambio que atiende un hallazgo. |
 | **Modo sombra** | `shadowMode` | El sistema decide y registra, pero no actúa. |
 | **Modo ensayo** | `dryRun` | El sistema arregla en local pero no publica (posible división de BH3). |
 | **Escalar** | `escalate` | Pausar una PR y pedir criterio al mantenedor. |
