@@ -54,7 +54,7 @@ sed -i.bak '/^argument-hint:/d;/^disable-model-invocation:/d' /tmp/qv-<skill>/SK
 python -m scripts.quick_validate /tmp/qv-<skill>   # from the skill-creator folder; needs PyYAML
 ```
 
-Baseline (2026-10-07): the three pass ("Skill is valid!"), with `SKILL.md` between 55 and 91 lines.
+Baseline (2026-10-23): the three pass ("Skill is valid!"), with `SKILL.md` between 55 and 114 lines.
 
 ## Fixtures
 
