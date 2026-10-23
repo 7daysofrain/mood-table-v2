@@ -1042,6 +1042,25 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *`refine-story/assets/dod.md` también nombraba el PRD (el glosario en Feature y las preguntas en Spike), y no estaba en el plan: se generalizó en el mismo paso.*
 - *Los graders encontraron una fuga de anclaje fuera del alcance: el estimator lee en `readme.md` la estimación humana de MOO-14. Queda para una tarea aparte.*
 
+#### 6.26 El estimator, a ciegas de verdad (`MOO-71`)
+
+**Prompt 1** (respuesta a la pregunta de la IA «¿Dónde cortamos la fuga de la carta humana?»):
+
+> Estimator (a) (Recommended)
+
+*Claude Code (`claude-opus-5-5`, 23-oct), en una sesión lanzada desde la de `MOO-69`. Al pasar las evals de `estimate-story`, los graders vieron que el `estimator` leía en el README la estimación humana de `MOO-14`, la misma historia que estima en tres casos. Antes de proponer, la IA buscó dónde estaba escrita esa carta. Además del README (§5 y §6), salía en el `evals.json` de la skill y en los runs guardados. Concluyó que la fuga solo puede darse en las evals: los fixtures devuelven `MOO-14` a antes de estimarse, pero el repo no. Quitar las cartas del README no la cerraba y empobrecía la entrega, así que el humano eligió cortarla en el estimator con una regla general: solo lee sus fuentes y nunca busca una estimación de la historia que estima.*
+
+**Prompt 2** (respuesta a «¿Añadimos una línea "Fuentes:" a la salida del estimator…?»):
+
+> Sí, añadirla (Recommended)
+
+*La IA avisó de un hueco: la aserción nueva solo juzga lo que el estimator dice, porque el grader no ve sus llamadas a herramientas, y en la iteración anterior la fuga se vio solo porque él la confesó. Con `Fuentes:`, la ceguera se puede comprobar.*
+
+*Ajustes:*
+- *La línea base se pasó con 3 runs por cada caso de `MOO-14`, porque antes la fuga había salido 1 de cada 3 veces. La aserción falló en 4 de 9 runs. En uno, el estimator usó para su carta la cifra que el README da a `MOO-20`.*
+- *Claude Code carga `.claude/agents/` al arrancar la sesión, y una sonda confirmó que, tras el cambio, el estimator seguía siendo el viejo. La IA intentó lanzar cada run con `claude -p`. Primero lo bloqueó el modo auto; con el permiso del humano, después falló porque la sesión de la CLI había caducado. El humano eligió emular el estimator con un subagente con Sonnet que lee su fichero, y la receta quedó en `.claude/evals/README.md`.*
+- *Con el estimator nuevo pasan todas las aserciones (65/65 con la skill, antes 61/65) y la de ceguera, 9 de 9. La emulación no tenía Grep, así que algunos runs leyeron el principio del README (§0-§1) para encontrar los encabezados. Ahí no hay estimaciones, pero el estimator real, que sí tiene Grep, solo se comprobará en la próxima sesión.*
+
 ---
 
 ### 7. Pull Requests
