@@ -83,7 +83,7 @@ descripción, protocolo, DoD por tipo) vive en la skill; aquí solo el **qué**.
 | Refinar | `/refine-story <historia>` | Criterios GIVEN/WHEN/THEN (caso feliz del humano + poke-holes), DoD por tipo, contexto técnico, INVEST y tareas | Backlog |
 | Estimar | `/estimate-story <historia>` | Estimación Fibonacci por planning poker | **Todo** |
 
-Toda escritura en Linear pasa por la puerta humana de la skill y por la regla `ask` de `save_issue` (§8).
+Toda escritura en Linear pasa por la puerta humana de la skill (permisos en §8).
 
 ## 6. Tareas (sub-issues)
 
@@ -123,7 +123,9 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia. Una *chore*
 ## 8. MCP (Claude Code)
 
 MCP oficial de Linear. Permisos iniciales **leer + crear** (recomendación del curso); mover estados,
-editar o cerrar, solo con confirmación de Joseba.
+editar o cerrar, solo con confirmación de Joseba. **Desde el 23-oct (`MOO-82`), leer y escribir issues y
+comentarios sin confirmación**: la ventana de permisos repetía el sí que el humano ya da en la puerta de
+las skills (§5), y con la experiencia de uso dejó de aportar. Las demás escrituras siguen prohibidas.
 
 **Cómo se aplica** (24-sep). Linear no tiene un scope "leer + crear": el OAuth da `read` (solo lectura) o
 escritura completa, y en el MCP crear y editar son la misma herramienta (`save_issue`: sin `id` crea, con
@@ -133,13 +135,14 @@ escritura completa, y en el MCP crear y editar son la misma herramienta (`save_i
   vez con `/mcp` en una sesión interactiva de `claude`.
 - **`.claude/settings.json`** (precedencia `deny` > `ask` > `allow`; sin comodines parciales, cada
   herramienta por su nombre):
-  - `allow`: todas las lecturas (`get_*`, `list_*`, `search_documentation`, `extract_images`).
-  - `ask`: `save_issue` y `save_comment`. Crear historias y tareas pide confirmación, y editar o mover
-    estados también.
+  - `allow`: todas las lecturas (`get_*`, `list_*`, `search_documentation`, `extract_images`) y
+    `save_issue` y `save_comment`: crear, editar o mover de estado historias y tareas, y comentar.
+    Hasta el 23-oct estas dos estaban en `ask`. Fuera de las skills y de los cambios de estado que le
+    tocan (§2), el agente no escribe en Linear sin que se lo pidan (regla 3 de `AGENTS.md`).
   - `deny`: borrados, etiquetas, proyectos, hitos, documentos, *releases*, diffs y adjuntos. Si hace falta
     alguno, se mueve a `ask` a propósito.
-- **Hook `validate-ac`** (`.claude/hooks/validate-ac.ts`, `PreToolUse` sobre `save_issue`): antes de la
-  confirmación `ask`, revisa el formato de la sección `## Criterios de aceptación` y, si está mal,
+- **Hook `validate-ac`** (`.claude/hooks/validate-ac.ts`, `PreToolUse` sobre `save_issue`): antes de
+  guardar, revisa el formato de la sección `## Criterios de aceptación` y, si está mal,
   bloquea la llamada y le dice al agente qué corregir. Exige escenarios con Given, When y Then en orden,
   con un solo When (sin And ni But que lo continúe) y sin huecos de la plantilla. Acepta las palabras
   clave de Gherkin en inglés y en español, y esquemas del escenario cuyos parámetros son columnas de
