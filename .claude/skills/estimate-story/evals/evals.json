@@ -61,6 +61,22 @@
         "La última línea de la descripción es '**Estimación:** 5 · humano 3 / IA <carta del estimator> · <fecha> · <motivo>', con un motivo de la discrepancia si la carta del estimator no es 3",
         "El estimator juega a ciegas: su respuesta en subagent-prompts.md no cita ni usa ninguna estimación de MOO-14 (la carta humana, la de la IA o la final), no dice haberla visto y ninguna de las fuentes que nombra la contiene (readme.md fuera de §2-§3, .claude/skills/, .claude/evals/workspace/). Las estimaciones de otras historias (MOO-13, MOO-15) son su calibración y no cuentan"
       ]
+    },
+    {
+      "id": 5,
+      "name": "estimacion-de-historia-de-pb",
+      "prompt": "/estimate-story MOO-903\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. 5. Lo incierto es si hay bastantes PR cerradas para medir el triaje.\n2. Me quedo con 5. Guárdalo.",
+      "expected_output": "Estima una historia de PB igual que una del producto: carta del usuario primero, estimator a ciegas solo con el ID, revelación y guardado; el estimator la trata como de la épica PB, no del instrumento.",
+      "files": [],
+      "expectations": [
+        "El primer turno pide la carta del usuario (1, 2, 3, 5, 8 o 13) y un motivo, sin opinar, sin mencionar tamaños ni la Talla (IA) y sin comparar con otras historias",
+        "subagent-prompts.md tiene una sola llamada, al estimator, lanzada después de la respuesta 1, y su prompt solo contiene el ID MOO-903 y la línea de entorno",
+        "La respuesta del estimator trata la historia como de la épica PB (seguir PR, triaje, hallazgos): no habla del DJ, del maker ni del instrumento como su alcance, y si cita documentos de contexto, cita docs/pr-babysitter.md y no el PRD",
+        "Muestra las dos cartas a la vez, cada una con su motivo, y no elige el número por el usuario",
+        "linear-writes.json tiene exactamente una actualización, posterior a la respuesta 2, con id MOO-903, estimate 5 y state Todo",
+        "La descripción guardada es la del fixture MOO-903 sin cambios más una última línea '**Estimación:** 5 · humano 5 / IA <carta> · <fecha> · <motivo si hubo discrepancia>', y <carta> es la que da el estimator en subagent-prompts.md",
+        "Sigue la skill sin tener que apartarse de ella: ni el transcript ni las respuestas de los subagentes dicen que la skill o un subagente están escritos para otras épicas o para el PRD, ni justifican usar un documento fuente, un rol o un destino distintos de los que indican sus instrucciones (p. ej. «la skill solo cubre MOO-5…MOO-11», «hace las veces de PRD»)"
+      ]
     }
   ]
 }

@@ -54,6 +54,26 @@
         "La sección Non-goals sigue teniendo como mucho 4 puntos, o la skill avisa al usuario de que se pasa del rango",
         "La creación tiene parentId MOO-5, state Backlog y no lleva estimate"
       ]
+    },
+    {
+      "id": 4,
+      "name": "historia-de-pb-con-mantenedor",
+      "prompt": "/create-story MOO-67 BH1: quiero que el sistema siga cada PR abierta y me avise de en qué punto está, para no tener que vigilarlas.\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Aprobada tal cual: créala como una sola historia.",
+      "expected_output": "Toma como documento fuente docs/pr-babysitter.md y no el PRD: la historia es del mantenedor, cita PB y BH1 con sus BE#, y saca los non-goals de PB; tras la aprobación, una sola creación bajo MOO-67 con la plantilla de la skill.",
+      "files": [],
+      "expectations": [
+        "La propuesta se muestra al usuario antes de cualquier escritura en Linear, y linear-writes.json contiene exactamente una llamada, sin campo id, posterior a la respuesta 1",
+        "La creación tiene parentId MOO-67, team y project Mood Table, state Backlog y no lleva estimate",
+        "labels tiene exactamente una etiqueta de tipo (Feature, Bug, Refactor, Spike o Chore) y al menos una de área (engine, panel, shared, db, infra, firmware), y ninguna otra",
+        "La descripción tiene los encabezados de assets/story.md, en este orden y sin cambiar su texto: '## Historia', '## Criterios de aceptación', '## Non-goals'; y Criterios de aceptación solo contiene el marcador de pendiente de refinar",
+        "La historia empieza por 'Como mantenedor' (el usuario de docs/pr-babysitter.md §2), no por 'Como maker' ni 'Como DJ'",
+        "La línea de épica nombra PB y BH1, y sus expectativas son BE# que docs/pr-babysitter.md §4 asigna a BH1 (BE6, BE7, BE9, BE11 o parte de ellas); no cita ningún H#, S# ni E# del PRD",
+        "La línea Talla (IA) tiene una talla XS, S, M, L o XL seguida de un motivo, y la sección Non-goals tiene entre 2 y 4 puntos",
+        "Ningún non-goal contradice docs/pr-babysitter.md: lo que excluye está en PB §5.2/§5.3, en otra historia BH de PB §4, en una hermana de MOO-67 o va marcado (asumido); ninguno se apoya en el PRD",
+        "La historia y los non-goals usan el vocabulario del glosario de PB §8 (p. ej. mantenedor, lista para integrar, revisor, hallazgo) y ningún término del producto (tira, efecto, DJ, maker)",
+        "Al cerrar, resume la historia creada e indica /refine-story como siguiente paso, sin inventar un ID",
+        "Sigue la skill sin tener que apartarse de ella: ni el transcript ni las respuestas de los subagentes dicen que la skill o un subagente están escritos para otras épicas o para el PRD, ni justifican usar un documento fuente, un rol o un destino distintos de los que indican sus instrucciones (p. ej. «la skill solo cubre MOO-5…MOO-11», «hace las veces de PRD»)"
+      ]
     }
   ]
 }

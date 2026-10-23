@@ -1,0 +1,18 @@
+{
+  "id": "MOO-902",
+  "title": "Saber en qué punto está cada PR",
+  "description": "## Historia\n\nComo mantenedor, quiero que el sistema siga cada PR abierta y me avise de su estado (lista para integrar, con hallazgos o sin revisión del revisor del último push), para no tener que vigilarlas yo.\n**Épica:** PB (BH1) · **Expectativas:** BE6, BE7, BE9, BE11\n**Talla (IA):** M · seguir las PR abiertas, saber en qué punto está cada una y avisar por un canal nuevo\n\n## Criterios de aceptación\n\n*Pendiente de refinar (/refine-story).*\n\n## Non-goals\n\n* No clasifica ni arregla hallazgos: son BH2 y BH3.\n* No integra PR (BE2, PB §5.3).\n* Sin PR de otras personas ni de forks (PB §5.3).\n* No pregunta ni espera la respuesta del mantenedor: es BH4.",
+  "priority": {
+    "value": 4,
+    "name": "Low"
+  },
+  "estimate": null,
+  "status": "Backlog",
+  "labels": [
+    "infra",
+    "Feature"
+  ],
+  "parentId": "MOO-67",
+  "project": "Mood Table",
+  "team": "Mood Table"
+}

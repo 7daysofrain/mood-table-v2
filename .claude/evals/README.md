@@ -58,7 +58,7 @@ sed -i.bak '/^argument-hint:/d;/^disable-model-invocation:/d' /tmp/qv-<skill>/SK
 python -m scripts.quick_validate /tmp/qv-<skill>   # from the skill-creator folder; needs PyYAML
 ```
 
-Baseline (2026-10-07): the three pass ("Skill is valid!"), with `SKILL.md` between 55 and 91 lines.
+Baseline (2026-10-23): the three pass ("Skill is valid!"), with `SKILL.md` between 55 and 114 lines.
 
 ## Fixtures
 
@@ -74,6 +74,11 @@ input every time, and the real issues keep changing.
 | `MOO-14.json` | Refined story, **before** estimation (see below) | estimate-story |
 | `MOO-14.children.json` | Its tasks MOO-19, MOO-20, MOO-21 | estimate-story |
 | `MOO-901.json` | **Synthetic**: a story under H1 that is far too big (fails INVEST) | refine-story |
+| `MOO-67.json` | Epic PB, the technical epic whose source document is `docs/pr-babysitter.md` (snapshot of 2026-10-23) | create-story |
+| `MOO-67.children.json` | Sub-issues of MOO-67: only its *chores*, no story yet | create-story, poke-holes |
+| `MOO-902.json` | **Synthetic**: BH1 as a PB story in Backlog, not refined | refine-story |
+| `MOO-903.json` | **Synthetic**: BH2 as a refined PB story, before estimation | estimate-story |
+| `MOO-903.children.json` | **Synthetic**: its tasks MOO-904 and MOO-905 | estimate-story |
 
 IDs from `MOO-900` up are synthetic: no real issue has them, so a fixture can never be mistaken for a
 snapshot.

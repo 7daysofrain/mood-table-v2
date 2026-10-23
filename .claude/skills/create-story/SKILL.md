@@ -1,6 +1,6 @@
 ---
 name: create-story
-description: Create one or more user stories in Linear as sub-issues of a Mood Table epic (MOO-5…MOO-11), left in Backlog with As/I want/So that, non-goals, labels, priority and an AI t-shirt size. First step of the create-story → refine-story → estimate-story flow.
+description: Create one or more user stories in Linear as sub-issues of a Mood Table epic with a source document (the product epics H1-H5 and S1-S2, from the PRD, or PB, from docs/pr-babysitter.md), left in Backlog with As/I want/So that, non-goals, labels, priority and an AI t-shirt size. First step of the create-story → refine-story → estimate-story flow.
 argument-hint: <epic-id> [story idea | list of ideas]
 disable-model-invocation: true
 ---
@@ -19,9 +19,9 @@ user validates every story before anything is written to Linear.
 ## Language
 
 Instructions here are in English, but **talk to the user in Spanish and write all Linear content in
-Spanish**. The project writes documents in Spanish and code in English, and the PRD glossary (§8) maps
-one to the other. Use glossary terms. If you need a term that is not there, propose adding it to the
-glossary before using it, so the vocabulary does not drift.
+Spanish**. The project writes documents in Spanish and code in English, and the glossary of the epic's
+source document maps one to the other. Use its terms. If you need a term that is not there, propose
+adding it to that glossary before using it, so the vocabulary does not drift.
 
 ## Steps
 
@@ -29,15 +29,21 @@ glossary before using it, so the vocabulary does not drift.
    - `docs/instructions/linear.md`: §1, §3-§5 (structure, labels, estimation rules, the flow).
    - With the `linear` MCP, the epic (`get_issue`) and its existing sub-issues (`list_issues` with
      `parentId`). You need both to avoid duplicating a story that already exists.
-   - `docs/PRD.md`: the epic's H#/S# (§4), its expectations E# (§3), scope (§5) and open questions (§7).
-     The PRD is the source of truth. If something you want to write is not backed by it, mark it
-     *(asumido)* instead of presenting it as fact.
+   - **The epic's source document.** The prefix of the epic's title (`H1`, `S2`, `PB`…) tells you which
+     one it is, and the table of source documents in `docs/instructions/workflow.md` §3 says where
+     each part lives in it. Read the parts you need through that table, never by a section number you
+     remember: the epic's story or stories (its H#/S#, or the BH# for PB), its expectations, scope,
+     users, open questions and glossary. If the epic is not in the table (e.g. EN, whose tasks hang
+     without a story, `linear.md` §1), stop and say so.
+     That document is the source of truth. If something you want to write is not backed by it, mark
+     it *(asumido)* instead of presenting it as fact.
 
 2. **Propose.** Use a table when there are several stories. For each one:
-   - **Title:** short and in Spanish, describing the observable behaviour, with no H# prefix.
-   - **Como / quiero / para:** the user role (DJ or maker) comes from PRD §2.
-   - **Non-goals (2-4):** take them from PRD §5.3 (vision) and §5.4 (out by decision), and from what
-     sibling stories already cover. Explicit non-goals keep an implementing agent from over-building.
+   - **Title:** short and in Spanish, describing the observable behaviour, with no H#/BH# prefix.
+   - **Como / quiero / para:** the user role comes from the source document's users.
+   - **Non-goals (2-4):** take them from the source document's vision and out-by-decision parts, from
+     the document's other stories (another H#/S#, or another BH#) and from what sibling stories already
+     cover. Explicit non-goals keep an implementing agent from over-building.
    - **Talla (IA):** XS · S · M · L · XL, with a one-line reason. It is only a coarse signal to help
      prioritise, not the estimate.
    - **Labels:** one type (usually `Feature`) and the area(s) (`engine`, `panel`, `shared`, `db`,

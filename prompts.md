@@ -1017,6 +1017,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *`openspec validate` rechazó el primer delta: un escenario no se puede renombrar dentro de un MODIFIED. La IA quitó el requisito de los hilos y lo volvió a añadir con otro nombre, como se hizo en `MOO-42`.*
 - *Que Codex no revise borradores quedó como «(asumido)»: la documentación no lo aclara. Se comprueba con la propia PR, abierta en borrador.*
 
+#### 6.25 Las skills de historias, con el documento fuente de cada épica (`MOO-70` y `MOO-69`)
+
+**Prompt 1:**
+
+> necesitamos spec para la MOO-69 o podemos ejecutar directamente?
+
+*Claude Code (`claude-opus-5-5`, 22-oct). La IA leyó la tarea y `workflow.md` §6, y comprobó que ninguna spec de `openspec/specs/` cubre las skills: es una *chore* de arnés sin change. Recomendó ejecutarla, pero avisó de que el plan dejaba una decisión con riesgo: citar las secciones del documento fuente por su título, que se rompe sin avisar si alguien renombra una.*
+
+**Prompt 2:**
+
+> Pues en el 1 no se si estoy de acuerdo, casi prefiero hacerlo unequivocamente. Quizas deberiamos ponerle un ID a los ficheros de "vision" o "tipo PRD"? Me inclino a esto ahora mismo
+
+*Ajuste humano: referencias inequívocas en vez de títulos. La IA lo concretó en tres piezas: un ID por documento (`PRD`, `PB`), BA# y BQ# para los supuestos y las preguntas de PB, y una sola tabla de secciones en `workflow.md` §3. Descartó igualar la numeración de los dos documentos, que obligaría a PB a tener un *Should-have* vacío. Fue una *chore* aparte que bloqueaba MOO-69 (`MOO-70`, D67), porque así lo decía la propia tarea.*
+
+**Prompt 3:**
+
+> Sí: añade a los casos PB una aserción que falle si el run tiene que apartarse de la skill, comprueba que queda en rojo y sigue con el paso 2.
+
+*Respuesta elegida por el humano entre las que propuso la IA. Antes de cambiar las skills se pasaron sus evals (paso 1): los 11 casos de producto, en verde. Los 3 casos nuevos de PB también pasaban con las skills viejas: el resultado era bueno, pero porque los runs se apartaban de la skill a propósito («está escrita para las épicas del producto», «hace las veces de PRD»). La IA paró y lo planteó: o se mide esa improvisación o MOO-69 se reduce. Con la aserción nueva, crear y refinar quedaron en rojo; estimar no, porque nunca dependió del PRD. Con las skills generalizadas: 116 de 116 aserciones, ninguna regresión en los casos de producto.*
+
+*Ajustes:*
+- *El primer intento del paso 1 no valía: la IA había dejado el prompt de cada caso en `eval_metadata.json`, junto a las aserciones, y un runner las leyó antes de ejecutar. La IA lo detectó por el informe de ese runner, paró los demás y los relanzó con el prompt dentro del encargo.*
+- *`refine-story/assets/dod.md` también nombraba el PRD (el glosario en Feature y las preguntas en Spike), y no estaba en el plan: se generalizó en el mismo paso.*
+- *Los graders encontraron una fuga de anclaje fuera del alcance: el estimator lee en `readme.md` la estimación humana de MOO-14. Queda para una tarea aparte.*
+
 #### 6.26 El estimator, a ciegas de verdad (`MOO-71`)
 
 **Prompt 1** (respuesta a la pregunta de la IA «¿Dónde cortamos la fuga de la carta humana?»):
