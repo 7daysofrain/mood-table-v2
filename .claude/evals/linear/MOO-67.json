@@ -1,0 +1,15 @@
+{
+  "id": "MOO-67",
+  "title": "PB · PR Babysitter",
+  "description": "**Épica técnica**: no sale del PRD del producto, sino de su propio documento de qué y porqué, `docs/pr-babysitter.md` (expectativas BE1-BE11, historias BH1-BH4 y glosario). Es herramienta de desarrollo, no producto.\n\n* Qué agrupa: el sistema multiagente que conduce cada PR desde que se abre hasta dejarla lista para integrar. El merge sigue siendo del mantenedor.\n* Prioridad *should*: no compite con el producto en la Entrega 3. Se usa en las PR que vayan saliendo, empezando por las de H2.\n* Diseño: en el OpenSpec change de cada historia. Decisiones: `docs/idea-mood-table.md` §10.\n* Proceso: `docs/instructions/workflow.md` · Convenciones: `docs/instructions/linear.md` (§1, segunda épica técnica)",
+  "priority": {
+    "value": 4,
+    "name": "Low"
+  },
+  "estimate": null,
+  "status": "Backlog",
+  "labels": [],
+  "parentId": null,
+  "project": "Mood Table",
+  "team": "Mood Table"
+}
