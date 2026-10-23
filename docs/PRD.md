@@ -1,6 +1,6 @@
 # Mood Table · PRD (Product Requirements Document)
 
-**Versión:** 1.0 · **Fecha:** 23-sep-2026 · **Autor:** Joseba Alonso
+**ID:** `PRD` ([documentos fuente](instructions/workflow.md#3-fuente-de-verdad-de-cada-cosa)) · **Versión:** 1.0 · **Fecha:** 23-sep-2026 · **Autor:** Joseba Alonso
 **Estado:** documento vivo: se actualiza a medida que avanza el producto; el historial de cambios está en git.
 
 > **Qué es este documento.** La fuente de verdad **de alto nivel** del producto: qué se quiere, para
