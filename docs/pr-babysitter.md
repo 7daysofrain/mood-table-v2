@@ -1,6 +1,6 @@
 # PR Babysitter · qué y por qué
 
-**Versión:** 1.0 · **Fecha:** 22-oct-2026 · **Autor:** Joseba Alonso
+**ID:** `PB` ([documentos fuente](instructions/workflow.md#3-fuente-de-verdad-de-cada-cosa)) · **Versión:** 1.0 · **Fecha:** 22-oct-2026 · **Autor:** Joseba Alonso
 **Estado:** documento vivo: se actualiza a medida que avanza la épica; el historial de cambios está en
 git. Es la fuente de verdad de la épica técnica *PR Babysitter* (`MOO-67` en Linear).
 

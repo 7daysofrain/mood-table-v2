@@ -53,6 +53,29 @@ Cada dato se escribe en **un solo sitio**; en los demás, se enlaza.
 | **README** | Diseño del sistema y lo que exige la entrega del máster | Requisitos de producto (si discrepa del PRD, **manda el PRD**) |
 | **Ficha** (`docs/idea-mood-table.md`) | Registro de decisiones con su porqué | Instrucciones de trabajo |
 
+**Documentos fuente.** El PRD y `docs/pr-babysitter.md` son los **documentos fuente** de las épicas:
+cada épica saca su qué y su porqué de uno de ellos. Un documento fuente se cita por su **ID** y el
+número de sección (`PRD §5.4`, `PB §5.3`), y sus elementos, por su propio ID (E3, BA2). Esta tabla
+es el único sitio que dice en qué sección está cada parte: quien la necesite (p. ej. las skills de
+historias) la lee aquí y no lleva los números escritos. Si un documento se renumera, la tabla se
+actualiza en el mismo commit.
+
+| Parte | `PRD` | `PB` |
+|---|---|---|
+| Documento | [`docs/PRD.md`](../PRD.md) | [`docs/pr-babysitter.md`](../pr-babysitter.md) |
+| Épicas (prefijo del título en Linear) | H1-H5, S1-S2 | PB |
+| Problema | §1 | §1 |
+| Usuarios | §2 | §2 |
+| Expectativas | §3 (E#) | §3 (BE#) |
+| Historias | §4 (H#, S#: épicas en Linear) | §4 (BH#: historias en Linear) |
+| Alcance | §5 | §5 |
+| Visión | §5.3 | §5.2 |
+| Fuera por decisión | §5.4 | §5.3 |
+| Supuestos | §6.1 (A#) | §6.1 (BA#) |
+| Restricciones | §6.2 | §6.2 |
+| Preguntas abiertas | §7 (Q#) | §7 (BQ#) |
+| Glosario | §8 | §8 |
+
 ## 4. Vida de una historia
 
 1. **Refinar (Linear):** crear, refinar y estimar la historia. Cada paso es una skill (`linear.md` §5); el
