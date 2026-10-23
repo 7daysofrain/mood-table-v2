@@ -90,8 +90,9 @@ would otherwise read the real card.
 
 The repo, though, is ahead of the fixtures: `readme.md` §5-§6 records MOO-14's estimate, and so do
 `estimate-story`'s `evals.json` (the user's scripted cards) and the runs in `workspace/`. The
-`estimator` must not find it. The assertion «El estimator juega a ciegas» of the MOO-14 cases checks
-it through the `Fuentes:` line of its answer (`MOO-71`); it can only judge what the estimator reports.
+`estimator` must not find it, nor MOO-903's scripted card. The assertion «El estimator juega a
+ciegas» of every case that launches it checks this through the `Fuentes:` line of its answer
+(`MOO-71`); it can only judge what the estimator reports.
 
 In every fixture, the MCP's `<issue id=… href=…>MOO-n</issue>` links are flattened to the plain
 `MOO-n`, and fields the skills do not read (UUIDs, URLs, timestamps, state history) are left out.
