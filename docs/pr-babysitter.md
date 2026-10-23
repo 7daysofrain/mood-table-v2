@@ -57,7 +57,7 @@ Se construye por tres razones:
 
 | Usuario | Quién es | Qué necesita | Historias |
 |---|---|---|---|
-| **Mantenedor** | Quien integra las PR del repo. Hoy, el autor. | Que cada PR llegue **lista para integrar** sin vigilarla; que le avisen **solo** cuando hace falta criterio; poder entender y auditar qué se decidió y por qué. | BH1-BH4 |
+| **Mantenedor** | Quien integra las PR del repo. Hoy, el autor. | Que cada PR llegue **lista para integrar** sin vigilarla; que le avisen **solo** cuando hace falta criterio; poder entender y auditar qué se decidió y por qué. | BH1-BH5 |
 
 ## 3. Qué se espera
 
@@ -74,6 +74,7 @@ Se construye por tres razones:
 | BE9 | **Me entero cuando una PR está lista.** | Cuando una PR llega a *lista para integrar*, el sistema avisa al mantenedor por el mismo canal que cuando escala. |
 | BE10 | **Sus arreglos no rompen nada.** | Ningún arreglo se publica sin pasar antes, en local, `lint`, `typecheck`, `test` y `e2e`; SonarQube lo comprueba la PR después, como en cualquier otra. |
 | BE11 | **Puedo pararlo.** | El mantenedor puede detener el sistema en una PR concreta o del todo, y vuelve a ponerlo en marcha cuando quiere. |
+| BE12 | **No gasta revisiones en balde.** | El sistema pide la revisión del revisor cuando las comprobaciones del último push están en verde, y no la pide dos veces para el mismo push. |
 
 Como en el PRD del producto, las expectativas no llevan números: los umbrales (cuánto es "lo
 suficiente", cuántas iteraciones, qué tope de gasto) se fijan en la spec de cada historia.
@@ -99,6 +100,11 @@ suficiente", cuántas iteraciones, qué tope de gasto) se fijan en la spec de ca
   vigilar. *(BE1)*
   - Hasta BH4, un hallazgo que exige criterio no se toca: el sistema avisa al mantenedor por el canal
     de BH1.
+- **BH5 · Pedir la revisión cuando toca.** Como **mantenedor**, quiero que el sistema pida la revisión
+  del revisor cuando las comprobaciones del último push estén en verde, para no gastar revisiones en
+  código que va a cambiar ni tener que pedirla yo. *(BE4, BE11, BE12)*
+  - La *Automatic review* de Codex sigue activada hasta que BH5 esté integrada; después la apaga el
+    mantenedor en los ajustes de Codex.
 
 ### 4.1 Política de escalado
 
@@ -115,7 +121,7 @@ Sale de `workflow.md` §4.4. El sistema escala al mantenedor cuando:
 
 ### 5.1 Primera versión
 
-BH1-BH4.
+BH1-BH5.
 
 **Qué PR atiende:** todas las PR contra `main` del mantenedor (de tarea, *chores* sin change y de
 archivar un change) y las de **Dependabot**. En las que no tienen spec, el alcance lo da el plan de
@@ -152,6 +158,7 @@ cuenta en `prompts.md` y el resto sigue después.
 | BA4 | Hay suficientes PR cerradas con hallazgos y respuestas para medir el triaje *(asumido: se cuentan al especificar BH2)*. |
 | BA5 | Hay un presupuesto mensual para los modelos *(asumido: la cifra se fija en la spec)*. |
 | BA6 | El sistema está en marcha cuando hay PR abiertas *(asumido)*. |
+| BA7 | El revisor atiende a la petición de revisión del sistema: en Codex, un comentario `@codex review` escrito con el token del sistema *(asumido: comprobarlo; si no se cumple, BH5 no se puede hacer)*. |
 
 ### 6.2 Restricciones
 
