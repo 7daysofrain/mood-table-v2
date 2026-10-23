@@ -1,0 +1,38 @@
+{
+  "issues": [
+    {
+      "id": "MOO-69",
+      "title": "Generalizar las skills de historias a épicas con documento propio",
+      "status": "Todo",
+      "labels": [
+        "infra",
+        "Chore"
+      ],
+      "parentId": "MOO-67",
+      "estimate": null
+    },
+    {
+      "id": "MOO-70",
+      "title": "Dar ID a los documentos fuente y a los supuestos y preguntas de PB",
+      "status": "Done",
+      "labels": [
+        "infra",
+        "Chore"
+      ],
+      "parentId": "MOO-67",
+      "estimate": null
+    },
+    {
+      "id": "MOO-68",
+      "title": "Documentar la épica PR Babysitter",
+      "status": "Done",
+      "labels": [
+        "infra",
+        "Chore"
+      ],
+      "parentId": "MOO-67",
+      "estimate": null
+    }
+  ],
+  "hasNextPage": false
+}

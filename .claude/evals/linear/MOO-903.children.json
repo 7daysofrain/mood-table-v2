@@ -1,0 +1,25 @@
+{
+  "issues": [
+    {
+      "id": "MOO-904",
+      "title": "Clasificar los hallazgos de cada PR en modo sombra",
+      "description": "Triaje de cada hallazgo nuevo (real, no aplica o exige criterio) con su motivo y su coste, registrado sin actuar sobre la PR y con un tope de gasto por PR.\n\nPasos: sección de esta tarea en el `tasks.md` del OpenSpec change de MOO-903 (pendiente).",
+      "status": "Backlog",
+      "labels": [
+        "infra"
+      ],
+      "parentId": "MOO-903"
+    },
+    {
+      "id": "MOO-905",
+      "title": "Medir el triaje contra PR ya cerradas",
+      "description": "Los hallazgos de PR cerradas, con la respuesta que se dio a cada uno, y la medida de cuántos acierta el triaje frente a ellos.\n\nPasos: sección de esta tarea en el `tasks.md` del OpenSpec change de MOO-903 (pendiente).",
+      "status": "Backlog",
+      "labels": [
+        "infra"
+      ],
+      "parentId": "MOO-903"
+    }
+  ],
+  "hasNextPage": false
+}

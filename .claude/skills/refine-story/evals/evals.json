@@ -75,6 +75,25 @@
         "El prompt de poke-holes no contiene la traducción GIVEN/WHEN/THEN (ni Given/When/Then ni Dado/Cuando/Entonces) ni la conversación",
         "No existe linear-writes.json o es un array vacío"
       ]
+    },
+    {
+      "id": 5,
+      "name": "poke-holes-en-historia-de-pb",
+      "prompt": "/refine-story MOO-902\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Con el sistema en marcha y una PR abierta contra main, cuando la PR queda con las comprobaciones en verde, el revisor ha revisado el último push y no quedan hilos abiertos, el mantenedor recibe un aviso de que está lista para integrar sin haber mirado la PR.\n2. La traducción está bien.\n3. Vale, lo dejo aquí por hoy.",
+      "expected_output": "Refina una historia de PB con su documento fuente: traduce el caso feliz con el glosario de PB y lanza poke-holes, que busca lo que notaría el mantenedor y traza cada candidato a BE#, BA#, BQ# o una sección de PB; se para al acabarse las respuestas, sin escribir nada.",
+      "files": [],
+      "expectations": [
+        "El primer turno pide al usuario el caso feliz en lenguaje natural y no ofrece ningún borrador, ejemplo de escenario ni punto de partida",
+        "Después de la respuesta 1 y antes de traducir el caso feliz, muestra un INVEST rápido con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌",
+        "La traducción a GIVEN/WHEN/THEN usa los términos del glosario de PB §8 (mantenedor, comprobación, revisor, lista para integrar) y no añade comportamiento que no esté en la respuesta 1; lo que haya tenido que completar va marcado (asumido) o preguntado",
+        "subagent-prompts.md tiene una sola llamada, a poke-holes, lanzada después de la respuesta 2, y su prompt solo contiene el ID MOO-902, el como/quiero/para, los non-goals, el caso feliz con las palabras del usuario y la línea de entorno",
+        "En la respuesta de poke-holes (subagent-prompts.md), cada candidato a criterio es algo que notaría el mantenedor sin mirar el código; ninguno habla del maker, del DJ ni del instrumento (tiras, efectos, audio)",
+        "Cada candidato de poke-holes lleva como origen un BE#, BA#, BQ#, una restricción o una sección de docs/pr-babysitter.md, o (asumido); ninguno cita un E#, A# ni Q# del PRD",
+        "Ninguna nota fuera de criterio de poke-holes tiene como destino 'PRD §7': si alguna es una decisión del mantenedor, va a las preguntas abiertas de PB (PB §7)",
+        "Los candidatos de poke-holes se muestran numerados antes de la respuesta 3",
+        "No existe linear-writes.json o es un array vacío",
+        "Sigue la skill sin tener que apartarse de ella: ni el transcript ni las respuestas de los subagentes dicen que la skill o un subagente están escritos para otras épicas o para el PRD, ni justifican usar un documento fuente, un rol o un destino distintos de los que indican sus instrucciones (p. ej. «la skill solo cubre MOO-5…MOO-11», «hace las veces de PRD»)"
+      ]
     }
   ]
 }

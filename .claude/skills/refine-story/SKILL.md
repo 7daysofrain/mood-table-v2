@@ -19,15 +19,18 @@ Input: `$ARGUMENTS` = story ID.
 ## Language
 
 Instructions here are in English, but **talk to the user in Spanish and write all Linear content in
-Spanish**, using the PRD glossary (§8).
+Spanish**, using the glossary of the epic's source document.
 
 ## Steps
 
 1. **Load context.**
    - The story and its epic (`get_issue`).
-   - `docs/instructions/workflow.md` §2 (task = PR) and §5 (rules for agents).
-   - In `docs/PRD.md`: the H#/S#, its E#, §6 (assumptions and constraints), §7 (open questions) and
-     §8 (glossary).
+   - `docs/instructions/workflow.md` §2 (task = PR), §3 (the table of source documents) and §5 (rules
+     for agents).
+   - The epic's source document: the prefix of the epic's title (`H1`, `PB`…) says which one, and the
+     table says where each part lives. Read through it, never by a section number you remember: the
+     story it comes from (H#/S#, or BH#), its expectations, assumptions and constraints, open
+     questions and glossary.
 
 2. **Happy path (the user writes it).** Ask the user to describe the happy path **in natural
    language**. Do not offer a draft, not even as a starting point: a draft anchors the user and the
@@ -75,8 +78,9 @@ Spanish**, using the PRD glossary (§8).
      `spec` → the technical context, as a question for the OpenSpec change.
    - Write only the kept ones in GWT, using the same checklist, and mark *(asumido)* anything without
      evidence. Ask the user to approve the wording.
-   - If a discarded candidate is really a product question (a decision for the DJ), propose adding it
-     to PRD §7 rather than answering it yourself.
+   - If a discarded candidate is really a question for the source document's user (a decision for the
+     DJ, or for the maintainer in PB), propose adding it to that document's open questions rather than
+     answering it yourself.
 
 7. **Definition of Done.** Read [`assets/dod.md`](assets/dod.md) and copy **verbatim** the block that
    matches the story's **Tipo** label. The block is already in Spanish because it goes straight into

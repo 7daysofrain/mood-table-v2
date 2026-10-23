@@ -1,0 +1,18 @@
+{
+  "id": "MOO-903",
+  "title": "Ver cómo clasificaría el sistema cada hallazgo, sin que actúe",
+  "description": "## Historia\n\nComo mantenedor, quiero ver cómo clasificaría el sistema cada hallazgo, sin que actúe, para confiar en su criterio antes de dejarle arreglar.\n**Épica:** PB (BH2) · **Expectativas:** BE3, BE4, BE8\n**Talla (IA):** L · triaje con un modelo, medirlo contra PR cerradas y registrar cada decisión con su coste\n\n## Criterios de aceptación\n\n```gherkin\nEscenario: El sistema clasifica cada hallazgo sin actuar\n  Dado que el sistema sigue una PR abierta en modo sombra\n  Cuando el revisor deja un hallazgo nuevo en la PR\n  Entonces el mantenedor ve el hallazgo clasificado como real, no aplica o exige criterio, con su motivo\n    Y el sistema no cambia código ni contesta en la PR\n\nEscenario: El triaje se mide contra PR ya cerradas\n  Dado que hay PR cerradas con hallazgos y la respuesta que se dio a cada uno\n  Cuando el mantenedor pide medir el triaje\n  Entonces ve en cuántos hallazgos el triaje del sistema coincide con lo que se hizo\n\nEscenario: Cada decisión queda registrada con su coste\n  Dado que el sistema ha clasificado los hallazgos de una PR\n  Cuando el mantenedor revisa esa PR\n  Entonces ve qué decidió el sistema con cada hallazgo, por qué y cuánto costó\n\nEscenario: Una PR no pasa de su tope de gasto\n  Dado que el sistema clasifica los hallazgos de una PR\n  Cuando el gasto en modelos de esa PR llega a su tope (asumido: la cifra se fija en la spec)\n  Entonces el sistema deja de clasificar los hallazgos de esa PR\n    Y el mantenedor ve que se ha llegado al tope\n```\n\n## Non-goals\n\n* No arregla hallazgos ni contesta en sus hilos: es BH3.\n* No pregunta al mantenedor: es BH4.\n* No integra PR (BE2, PB §5.3).\n\n## Definition of Done (Feature)\n\n- [ ] OpenSpec change aprobado; archivado tras el merge\n- [ ] Tests que cubren todos los escenarios (GIVEN/WHEN/THEN) de la historia\n- [ ] Lint, tipos, E2E y quality gate de SonarQube en verde\n- [ ] Glosario del documento fuente actualizado si aparece un término nuevo\n- [ ] README actualizado si cambia el diseño, la instalación o la API (OpenAPI)\n\n## Contexto técnico (para el agente)\n\n* `docs/pr-babysitter.md` §4 (BH2) y §6.1 (BA4: hay PR cerradas suficientes para medir el triaje); D63-D66 en `docs/idea-mood-table.md` §10.\n* Preguntas para la spec: dónde ve el mantenedor las decisiones del modo sombra (BQ2); el umbral de acierto del triaje y el tope de gasto (BQ5).\n* Bloqueada por MOO-902 (BH1: seguir cada PR).\n* OpenSpec change: `openspec/changes/<id>` (pendiente)",
+  "priority": {
+    "value": 4,
+    "name": "Low"
+  },
+  "estimate": null,
+  "status": "Backlog",
+  "labels": [
+    "infra",
+    "Feature"
+  ],
+  "parentId": "MOO-67",
+  "project": "Mood Table",
+  "team": "Mood Table"
+}

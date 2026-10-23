@@ -12,7 +12,7 @@ Común a todos los tipos: **PR con revisión humana** y **`Fixes MOO-n`** con el
 - [ ] OpenSpec change aprobado; archivado tras el merge
 - [ ] Tests que cubren todos los escenarios (GIVEN/WHEN/THEN) de la historia
 - [ ] Lint, tipos, E2E y quality gate de SonarQube en verde
-- [ ] Glosario del PRD actualizado si aparece un término nuevo
+- [ ] Glosario del documento fuente actualizado si aparece un término nuevo
 - [ ] README actualizado si cambia el diseño, la instalación o la API (OpenAPI)
 
 ## Bug
@@ -34,7 +34,7 @@ Común a todos los tipos: **PR con revisión humana** y **`Fixes MOO-n`** con el
 - [ ] Hallazgos y decisión registrados en la ficha (`docs/idea-mood-table.md`, nueva D#) y en `prompts.md` si la IA intervino
 - [ ] Tiempo invertido anotado frente al *timebox* acordado
 - [ ] Código del spike descartado o aislado (no llega a `main` como producto)
-- [ ] Historias o preguntas del PRD (Q#, A#) afectadas actualizadas
+- [ ] Historias, supuestos o preguntas del documento fuente (A#, Q#; BA#, BQ#) afectados actualizados
 
 ## Chore
 
