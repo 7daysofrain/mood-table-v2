@@ -37,6 +37,10 @@ Follow skill-creator's "Running and evaluating test cases", with two adjustments
   `aggregate_benchmark` needs `eval-*/<config>/run-*/`; `generate_review.py` shows "No prompt found"
   unless `eval_metadata.json` sits in `<config>/` or `run-1/`.
 - **Viewer:** `generate_review.py … --static <workspace>/iteration-N/review.html`, so no server stays up.
+- **Changed subagent:** Claude Code loads `.claude/agents/` when the session starts, so after editing
+  `estimator` or `poke-holes` the same session still launches the old one. Run the evals in a new
+  session; if that is not possible, have each run launch a `general-purpose` subagent with the
+  subagent's `model` that reads its file and follows it, and note it in the results (`MOO-71`).
 
 ## Validating the skills' form
 
@@ -78,6 +82,11 @@ snapshot.
 `estimate`, and without the `**Estimación:**` line. It appears unestimated in the lists too
 (`MOO-5.children.json`, `team.json`): the `estimator` calibrates against the estimated stories, and
 would otherwise read the real card.
+
+The repo, though, is ahead of the fixtures: `readme.md` §5-§6 records MOO-14's estimate, and so do
+`estimate-story`'s `evals.json` (the user's scripted cards) and the runs in `workspace/`. The
+`estimator` must not find it. The assertion «El estimator juega a ciegas» of the MOO-14 cases checks
+it through the `Fuentes:` line of its answer (`MOO-71`); it can only judge what the estimator reports.
 
 In every fixture, the MCP's `<issue id=… href=…>MOO-n</issue>` links are flattened to the plain
 `MOO-n`, and fields the skills do not read (UUIDs, URLs, timestamps, state history) are left out.
