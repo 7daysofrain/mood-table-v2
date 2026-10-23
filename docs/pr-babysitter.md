@@ -147,15 +147,14 @@ cuenta en `prompts.md` y el resto sigue después.
 
 ### 6.1 Supuestos
 
-- Codex revisa cada push y su comentario se puede leer por máquina (bloque `codex-review-state`).
-- Codex también revisa las PR de Dependabot *(asumido: comprobarlo)*. Si no, en esas PR los
-  hallazgos solo vienen de la CI y de SonarQube.
-- **El revisor puede cambiar** (en octubre pasó de Copilot a Codex): cambiar de revisor no debe
-  obligar a rehacer el sistema.
-- Hay suficientes PR cerradas con hallazgos y respuestas para medir el triaje *(asumido: se cuentan
-  al especificar BH2)*.
-- Hay un presupuesto mensual para los modelos *(asumido: la cifra se fija en la spec)*.
-- El sistema está en marcha cuando hay PR abiertas *(asumido)*.
+| # | Supuesto |
+|---|---|
+| BA1 | Codex revisa cada push y su comentario se puede leer por máquina (bloque `codex-review-state`). |
+| BA2 | Codex también revisa las PR de Dependabot *(asumido: comprobarlo)*. Si no, en esas PR los hallazgos solo vienen de la CI y de SonarQube. |
+| BA3 | **El revisor puede cambiar** (en octubre pasó de Copilot a Codex): cambiar de revisor no debe obligar a rehacer el sistema. |
+| BA4 | Hay suficientes PR cerradas con hallazgos y respuestas para medir el triaje *(asumido: se cuentan al especificar BH2)*. |
+| BA5 | Hay un presupuesto mensual para los modelos *(asumido: la cifra se fija en la spec)*. |
+| BA6 | El sistema está en marcha cuando hay PR abiertas *(asumido)*. |
 
 ### 6.2 Restricciones
 
@@ -175,13 +174,13 @@ máquina de casa; si luego compensa, puede pasar a la nube.
 Solo las que cambian lo que nota el mantenedor. Las de diseño se deciden en el OpenSpec change de
 cada historia.
 
-| Pregunta | Se resuelve en |
-|---|---|
-| Por dónde avisa el sistema al mantenedor | BH1 |
-| Dónde ve el mantenedor las decisiones del modo sombra (un comentario resumen en la PR o solo en las trazas) | BH2 |
-| Qué hace con las PR de Dependabot si subir commits a su rama hace que Dependabot deje de mantenerla *(asumido: comprobarlo en su documentación)*: escalar en vez de arreglar, o pedirle a Dependabot que la rehaga | BH3 |
-| Por dónde contesta el mantenedor cuando el sistema escala | BH4 |
-| Los umbrales de BE3, BE8 y de la política (§4.1) | La spec de cada historia |
+| # | Pregunta | Se resuelve en |
+|---|---|---|
+| BQ1 | Por dónde avisa el sistema al mantenedor | BH1 |
+| BQ2 | Dónde ve el mantenedor las decisiones del modo sombra (un comentario resumen en la PR o solo en las trazas) | BH2 |
+| BQ3 | Qué hace con las PR de Dependabot si subir commits a su rama hace que Dependabot deje de mantenerla *(asumido: comprobarlo en su documentación)*: escalar en vez de arreglar, o pedirle a Dependabot que la rehaga | BH3 |
+| BQ4 | Por dónde contesta el mantenedor cuando el sistema escala | BH4 |
+| BQ5 | Los umbrales de BE3, BE8 y de la política (§4.1) | La spec de cada historia |
 
 ## 8. Glosario
 
