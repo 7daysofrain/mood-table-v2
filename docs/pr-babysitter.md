@@ -121,10 +121,7 @@ BH1-BH4.
 archivar un change) y las de **Dependabot**. En las que no tienen spec, el alcance lo da el plan de
 la *chore* en su tarea de Linear o la actualización de la dependencia.
 
-**Mínimos:**
-
-- **Mínimo útil:** BH1. Ya quita al mantenedor el papel de reloj.
-- **Mínimo que demuestra el sistema multiagente:** BH1 + BH2. BH1 no usa ningún LLM.
+**Mínimo útil:** BH1. Ya quita al mantenedor el papel de reloj.
 
 La Entrega 3 (11-nov) **no depende** de esta épica (prioridad *should*): lo integrado para entonces se
 cuenta en `prompts.md` y el resto sigue después.
