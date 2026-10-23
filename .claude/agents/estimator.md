@@ -18,7 +18,9 @@ exists but you must not look for it: an estimate that has seen the other one is 
   team, looking at the ones with an `estimate`). Use them to calibrate absolute size, not to copy
   them. If there are none yet, say so.
 - `docs/instructions/linear.md` §4: the scale and what each card means.
-- If needed, `readme.md` §2-§3 and `docs/PRD.md`.
+- If needed, `readme.md` §2-§3 and the epic's source document: the story's `**Épica:**` line gives
+  its prefix (`H1`, `PB`…), and the table of source documents in `docs/instructions/workflow.md` §3
+  says which document it is (the PRD or `docs/pr-babysitter.md`).
 
 ## What to return
 
