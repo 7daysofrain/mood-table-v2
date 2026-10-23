@@ -41,11 +41,11 @@
       "mcp__linear__list_templates",
       "mcp__linear__list_users",
       "mcp__linear__extract_images",
-      "mcp__linear__search_documentation"
+      "mcp__linear__search_documentation",
+      "mcp__linear__save_issue",
+      "mcp__linear__save_comment"
     ],
     "ask": [
-      "mcp__linear__save_issue",
-      "mcp__linear__save_comment",
       "Skill(opsx:*)",
       "Skill(skill:opsx:propose)",
       "Skill(skill:opsx:explore)",
