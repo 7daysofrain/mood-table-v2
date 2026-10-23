@@ -1061,6 +1061,22 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Claude Code carga `.claude/agents/` al arrancar la sesión, y una sonda confirmó que, tras el cambio, el estimator seguía siendo el viejo. La IA intentó lanzar cada run con `claude -p`. Primero lo bloqueó el modo auto; con el permiso del humano, después falló porque la sesión de la CLI había caducado. El humano eligió emular el estimator con un subagente con Sonnet que lee su fichero, y la receta quedó en `.claude/evals/README.md`.*
 - *Con el estimator nuevo pasan todas las aserciones (65/65 con la skill, antes 61/65) y la de ceguera, 9 de 9. La emulación no tenía Grep, así que algunos runs leyeron el principio del README (§0-§1) para encontrar los encabezados. Ahí no hay estimaciones, pero el estimator real, que sí tiene Grep, solo se comprobará en la próxima sesión.*
 
+#### 6.27 Escribir en Linear sin confirmación (`MOO-82`)
+
+**Prompt 1:**
+
+> Te quiero dar mas control sobre linear. ¿podemos quitar las cofirmaciones que te estoy dando? En realidad me he dado cuenta de que no son necesarias
+
+*Claude Code (`claude-opus-5-5`, 23-oct). La IA buscó de dónde salían las confirmaciones (la lista `ask` de `.claude/settings.json`, documentada en `linear.md` §8) y propuso pasar `save_issue` y `save_comment` a `allow` sin tocar `deny`. Antes de cambiar nada dio el porqué y el riesgo. El porqué: las skills de historias ya piden aprobación antes de escribir, así que la ventana de permisos solo repetía el sí. El riesgo: fuera de las skills, nada técnico impide editar o mover una issue, solo la regla 3 de `AGENTS.md`. Avisó también de que así se aparta de la recomendación del curso («leer + crear») y propuso dejar escrito el motivo.*
+
+**Prompt 2** (respuesta elegida entre las que propuso la IA):
+
+> Sí: pásalas a allow, deja deny como está y hazlo como chore con su issue en Linear, rama y PR.
+
+*Ajustes:*
+- *Al reescribir la regla de `AGENTS.md`, la IA vio que «solo con la puerta de una skill o si lo pide el usuario» chocaba con `linear.md` §2, que ya encarga al agente mover estados (a `Todo` al crear la rama y a `Spec` al subir el change). La regla nombra esos tres casos.*
+- *La propia `MOO-82` todavía se creó con confirmación: el cambio solo vale cuando se integra.*
+
 ---
 
 ### 7. Pull Requests
