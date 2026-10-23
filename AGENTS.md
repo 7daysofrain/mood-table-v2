@@ -97,7 +97,8 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - Don't copy information between sources of truth; link instead (`workflow.md` §3).
 - Don't invent acceptance criteria or use terms outside the PRD glossary (`workflow.md` §5).
 - Don't mix two tasks in one PR or two steps in one commit.
-- Don't write to Linear outside the `ask` gate (`linear.md` §8).
+- Don't write to Linear on your own initiative: only after a skill's human gate, for a state change
+  these instructions give the agent (`linear.md` §2), or when the user asks (`linear.md` §8).
 
 ## Where the work stands
 
