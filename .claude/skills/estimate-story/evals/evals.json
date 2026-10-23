@@ -15,7 +15,8 @@
         "Si las cartas difieren, resume qué supuesto hace cada una; en ningún caso propone la media ni elige el número por el usuario",
         "linear-writes.json tiene exactamente una actualización, posterior a la respuesta 2, con id MOO-14, estimate 8 y state Todo",
         "La descripción guardada es la del fixture MOO-14 sin cambios más una última línea añadida al final",
-        "La última línea sigue el formato '**Estimación:** 8 · humano 8 / IA <carta> · <fecha> · <motivo si hubo discrepancia>', y <carta> es la que da el estimator en su respuesta en subagent-prompts.md"
+        "La última línea sigue el formato '**Estimación:** 8 · humano 8 / IA <carta> · <fecha> · <motivo si hubo discrepancia>', y <carta> es la que da el estimator en su respuesta en subagent-prompts.md",
+        "El estimator juega a ciegas: su respuesta en subagent-prompts.md no cita ni usa ninguna estimación de MOO-14 (la carta humana, la de la IA o la final), no dice haberla visto y ninguna de las fuentes que nombra la contiene (readme.md fuera de §2-§3, .claude/skills/, .claude/evals/workspace/). Las estimaciones de otras historias (MOO-13, MOO-15) son su calibración y no cuentan"
       ]
     },
     {
@@ -44,7 +45,8 @@
         "El estimator se lanza después de la respuesta 1, y subagent-prompts.md tiene una sola llamada, al estimator, cuyo prompt solo contiene el ID MOO-14 y la línea de entorno (ni la carta 13, ni su motivo, ni la Talla (IA))",
         "Muestra las dos cartas a la vez, cada una con su motivo, y la del estimator coincide con la de su respuesta en subagent-prompts.md",
         "No guarda un 13: no existe linear-writes.json, está vacío o ninguna escritura lleva estimate 13",
-        "No mueve MOO-14 a Todo: ninguna escritura lleva state Todo"
+        "No mueve MOO-14 a Todo: ninguna escritura lleva state Todo",
+        "El estimator juega a ciegas: su respuesta en subagent-prompts.md no cita ni usa ninguna estimación de MOO-14 (la carta humana, la de la IA o la final), no dice haberla visto y ninguna de las fuentes que nombra la contiene (readme.md fuera de §2-§3, .claude/skills/, .claude/evals/workspace/). Las estimaciones de otras historias (MOO-13, MOO-15) son su calibración y no cuentan"
       ]
     },
     {
@@ -56,7 +58,8 @@
       "expectations": [
         "Tras la respuesta 2 no da un número como decisión propia ni propone la media; devuelve la decisión al usuario, apoyándose en los supuestos de cada carta",
         "linear-writes.json tiene exactamente una actualización, posterior a la respuesta 3, con id MOO-14, estimate 5 y state Todo",
-        "La última línea de la descripción es '**Estimación:** 5 · humano 3 / IA <carta del estimator> · <fecha> · <motivo>', con un motivo de la discrepancia si la carta del estimator no es 3"
+        "La última línea de la descripción es '**Estimación:** 5 · humano 3 / IA <carta del estimator> · <fecha> · <motivo>', con un motivo de la discrepancia si la carta del estimator no es 3",
+        "El estimator juega a ciegas: su respuesta en subagent-prompts.md no cita ni usa ninguna estimación de MOO-14 (la carta humana, la de la IA o la final), no dice haberla visto y ninguna de las fuentes que nombra la contiene (readme.md fuera de §2-§3, .claude/skills/, .claude/evals/workspace/). Las estimaciones de otras historias (MOO-13, MOO-15) son su calibración y no cuentan"
       ]
     }
   ]
