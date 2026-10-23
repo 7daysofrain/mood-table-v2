@@ -81,6 +81,9 @@ suficiente", cuántas iteraciones, qué tope de gasto) se fijan en la spec de ca
 
 ## 4. Historias
 
+Cada BH# es una necesidad del mantenedor, como las H# del PRD. Cómo se parte en historias de Linear,
+su tamaño y su orden se deciden en el backlog, no aquí.
+
 - **BH1 · Saber en qué punto está cada PR.** Como **mantenedor**, quiero que el sistema siga cada PR
   abierta y me avise de su estado (lista para integrar, con hallazgos o sin revisión de Codex del
   último push), para no tener que vigilarlas yo. *(BE6, BE7, BE9, BE11)*
@@ -93,8 +96,6 @@ suficiente", cuántas iteraciones, qué tope de gasto) se fijan en la spec de ca
 - **BH3 · Arreglar y publicar.** Como **mantenedor**, quiero que el sistema arregle los hallazgos
   reales, conteste y resuelva sus hilos, para que la PR llegue lista para integrar. *(BE1, BE2, BE4,
   BE5, BE6, BE8, BE10)*
-  - Si al estimarla sale 13, se parte en dos: **arreglar en local en modo ensayo** (deja el arreglo
-    en una rama para revisarlo, sin publicar) y **publicar**.
 - **BH4 · Escalar cuando hace falta.** Como **mantenedor**, quiero que el sistema se pause en los
   casos de la política, me pregunte y siga con mi respuesta, para decidir lo que exige criterio sin
   vigilar. *(BE1)*
@@ -201,7 +202,7 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Triaje** | `triage` | Clasificar un hallazgo en **real** (`valid`), **no aplica** (`notApplicable`) o **exige criterio** (`needsJudgment`). |
 | **Arreglo** | `fix` | Cambio que atiende un hallazgo. |
 | **Modo sombra** | `shadowMode` | El sistema decide y registra, pero no actúa. |
-| **Modo ensayo** | `dryRun` | El sistema arregla en local pero no publica (posible división de BH3). |
+| **Modo ensayo** | `dryRun` | El sistema arregla en local y deja el arreglo en una rama para revisarlo, pero no publica. |
 | **Escalar** | `escalate` | Pausar una PR y pedir criterio al mantenedor. |
 | **Política de escalado** | `escalationPolicy` | Los casos en los que el sistema escala (§4.1). |
 | **Lista para integrar** | `readyToMerge` | Comprobaciones en verde, revisión del revisor del último push e hilos resueltos. |
