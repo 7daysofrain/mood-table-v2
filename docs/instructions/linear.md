@@ -18,7 +18,8 @@
   de área, porque no heredan el DoD de ninguna historia.
 - **Segunda épica técnica:** `PB · PR Babysitter`, el sistema que conduce cada PR hasta dejarla lista
   para integrar. Es herramienta de desarrollo, no producto, pero es demasiado grande para tareas
-  sueltas: **sí tiene historias** (BH1-BH4), con sus tareas debajo como cualquier otra. Sus historias y
+  sueltas: **sí tiene historias**, que salen de sus necesidades BH1-BH5 (una BH# puede partirse en
+  varias historias: D69), con sus tareas debajo como cualquier otra. Sus historias y
   criterios salen de [`docs/pr-babysitter.md`](../pr-babysitter.md) (expectativas BE#, glosario
   propio), no del PRD. Prioridad **Low** (*should*).
 - **Historia = sub-issue de su épica. Tarea = sub-issue de su historia** (tres niveles de anidación).
