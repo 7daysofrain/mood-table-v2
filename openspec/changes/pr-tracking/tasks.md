@@ -33,7 +33,7 @@
   el aviso de dominio de seguimiento (número, título y URL de la PR) (`specs/pr-tracking`, decisiones
   2 y 9).
   Verificar: los tests nuevos fallan porque las funciones no existen.
-- [ ] 1.5 El modelo de la foto de una PR, el aviso de dominio, el puerto `Notifier`, el puerto de
+- [x] 1.5 El modelo de la foto de una PR, el aviso de dominio, el puerto `Notifier`, el puerto de
   lectura de GitHub y la regla de qué PR se sigue, en `src/core/`, con `zod` para la foto.
   Verificar: los tests de 1.4 pasan.
 - [ ] 1.6 **(test en rojo)** Tests del grafo con `MemorySaver` y un `Notifier` falso: un hilo nuevo
