@@ -149,3 +149,26 @@ describe('el PR Babysitter y el producto no se importan entre sí', () => {
     expect(errors).toHaveLength(1);
   });
 });
+
+describe('el núcleo del PR Babysitter no depende de sus adaptadores', () => {
+  it('rechaza que un fichero del núcleo importe un adaptador', async () => {
+    const errors = await boundaryErrors(
+      'packages/pr-babysitter/src/core/example.ts',
+      "import { createGitHubReader } from '../adapters/github.ts';\nexport const x = createGitHubReader;\n",
+    );
+    expect(errors).toHaveLength(1);
+  });
+
+  it('permite que su raíz de composición importe del núcleo y de los adaptadores', async () => {
+    const errors = await boundaryErrors(
+      'packages/pr-babysitter/src/main.ts',
+      [
+        "import { createGitHubReader } from './adapters/github.ts';",
+        "import { createDriver } from './core/driver.ts';",
+        'export const x = [createGitHubReader, createDriver];',
+        '',
+      ].join('\n'),
+    );
+    expect(errors).toEqual([]);
+  });
+});

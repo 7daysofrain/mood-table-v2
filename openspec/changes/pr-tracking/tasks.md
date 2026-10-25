@@ -55,7 +55,7 @@
   reintenta los nodos de aviso pendientes (`getState`) y reanuda los demás con `Command({ resume })`.
   La cadencia se inyecta, como el reloj del motor.
   Verificar: los tests de 1.8 pasan.
-- [ ] 1.10 **(test en rojo)** Tests del adaptador de GitHub en `src/adapters/github.test.ts`, con
+- [x] 1.10 **(test en rojo)** Tests del adaptador de GitHub en `src/adapters/github.test.ts`, con
   respuestas grabadas de la API: la lista de PR abiertas contra `main` se convierte en fotos (SHA,
   autor, borrador, título y URL); un 401 da un error de token distinto de los de red o de servidor
   (decisiones 3 y 4). Y en `tooling/boundaries.test.ts`, los casos que esperan a que exista un
