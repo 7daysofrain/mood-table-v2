@@ -69,9 +69,14 @@ function setup(pullRequests: OpenPullRequest[] = []) {
   return { github, notifier, log, tick };
 }
 
-/** Los números de las PR de los avisos de seguimiento, en orden. */
+/**
+ * Los números de las PR de los avisos de seguimiento, ordenados: las PR se avanzan a la vez, así que
+ * el orden entre ellas no está fijado.
+ */
 function trackedNumbers(notices: Notice[]) {
-  return notices.flatMap((notice) => (notice.type === 'tracking' ? [notice.pullRequest.number] : []));
+  return notices
+    .flatMap((notice) => (notice.type === 'tracking' ? [notice.pullRequest.number] : []))
+    .sort((a, b) => a - b);
 }
 
 describe('al arrancar', () => {

@@ -45,21 +45,20 @@ export function createDriver({
   const graph = createTrackingGraph(notifier, checkpointer);
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
-  /** Avisos del sistema que el canal aún no ha aceptado, en orden. */
+  /** Avisos del sistema que el canal aún no ha aceptado. */
   const pendingSystemNotices: SystemNotice[] = [];
   /** Si ya se ha avisado de que GitHub rechaza el token, desde la última lectura buena. */
   let unauthorizedNotified = false;
 
+  /** Publica los avisos del sistema pendientes; los que el canal no acepta, siguen pendientes. */
   async function flushSystemNotices() {
-    for (const notice of [...pendingSystemNotices]) {
-      try {
-        await notifier.notify(notice);
-      } catch (error) {
-        log(`No se ha podido publicar un aviso del sistema; se reintenta: ${describe(error)}`);
-        return;
-      }
-      pendingSystemNotices.shift();
-    }
+    const sending = pendingSystemNotices.splice(0);
+    const results = await Promise.allSettled(sending.map((notice) => notifier.notify(notice)));
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') return;
+      log(`No se ha podido publicar un aviso del sistema; se reintenta: ${describe(result.reason)}`);
+      pendingSystemNotices.push(sending[index] as SystemNotice);
+    });
   }
 
   async function readGitHub(): Promise<OpenPullRequest[] | undefined> {
@@ -107,17 +106,20 @@ export function createDriver({
 
       const toTrack = pullRequests.filter((pullRequest) => isTracked(pullRequest, policy));
       const stillTracked = new Set(toTrack.map((pullRequest) => pullRequest.number));
-      for (const number of [...tracked]) {
-        if (!stillTracked.has(number)) await forget(number);
-      }
+      const gone = [...tracked].filter((number) => !stillTracked.has(number));
+      await Promise.all(gone.map(forget));
 
-      for (const pullRequest of toTrack) {
-        try {
-          await advance({ ...pullRequest, observedAt: now });
-        } catch (error) {
-          log(`No se ha podido avanzar la PR #${pullRequest.number}; se reintenta: ${describe(error)}`);
-        }
-      }
+      // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.
+      await Promise.all(
+        toTrack.map(async (pullRequest) => {
+          try {
+            await advance({ ...pullRequest, observedAt: now });
+          } catch (error) {
+            const reason = describe(error);
+            log(`No se ha podido avanzar la PR #${pullRequest.number}; se reintenta: ${reason}`);
+          }
+        }),
+      );
     },
   };
 }
