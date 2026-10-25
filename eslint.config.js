@@ -56,6 +56,11 @@ export default defineConfig(
         { type: 'engine-adapter', pattern: 'packages/engine/src/adapters' },
         { type: 'engine-main', pattern: 'packages/engine/src' },
         { type: 'panel', pattern: 'packages/panel' },
+        // El PR Babysitter es herramienta de desarrollo, no producto (D63): mismas capas que el motor
+        // y ninguna dependencia con los paquetes del producto (change pr-tracking, decisión 5).
+        { type: 'pb-core', pattern: 'packages/pr-babysitter/src/core' },
+        { type: 'pb-adapter', pattern: 'packages/pr-babysitter/src/adapters' },
+        { type: 'pb-main', pattern: 'packages/pr-babysitter/src' },
       ],
     },
     rules: {
@@ -87,6 +92,18 @@ export default defineConfig(
             {
               from: { element: { type: 'panel' } },
               allow: { to: { element: { type: ['panel', 'shared'] } } },
+            },
+            {
+              from: { element: { type: 'pb-core' } },
+              allow: { to: { element: { type: 'pb-core' } } },
+            },
+            {
+              from: { element: { type: 'pb-adapter' } },
+              allow: { to: { element: { type: ['pb-adapter', 'pb-core'] } } },
+            },
+            {
+              from: { element: { type: 'pb-main' } },
+              allow: { to: { element: { type: ['pb-main', 'pb-core', 'pb-adapter'] } } },
             },
             // Un paquete del repo que no resuelve (no es dependencia declarada, o se entra por una ruta
             // interna que su `exports` no publica) no es "externo": se rechaza.

@@ -25,7 +25,7 @@
   Los casos del núcleo y de la raíz de composición van en 1.10: la regla ignora un import relativo a
   un fichero que no existe, y hasta 1.11 no hay ningún adaptador (decidido con el usuario, 25-oct).
   Verificar: los casos nuevos fallan porque la regla no conoce el paquete.
-- [ ] 1.3 Elementos `pb-core`, `pb-adapter` y `pb-main` y sus reglas en `eslint.config.js`. El
+- [x] 1.3 Elementos `pb-core`, `pb-adapter` y `pb-main` y sus reglas en `eslint.config.js`. El
   `tsconfig.json` del paquete ya entra en la lista de proyectos del lint (`./packages/*/tsconfig.json`).
   Verificar: los casos de 1.2 pasan y `pnpm lint` no da ningún error.
 - [ ] 1.4 **(test en rojo)** Tests del núcleo en `packages/pr-babysitter/src/core/`: qué PR se sigue
