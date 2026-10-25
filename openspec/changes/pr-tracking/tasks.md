@@ -28,7 +28,7 @@
 - [x] 1.3 Elementos `pb-core`, `pb-adapter` y `pb-main` y sus reglas en `eslint.config.js`. El
   `tsconfig.json` del paquete ya entra en la lista de proyectos del lint (`./packages/*/tsconfig.json`).
   Verificar: los casos de 1.2 pasan y `pnpm lint` no da ningún error.
-- [ ] 1.4 **(test en rojo)** Tests del núcleo en `packages/pr-babysitter/src/core/`: qué PR se sigue
+- [x] 1.4 **(test en rojo)** Tests del núcleo en `packages/pr-babysitter/src/core/`: qué PR se sigue
   (del mantenedor, contra `main` y no borrador; ni de otra persona, ni contra otra rama, ni borrador) y
   el aviso de dominio de seguimiento (número, título y URL de la PR) (`specs/pr-tracking`, decisiones
   2 y 9).
