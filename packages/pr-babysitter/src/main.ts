@@ -1,9 +1,9 @@
 /**
- * Raíz de composición del PR Babysitter (change pr-tracking, decisión 5): el único módulo que conoce
- * a la vez el núcleo y los adaptadores. Lee la configuración del entorno, monta GitHub, Linear y el
- * driver, y da vueltas hasta que el contenedor lo pare. Si la configuración no vale, dice qué
- * variable falla y termina con código 1. Sin persistencia: al reiniciar, el estado se reconstruye
- * desde GitHub (`MemorySaver` hasta BE7, D73).
+ * Raíz de composición del PR Babysitter (change pr-tracking, decisión 5): el único módulo que
+ * conoce a la vez el núcleo y los adaptadores. Lee la configuración del entorno, monta GitHub,
+ * Linear y el driver, y da vueltas hasta que el contenedor lo pare. Si la configuración no vale,
+ * dice qué variable falla y termina con código 1. Sin persistencia: al reiniciar, el estado se
+ * reconstruye desde GitHub (`MemorySaver` hasta BE7, D73).
  */
 import { setTimeout as sleep } from 'node:timers/promises';
 

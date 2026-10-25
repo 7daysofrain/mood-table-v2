@@ -1,7 +1,8 @@
 /**
  * La configuración del PR Babysitter (change pr-tracking, decisiones 3 y 8), de las variables de
  * entorno del contenedor, que vienen de un `.env` sin commitear (`.env.example` tiene los nombres).
- * Se valida con zod al arrancar: si falta algo o no vale, el proceso no arranca y dice qué variable.
+ * Se valida con zod al arrancar: si falta algo o no vale, el proceso no arranca y dice qué
+ * variable.
  */
 import * as z from 'zod';
 

@@ -1,9 +1,9 @@
 /**
  * Con respuestas de Linear en `test/fixtures/linear/`. Grabadas el 25-oct: `not-authenticated.json`
  * (la API con un token no válido, HTTP 401) e `invalid-client.json` (el endpoint del token con un
- * cliente no válido, HTTP 400). Las demás tienen la forma de la documentación de Linear (OAuth 2.0 y
- * attachments), porque grabarlas pide las credenciales de la app; se contrastan en la prueba a mano
- * (tasks.md 1.16).
+ * cliente no válido, HTTP 400). Las demás tienen la forma de la documentación de Linear (OAuth 2.0
+ * y attachments), porque grabarlas pide las credenciales de la app; se contrastan en la prueba a
+ * mano (tasks.md 1.16).
  */
 import { readFile } from 'node:fs/promises';
 
@@ -47,8 +47,8 @@ interface GraphQLRequest {
 }
 
 /**
- * Linear falso sobre el `fetch` global, que es el que usa `@linear/sdk`. Responde con los fixtures y
- * deja cambiar cada respuesta para un caso.
+ * Linear falso sobre el `fetch` global, que es el que usa `@linear/sdk`. Responde con los fixtures
+ * y deja cambiar cada respuesta para un caso.
  */
 async function fakeLinear() {
   const fixtures = {

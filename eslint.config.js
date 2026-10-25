@@ -56,8 +56,8 @@ export default defineConfig(
         { type: 'engine-adapter', pattern: 'packages/engine/src/adapters' },
         { type: 'engine-main', pattern: 'packages/engine/src' },
         { type: 'panel', pattern: 'packages/panel' },
-        // El PR Babysitter es herramienta de desarrollo, no producto (D63): mismas capas que el motor
-        // y ninguna dependencia con los paquetes del producto (change pr-tracking, decisión 5).
+        // El PR Babysitter es herramienta de desarrollo, no producto (D63): mismas capas que el
+        // motor y ninguna dependencia con los paquetes del producto (change pr-tracking, decisión 5).
         { type: 'pb-core', pattern: 'packages/pr-babysitter/src/core' },
         { type: 'pb-adapter', pattern: 'packages/pr-babysitter/src/adapters' },
         { type: 'pb-main', pattern: 'packages/pr-babysitter/src' },

@@ -1,12 +1,12 @@
 /**
  * Adaptador del canal de aviso (change pr-tracking, decisiones 1, 2 y 4): publica cada aviso como
- * comentario en Linear, con una app OAuth propia (`actor=app`) que solo puede leer y comentar. Así el
- * comentario no sale a nombre del mantenedor y Linear sí le notifica.
+ * comentario en Linear, con una app OAuth propia (`actor=app`) que solo puede leer y comentar. Así
+ * el comentario no sale a nombre del mantenedor y Linear sí le notifica.
  *
- * El token se pide con `client_credentials` (dura 30 días), se renueva un día antes de que caduque y,
- * si Linear lo rechaza, se pide otro y se repite la petición una vez. El aviso de una PR va a la tarea
- * que tiene la PR como adjunto; sin tarea, y los avisos del sistema, al issue buzón. Si Linear falla,
- * `notify` lanza: el driver reintenta el aviso en la vuelta siguiente.
+ * El token se pide con `client_credentials` (dura 30 días), se renueva un día antes de que caduque
+ * y, si Linear lo rechaza, se pide otro y se repite la petición una vez. El aviso de una PR va a la
+ * tarea que tiene la PR como adjunto; sin tarea, y los avisos del sistema, al issue buzón. Si
+ * Linear falla, `notify` lanza: el driver reintenta el aviso en la vuelta siguiente.
  */
 import { LinearClient, LinearError, LinearErrorType } from '@linear/sdk';
 import * as z from 'zod';

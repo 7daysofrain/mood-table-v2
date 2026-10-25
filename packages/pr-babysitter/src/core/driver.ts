@@ -1,7 +1,7 @@
 /**
  * El driver (change pr-tracking, decisiones 3, 4 y 9): en cada vuelta lee GitHub y despierta el
- * hilo de cada PR que se sigue. Lo que no es del grafo lo decide aquí: qué hilos arrancan, cuáles se
- * olvidan, cuándo se reintenta un aviso y cuándo se avisa de que GitHub rechaza el token.
+ * hilo de cada PR que se sigue. Lo que no es del grafo lo decide aquí: qué hilos arrancan, cuáles
+ * se olvidan, cuándo se reintenta un aviso y cuándo se avisa de que GitHub rechaza el token.
  *
  * Una vuelta nunca lanza: un fallo de GitHub la salta entera (sin foto buena no se reanuda ningún
  * hilo), y un fallo de una PR, la de esa PR. Lo uno y lo otro va al log y se repite en la vuelta
