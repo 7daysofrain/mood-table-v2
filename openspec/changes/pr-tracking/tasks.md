@@ -65,7 +65,7 @@
 - [x] 1.11 El adaptador de GitHub en `src/adapters/github.ts` con `octokit`, que recibe el token de un
   proveedor (decisión 3).
   Verificar: los tests de 1.10 pasan, también los de fronteras.
-- [ ] 1.12 **(test en rojo)** Tests de `LinearNotifier` en `src/adapters/linear.test.ts`, con
+- [x] 1.12 **(test en rojo)** Tests de `LinearNotifier` en `src/adapters/linear.test.ts`, con
   respuestas grabadas: pide el token con `client_credentials` y lo renueva antes de que caduque y tras
   un 401; encuentra la tarea con `attachmentsForURL` y publica un comentario que menciona al
   mantenedor y lleva número, título y URL de la PR; sin tarea, publica en el buzón; si Linear falla,
