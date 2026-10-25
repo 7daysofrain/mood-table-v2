@@ -17,6 +17,9 @@ catalog:
   '@eslint/js': 10.0.1
   '@fastify/static': 10.1.6
   '@fastify/websocket': 11.3.4
+  '@langchain/core': 1.3.0
+  '@langchain/langgraph': 1.5.2
+  '@linear/sdk': 99.0.0
   '@mantine/core': 9.6.3
   '@mantine/hooks': 9.6.3
   '@playwright/test': 1.64.0
@@ -37,6 +40,7 @@ catalog:
   eslint-plugin-boundaries: 7.2.0
   globals: 17.12.0
   jsdom: 30.1.1
+  octokit: 5.0.5
   react-dom: 19.3.0
   react: 19.3.0
   typescript-eslint: 8.71.0
@@ -44,6 +48,7 @@ catalog:
   typescript: 6.0.3
   vite: 8.3.1
   vitest: 5.0.3
+  zod: 4.6.7
 
 allowBuilds:
   unrs-resolver: false

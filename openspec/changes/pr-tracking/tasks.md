@@ -13,7 +13,7 @@
 
 ## 1. MOO-83 · infra
 
-- [ ] 1.1 Paquete `packages/pr-babysitter` (`@moodtable/pr-babysitter`, privado, `type: module`) con
+- [x] 1.1 Paquete `packages/pr-babysitter` (`@moodtable/pr-babysitter`, privado, `type: module`) con
   `package.json`, `tsconfig.json` (extiende `tsconfig.node.json`), `src/main.ts` vacío y el script
   `dev` (`node src/main.ts`). `@langchain/langgraph`, `zod`, `octokit` y `@linear/sdk` en el catalog
   de `pnpm-workspace.yaml`, con versiones de al menos un día (`minimumReleaseAge`). `src/main.ts` del
