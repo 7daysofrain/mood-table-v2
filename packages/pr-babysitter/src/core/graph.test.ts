@@ -64,7 +64,7 @@ describe('el hilo de una PR', () => {
     expect(notices).toHaveLength(1);
     const state = await graph.getState(threadConfig(74));
     expect(state.next).toEqual(['esperarComprobaciones']);
-    expect(state.values.snapshot).toEqual(snapshot(180_000));
+    expect(state.values).toEqual({ snapshot: snapshot(180_000) });
   });
 
   it('cada PR tiene su propio hilo', async () => {

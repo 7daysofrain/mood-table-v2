@@ -40,7 +40,7 @@
   avisa de que sigue la PR y se queda esperando las comprobaciones; reanudarlo con fotos nuevas **no**
   repite el aviso (la trampa del nodo que se reejecuta, decisión 9).
   Verificar: los tests nuevos fallan porque el grafo no existe.
-- [ ] 1.7 El grafo en `src/core/graph.ts`: `StateSchema` con zod, nodos `avisarSeguimiento` y
+- [x] 1.7 El grafo en `src/core/graph.ts`: `StateSchema` con zod, nodos `avisarSeguimiento` y
   `esperarComprobaciones` (con `interrupt()`) y un hilo por PR (`thread_id` = número). La salida de la
   espera la completa `MOO-84`.
   Verificar: los tests de 1.6 pasan.
