@@ -116,8 +116,10 @@ como hijo de la épica (ver arriba).
 ### 3. Credenciales mínimas: GitHub de solo lectura
 
 - **GitHub:** un PAT *fine-grained* del mantenedor, limitado a `mood-table-v2`, con permisos de
-  **solo lectura** (Metadata, Pull requests y Checks). En esta historia el sistema no escribe nada en
-  GitHub, así que D64 se cumple sin matices: ni integrar, ni hacer push, ni comentar.
+  **solo lectura** (Metadata y Pull requests). Los tokens *fine-grained* no ofrecen el permiso Checks
+  (es solo de GitHub Apps), y no hace falta: en un repo público, los *check runs* se leen sin permiso
+  propio (comprobado el 25-oct sin token). En esta historia el sistema no escribe nada en GitHub, así
+  que D64 se cumple sin matices: ni integrar, ni hacer push, ni comentar.
 - **Linear:** ver la decisión 1.
 - **Secretos** en variables de entorno del contenedor, desde un `.env` que no se commitea. Hay un
   `.env.example` con los nombres y sin valores.
