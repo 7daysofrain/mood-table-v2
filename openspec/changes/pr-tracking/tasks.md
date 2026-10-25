@@ -73,7 +73,7 @@
   Verificar: los tests nuevos fallan porque el adaptador no existe.
 - [x] 1.13 `LinearNotifier` en `src/adapters/linear.ts` con `@linear/sdk`.
   Verificar: los tests de 1.12 pasan.
-- [ ] 1.14 La raíz de composición en `src/main.ts`: lee y valida la configuración del entorno con zod
+- [x] 1.14 La raíz de composición en `src/main.ts`: lee y valida la configuración del entorno con zod
   (token de GitHub, *client id* y *secret* de Linear, usuario de Linear del mantenedor, login de GitHub
   del mantenedor, ID del buzón, cadencia), monta adaptadores, grafo y driver, y arranca. Con
   `packages/pr-babysitter/.env.example`, `Dockerfile` (`pnpm deploy --filter`, Node 24) y

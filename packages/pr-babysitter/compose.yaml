@@ -1,0 +1,9 @@
+# El PR Babysitter en una máquina de casa (D66): `docker compose up -d` desde esta carpeta, con el
+# `.env` al lado. No abre ningún puerto: solo consulta GitHub y publica en Linear.
+services:
+  pr-babysitter:
+    build:
+      context: ../..
+      dockerfile: packages/pr-babysitter/Dockerfile
+    env_file: .env
+    restart: unless-stopped

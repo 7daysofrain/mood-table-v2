@@ -1,0 +1,12 @@
+# Contexto de la imagen del PR Babysitter (packages/pr-babysitter/Dockerfile): el repo sin lo que se
+# instala o se genera, sin las carpetas de herramientas y sin ningún `.env`.
+**/node_modules
+**/.env
+**/dist
+coverage
+.git
+.claude
+.agents
+docs
+e2e/playwright-report
+e2e/test-results
