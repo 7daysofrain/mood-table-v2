@@ -51,7 +51,7 @@
   da un solo aviso al buzón; un aviso que falla en el `Notifier` se reintenta en la vuelta siguiente y
   llega (`specs/pr-tracking`, decisiones 3, 4 y 9).
   Verificar: los tests nuevos fallan porque el driver no existe.
-- [ ] 1.9 El driver en `src/core/driver.ts`: una vuelta lee GitHub, arranca los hilos que faltan,
+- [x] 1.9 El driver en `src/core/driver.ts`: una vuelta lee GitHub, arranca los hilos que faltan,
   reintenta los nodos de aviso pendientes (`getState`) y reanuda los demás con `Command({ resume })`.
   La cadencia se inyecta, como el reloj del motor.
   Verificar: los tests de 1.8 pasan.
