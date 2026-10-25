@@ -71,7 +71,7 @@
   mantenedor y lleva número, título y URL de la PR; sin tarea, publica en el buzón; si Linear falla,
   lanza un error en vez de tragárselo (decisiones 1, 2 y 4).
   Verificar: los tests nuevos fallan porque el adaptador no existe.
-- [ ] 1.13 `LinearNotifier` en `src/adapters/linear.ts` con `@linear/sdk`.
+- [x] 1.13 `LinearNotifier` en `src/adapters/linear.ts` con `@linear/sdk`.
   Verificar: los tests de 1.12 pasan.
 - [ ] 1.14 La raíz de composición en `src/main.ts`: lee y valida la configuración del entorno con zod
   (token de GitHub, *client id* y *secret* de Linear, usuario de Linear del mantenedor, login de GitHub
