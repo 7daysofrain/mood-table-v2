@@ -20,13 +20,13 @@
   paquete, fuera de la cobertura en `vitest.config.ts` y en `sonar-project.properties`, igual en los
   dos (`design.md` decisión 5).
   Verificar: `pnpm install`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 1.2 **(test en rojo)** Casos de fronteras en `tooling/boundaries.test.ts`: el núcleo del PR
-  Babysitter que importa un adaptador da error; su raíz de composición que importa núcleo y
-  adaptadores, no; el paquete que importa de `shared` da error; el motor que importa del paquete da
-  error (`specs/module-boundaries`).
+- [x] 1.2 **(test en rojo)** Casos de fronteras en `tooling/boundaries.test.ts`: el paquete que
+  importa de `shared` da error; el motor que importa del paquete da error (`specs/module-boundaries`).
+  Los casos del núcleo y de la raíz de composición van en 1.10: la regla ignora un import relativo a
+  un fichero que no existe, y hasta 1.11 no hay ningún adaptador (decidido con el usuario, 25-oct).
   Verificar: los casos nuevos fallan porque la regla no conoce el paquete.
-- [ ] 1.3 Elementos `pb-core`, `pb-adapter` y `pb-main` y sus reglas en `eslint.config.js`, más el
-  `tsconfig.json` del paquete en la lista de proyectos del lint.
+- [ ] 1.3 Elementos `pb-core`, `pb-adapter` y `pb-main` y sus reglas en `eslint.config.js`. El
+  `tsconfig.json` del paquete ya entra en la lista de proyectos del lint (`./packages/*/tsconfig.json`).
   Verificar: los casos de 1.2 pasan y `pnpm lint` no da ningún error.
 - [ ] 1.4 **(test en rojo)** Tests del núcleo en `packages/pr-babysitter/src/core/`: qué PR se sigue
   (del mantenedor, contra `main` y no borrador; ni de otra persona, ni contra otra rama, ni borrador) y
@@ -58,11 +58,13 @@
 - [ ] 1.10 **(test en rojo)** Tests del adaptador de GitHub en `src/adapters/github.test.ts`, con
   respuestas grabadas de la API: la lista de PR abiertas contra `main` se convierte en fotos (SHA,
   autor, borrador, título y URL); un 401 da un error de token distinto de los de red o de servidor
-  (decisiones 3 y 4).
+  (decisiones 3 y 4). Y en `tooling/boundaries.test.ts`, los casos que esperan a que exista un
+  adaptador (ver 1.2): el núcleo que importa `adapters/github.ts` da error; la raíz de composición que
+  importa núcleo y adaptadores, no.
   Verificar: los tests nuevos fallan porque el adaptador no existe.
 - [ ] 1.11 El adaptador de GitHub en `src/adapters/github.ts` con `octokit`, que recibe el token de un
   proveedor (decisión 3).
-  Verificar: los tests de 1.10 pasan.
+  Verificar: los tests de 1.10 pasan, también los de fronteras.
 - [ ] 1.12 **(test en rojo)** Tests de `LinearNotifier` en `src/adapters/linear.test.ts`, con
   respuestas grabadas: pide el token con `client_credentials` y lo renueva antes de que caduque y tras
   un 401; encuentra la tarea con `attachmentsForURL` y publica un comentario que menciona al

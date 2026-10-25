@@ -115,3 +115,37 @@ describe('shared no depende de los otros paquetes', () => {
     expect(errors).toHaveLength(1);
   });
 });
+
+describe('el PR Babysitter y el producto no se importan entre sí', () => {
+  it('rechaza que el PR Babysitter importe shared por nombre de paquete', async () => {
+    const errors = await boundaryErrors(
+      'packages/pr-babysitter/src/core/example.ts',
+      "import { SHARED_PACKAGE_NAME } from '@moodtable/shared';\nexport const x = SHARED_PACKAGE_NAME;\n",
+    );
+    expect(errors).toHaveLength(1);
+  });
+
+  it('rechaza que el PR Babysitter importe shared por ruta relativa', async () => {
+    const errors = await boundaryErrors(
+      'packages/pr-babysitter/src/main.ts',
+      "import { SHARED_PACKAGE_NAME } from '../../shared/src/index.ts';\nexport const x = SHARED_PACKAGE_NAME;\n",
+    );
+    expect(errors).toHaveLength(1);
+  });
+
+  it('rechaza que el motor importe el PR Babysitter por nombre de paquete', async () => {
+    const errors = await boundaryErrors(
+      'packages/engine/src/core/example.ts',
+      "import * as babysitter from '@moodtable/pr-babysitter';\nexport const x = babysitter;\n",
+    );
+    expect(errors).toHaveLength(1);
+  });
+
+  it('rechaza que el motor importe el PR Babysitter por ruta relativa', async () => {
+    const errors = await boundaryErrors(
+      'packages/engine/src/core/example.ts',
+      "import * as babysitter from '../../../pr-babysitter/src/main.ts';\nexport const x = babysitter;\n",
+    );
+    expect(errors).toHaveLength(1);
+  });
+});
