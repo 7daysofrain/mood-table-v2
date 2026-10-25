@@ -44,7 +44,7 @@
   `esperarComprobaciones` (con `interrupt()`) y un hilo por PR (`thread_id` = número). La salida de la
   espera la completa `MOO-84`.
   Verificar: los tests de 1.6 pasan.
-- [ ] 1.8 **(test en rojo)** Tests del driver en `src/core/driver.test.ts`, con un puerto de GitHub y un
+- [x] 1.8 **(test en rojo)** Tests del driver en `src/core/driver.test.ts`, con un puerto de GitHub y un
   `Notifier` falsos: al arrancar con PR abiertas, un aviso por cada una; un borrador no avisa, y al
   pasar a lista para revisar, sí; una PR que se cierra, se integra o vuelve a borrador deja de seguirse
   sin aviso; una lectura de GitHub que falla no cambia nada y se repite en la vuelta siguiente; un 401
