@@ -36,7 +36,7 @@
 - [x] 1.5 El modelo de la foto de una PR, el aviso de dominio, el puerto `Notifier`, el puerto de
   lectura de GitHub y la regla de qué PR se sigue, en `src/core/`, con `zod` para la foto.
   Verificar: los tests de 1.4 pasan.
-- [ ] 1.6 **(test en rojo)** Tests del grafo con `MemorySaver` y un `Notifier` falso: un hilo nuevo
+- [x] 1.6 **(test en rojo)** Tests del grafo con `MemorySaver` y un `Notifier` falso: un hilo nuevo
   avisa de que sigue la PR y se queda esperando las comprobaciones; reanudarlo con fotos nuevas **no**
   repite el aviso (la trampa del nodo que se reejecuta, decisión 9).
   Verificar: los tests nuevos fallan porque el grafo no existe.
