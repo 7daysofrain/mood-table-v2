@@ -62,7 +62,7 @@
   adaptador (ver 1.2): el núcleo que importa `adapters/github.ts` da error; la raíz de composición que
   importa núcleo y adaptadores, no.
   Verificar: los tests nuevos fallan porque el adaptador no existe.
-- [ ] 1.11 El adaptador de GitHub en `src/adapters/github.ts` con `octokit`, que recibe el token de un
+- [x] 1.11 El adaptador de GitHub en `src/adapters/github.ts` con `octokit`, que recibe el token de un
   proveedor (decisión 3).
   Verificar: los tests de 1.10 pasan, también los de fronteras.
 - [ ] 1.12 **(test en rojo)** Tests de `LinearNotifier` en `src/adapters/linear.test.ts`, con

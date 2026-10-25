@@ -27,7 +27,7 @@ function fakeFetch(respond: () => Response | Promise<Response>) {
     calls.push({ url: request.url, authorization: request.headers.get('authorization') });
     return Promise.resolve(respond());
   };
-  return { fetch: fetch as typeof globalThis.fetch, calls };
+  return { fetch, calls };
 }
 
 function json(body: string, status = 200) {
