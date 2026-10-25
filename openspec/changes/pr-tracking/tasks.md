@@ -81,7 +81,7 @@
   `.gitignore`.
   Verificar: `docker compose build` termina sin errores y, con un `.env` sin valores, el proceso sale
   diciendo qué variable falta.
-- [ ] 1.15 Documentación: D70 (canal Linear y destino de los avisos), D71 (credenciales), D72 (paquete
+- [x] 1.15 Documentación: D70 (canal Linear y destino de los avisos), D71 (credenciales), D72 (paquete
   y zod) y D73 (grafo, que matiza D65) en `docs/idea-mood-table.md` §10; la sección del PR Babysitter
   en `docs/instructions/linear.md`; en `docs/pr-babysitter.md`, BQ1 resuelta y dos preguntas nuevas
   (reflejar en Linear el estado de la PR; push sin merge en BH3); la cadencia del polling, con su

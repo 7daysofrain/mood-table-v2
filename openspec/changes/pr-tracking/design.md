@@ -241,7 +241,7 @@ Sin D#: aplica `workflow.md` §4.4 y BA1, que ya existen.
 ### 8. Polling cada 60 s y un tiempo de espera de 30 min
 
 - **Polling cada 60 s**, configurable. Cada vuelta hace una petición para la lista de PR abiertas,
-  una para el *ruleset* y dos por cada PR seguida (*check runs* y comentarios). Con 3 PR son unas 420
+  una para el *ruleset* y dos por cada PR seguida (*check runs* y comentarios). Con 3 PR son unas 480
   peticiones por hora, frente a un límite de 5000. Un minuto de retraso en un aviso no le cambia nada
   al mantenedor.
 - **Un solo tiempo de espera de 30 min**, configurable, para comprobaciones y revisión juntas. Cuenta
