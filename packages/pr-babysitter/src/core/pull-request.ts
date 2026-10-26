@@ -3,8 +3,7 @@
  * leído de GitHub. El grafo no consulta GitHub: recibe la foto al reanudar cada hilo, y con la hora
  * dentro de la foto el tiempo de espera se prueba sin relojes falsos.
  *
- * Se valida con zod, como el estado del grafo (D65, decisión 5). Las comprobaciones y el estado del
- * revisor llegan con MOO-84.
+ * Se valida con zod, como el estado del grafo (D65, decisión 5).
  */
 import * as z from 'zod';
 
@@ -24,8 +23,36 @@ export const openPullRequestSchema = z.object({
 
 export type OpenPullRequest = z.infer<typeof openPullRequestSchema>;
 
-/** Lo que recibe un hilo al reanudarse: la PR y cuándo la vio el driver (ms desde epoch). */
+/**
+ * Una comprobación que exige la rama base, en el último push (decisión 6): no ha terminado
+ * (`pending`, también si aún no ha empezado), pasa (correcta, neutra o saltada) o falla.
+ */
+export const checkSchema = z.object({
+  name: z.string(),
+  status: z.enum(['pending', 'passed', 'failed']),
+});
+
+export type Check = z.infer<typeof checkSchema>;
+
+/**
+ * La última revisión del revisor (decisión 7): el commit que revisó, si ha terminado y si ha tenido
+ * hallazgos. `null` en la foto si no hay revisión o no se entiende.
+ */
+export const reviewSchema = z.object({
+  reviewedSha: z.string().min(1),
+  completed: z.boolean(),
+  hasFindings: z.boolean(),
+});
+
+export type Review = z.infer<typeof reviewSchema>;
+
+/**
+ * Lo que recibe un hilo al reanudarse: la PR, sus comprobaciones, la revisión y cuándo la vio el
+ * driver (ms desde epoch).
+ */
 export const pullRequestSnapshotSchema = openPullRequestSchema.extend({
+  checks: z.array(checkSchema),
+  review: reviewSchema.nullable(),
   observedAt: z.number(),
 });
 

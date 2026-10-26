@@ -97,42 +97,42 @@
 
 ## 2. MOO-84 · infra
 
-- [ ] 2.1 **(test en rojo)** Tests del adaptador de GitHub con respuestas grabadas: las comprobaciones
+- [x] 2.1 **(test en rojo)** Tests del adaptador de GitHub con respuestas grabadas: las comprobaciones
   exigidas salen del *ruleset* de `main`; cada una lleva si ha terminado y si pasa (`success`,
   `neutral` y `skipped` pasan); una exigida sin *check run* no ha terminado (`specs/pr-tracking`,
   decisión 6).
   Verificar: los tests nuevos fallan porque la foto no lleva comprobaciones.
-- [ ] 2.2 Las comprobaciones en la foto, en `src/adapters/github.ts`.
+- [x] 2.2 Las comprobaciones en la foto, en `src/adapters/github.ts`.
   Verificar: los tests de 2.1 pasan.
-- [ ] 2.3 **(test en rojo)** Tests del adaptador del revisor en `src/adapters/codex-review.test.ts`,
+- [x] 2.3 **(test en rojo)** Tests del adaptador del revisor en `src/adapters/codex-review.test.ts`,
   con los comentarios reales de #57-#68 como fixtures: `completed` sobre el último SHA, sin y con
   hallazgos (`has_any_findings`); `running`; `completed` sobre un SHA anterior; sin bloque; JSON que
   no pasa zod; un comentario de otra cuenta con un bloque falso, que se ignora (decisión 7).
   Verificar: los tests nuevos fallan porque el adaptador no existe.
-- [ ] 2.4 El adaptador del revisor en `src/adapters/codex-review.ts` (cuenta del revisor en la
+- [x] 2.4 El adaptador del revisor en `src/adapters/codex-review.ts` (cuenta del revisor en la
   configuración) y el estado del revisor en la foto.
   Verificar: los tests de 2.3 pasan.
-- [ ] 2.5 **(test en rojo)** Tests de las reglas puras en `src/core/`: comprobaciones terminadas; estado
+- [x] 2.5 **(test en rojo)** Tests de las reglas puras en `src/core/`: comprobaciones terminadas; estado
   final «lista para integrar» y los dos «necesita intervención» con su motivo; tiempo agotado a los
   30 min desde la primera foto con ese SHA, para comprobaciones y para revisión, con qué no terminó;
   un SHA nuevo reinicia el seguimiento y el tiempo; el mismo resultado con o sin comentarios de otras
   cuentas (`specs/pr-tracking`, decisiones 6, 7 y 8).
   Verificar: los tests nuevos fallan porque las reglas no existen.
-- [ ] 2.6 Las reglas en `src/core/` y el tiempo de espera en la configuración (30 min por defecto).
+- [x] 2.6 Las reglas en `src/core/` y el tiempo de espera en la configuración (30 min por defecto).
   Verificar: los tests de 2.5 pasan.
-- [ ] 2.7 **(test en rojo)** Tests del grafo y del driver para el ciclo completo, con `Notifier` falso:
+- [x] 2.7 **(test en rojo)** Tests del grafo y del driver para el ciclo completo, con `Notifier` falso:
   la secuencia de avisos de cada escenario de `specs/pr-tracking`; un push nuevo mientras la sigue no
   avisa y los avisos siguientes son de ese push; un push nuevo tras el estado final vuelve a avisar de
   que la sigue.
   Verificar: los tests nuevos fallan porque el grafo se queda esperando las comprobaciones.
-- [ ] 2.8 Los nodos `avisarComprobaciones`, `esperarRevisor` y `avisarEstadoFinal` y sus aristas en
+- [x] 2.8 Los nodos `avisarComprobaciones`, `esperarRevisor` y `avisarEstadoFinal` y sus aristas en
   `src/core/graph.ts`, y en el driver, la nueva ejecución de un hilo terminado cuando cambia el SHA.
   Verificar: los tests de 2.7 pasan y los de `MOO-83` siguen en verde.
-- [ ] 2.9 Documentación: el tiempo de espera, con la medición de #57-#68, en
+- [x] 2.9 Documentación: el tiempo de espera, con la medición de #57-#68, en
   `docs/umbrales-para-specs.md`; los términos nuevos (*necesita intervención*, *issue buzón*) en el
   glosario de `docs/pr-babysitter.md` §8; README §2.2 si cambia; `prompts.md`.
   Verificar: los términos que usan los avisos están en el glosario.
-- [ ] 2.10 Prueba a mano con el contenedor en marcha: una PR que pasa todo y que Codex revisa sin
+- [x] 2.10 Prueba a mano con el contenedor en marcha: una PR que pasa todo y que Codex revisa sin
   hallazgos acaba en «lista para integrar»; una con una comprobación que falla, en «necesita
   intervención» con su nombre; con el tiempo de espera bajado a pocos minutos en el `.env`, una PR que
   Codex no revisa acaba por tiempo; un push nuevo a media espera no avisa.

@@ -1,0 +1,57 @@
+[
+  {
+    "id": 6372927210,
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/67#issuecomment-6372927210",
+    "user": {
+      "login": "linear-code[bot]",
+      "type": "Bot"
+    },
+    "created_at": "2026-10-23T19:22:24Z",
+    "updated_at": "2026-10-23T19:22:24Z",
+    "body": "<!-- linear-linkback -->\n<p><a href=\"https://linear.app/7daysofrain/issue/MOO-80\">MOO-80</a></p>"
+  },
+  {
+    "id": 6372928258,
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/67#issuecomment-6372928258",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "type": "Bot"
+    },
+    "created_at": "2026-10-23T19:22:27Z",
+    "updated_at": "2026-10-23T19:22:27Z",
+    "body": "To use Codex here, [create an environment for this repo](https://chatgpt.com/codex/cloud/settings/environments)."
+  },
+  {
+    "id": 6372952006,
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/67#issuecomment-6372952006",
+    "user": {
+      "login": "sonarqubecloud[bot]",
+      "type": "Bot"
+    },
+    "created_at": "2026-10-23T19:23:49Z",
+    "updated_at": "2026-10-23T19:23:49Z",
+    "body": "## [![Quality Gate Passed](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/checks/QualityGateBadge/qg-passed-20px.png 'Quality Gate Passed')](https://sonarcloud.io/dashboard?id=7daysofrain_mood-table-v2&pullRequest=67) **Quality Gate passed**  \nIssues  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed-16px.png '') [0 New issues](https://sonarcloud.io/project/issues?id=7daysofrain_mood-table-v2&pullRequest=67&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/accepted-16px.png '') [0 Accepted issues](https://sonarcloud.io/project/issues?id=7daysofrain_mood-table-v2&pullRequest=67&issueStatuses=ACCEPTED)\n\nMeasures  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed-16px.png '') [0 Security Hotspots](https://sonarcloud.io/project/security_hotspots?id=7daysofrain_mood-table-v2&pullRequest=67&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed-16px.png '') [0.0% Coverage on New Code](https://sonarcloud.io/component_measures?id=7daysofrain_mood-table-v2&pullRequest=67&metric=new_coverage&view=list)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed-16px.png '') [0.0% Duplication on New Code](https://sonarcloud.io/component_measures?id=7daysofrain_mood-table-v2&pullRequest=67&metric=new_duplicated_lines_density&view=list)  \n  \n<!-- sqra-placement-anchor -->\n[See analysis details on SonarQube Cloud](https://sonarcloud.io/dashboard?id=7daysofrain_mood-table-v2&pullRequest=67)\n\n"
+  },
+  {
+    "id": 6373022407,
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/67#issuecomment-6373022407",
+    "user": {
+      "login": "7daysofrain",
+      "type": "User"
+    },
+    "created_at": "2026-10-23T19:27:23Z",
+    "updated_at": "2026-10-23T19:27:23Z",
+    "body": "@codex review"
+  },
+  {
+    "id": 6373027854,
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/67#issuecomment-6373027854",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "type": "Bot"
+    },
+    "created_at": "2026-10-23T19:27:40Z",
+    "updated_at": "2026-10-23T19:27:40Z",
+    "body": "<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 {\"code_review\":{\"commit_sha\":\"bef08e89e1d081e9194a4376f147ab5c1cc6baba\",\"has_any_findings\":null,\"has_unresolved_findings\":null,\"status\":\"running\"},\"security_review\":{\"commit_sha\":null,\"has_any_findings\":null,\"has_unresolved_findings\":null,\"status\":null}} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | 🔄 **Running** since <relative-time datetime=\"2026-10-23T19:27:36.737014Z\">2026-10-23T19:27:36.737014Z</relative-time> | `bef08e8` | Manual request |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>"
+  }
+]

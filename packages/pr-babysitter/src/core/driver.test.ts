@@ -3,10 +3,16 @@ import { describe, expect, it } from 'vitest';
 
 import { createDriver, runDriver } from './driver.ts';
 import type { Notice } from './notice.ts';
-import { GitHubUnauthorizedError, type GitHubReader, type Notifier } from './ports.ts';
-import type { OpenPullRequest } from './pull-request.ts';
+import {
+  GitHubUnauthorizedError,
+  type GitHubReader,
+  type Notifier,
+  type ReviewReader,
+} from './ports.ts';
+import type { Check, OpenPullRequest, Review } from './pull-request.ts';
 
 const MAINTAINER = '7daysofrain';
+const MINUTE = 60_000;
 
 function pullRequest(number: number, overrides: Partial<OpenPullRequest> = {}): OpenPullRequest {
   return {
@@ -21,20 +27,39 @@ function pullRequest(number: number, overrides: Partial<OpenPullRequest> = {}): 
   };
 }
 
-/** GitHub falso: devuelve las PR que tenga en ese momento, o lanza el error que se le diga. */
+/**
+ * GitHub falso: devuelve lo que tenga en ese momento, o lanza el error que se le diga. Mientras no
+ * se le den, las comprobaciones de cada SHA están a medias y no hay revisión.
+ */
 function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
   const github = {
     pullRequests,
+    /** Las comprobaciones de cada SHA. */
+    checks: {} as Record<string, Check[]>,
+    /** La revisión de cada PR. */
+    reviews: {} as Record<number, Review>,
     failure: undefined as Error | undefined,
+    /** Si falla solo la lectura de las comprobaciones. */
+    checksFailure: undefined as Error | undefined,
     reads: 0,
+    checksReads: 0,
   };
+  const read = <T>(value: T) =>
+    github.failure ? Promise.reject(github.failure) : Promise.resolve(value);
   const reader: GitHubReader = {
     listOpenPullRequests() {
       github.reads += 1;
-      return github.failure ? Promise.reject(github.failure) : Promise.resolve(github.pullRequests);
+      return read(github.pullRequests);
+    },
+    requiredChecks: () => read(['lint']),
+    checks(sha) {
+      github.checksReads += 1;
+      if (github.checksFailure) return Promise.reject(github.checksFailure);
+      return read(github.checks[sha] ?? [{ name: 'lint', status: 'pending' }]);
     },
   };
-  return { github, reader };
+  const reviewer: ReviewReader = { review: (number) => read(github.reviews[number] ?? null) };
+  return { github, reader, reviewer };
 }
 
 /** Notifier falso: guarda los avisos que publica, o falla mientras `failing` esté a true. */
@@ -51,20 +76,22 @@ function fakeNotifier() {
 }
 
 function setup(pullRequests: OpenPullRequest[] = []) {
-  const { github, reader } = fakeGitHub(pullRequests);
+  const { github, reader, reviewer } = fakeGitHub(pullRequests);
   const { notifier, port } = fakeNotifier();
   const log: string[] = [];
   const driver = createDriver({
     github: reader,
+    reviewer,
     notifier: port,
     checkpointer: new MemorySaver(),
     policy: { maintainer: MAINTAINER, baseBranch: 'main' },
+    timeoutMs: 30 * MINUTE,
     log: (line) => log.push(line),
   });
   let now = 0;
   const tick = async () => {
     await driver.tick(now);
-    now += 60_000;
+    now += MINUTE;
   };
   return { github, notifier, log, tick };
 }
@@ -230,6 +257,143 @@ describe('si el canal no acepta un aviso', () => {
     await tick();
 
     expect(trackedNumbers(notifier.notices)).toEqual([74, 75]);
+  });
+});
+
+/** Los avisos de las PR en corto: número, tipo y, el del estado final, su estado. */
+function summary(notices: Notice[]) {
+  return notices.flatMap((notice) => {
+    if (!('pullRequest' in notice)) return [];
+    const { number } = notice.pullRequest;
+    return [notice.type === 'final' ? [number, notice.state.status] : [number, notice.type]];
+  });
+}
+
+const PASSED: Check[] = [{ name: 'lint', status: 'passed' }];
+const reviewed = (sha: string): Review => ({ reviewedSha: sha, completed: true, hasFindings: false });
+
+describe('hasta el estado final', () => {
+  it('sigue la PR por cada vuelta hasta avisar de su estado final', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    await tick();
+
+    github.checks['sha-74'] = PASSED;
+    await tick();
+    github.reviews[74] = reviewed('sha-74');
+    await tick();
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'readyToMerge'],
+    ]);
+  });
+
+  it('tras el estado final no avisa más ni vuelve a leer la PR mientras no haya push nuevo', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    await tick();
+    await tick();
+    await tick();
+    const reads = github.checksReads;
+
+    await tick();
+    await tick();
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'readyToMerge'],
+    ]);
+    expect(github.checksReads).toBe(reads);
+  });
+
+  it('un push nuevo tras el estado final vuelve a avisar de que la sigue, y sigue ese push', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    await tick();
+    await tick();
+    await tick();
+
+    github.pullRequests = [pullRequest(74, { headSha: 'nuevo' })];
+    await tick();
+    await tick();
+    expect(summary(notifier.notices).slice(3)).toEqual([[74, 'tracking']]);
+
+    github.checks['nuevo'] = PASSED;
+    github.reviews[74] = reviewed('nuevo');
+    await tick();
+    await tick();
+    expect(summary(notifier.notices).slice(3)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'readyToMerge'],
+    ]);
+  });
+
+  it('un push nuevo mientras la sigue no avisa', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    github.pullRequests = [pullRequest(74, { headSha: 'nuevo' })];
+    await tick();
+    await tick();
+
+    expect(summary(notifier.notices)).toEqual([[74, 'tracking']]);
+  });
+
+  it('si nadie termina en 30 min desde que vio el push, avisa de que necesita intervención', async () => {
+    const { notifier, tick } = setup([pullRequest(74)]);
+
+    for (let minute = 0; minute <= 30; minute++) await tick();
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'needsIntervention'],
+    ]);
+  });
+
+  it('un aviso reintentado tras un push nuevo no da el estado final del push anterior', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    // Las comprobaciones y la revisión terminan, pero Linear no acepta el aviso.
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    notifier.failing = true;
+    await tick();
+
+    // Llega un push nuevo antes de que Linear vuelva.
+    github.pullRequests = [pullRequest(74, { headSha: 'nuevo' })];
+    notifier.failing = false;
+    await tick();
+    await tick();
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+    ]);
+  });
+
+  it('si falla la lectura de sus comprobaciones, la PR no cambia y se vuelve a leer', async () => {
+    const { github, notifier, log, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    github.checks['sha-74'] = PASSED;
+    github.checksFailure = new Error('502 Bad Gateway');
+    await tick();
+    expect(summary(notifier.notices)).toEqual([[74, 'tracking']]);
+    expect(log).toHaveLength(1);
+
+    github.checksFailure = undefined;
+    await tick();
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+    ]);
   });
 });
 

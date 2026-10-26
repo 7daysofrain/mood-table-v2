@@ -1,7 +1,8 @@
 /**
  * El driver (change pr-tracking, decisiones 3, 4 y 9): en cada vuelta lee GitHub y despierta el
  * hilo de cada PR que se sigue. Lo que no es del grafo lo decide aquí: qué hilos arrancan, cuáles
- * se olvidan, cuándo se reintenta un aviso y cuándo se avisa de que GitHub rechaza el token.
+ * se olvidan, cuáles vuelven a empezar por un push nuevo tras el estado final, cuándo se reintenta
+ * un aviso y cuándo se avisa de que GitHub rechaza el token.
  *
  * Una vuelta nunca lanza: un fallo de GitHub la salta entera (sin foto buena no se reanuda ningún
  * hilo), y un fallo de una PR, la de esa PR. Lo uno y lo otro va al log y se repite en la vuelta
@@ -10,9 +11,14 @@
  */
 import { type BaseCheckpointSaver, Command } from '@langchain/langgraph';
 
-import { createTrackingGraph, threadConfig } from './graph.ts';
+import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
 import { githubUnauthorizedNotice, type SystemNotice } from './notice.ts';
-import { GitHubUnauthorizedError, type GitHubReader, type Notifier } from './ports.ts';
+import {
+  GitHubUnauthorizedError,
+  type GitHubReader,
+  type Notifier,
+  type ReviewReader,
+} from './ports.ts';
 import {
   isTracked,
   type OpenPullRequest,
@@ -22,10 +28,13 @@ import {
 
 export interface DriverOptions {
   github: GitHubReader;
+  reviewer: ReviewReader;
   notifier: Notifier;
   /** Donde guarda cada hilo su estado. `MemorySaver` hasta BE7 (D73). */
   checkpointer: BaseCheckpointSaver;
   policy: TrackingPolicy;
+  /** Cuánto se espera, desde que se ve un push, a comprobaciones y revisión (decisión 8). */
+  timeoutMs: number;
   /** Una línea por fallo, para el log de errores. */
   log: (line: string) => void;
 }
@@ -37,17 +46,19 @@ export interface Driver {
 
 export function createDriver({
   github,
+  reviewer,
   notifier,
   checkpointer,
   policy,
+  timeoutMs,
   log,
 }: DriverOptions): Driver {
-  const graph = createTrackingGraph(notifier, checkpointer);
+  const graph = createTrackingGraph(notifier, checkpointer, { timeoutMs });
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
   /** Avisos del sistema que el canal aún no ha aceptado. */
   const pendingSystemNotices: SystemNotice[] = [];
-  /** Si ya se ha avisado de que GitHub rechaza el token, desde la última lectura buena. */
+  /** Si ya se ha avisado de que GitHub rechaza el token, desde la última vuelta que lo aceptó. */
   let unauthorizedNotified = false;
 
   /** Publica los avisos del sistema pendientes; los que el canal no acepta, siguen pendientes. */
@@ -61,19 +72,12 @@ export function createDriver({
     });
   }
 
-  async function readGitHub(): Promise<OpenPullRequest[] | undefined> {
-    try {
-      const pullRequests = await github.listOpenPullRequests();
-      unauthorizedNotified = false;
-      return pullRequests;
-    } catch (error) {
-      if (error instanceof GitHubUnauthorizedError) {
-        if (!unauthorizedNotified) pendingSystemNotices.push(githubUnauthorizedNotice());
-        unauthorizedNotified = true;
-      }
-      log(`No se ha podido leer GitHub; se vuelve a intentar: ${describe(error)}`);
-      return undefined;
+  /** Avisa una sola vez de que GitHub rechaza el token, hasta que lo vuelva a aceptar. */
+  function noteUnauthorized(unauthorized: boolean) {
+    if (unauthorized && !unauthorizedNotified) {
+      pendingSystemNotices.push(githubUnauthorizedNotice());
     }
+    unauthorizedNotified = unauthorized;
   }
 
   async function forget(number: number) {
@@ -81,45 +85,84 @@ export function createDriver({
     await checkpointer.deleteThread(String(number));
   }
 
-  /** Arranca el hilo de la PR, reintenta su aviso pendiente o lo reanuda con la foto. */
-  async function advance(snapshot: PullRequestSnapshot) {
-    const config = threadConfig(snapshot.number);
-    if (!tracked.has(snapshot.number)) {
-      tracked.add(snapshot.number);
+  /**
+   * Arranca el hilo de la PR, reintenta su aviso pendiente, lo reanuda con la foto o, si terminó y
+   * hay un push nuevo, lo vuelve a empezar. La foto solo se lee de GitHub cuando hace falta: un
+   * aviso pendiente se reintenta con la que ya tiene el hilo, y un hilo terminado sin push nuevo
+   * no se lee.
+   */
+  async function advance(
+    pullRequest: OpenPullRequest,
+    snapshotOf: (pullRequest: OpenPullRequest) => Promise<PullRequestSnapshot>,
+  ) {
+    const config = threadConfig(pullRequest.number);
+    if (!tracked.has(pullRequest.number)) {
+      const snapshot = await snapshotOf(pullRequest);
+      tracked.add(pullRequest.number);
       await graph.invoke({ snapshot }, config);
       return;
     }
     const state = await graph.getState(config);
     if (state.tasks.some((task) => task.interrupts.length > 0)) {
-      await graph.invoke(new Command({ resume: snapshot }), config);
+      await graph.invoke(new Command({ resume: await snapshotOf(pullRequest) }), config);
     } else if (state.next.length > 0) {
       // Un nodo que falló (un aviso que el canal no aceptó) sigue pendiente en el checkpoint.
       await graph.invoke(null, config);
+    } else if (lastSnapshot(state.values).headSha !== pullRequest.headSha) {
+      // Terminó con el estado final de otro push: una ejecución nueva en el mismo hilo.
+      await graph.invoke({ snapshot: await snapshotOf(pullRequest) }, config);
     }
   }
 
   return {
     async tick(now) {
-      const pullRequests = await readGitHub();
+      let unauthorized = false;
+      /** Anota si GitHub ha rechazado el token y lo deja en el log. */
+      const readFailed = (error: unknown, line: string) => {
+        if (error instanceof GitHubUnauthorizedError) unauthorized = true;
+        log(`${line}: ${describe(error)}`);
+      };
+
+      let pullRequests: OpenPullRequest[] | undefined;
+      try {
+        pullRequests = await github.listOpenPullRequests();
+      } catch (error) {
+        readFailed(error, 'No se ha podido leer GitHub; se vuelve a intentar');
+      }
+
+      if (pullRequests) {
+        const toTrack = pullRequests.filter((pullRequest) => isTracked(pullRequest, policy));
+        const stillTracked = new Set(toTrack.map((pullRequest) => pullRequest.number));
+        const gone = [...tracked].filter((number) => !stillTracked.has(number));
+        await Promise.all(gone.map(forget));
+
+        // Las comprobaciones exigidas se leen una vez por vuelta, y solo si alguna PR las necesita.
+        let required: Promise<string[]> | undefined;
+        const snapshotOf = async (pullRequest: OpenPullRequest): Promise<PullRequestSnapshot> => {
+          required ??= github.requiredChecks();
+          const [checks, review] = await Promise.all([
+            required.then((names) => github.checks(pullRequest.headSha, names)),
+            reviewer.review(pullRequest.number),
+          ]);
+          return { ...pullRequest, checks, review, observedAt: now };
+        };
+
+        // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.
+        await Promise.all(
+          toTrack.map(async (pullRequest) => {
+            try {
+              await advance(pullRequest, snapshotOf);
+            } catch (error) {
+              const line = `No se ha podido avanzar la PR #${pullRequest.number}; se reintenta`;
+              readFailed(error, line);
+            }
+          }),
+        );
+      }
+
+      // Una vuelta sin respuesta de GitHub no dice nada del token: se queda como estaba.
+      if (pullRequests || unauthorized) noteUnauthorized(unauthorized);
       await flushSystemNotices();
-      if (!pullRequests) return;
-
-      const toTrack = pullRequests.filter((pullRequest) => isTracked(pullRequest, policy));
-      const stillTracked = new Set(toTrack.map((pullRequest) => pullRequest.number));
-      const gone = [...tracked].filter((number) => !stillTracked.has(number));
-      await Promise.all(gone.map(forget));
-
-      // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.
-      await Promise.all(
-        toTrack.map(async (pullRequest) => {
-          try {
-            await advance({ ...pullRequest, observedAt: now });
-          } catch (error) {
-            const reason = describe(error);
-            log(`No se ha podido avanzar la PR #${pullRequest.number}; se reintenta: ${reason}`);
-          }
-        }),
-      );
     },
   };
 }

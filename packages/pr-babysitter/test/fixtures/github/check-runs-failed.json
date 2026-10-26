@@ -1,0 +1,83 @@
+{
+  "total_count": 6,
+  "check_runs": [
+    {
+      "id": 121264937094,
+      "name": "sonar-issues",
+      "head_sha": "93210ef00b3ecf9705a747ea8fc468de297a4b95",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-25T19:15:48Z",
+      "completed_at": "2026-10-25T19:15:59Z",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 121264920146,
+      "name": "SonarCloud Code Analysis",
+      "head_sha": "93210ef00b3ecf9705a747ea8fc468de297a4b95",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-25T19:14:55Z",
+      "completed_at": "2026-10-25T19:15:40Z",
+      "app": {
+        "id": 12526,
+        "slug": "sonarqubecloud"
+      }
+    },
+    {
+      "id": 121264507834,
+      "name": "e2e",
+      "head_sha": "93210ef00b3ecf9705a747ea8fc468de297a4b95",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-25T19:14:03Z",
+      "completed_at": "2026-10-25T19:22:02Z",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 121264507826,
+      "name": "test",
+      "head_sha": "93210ef00b3ecf9705a747ea8fc468de297a4b95",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-25T19:14:02Z",
+      "completed_at": "2026-10-25T19:15:45Z",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 121264507788,
+      "name": "lint",
+      "head_sha": "93210ef00b3ecf9705a747ea8fc468de297a4b95",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-25T19:14:02Z",
+      "completed_at": "2026-10-25T19:14:38Z",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 121264507674,
+      "name": "typecheck",
+      "head_sha": "93210ef00b3ecf9705a747ea8fc468de297a4b95",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-25T19:14:02Z",
+      "completed_at": "2026-10-25T19:14:31Z",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    }
+  ]
+}
