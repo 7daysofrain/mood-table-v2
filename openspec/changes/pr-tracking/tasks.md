@@ -88,7 +88,7 @@
   cálculo, en `docs/umbrales-para-specs.md`; README §2.2 (componentes), §2.4 (despliegue) y §2.5
   (tokens); `prompts.md`.
   Verificar: los números de D# y las referencias cuadran con `design.md`.
-- [ ] 1.16 Prueba a mano con el contenedor en marcha y las credenciales reales: una PR en borrador no
+- [x] 1.16 Prueba a mano con el contenedor en marcha y las credenciales reales: una PR en borrador no
   avisa; al marcarla lista, su tarea de Linear recibe el aviso del PR Babysitter (no del mantenedor) y
   la notificación llega al móvil; al reiniciar el contenedor, el aviso se repite; una PR sin tarea
   avisa en el buzón; en GitHub no hay nada escrito por el sistema.
