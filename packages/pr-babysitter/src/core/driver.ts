@@ -12,7 +12,12 @@ import { type BaseCheckpointSaver, Command } from '@langchain/langgraph';
 
 import { createTrackingGraph, threadConfig } from './graph.ts';
 import { githubUnauthorizedNotice, type SystemNotice } from './notice.ts';
-import { GitHubUnauthorizedError, type GitHubReader, type Notifier } from './ports.ts';
+import {
+  GitHubUnauthorizedError,
+  type GitHubReader,
+  type Notifier,
+  type ReviewReader,
+} from './ports.ts';
 import {
   isTracked,
   type OpenPullRequest,
@@ -22,6 +27,7 @@ import {
 
 export interface DriverOptions {
   github: GitHubReader;
+  reviewer: ReviewReader;
   notifier: Notifier;
   /** Donde guarda cada hilo su estado. `MemorySaver` hasta BE7 (D73). */
   checkpointer: BaseCheckpointSaver;
@@ -37,6 +43,7 @@ export interface Driver {
 
 export function createDriver({
   github,
+  reviewer,
   notifier,
   checkpointer,
   policy,
@@ -124,8 +131,11 @@ export function createDriver({
         let required: Promise<string[]> | undefined;
         const snapshotOf = async (pullRequest: OpenPullRequest): Promise<PullRequestSnapshot> => {
           required ??= github.requiredChecks();
-          const checks = await github.checks(pullRequest.headSha, await required);
-          return { ...pullRequest, checks, observedAt: now };
+          const [checks, review] = await Promise.all([
+            required.then((names) => github.checks(pullRequest.headSha, names)),
+            reviewer.review(pullRequest.number),
+          ]);
+          return { ...pullRequest, checks, review, observedAt: now };
         };
 
         // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.

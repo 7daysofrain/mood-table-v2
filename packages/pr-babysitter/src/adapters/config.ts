@@ -15,6 +15,7 @@ const envSchema = z.object({
   LINEAR_CLIENT_SECRET: required,
   LINEAR_MAINTAINER_PROFILE_URL: required.pipe(z.url('no es una URL')),
   LINEAR_INBOX_ISSUE_ID: required,
+  GITHUB_REVIEWER: z.string().trim().min(1).default('chatgpt-codex-connector[bot]'),
   POLL_INTERVAL_SECONDS: z.coerce
     .number('no es un número')
     .int('no es un número entero')
@@ -27,6 +28,8 @@ export interface Config {
   githubToken: string;
   /** Login de GitHub del mantenedor: solo se siguen sus PR. */
   githubMaintainer: string;
+  /** Cuenta de GitHub del revisor: solo cuentan sus comentarios (decisión 7). */
+  githubReviewer: string;
   linearClientId: string;
   linearClientSecret: string;
   /** URL del perfil del mantenedor en Linear, con la que se le menciona. */
@@ -59,6 +62,7 @@ export function loadConfig(env: Record<string, string | undefined>): ConfigResul
     config: {
       githubToken: vars.GITHUB_TOKEN,
       githubMaintainer: vars.GITHUB_MAINTAINER,
+      githubReviewer: vars.GITHUB_REVIEWER,
       linearClientId: vars.LINEAR_CLIENT_ID,
       linearClientSecret: vars.LINEAR_CLIENT_SECRET,
       linearMaintainerProfileUrl: vars.LINEAR_MAINTAINER_PROFILE_URL,

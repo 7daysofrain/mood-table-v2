@@ -35,11 +35,24 @@ export const checkSchema = z.object({
 export type Check = z.infer<typeof checkSchema>;
 
 /**
- * Lo que recibe un hilo al reanudarse: la PR, sus comprobaciones y cuándo la vio el driver (ms
- * desde epoch).
+ * La última revisión del revisor (decisión 7): el commit que revisó, si ha terminado y si ha tenido
+ * hallazgos. `null` en la foto si no hay revisión o no se entiende.
+ */
+export const reviewSchema = z.object({
+  reviewedSha: z.string().min(1),
+  completed: z.boolean(),
+  hasFindings: z.boolean(),
+});
+
+export type Review = z.infer<typeof reviewSchema>;
+
+/**
+ * Lo que recibe un hilo al reanudarse: la PR, sus comprobaciones, la revisión y cuándo la vio el
+ * driver (ms desde epoch).
  */
 export const pullRequestSnapshotSchema = openPullRequestSchema.extend({
   checks: z.array(checkSchema),
+  review: reviewSchema.nullable(),
   observedAt: z.number(),
 });
 

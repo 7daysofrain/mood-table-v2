@@ -109,7 +109,7 @@
   hallazgos (`has_any_findings`); `running`; `completed` sobre un SHA anterior; sin bloque; JSON que
   no pasa zod; un comentario de otra cuenta con un bloque falso, que se ignora (decisión 7).
   Verificar: los tests nuevos fallan porque el adaptador no existe.
-- [ ] 2.4 El adaptador del revisor en `src/adapters/codex-review.ts` (cuenta del revisor en la
+- [x] 2.4 El adaptador del revisor en `src/adapters/codex-review.ts` (cuenta del revisor en la
   configuración) y el estado del revisor en la foto.
   Verificar: los tests de 2.3 pasan.
 - [ ] 2.5 **(test en rojo)** Tests de las reglas puras en `src/core/`: comprobaciones terminadas; estado

@@ -12,12 +12,13 @@ const env = {
 };
 
 describe('la configuración del entorno', () => {
-  it('con todas las variables, da la configuración y la cadencia por defecto de 60 s', () => {
+  it('con todas las variables, da la configuración, Codex de revisor y la cadencia de 60 s', () => {
     expect(loadConfig(env)).toEqual({
       ok: true,
       config: {
         githubToken: 'github_pat_x',
         githubMaintainer: '7daysofrain',
+        githubReviewer: 'chatgpt-codex-connector[bot]',
         linearClientId: 'client-id',
         linearClientSecret: 'client-secret',
         linearMaintainerProfileUrl: 'https://linear.app/7daysofrain/profiles/joseba',
@@ -25,6 +26,11 @@ describe('la configuración del entorno', () => {
         pollIntervalMs: 60_000,
       },
     });
+  });
+
+  it('lee la cuenta del revisor', () => {
+    const result = loadConfig({ ...env, GITHUB_REVIEWER: 'otro-revisor[bot]' });
+    expect(result.ok && result.config.githubReviewer).toBe('otro-revisor[bot]');
   });
 
   it('lee la cadencia en segundos', () => {

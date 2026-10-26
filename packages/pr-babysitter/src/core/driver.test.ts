@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 
 import { createDriver, runDriver } from './driver.ts';
 import type { Notice } from './notice.ts';
-import { GitHubUnauthorizedError, type GitHubReader, type Notifier } from './ports.ts';
+import {
+  GitHubUnauthorizedError,
+  type GitHubReader,
+  type Notifier,
+  type ReviewReader,
+} from './ports.ts';
 import type { OpenPullRequest } from './pull-request.ts';
 
 const MAINTAINER = '7daysofrain';
@@ -38,7 +43,8 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     requiredChecks: () => read([]),
     checks: () => read([]),
   };
-  return { github, reader };
+  const reviewer: ReviewReader = { review: () => read(null) };
+  return { github, reader, reviewer };
 }
 
 /** Notifier falso: guarda los avisos que publica, o falla mientras `failing` esté a true. */
@@ -55,11 +61,12 @@ function fakeNotifier() {
 }
 
 function setup(pullRequests: OpenPullRequest[] = []) {
-  const { github, reader } = fakeGitHub(pullRequests);
+  const { github, reader, reviewer } = fakeGitHub(pullRequests);
   const { notifier, port } = fakeNotifier();
   const log: string[] = [];
   const driver = createDriver({
     github: reader,
+    reviewer,
     notifier: port,
     checkpointer: new MemorySaver(),
     policy: { maintainer: MAINTAINER, baseBranch: 'main' },

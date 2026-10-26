@@ -9,6 +9,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import { MemorySaver } from '@langchain/langgraph';
 
+import { createCodexReviewReader } from './adapters/codex-review.ts';
 import { loadConfig } from './adapters/config.ts';
 import { createGitHubReader } from './adapters/github.ts';
 import { createLinearNotifier } from './adapters/linear.ts';
@@ -26,12 +27,18 @@ if (!loaded.ok) {
 const { config } = loaded;
 const log = (line: string) => console.error(line);
 
+const github = createGitHubReader({
+  owner: OWNER,
+  repo: REPO,
+  baseBranch: BASE_BRANCH,
+  token: () => config.githubToken,
+});
+
 const driver = createDriver({
-  github: createGitHubReader({
-    owner: OWNER,
-    repo: REPO,
-    baseBranch: BASE_BRANCH,
-    token: () => config.githubToken,
+  github,
+  reviewer: createCodexReviewReader({
+    reviewer: config.githubReviewer,
+    listComments: (number) => github.listComments(number),
   }),
   notifier: createLinearNotifier({
     clientId: config.linearClientId,

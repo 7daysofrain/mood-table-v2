@@ -16,6 +16,13 @@ import * as z from 'zod';
 import { GitHubUnauthorizedError, type GitHubReader } from '../core/ports.ts';
 import type { Check, OpenPullRequest } from '../core/pull-request.ts';
 
+/** Un comentario de una PR: quién lo escribe y qué dice. */
+export interface PullRequestComment {
+  /** Login de GitHub de la cuenta que lo escribe. */
+  author: string;
+  body: string;
+}
+
 export interface GitHubReaderOptions {
   owner: string;
   repo: string;
@@ -36,6 +43,12 @@ const pullSchema = z.object({
   draft: z.boolean(),
   head: z.object({ sha: z.string() }),
   base: z.object({ ref: z.string() }),
+});
+
+/** Lo que se lee de cada comentario de `GET /repos/{owner}/{repo}/issues/{number}/comments`. */
+const commentSchema = z.object({
+  user: z.object({ login: z.string() }),
+  body: z.string(),
 });
 
 /** Lo que se lee de cada regla de `GET /repos/{owner}/{repo}/rules/branches/{branch}`. */
@@ -64,7 +77,10 @@ export function createGitHubReader({
   baseBranch,
   token,
   fetch,
-}: GitHubReaderOptions): GitHubReader {
+}: GitHubReaderOptions): GitHubReader & {
+  /** Los comentarios de una PR, del primero al último. Para el adaptador del revisor. */
+  listComments(pullRequestNumber: number): Promise<PullRequestComment[]>;
+} {
   const octokit = new Octokit({
     request: fetch ? { fetch } : {},
     retry: { enabled: false },
@@ -138,6 +154,21 @@ export function createGitHubReader({
         const passed = PASSING_CONCLUSIONS.has(run.conclusion ?? '');
         return { name, status: passed ? 'passed' : 'failed' };
       });
+    },
+
+    async listComments(pullRequestNumber: number): Promise<PullRequestComment[]> {
+      const comments = await read(() =>
+        octokit.paginate(octokit.rest.issues.listComments, {
+          owner,
+          repo,
+          issue_number: pullRequestNumber,
+          per_page: 100,
+        }),
+      );
+      return z
+        .array(commentSchema)
+        .parse(comments)
+        .map((comment) => ({ author: comment.user.login, body: comment.body }));
     },
   };
 }

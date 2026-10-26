@@ -4,7 +4,7 @@
  * falsos.
  */
 import type { Notice } from './notice.ts';
-import type { Check, OpenPullRequest } from './pull-request.ts';
+import type { Check, OpenPullRequest, Review } from './pull-request.ts';
 
 /**
  * Publica un aviso para el mantenedor. Solo envía: la respuesta se diseña en BH4. Si el canal no lo
@@ -26,6 +26,14 @@ export interface GitHubReader {
   requiredChecks(): Promise<string[]>;
   /** El estado de cada comprobación exigida en un commit, en el orden de `required`. */
   checks(sha: string, required: string[]): Promise<Check[]>;
+}
+
+/**
+ * Lectura de la revisión del revisor. Como `GitHubReader`, lanza si no puede leer; una revisión que
+ * no hay o no se entiende no es un fallo, es `null` (decisión 7).
+ */
+export interface ReviewReader {
+  review(pullRequestNumber: number): Promise<Review | null>;
 }
 
 /** GitHub rechaza el token (401): hay que avisar, porque no se arregla solo (decisión 3). */
