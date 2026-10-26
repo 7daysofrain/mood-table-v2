@@ -128,7 +128,7 @@
 - [x] 2.8 Los nodos `avisarComprobaciones`, `esperarRevisor` y `avisarEstadoFinal` y sus aristas en
   `src/core/graph.ts`, y en el driver, la nueva ejecución de un hilo terminado cuando cambia el SHA.
   Verificar: los tests de 2.7 pasan y los de `MOO-83` siguen en verde.
-- [ ] 2.9 Documentación: el tiempo de espera, con la medición de #57-#68, en
+- [x] 2.9 Documentación: el tiempo de espera, con la medición de #57-#68, en
   `docs/umbrales-para-specs.md`; los términos nuevos (*necesita intervención*, *issue buzón*) en el
   glosario de `docs/pr-babysitter.md` §8; README §2.2 si cambia; `prompts.md`.
   Verificar: los términos que usan los avisos están en el glosario.

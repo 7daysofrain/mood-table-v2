@@ -1103,6 +1103,20 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Solo dos respuestas de Linear son grabadas (las de credenciales no válidas); las demás siguen la documentación, porque grabarlas pedía los secretos de la app, que no pasan por el chat. Se contrastan en la prueba a mano.*
 - *Al pasar la cadencia a `docs/umbrales-para-specs.md`, la IA vio que el `design.md` decía 420 peticiones por hora donde la cuenta da 480, y lo corrigió.*
 
+#### 6.29 El PR Babysitter sigue cada PR hasta su estado final (`MOO-84`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-84
+
+*Claude Code (`claude-opus-5-5`, 26-oct). La IA implementó la sección `MOO-84` del change `pr-tracking` con un commit por paso, en TDD: cada test en rojo antes de su código. Grabó con `gh` las respuestas reales que faltaban: las reglas de `main`, los *check runs* de dos pushes de la #69 (uno con `sonar-issues` fallando) y los comentarios de Codex de las PR #57-#69. Con eso, cada caso de la revisión es un fixture real: terminada con y sin hallazgos, en marcha, sobre un push anterior, sin bloque. Los casos que no se habían dado (un push a medias, un JSON roto, un bloque falso de otra cuenta) los derivó a mano, y lo dice en cada test. Las reglas (qué toca tras cada espera, el estado final y su motivo, el tiempo de espera) son funciones puras, y las esperas del grafo eligen el nodo siguiente con un `Command` de LangGraph (consultado en Context7).*
+
+*Ajustes:*
+- *Los datos reales contradecían el diseño: Codex no deja siempre un único comentario. En la #67 hay uno sin bloque («crea un entorno») antes del bueno, y en la #69, un resumen sin bloque después. El adaptador se queda con el último comentario del revisor que lleva bloque, y los dos casos tienen su test.*
+- *Un bloque `completed` sin `has_any_findings` no es una revisión: no se sabe qué ha pasado, y el diseño pide no inventar un estado.*
+- *`octokit.paginate` lee `response.url` en las listas con `total_count` (los *check runs*); el `fetch` falso de los tests devolvía una URL vacía y fallaba. El falso, ya compartido entre los tests de los adaptadores, ahora devuelve la URL pedida, como el real.*
+- *Una PR con su estado final no se vuelve a leer hasta que llega un push nuevo: así la vuelta ahorra peticiones y el umbral de `docs/umbrales-para-specs.md` lo dice.*
+
 ---
 
 ### 7. Pull Requests
