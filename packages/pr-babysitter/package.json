@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --env-file-if-exists=.env src/main.ts",
+    "studio": "LANGGRAPH_CLI_NO_ANALYTICS=1 langgraphjs dev",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -15,6 +16,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@langchain/langgraph-cli": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:"
   }

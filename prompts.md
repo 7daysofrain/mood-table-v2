@@ -1128,6 +1128,25 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La revisión automática de Codex no se disparó con ningún push nuevo (`9219fe5`, `0d9e70b`, `1cf8413`), solo al marcar la PR lista o al pedirla con `@codex review`. El humano creía que Codex estaba atascado; la IA le enseñó que respondía a cada petición en un minuto y que lo que fallaba era la revisión al hacer push. Es el caso de BH5.*
 - *Al corregir el `design.md` («Codex deja un único comentario»), se hizo con un commit propio, a petición del humano.*
 
+#### 6.30 Ver y ejecutar el grafo del PR Babysitter en LangGraph Studio (`MOO-87`)
+
+**Prompt 1:**
+
+> Ejecutar MOO-87
+
+*Claude Code (`claude-opus-5-5`, 26-oct). Es una *chore* sin change: el plan, paso a paso, estaba en la descripción de la tarea. Antes de empezar había que comprobar si Studio obliga a enviar trazas a LangSmith. La IA lo comprobó en la documentación (Context7) y en el código del CLI y del servidor de LangGraph: sin `LANGSMITH_TRACING=true` y una API key no se envía nada, así que siguió. Probó el grafo con un hilo completo por la API del servidor local: entrada, parada en cada `interrupt()`, dos reanudaciones con fotos escritas a mano y los tres avisos en el log, hasta «lista para integrar».*
+
+*Ajustes:*
+- *En el código del CLI encontró algo que la documentación no dice: en cada arranque envía datos anónimos de uso (sistema, versión de Node y opciones) a un servidor de LangChain. El script `studio` lo apaga con `LANGGRAPH_CLI_NO_ANALYTICS=1`.*
+- *La tarea decía «sin checkpointer propio» y, si el servidor no aceptaba uno, hacerlo opcional en el núcleo. El código del servidor muestra que siempre pone el suyo encima del que trae el grafo, así que el núcleo no cambia: `studio.ts` pasa un `MemorySaver` solo para cumplir la firma.*
+- *El navegador integrado de Claude no deja que una web pública (Studio) llame a `localhost`, así que la IA no pudo comprobar la interfaz y dejó la PR en borrador. Se la pidió al humano, que eligió que la hiciera la IA en su Chrome (Claude in Chrome).*
+
+**Prompt 2:**
+
+> Prueba tú la interfaz de Studio en mi Chrome (Claude in Chrome): un hilo con interrupt y reanudación. Si va bien, pasa la PR #75 a lista para revisar.
+
+*Studio se quedaba en negro: Chrome esperaba a que el humano diera permiso para acceder a la red local, una ventana del navegador que la IA no puede aceptar. Con el permiso, la IA lanzó un hilo con una foto escrita a mano, lo vio pararse en `esperarComprobaciones` y en `esperarRevisor`, lo reanudó dos veces desde el editor de Studio y comprobó los tres avisos en el log. El README dice ahora que hace falta ese permiso.*
+
 ---
 
 ### 7. Pull Requests

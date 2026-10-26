@@ -23,6 +23,8 @@ export default defineConfig({
         'packages/engine/src/main.ts',
         'packages/panel/src/main.tsx',
         'packages/pr-babysitter/src/main.ts',
+        // Grafo para LangGraph Studio: monta el núcleo con un aviso al log (MOO-87).
+        'packages/pr-babysitter/src/studio.ts',
         // Entrada del hook validate-ac: lee stdin y sale con su código; la lógica está en su módulo.
         '.claude/hooks/validate-ac.ts',
         // E/S real de los adaptadores de hardware: se prueba a mano (README §2.6).

@@ -419,6 +419,8 @@ No es parte del instrumento: es el sistema que sigue cada PR del repo hasta deja
 
 **Raíz de composición (`main.ts`).** Monta la configuración, los adaptadores y el driver, y da vueltas hasta que el contenedor la para.
 
+**Depurar el grafo en LangGraph Studio** (solo en local). `pnpm --filter @moodtable/pr-babysitter studio` arranca el servidor de LangGraph en `localhost:2024` y abre Studio en el navegador (la primera vez, Chrome pide permiso para que la página acceda a la red local); no envía trazas a LangSmith. Se ven los nodos, el que se ejecuta en cada paso y el estado; cada hilo hace de una PR: se lanza con una foto escrita a mano, se para en cada `interrupt()` y se reanuda con la foto siguiente. Los avisos van al log del servidor, no a Linear (`src/studio.ts`).
+
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 
 > Representa la estructura del proyecto y explica brevemente el propósito de las carpetas principales, así como si obedece a algún patrón o arquitectura específica.
