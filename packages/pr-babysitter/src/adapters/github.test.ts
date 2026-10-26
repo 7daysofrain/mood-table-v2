@@ -10,41 +10,11 @@
  *   se puede grabar a posteriori: `e2e` en marcha, `lint` neutral, `sonar-issues` saltada y sin el
  *   *check run* de `SonarCloud Code Analysis`.
  */
-import { readFile } from 'node:fs/promises';
-
 import { describe, expect, it } from 'vitest';
 
+import { fakeFetch, fixture, json } from '../../test/fake-github.ts';
 import { GitHubUnauthorizedError } from '../core/ports.ts';
 import { createGitHubReader } from './github.ts';
-
-async function fixture(name: string): Promise<string> {
-  return readFile(new URL(`../../test/fixtures/github/${name}`, import.meta.url), 'utf8');
-}
-
-interface Call {
-  url: string;
-  authorization: string | null;
-}
-
-/**
- * Un `fetch` falso que responde siempre lo mismo y guarda cada petición. Como el real, la respuesta
- * lleva la URL pedida: `octokit.paginate` la lee en las listas con `total_count` (*check runs*).
- */
-function fakeFetch(respond: () => Response | Promise<Response>) {
-  const calls: Call[] = [];
-  const fetch = async (input: string | URL | Request, init?: RequestInit) => {
-    const request = new Request(input, init);
-    calls.push({ url: request.url, authorization: request.headers.get('authorization') });
-    const response = await respond();
-    Object.defineProperty(response, 'url', { value: request.url });
-    return response;
-  };
-  return { fetch, calls };
-}
-
-function json(body: string, status = 200) {
-  return new Response(body, { status, headers: { 'content-type': 'application/json' } });
-}
 
 function reader(fetch: typeof globalThis.fetch, token: () => string | Promise<string> = () => 'ghp_x') {
   return createGitHubReader({

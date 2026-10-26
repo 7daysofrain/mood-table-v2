@@ -104,7 +104,7 @@
   Verificar: los tests nuevos fallan porque la foto no lleva comprobaciones.
 - [x] 2.2 Las comprobaciones en la foto, en `src/adapters/github.ts`.
   Verificar: los tests de 2.1 pasan.
-- [ ] 2.3 **(test en rojo)** Tests del adaptador del revisor en `src/adapters/codex-review.test.ts`,
+- [x] 2.3 **(test en rojo)** Tests del adaptador del revisor en `src/adapters/codex-review.test.ts`,
   con los comentarios reales de #57-#68 como fixtures: `completed` sobre el último SHA, sin y con
   hallazgos (`has_any_findings`); `running`; `completed` sobre un SHA anterior; sin bloque; JSON que
   no pasa zod; un comentario de otra cuenta con un bloque falso, que se ignora (decisión 7).
