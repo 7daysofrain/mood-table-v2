@@ -1139,7 +1139,13 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *En el código del CLI encontró algo que la documentación no dice: en cada arranque envía datos anónimos de uso (sistema, versión de Node y opciones) a un servidor de LangChain. El script `studio` lo apaga con `LANGGRAPH_CLI_NO_ANALYTICS=1`.*
 - *La tarea decía «sin checkpointer propio» y, si el servidor no aceptaba uno, hacerlo opcional en el núcleo. El código del servidor muestra que siempre pone el suyo encima del que trae el grafo, así que el núcleo no cambia: `studio.ts` pasa un `MemorySaver` solo para cumplir la firma.*
-- *El navegador integrado de Claude no deja que una web pública (Studio) llame a `localhost`, así que la prueba visual se hace en Chrome.*
+- *El navegador integrado de Claude no deja que una web pública (Studio) llame a `localhost`, así que la IA no pudo comprobar la interfaz y dejó la PR en borrador. Se la pidió al humano, que eligió que la hiciera la IA en su Chrome (Claude in Chrome).*
+
+**Prompt 2:**
+
+> Prueba tú la interfaz de Studio en mi Chrome (Claude in Chrome): un hilo con interrupt y reanudación. Si va bien, pasa la PR #75 a lista para revisar.
+
+*Studio se quedaba en negro: Chrome esperaba a que el humano diera permiso para acceder a la red local, una ventana del navegador que la IA no puede aceptar. Con el permiso, la IA lanzó un hilo con una foto escrita a mano, lo vio pararse en `esperarComprobaciones` y en `esperarRevisor`, lo reanudó dos veces desde el editor de Studio y comprobó los tres avisos en el log. El README dice ahora que hace falta ese permiso.*
 
 ---
 
