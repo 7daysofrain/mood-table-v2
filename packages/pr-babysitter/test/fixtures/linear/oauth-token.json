@@ -1,0 +1,6 @@
+{
+  "access_token": "lin_oauth_fixture_primero",
+  "token_type": "Bearer",
+  "expires_in": 2591999,
+  "scope": "read comments:create"
+}

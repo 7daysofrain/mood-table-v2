@@ -401,6 +401,22 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 
 **Tipos compartidos.** Los esquemas TypeBox (efectos, comandos, configuración de las tiras) viven en un paquete común que importan el motor y el panel. Si cambia un parámetro, el compilador avisa en los dos lados.
 
+#### PR Babysitter (herramienta de desarrollo)
+
+No es parte del instrumento: es el sistema que sigue cada PR del repo hasta dejarla lista para integrar (épica PB, [`docs/pr-babysitter.md`](docs/pr-babysitter.md)). Vive en su propio paquete, `packages/pr-babysitter`, con la misma forma hexagonal que el motor y sin importar nada del producto (D72). TypeScript sobre LangGraph.js (D65), validación con zod. Hoy (`MOO-73`, BH1) solo avisa; no hay ningún LLM.
+
+- **Driver** (núcleo). Cada 60 s lee GitHub y despierta el hilo de cada PR que sigue: las del mantenedor contra `main` que no son borrador. Arranca los hilos que faltan (también al arrancar el proceso, para las PR que ya estaban abiertas), olvida sin avisar los de las PR que se cierran, se integran o vuelven a borrador, y reintenta en la vuelta siguiente el aviso que el canal no aceptó. Un fallo de GitHub salta la vuelta; si GitHub rechaza el token, avisa una vez al buzón.
+- **Grafo** (núcleo). Un hilo por PR (`thread_id` = su número) que no consulta GitHub: recibe una **foto** de la PR (último SHA, borrador, y con `MOO-84`, las comprobaciones y el estado del revisor, más la hora) cada vez que el driver lo reanuda con `Command({ resume })`. Cada aviso va en su propio nodo y cada espera en otro, con `interrupt()`, porque LangGraph vuelve a ejecutar el nodo interrumpido al reanudarlo (D73). Estado en memoria (`MemorySaver`) hasta BE7.
+- **Aviso de dominio y puertos** (núcleo). El aviso dice qué pasa (sigue la PR, comprobaciones terminadas, estado final) sin nada del canal. Los puertos `GitHubReader` y `Notifier` son interfaces del núcleo.
+
+| Adaptador | Puerto | Tecnología | Qué hace |
+|---|---|---|---|
+| **GitHub** | `GitHubReader` | `octokit` | Lista las PR abiertas contra `main` y las convierte en fotos, validadas con zod. Pide el token a un proveedor en cada petición (hoy el PAT del `.env`; con BH3, quizá el de una GitHub App). Un 401 da un error propio, que el driver convierte en aviso. |
+| **Linear** | `Notifier` | `@linear/sdk` | Publica cada aviso como comentario de la app «PR Babysitter» en la tarea que tiene la PR adjunta (`attachmentsForURL`), mencionando al mantenedor; sin tarea, en el issue buzón (D70). Pide el token con *client credentials* y lo renueva solo. Si Linear falla, lanza, y el aviso se reintenta. |
+| **Configuración** | — | zod | Lee y valida las variables de entorno al arrancar: si falta una o no vale, el proceso dice cuál y no arranca. |
+
+**Raíz de composición (`main.ts`).** Monta la configuración, los dos adaptadores y el driver, y da vueltas hasta que el contenedor la para.
+
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 
 > Representa la estructura del proyecto y explica brevemente el propósito de las carpetas principales, así como si obedece a algún patrón o arquitectura específica.
@@ -414,7 +430,8 @@ mood-table-v2/
 ├── packages/
 │   ├── shared/     # Esquemas TypeBox comunes: parámetros de efectos, comandos, config de la tira, formato de frames
 │   ├── engine/     # Motor (un proceso Node en la Pi): núcleo y adaptadores, separados
-│   └── panel/      # Front (React + Vite): panel de control y visor
+│   ├── panel/      # Front (React + Vite): panel de control y visor
+│   └── pr-babysitter/  # Herramienta de desarrollo, no producto: sigue cada PR y avisa por Linear (§2.2)
 ├── e2e/            # Tests E2E (Playwright) del flujo principal
 ├── firmware/       # (should-have) Firmware C++ para ESP8266/ESP32
 ├── openspec/       # Specs de SDD: specs vivas y cambios propuestos
@@ -549,6 +566,15 @@ flowchart LR
 - **URL pública** de la demo: suena un tema, las tiras virtuales reaccionan y el panel cambia los parámetros en vivo. Cómo probarla, en §1.4.
 - **Vídeo de 2-3 minutos** del flujo completo en la mesa: panel → motor → tira física → apagar y encender → vuelve al último estado.
 
+#### PR Babysitter
+
+La herramienta de desarrollo que sigue las PR (§2.2) no se despliega con el instrumento ni en la Pi (D66): corre en un contenedor de Docker en una máquina de casa, mientras dure el desarrollo.
+
+- **Imagen:** `packages/pr-babysitter/Dockerfile` se construye desde la raíz del monorepo y, con `pnpm deploy`, solo lleva ese paquete y sus dependencias de producción, sobre Node 24 y con el usuario `node`.
+- **Arranque:** `docker compose up -d` en `packages/pr-babysitter/`, con su `.env` al lado (los nombres, en `.env.example`). `restart: unless-stopped` lo levanta si cae o si se reinicia la máquina; para quitarlo, `docker compose down`.
+- **Sin puertos:** solo hace peticiones hacia fuera (polling a GitHub y comentarios en Linear), así que no abre nada hacia dentro.
+- **Sin estado propio:** al reiniciarse reconstruye desde GitHub qué PR sigue (D73). Pararlo no deja nada a medias, porque no escribe en GitHub.
+
 #### Sacrificios
 
 - **Operación a cargo del autor.** Sistema operativo, Caddy y la instancia se mantienen a mano; un PaaS lo daría hecho. Se compensa con scripts idempotentes y actualizaciones automáticas.
@@ -583,7 +609,17 @@ La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la 
 - **Mismo origen:** el panel lo sirve el propio motor, así que no se abre CORS.
 - **Cabeceras de seguridad** HTTP con `@fastify/helmet`.
 - **Tamaño máximo** de los mensajes WebSocket entrantes.
-- **Sin secretos:** el sistema no necesita claves ni credenciales. No hay login: el README lo indica expresamente en las instrucciones de prueba.
+- **Sin secretos:** el instrumento no necesita claves ni credenciales. No hay login: el README lo indica expresamente en las instrucciones de prueba. La única pieza con secretos es la herramienta de desarrollo (abajo).
+
+#### En el PR Babysitter (herramienta de desarrollo)
+
+Necesita dos credenciales, y cada una tiene el mínimo de permisos que pide lo que hace (D71):
+
+- **GitHub:** un PAT *fine-grained* limitado al repo `mood-table-v2` y de **solo lectura** (Metadata y Pull requests). El sistema no puede comentar, hacer push ni integrar: el merge sigue siendo solo del mantenedor (D64). Si el token caduca o se revoca, avisa al issue buzón en lugar de pararse en silencio.
+- **Linear:** una app OAuth propia con los scopes `read` y `comments:create`: puede leer y comentar, pero no crear, editar ni mover issues (D70). Su token dura 30 días y el sistema lo renueva solo.
+- **Dónde viven:** en el `.env` del contenedor, que no se commitea (está en el `.gitignore` y fuera del contexto de la imagen); el repo solo tiene `.env.example`, sin valores.
+- **Todo lo que llega de fuera se valida** con zod antes de usarse: la configuración y las respuestas de GitHub y de Linear.
+- **Riesgo apuntado para BH3:** para hacer push hace falta `Contents: write`, y en GitHub ese permiso también deja integrar. Cómo se separa una cosa de la otra es una pregunta abierta (PB, BQ7).
 
 #### Análisis automático en cada PR
 

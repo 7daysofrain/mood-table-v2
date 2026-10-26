@@ -1077,6 +1077,32 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Al reescribir la regla de `AGENTS.md`, la IA vio que «solo con la puerta de una skill o si lo pide el usuario» chocaba con `linear.md` §2, que ya encarga al agente mover estados (a `Todo` al crear la rama y a `Spec` al subir el change). La regla nombra esos tres casos.*
 - *La propia `MOO-82` todavía se creó con confirmación: el cambio solo vale cuando se integra.*
 
+#### 6.28 El PR Babysitter avisa de cada PR: exploración, spec y base del sistema (`MOO-73` y `MOO-83`)
+
+**Prompt 1** (en `/opsx:explore MOO-73`, sobre el canal de aviso, BQ1):
+
+> A mi Linear me parece perfecto porque nos permitiría incluso cambiar el estado de la US en relación directa. La restricción de linear.md la tendríamos que cambiar, porque no estaba pensado para estas casuísticas. Me gustaría saber además si es un sistema lo suficientemente flexible para añadir nuevos  metodos de notificacion y respuesta. ¿Cómo lo ves?
+
+*Claude Code (`claude-opus-5-5`, 25-oct). La exploración fue punto por punto, con una recomendación y una pregunta por punto. La IA comprobó en la documentación de Linear (Context7) que una app OAuth con `actor=app` y *client credentials* comenta a su nombre, y explicó por qué con la API key del mantenedor el aviso no le llegaría: Linear no notifica a nadie de sus propios comentarios. No dio por buena la idea de mover estados: la integración de GitHub ya los mueve, y dos escritores se pisarían. Propuso que la app solo comentara (`comments:create`), dejar mover estados como pregunta nueva de PB (BQ6) y un puerto `Notifier` para que otro canal fuera otro adaptador. El humano lo aceptó (D70).*
+
+**Prompt 2** (al cerrar la exploración, con las cinco decisiones de arquitectura y los detalles de la spec):
+
+> Si, las 5 pero rebajamos el timeout a 30m para F3
+
+*La IA había medido en las PR #57-#68 lo que tardan las comprobaciones (hasta 10,5 min) y la revisión de Codex (hasta 20,7 min), y en 3 de 12 vio el bloque de Codex atascado en `running` con la PR ya integrada. Proponía 45 min de espera; el humano lo bajó a 30 para enterarse antes de un atasco, aunque alguna revisión lenta dé un aviso de más. De ahí salió el change `pr-tracking`, con dos tareas: `MOO-83` (paquete, contenedor, credenciales, polling y canal) y `MOO-84` (seguimiento hasta el estado final). Antes de implementar, la IA guio al humano para crear a mano la app de Linear, el PAT de GitHub y el issue buzón (`MOO-86`). El PAT no ofrecía el permiso Checks, y la IA comprobó que en un repo público no hace falta y corrigió la decisión 3 del diseño.*
+
+**Prompt 3** (en `/opsx:apply MOO-83`, respuesta a «La regla de fronteras ignora en silencio un import relativo a un fichero que no existe… ¿Cómo lo ordeno?»):
+
+> Casos pb en 1.11 (Recommended)
+
+*Antes de escribir los tests de fronteras, la IA probó la regla con ficheros que no existían y vio que ignora el import en silencio: el caso «el núcleo importa un adaptador» habría pasado sin comprobar nada hasta que existiera un adaptador. Propuso mover esos casos al paso del primer adaptador y lo anotó en el `tasks.md`. En la misma prueba encontró un hueco más general: un fichero de `packages/` que no es de ningún elemento no se comprueba, aunque `eslint.config.js` diga lo contrario. El humano eligió dejarlo para una tarea aparte.*
+
+*Ajustes:*
+- *`@langchain/core` también entró en el catalog: es dependencia *peer* de LangGraph y el `tasks.md` no la nombraba.*
+- *La validación de la configuración salió de `main.ts` a un adaptador con tests (como `config-file.ts` del motor), para que la raíz no tuviera lógica sin cubrir.*
+- *Solo dos respuestas de Linear son grabadas (las de credenciales no válidas); las demás siguen la documentación, porque grabarlas pedía los secretos de la app, que no pasan por el chat. Se contrastan en la prueba a mano.*
+- *Al pasar la cadencia a `docs/umbrales-para-specs.md`, la IA vio que el `design.md` decía 420 peticiones por hora donde la cuenta da 480, y lo corrigió.*
+
 ---
 
 ### 7. Pull Requests

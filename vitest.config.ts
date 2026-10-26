@@ -22,6 +22,7 @@ export default defineConfig({
         // Raíces de composición: montan piezas, sin lógica propia (design.md §5).
         'packages/engine/src/main.ts',
         'packages/panel/src/main.tsx',
+        'packages/pr-babysitter/src/main.ts',
         // Entrada del hook validate-ac: lee stdin y sale con su código; la lógica está en su módulo.
         '.claude/hooks/validate-ac.ts',
         // E/S real de los adaptadores de hardware: se prueba a mano (README §2.6).

@@ -1,0 +1,11 @@
+{
+  "data": {
+    "commentCreate": {
+      "lastSyncId": 1234567,
+      "success": true,
+      "comment": {
+        "id": "8a3c1f0e-6b2d-4e57-9c41-0d7f2a9b5e13"
+      }
+    }
+  }
+}

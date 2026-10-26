@@ -1,0 +1,21 @@
+{
+  "name": "@moodtable/pr-babysitter",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@langchain/core": "catalog:",
+    "@langchain/langgraph": "catalog:",
+    "@linear/sdk": "catalog:",
+    "octokit": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

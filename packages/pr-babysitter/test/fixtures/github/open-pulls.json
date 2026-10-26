@@ -1,0 +1,50 @@
+[
+  {
+    "url": "https://api.github.com/repos/7daysofrain/mood-table-v2/pulls/69",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/69",
+    "number": 69,
+    "state": "open",
+    "title": "Avisar de cada PR lista para revisar",
+    "user": {
+      "login": "7daysofrain",
+      "type": "User"
+    },
+    "created_at": "2026-10-25T07:58:08Z",
+    "updated_at": "2026-10-25T07:59:43Z",
+    "draft": true,
+    "head": {
+      "label": "7daysofrain:7daysofrain/moo-83-avisar-de-cada-pr-lista-para-revisar",
+      "ref": "7daysofrain/moo-83-avisar-de-cada-pr-lista-para-revisar",
+      "sha": "70c8dad40326ea0f7b20954b5e8896535bfcf6ec"
+    },
+    "base": {
+      "label": "7daysofrain:main",
+      "ref": "main",
+      "sha": "bc085af09883d404f2be47417a674c706e7cfedb"
+    }
+  },
+  {
+    "url": "https://api.github.com/repos/7daysofrain/mood-table-v2/pulls/41",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/41",
+    "number": 41,
+    "state": "open",
+    "title": "build(deps): Bump the npm-minor-patch group across 1 directory with 16 updates",
+    "user": {
+      "login": "dependabot[bot]",
+      "type": "Bot"
+    },
+    "created_at": "2026-10-19T08:52:16Z",
+    "updated_at": "2026-10-20T18:58:53Z",
+    "draft": false,
+    "head": {
+      "label": "7daysofrain:dependabot/npm_and_yarn/npm-minor-patch-a4e0e16526",
+      "ref": "dependabot/npm_and_yarn/npm-minor-patch-a4e0e16526",
+      "sha": "2856846ca5c464cceefc6b030936687e740b7cc3"
+    },
+    "base": {
+      "label": "7daysofrain:main",
+      "ref": "main",
+      "sha": "043eb9af79a565c3c2815bcc397736e011bc0be4"
+    }
+  }
+]

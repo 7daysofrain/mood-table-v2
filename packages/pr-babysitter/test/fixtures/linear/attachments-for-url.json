@@ -1,0 +1,15 @@
+{
+  "data": {
+    "attachmentsForURL": {
+      "nodes": [
+        {
+          "id": "47e14163-404c-4a34-b775-5c536d67760a",
+          "issue": {
+            "id": "590a1127-f98b-49fc-ba74-2df8751c089e",
+            "identifier": "MOO-83"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -150,3 +150,23 @@ escritura completa, y en el MCP crear y editar son la misma herramienta (`save_i
   nada. Solo mira la forma, no el contenido.
 - Las herramientas nuevas que publique Linear no quedan cubiertas: caen en el modo de permisos por
   defecto. Hay que revisar la lista si aparece alguna.
+
+## 9. PR Babysitter (app de Linear)
+
+El PR Babysitter (épica `PB`) es un **segundo actor** que escribe en Linear, con su propio token,
+distinto de Claude Code (§8). El porqué está en D70 y D71 (`docs/idea-mood-table.md` §10).
+
+- **Identidad:** la app OAuth «PR Babysitter» del workspace, instalada con `actor=app`. Los
+  comentarios salen a su nombre, no al del mantenedor, y por eso Linear sí le notifica. Crearla o
+  cambiar sus scopes pide ser admin del workspace.
+- **Token:** *client credentials* con los scopes `read` y `comments:create`. Dura 30 días; el sistema
+  lo pide al arrancar y lo renueva solo. El *client id* y el *secret* van en el `.env` del contenedor
+  (`packages/pr-babysitter/.env.example`), nunca en el repo.
+- **Qué escribe:** solo comentarios. Cada aviso de una PR va a la tarea que la tiene adjunta (la
+  integración de GitHub la adjunta, §7) y menciona al mantenedor. Lo que no tiene tarea, y los
+  avisos del propio sistema, van al **issue buzón** `MOO-86` «PR Babysitter · avisos del sistema»:
+  en *Backlog*, abierto siempre y sin padre, porque como hijo de la épica impediría el *parent
+  auto-close*.
+- **Qué no hace:** no crea issues ni mueve estados; eso sigue siendo de la integración de GitHub
+  (§7) y de Claude Code (§2). Si debe reflejar en Linear el estado de la PR es una pregunta abierta
+  de PB (BQ6).

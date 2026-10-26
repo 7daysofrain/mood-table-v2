@@ -12,3 +12,8 @@ El PRD fija expectativas sin cifras; estas se derivan en la spec del motor y se 
 - **E7 (sin hardware):** de clonar a ver el simulador en ≤ 10 min siguiendo la documentación.
 - **E8:** ningún frame por encima del límite de potencia declarado (test automático).
 - **E9:** un efecto nuevo = un módulo y su test, sin cambios en motor, panel ni BD.
+
+## PR Babysitter (BQ5, `docs/pr-babysitter.md`)
+
+- **Cadencia del polling (`MOO-73`):** una vuelta cada 60 s, configurable (`POLL_INTERVAL_SECONDS`). Cada vuelta pide la lista de PR abiertas y, con `MOO-84`, el *ruleset* de `main` y dos lecturas por PR seguida (*check runs* y comentarios): con 3 PR abiertas, (1 + 1 + 2 × 3) × 60 = **480 peticiones por hora**, frente al límite de 5.000 de un token. Un minuto de retraso en un aviso no cambia nada para el mantenedor, que no está mirando la PR. Las comprobaciones tardan de 1,7 a 10,5 min (PR #57-#68), así que bajar la cadencia apenas adelantaría los avisos.
+

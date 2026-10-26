@@ -181,11 +181,13 @@ cada historia.
 
 | # | Pregunta | Se resuelve en |
 |---|---|---|
-| BQ1 | Por dónde avisa el sistema al mantenedor | BH1 |
+| BQ1 | Por dónde avisa el sistema al mantenedor | BH1. ✅ **Resuelta (25-oct, `MOO-73`):** por Linear, con un comentario de una app propia en la tarea de la PR que menciona al mantenedor; lo que no tiene tarea va a un issue buzón (D70) |
 | BQ2 | Dónde ve el mantenedor las decisiones del modo sombra (un comentario resumen en la PR o solo en las trazas) | BH2 |
 | BQ3 | Qué hace con las PR de Dependabot si subir commits a su rama hace que Dependabot deje de mantenerla *(asumido: comprobarlo en su documentación)*: escalar en vez de arreglar, o pedirle a Dependabot que la rehaga | BH3 |
 | BQ4 | Por dónde contesta el mantenedor cuando el sistema escala | BH4 |
 | BQ5 | Los umbrales de BE3, BE8 y de la política (§4.1) | La spec de cada historia |
+| BQ6 | ¿Refleja el sistema en Linear el estado de cada PR (mover la historia o la tarea), además de comentar? Hoy los estados los mueve la integración de GitHub, y dos escritores sobre el mismo estado se pisarían | Una historia propia de PB |
+| BQ7 | Cómo hace push el sistema sin poder integrar: en GitHub, el permiso `Contents: write` del token que hace falta para subir commits también deja integrar PR por la API, y BE2 y D64 piden que no pueda | BH3 |
 
 ## 8. Glosario
 
