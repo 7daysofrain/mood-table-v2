@@ -97,7 +97,7 @@
 
 ## 2. MOO-84 · infra
 
-- [ ] 2.1 **(test en rojo)** Tests del adaptador de GitHub con respuestas grabadas: las comprobaciones
+- [x] 2.1 **(test en rojo)** Tests del adaptador de GitHub con respuestas grabadas: las comprobaciones
   exigidas salen del *ruleset* de `main`; cada una lleva si ha terminado y si pasa (`success`,
   `neutral` y `skipped` pasan); una exigida sin *check run* no ha terminado (`specs/pr-tracking`,
   decisión 6).

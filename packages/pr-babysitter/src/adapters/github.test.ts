@@ -1,7 +1,14 @@
 /**
- * Con respuestas grabadas de la API de GitHub (`test/fixtures/github/`, 25-oct): `open-pulls.json`
- * es la lista de PR abiertas contra `main` de ese día, recortada a los campos que se leen y algunos
- * más; `bad-credentials.json`, la respuesta a un token no válido.
+ * Con respuestas grabadas de la API de GitHub (`test/fixtures/github/`), recortadas a los campos
+ * que se leen y algunos más:
+ * - `open-pulls.json` (25-oct): la lista de PR abiertas contra `main` de ese día.
+ * - `bad-credentials.json`: la respuesta a un token no válido.
+ * - `main-rules.json` (26-oct): las reglas de `main`, con las seis comprobaciones exigidas.
+ * - `check-runs-passed.json` (26-oct): los *check runs* del último push de la #69, todos superados.
+ * - `check-runs-failed.json` (26-oct): los de un push de la #69 en el que falla `sonar-issues`.
+ * - `check-runs-in-progress.json`: **derivado a mano** del anterior, porque un push recién hecho no
+ *   se puede grabar a posteriori: `e2e` en marcha, `lint` neutral, `sonar-issues` saltada y sin el
+ *   *check run* de `SonarCloud Code Analysis`.
  */
 import { readFile } from 'node:fs/promises';
 
@@ -86,6 +93,86 @@ describe('la lista de PR abiertas', () => {
     expect(url.searchParams.get('state')).toBe('open');
     expect(url.searchParams.get('base')).toBe('main');
     expect(calls.map((call) => call.authorization)).toEqual(['token ghp_primero', 'token ghp_segundo']);
+  });
+});
+
+const REQUIRED_CHECKS = [
+  'lint',
+  'test',
+  'SonarCloud Code Analysis',
+  'typecheck',
+  'sonar-issues',
+  'e2e',
+];
+const FAILED_PUSH = '93210ef00b3ecf9705a747ea8fc468de297a4b95';
+
+describe('las comprobaciones', () => {
+  it('las exigidas salen de las reglas de la rama base', async () => {
+    const body = await fixture('main-rules.json');
+    const { fetch, calls } = fakeFetch(() => json(body));
+
+    await expect(reader(fetch).requiredChecks()).resolves.toEqual(REQUIRED_CHECKS);
+    expect(new URL(calls[0]!.url).pathname).toBe(
+      '/repos/7daysofrain/mood-table-v2/rules/branches/main',
+    );
+  });
+
+  it('si todas tienen un check run superado, todas pasan', async () => {
+    const body = await fixture('check-runs-passed.json');
+    const { fetch, calls } = fakeFetch(() => json(body));
+    const sha = '4377f6572569b6a1afdd40675c4bca047122e307';
+
+    await expect(reader(fetch).checks(sha, REQUIRED_CHECKS)).resolves.toEqual(
+      REQUIRED_CHECKS.map((name) => ({ name, status: 'passed' })),
+    );
+    expect(new URL(calls[0]!.url).pathname).toBe(
+      `/repos/7daysofrain/mood-table-v2/commits/${sha}/check-runs`,
+    );
+  });
+
+  it('una con un check run que no es correcto, neutro ni saltado, falla', async () => {
+    const body = await fixture('check-runs-failed.json');
+    const { fetch } = fakeFetch(() => json(body));
+
+    const checks = await reader(fetch).checks(FAILED_PUSH, REQUIRED_CHECKS);
+
+    expect(checks).toContainEqual({ name: 'sonar-issues', status: 'failed' });
+    expect(checks.filter((check) => check.status === 'passed')).toHaveLength(5);
+  });
+
+  it('neutra y saltada pasan; en marcha o sin check run, no ha terminado', async () => {
+    const body = await fixture('check-runs-in-progress.json');
+    const { fetch } = fakeFetch(() => json(body));
+
+    await expect(reader(fetch).checks(FAILED_PUSH, REQUIRED_CHECKS)).resolves.toEqual([
+      { name: 'lint', status: 'passed' },
+      { name: 'test', status: 'passed' },
+      { name: 'SonarCloud Code Analysis', status: 'pending' },
+      { name: 'typecheck', status: 'passed' },
+      { name: 'sonar-issues', status: 'passed' },
+      { name: 'e2e', status: 'pending' },
+    ]);
+  });
+
+  it('solo trae las exigidas, aunque el SHA tenga más check runs', async () => {
+    const body = await fixture('check-runs-passed.json');
+    const { fetch } = fakeFetch(() => json(body));
+
+    await expect(reader(fetch).checks('4377f65', ['lint', 'e2e'])).resolves.toEqual([
+      { name: 'lint', status: 'passed' },
+      { name: 'e2e', status: 'passed' },
+    ]);
+  });
+
+  it('un 401 al leerlas da el error de token rechazado', async () => {
+    const body = await fixture('bad-credentials.json');
+    const { fetch } = fakeFetch(() => json(body, 401));
+    const github = reader(fetch);
+
+    await expect(github.requiredChecks()).rejects.toBeInstanceOf(GitHubUnauthorizedError);
+    await expect(github.checks('4377f65', REQUIRED_CHECKS)).rejects.toBeInstanceOf(
+      GitHubUnauthorizedError,
+    );
   });
 });
 
