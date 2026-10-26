@@ -1,7 +1,7 @@
 /**
  * Con los comentarios reales de las PR (`test/fixtures/github/comments-<n>.json`, grabados el
- * 26-oct y recortados a los campos que se leen y algunos más). Cada uno es un caso de la revisión de
- * Codex:
+ * 26-oct y recortados a los campos que se leen y algunos más). Cada uno es un caso de la revisión
+ * de Codex:
  * - #68: terminada sobre el último push, sin hallazgos.
  * - #62: terminada con hallazgos.
  * - #64: en marcha (`running`), como se quedó al integrarla.
@@ -15,6 +15,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { fakeFetch, fixture, json } from '../../test/fake-github.ts';
+import { finalState } from '../core/tracking.ts';
 import { createCodexReviewReader } from './codex-review.ts';
 import { createGitHubReader } from './github.ts';
 
@@ -165,5 +166,37 @@ describe('la revisión de Codex', () => {
     const { review } = await reviewOf(64, [...recorded, fake]);
 
     expect(review).toMatchObject({ completed: false });
+  });
+});
+
+describe('solo el revisor decide el estado final', () => {
+  // #62 lleva, además del de Codex, los de Linear, SonarQube y el mantenedor.
+  it('es el mismo con o sin los comentarios de otras cuentas (#62)', async () => {
+    const recorded = await comments(62);
+    const onlyCodex = recorded.filter((comment) => comment.user.login === REVIEWER);
+    const pullRequest = {
+      number: 62,
+      title: 'PR #62',
+      url: 'https://github.com/7daysofrain/mood-table-v2/pull/62',
+      author: '7daysofrain',
+      baseBranch: 'main',
+      draft: false,
+      headSha: '590bd6e6e8faec0017cb6e63dbea43b5a15d5cba',
+      checks: [{ name: 'lint', status: 'passed' as const }],
+      observedAt: 0,
+    };
+
+    const withOthers = finalState({ ...pullRequest, review: (await reviewOf(62)).review });
+    const withoutOthers = finalState({
+      ...pullRequest,
+      review: (await reviewOf(62, onlyCodex)).review,
+    });
+
+    expect(recorded.length).toBeGreaterThan(onlyCodex.length);
+    expect(withOthers).toEqual(withoutOthers);
+    expect(withOthers).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'reviewFindings' }],
+    });
   });
 });

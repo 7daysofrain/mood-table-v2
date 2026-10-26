@@ -112,7 +112,7 @@
 - [x] 2.4 El adaptador del revisor en `src/adapters/codex-review.ts` (cuenta del revisor en la
   configuración) y el estado del revisor en la foto.
   Verificar: los tests de 2.3 pasan.
-- [ ] 2.5 **(test en rojo)** Tests de las reglas puras en `src/core/`: comprobaciones terminadas; estado
+- [x] 2.5 **(test en rojo)** Tests de las reglas puras en `src/core/`: comprobaciones terminadas; estado
   final «lista para integrar» y los dos «necesita intervención» con su motivo; tiempo agotado a los
   30 min desde la primera foto con ese SHA, para comprobaciones y para revisión, con qué no terminó;
   un SHA nuevo reinicia el seguimiento y el tiempo; el mismo resultado con o sin comentarios de otras
