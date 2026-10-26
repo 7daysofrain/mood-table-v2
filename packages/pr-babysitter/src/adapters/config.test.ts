@@ -12,7 +12,7 @@ const env = {
 };
 
 describe('la configuración del entorno', () => {
-  it('con todas las variables, da la configuración, Codex de revisor y la cadencia de 60 s', () => {
+  it('con todas las variables, da la configuración y los valores por defecto', () => {
     expect(loadConfig(env)).toEqual({
       ok: true,
       config: {
@@ -24,6 +24,7 @@ describe('la configuración del entorno', () => {
         linearMaintainerProfileUrl: 'https://linear.app/7daysofrain/profiles/joseba',
         linearInboxIssueId: 'f2b9c3d4-0000-4000-8000-000000000086',
         pollIntervalMs: 60_000,
+        trackingTimeoutMs: 30 * 60_000,
       },
     });
   });
@@ -31,6 +32,11 @@ describe('la configuración del entorno', () => {
   it('lee la cuenta del revisor', () => {
     const result = loadConfig({ ...env, GITHUB_REVIEWER: 'otro-revisor[bot]' });
     expect(result.ok && result.config.githubReviewer).toBe('otro-revisor[bot]');
+  });
+
+  it('lee el tiempo de espera en minutos', () => {
+    const result = loadConfig({ ...env, TRACKING_TIMEOUT_MINUTES: '5' });
+    expect(result.ok && result.config.trackingTimeoutMs).toBe(5 * 60_000);
   });
 
   it('lee la cadencia en segundos', () => {

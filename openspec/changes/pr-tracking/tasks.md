@@ -118,7 +118,7 @@
   un SHA nuevo reinicia el seguimiento y el tiempo; el mismo resultado con o sin comentarios de otras
   cuentas (`specs/pr-tracking`, decisiones 6, 7 y 8).
   Verificar: los tests nuevos fallan porque las reglas no existen.
-- [ ] 2.6 Las reglas en `src/core/` y el tiempo de espera en la configuración (30 min por defecto).
+- [x] 2.6 Las reglas en `src/core/` y el tiempo de espera en la configuración (30 min por defecto).
   Verificar: los tests de 2.5 pasan.
 - [ ] 2.7 **(test en rojo)** Tests del grafo y del driver para el ciclo completo, con `Notifier` falso:
   la secuencia de avisos de cada escenario de `specs/pr-tracking`; un push nuevo mientras la sigue no

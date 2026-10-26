@@ -7,6 +7,10 @@
 import * as z from 'zod';
 
 const required = z.string().trim().min(1, 'falta');
+const positiveInteger = z.coerce
+  .number('no es un número')
+  .int('no es un número entero')
+  .positive('tiene que ser mayor que 0');
 
 const envSchema = z.object({
   GITHUB_TOKEN: required,
@@ -16,11 +20,8 @@ const envSchema = z.object({
   LINEAR_MAINTAINER_PROFILE_URL: required.pipe(z.url('no es una URL')),
   LINEAR_INBOX_ISSUE_ID: required,
   GITHUB_REVIEWER: z.string().trim().min(1).default('chatgpt-codex-connector[bot]'),
-  POLL_INTERVAL_SECONDS: z.coerce
-    .number('no es un número')
-    .int('no es un número entero')
-    .positive('tiene que ser mayor que 0')
-    .default(60),
+  POLL_INTERVAL_SECONDS: positiveInteger.default(60),
+  TRACKING_TIMEOUT_MINUTES: positiveInteger.default(30),
 });
 
 export interface Config {
@@ -38,6 +39,11 @@ export interface Config {
   linearInboxIssueId: string;
   /** Tiempo entre vueltas (decisión 8). */
   pollIntervalMs: number;
+  /**
+   * Cuánto se espera, desde que se ve un push, a que terminen comprobaciones y revisión
+   * (decisión 8).
+   */
+  trackingTimeoutMs: number;
 }
 
 export type ConfigResult = { ok: true; config: Config } | { ok: false; error: string };
@@ -68,6 +74,7 @@ export function loadConfig(env: Record<string, string | undefined>): ConfigResul
       linearMaintainerProfileUrl: vars.LINEAR_MAINTAINER_PROFILE_URL,
       linearInboxIssueId: vars.LINEAR_INBOX_ISSUE_ID,
       pollIntervalMs: vars.POLL_INTERVAL_SECONDS * 1000,
+      trackingTimeoutMs: vars.TRACKING_TIMEOUT_MINUTES * 60_000,
     },
   };
 }
