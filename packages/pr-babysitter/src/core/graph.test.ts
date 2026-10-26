@@ -1,7 +1,7 @@
 import { Command, MemorySaver } from '@langchain/langgraph';
 import { describe, expect, it } from 'vitest';
 
-import { createTrackingGraph, threadConfig } from './graph.ts';
+import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
 import type { Notice } from './notice.ts';
 import type { Notifier } from './ports.ts';
 import type { Check, PullRequestSnapshot, Review } from './pull-request.ts';
@@ -96,7 +96,7 @@ describe('el hilo de una PR', () => {
 
     expect(notices).toHaveLength(1);
     expect(state.next).toEqual(['esperarComprobaciones']);
-    expect(state.values.snapshot).toEqual(snapshot(3));
+    expect(lastSnapshot(state.values)).toEqual(snapshot(3));
   });
 
   it('cada PR tiene su propio hilo', async () => {

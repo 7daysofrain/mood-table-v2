@@ -125,7 +125,7 @@
   avisa y los avisos siguientes son de ese push; un push nuevo tras el estado final vuelve a avisar de
   que la sigue.
   Verificar: los tests nuevos fallan porque el grafo se queda esperando las comprobaciones.
-- [ ] 2.8 Los nodos `avisarComprobaciones`, `esperarRevisor` y `avisarEstadoFinal` y sus aristas en
+- [x] 2.8 Los nodos `avisarComprobaciones`, `esperarRevisor` y `avisarEstadoFinal` y sus aristas en
   `src/core/graph.ts`, y en el driver, la nueva ejecución de un hilo terminado cuando cambia el SHA.
   Verificar: los tests de 2.7 pasan y los de `MOO-83` siguen en verde.
 - [ ] 2.9 Documentación: el tiempo de espera, con la medición de #57-#68, en

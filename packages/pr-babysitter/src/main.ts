@@ -49,6 +49,7 @@ const driver = createDriver({
   }),
   checkpointer: new MemorySaver(),
   policy: { maintainer: config.githubMaintainer, baseBranch: BASE_BRANCH },
+  timeoutMs: config.trackingTimeoutMs,
   log,
 });
 

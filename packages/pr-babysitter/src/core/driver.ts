@@ -1,7 +1,8 @@
 /**
  * El driver (change pr-tracking, decisiones 3, 4 y 9): en cada vuelta lee GitHub y despierta el
  * hilo de cada PR que se sigue. Lo que no es del grafo lo decide aquí: qué hilos arrancan, cuáles
- * se olvidan, cuándo se reintenta un aviso y cuándo se avisa de que GitHub rechaza el token.
+ * se olvidan, cuáles vuelven a empezar por un push nuevo tras el estado final, cuándo se reintenta
+ * un aviso y cuándo se avisa de que GitHub rechaza el token.
  *
  * Una vuelta nunca lanza: un fallo de GitHub la salta entera (sin foto buena no se reanuda ningún
  * hilo), y un fallo de una PR, la de esa PR. Lo uno y lo otro va al log y se repite en la vuelta
@@ -10,7 +11,7 @@
  */
 import { type BaseCheckpointSaver, Command } from '@langchain/langgraph';
 
-import { createTrackingGraph, threadConfig } from './graph.ts';
+import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
 import { githubUnauthorizedNotice, type SystemNotice } from './notice.ts';
 import {
   GitHubUnauthorizedError,
@@ -32,6 +33,8 @@ export interface DriverOptions {
   /** Donde guarda cada hilo su estado. `MemorySaver` hasta BE7 (D73). */
   checkpointer: BaseCheckpointSaver;
   policy: TrackingPolicy;
+  /** Cuánto se espera, desde que se ve un push, a comprobaciones y revisión (decisión 8). */
+  timeoutMs: number;
   /** Una línea por fallo, para el log de errores. */
   log: (line: string) => void;
 }
@@ -47,9 +50,10 @@ export function createDriver({
   notifier,
   checkpointer,
   policy,
+  timeoutMs,
   log,
 }: DriverOptions): Driver {
-  const graph = createTrackingGraph(notifier, checkpointer);
+  const graph = createTrackingGraph(notifier, checkpointer, { timeoutMs });
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
   /** Avisos del sistema que el canal aún no ha aceptado. */
@@ -82,8 +86,10 @@ export function createDriver({
   }
 
   /**
-   * Arranca el hilo de la PR, reintenta su aviso pendiente o lo reanuda con la foto. La foto solo
-   * se lee de GitHub cuando hace falta: un aviso pendiente se reintenta con la que ya tiene el hilo.
+   * Arranca el hilo de la PR, reintenta su aviso pendiente, lo reanuda con la foto o, si terminó y
+   * hay un push nuevo, lo vuelve a empezar. La foto solo se lee de GitHub cuando hace falta: un
+   * aviso pendiente se reintenta con la que ya tiene el hilo, y un hilo terminado sin push nuevo
+   * no se lee.
    */
   async function advance(
     pullRequest: OpenPullRequest,
@@ -102,6 +108,9 @@ export function createDriver({
     } else if (state.next.length > 0) {
       // Un nodo que falló (un aviso que el canal no aceptó) sigue pendiente en el checkpoint.
       await graph.invoke(null, config);
+    } else if (lastSnapshot(state.values).headSha !== pullRequest.headSha) {
+      // Terminó con el estado final de otro push: una ejecución nueva en el mismo hilo.
+      await graph.invoke({ snapshot: await snapshotOf(pullRequest) }, config);
     }
   }
 
