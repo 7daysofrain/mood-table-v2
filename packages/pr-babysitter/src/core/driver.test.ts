@@ -28,11 +28,15 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     failure: undefined as Error | undefined,
     reads: 0,
   };
+  const read = <T>(value: T) =>
+    github.failure ? Promise.reject(github.failure) : Promise.resolve(value);
   const reader: GitHubReader = {
     listOpenPullRequests() {
       github.reads += 1;
-      return github.failure ? Promise.reject(github.failure) : Promise.resolve(github.pullRequests);
+      return read(github.pullRequests);
     },
+    requiredChecks: () => read([]),
+    checks: () => read([]),
   };
   return { github, reader };
 }

@@ -26,13 +26,18 @@ interface Call {
   authorization: string | null;
 }
 
-/** Un `fetch` falso que responde siempre lo mismo y guarda cada petición. */
+/**
+ * Un `fetch` falso que responde siempre lo mismo y guarda cada petición. Como el real, la respuesta
+ * lleva la URL pedida: `octokit.paginate` la lee en las listas con `total_count` (*check runs*).
+ */
 function fakeFetch(respond: () => Response | Promise<Response>) {
   const calls: Call[] = [];
-  const fetch = (input: string | URL | Request, init?: RequestInit) => {
+  const fetch = async (input: string | URL | Request, init?: RequestInit) => {
     const request = new Request(input, init);
     calls.push({ url: request.url, authorization: request.headers.get('authorization') });
-    return Promise.resolve(respond());
+    const response = await respond();
+    Object.defineProperty(response, 'url', { value: request.url });
+    return response;
   };
   return { fetch, calls };
 }

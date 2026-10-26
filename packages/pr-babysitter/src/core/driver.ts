@@ -47,7 +47,7 @@ export function createDriver({
   const tracked = new Set<number>();
   /** Avisos del sistema que el canal aún no ha aceptado. */
   const pendingSystemNotices: SystemNotice[] = [];
-  /** Si ya se ha avisado de que GitHub rechaza el token, desde la última lectura buena. */
+  /** Si ya se ha avisado de que GitHub rechaza el token, desde la última vuelta que lo aceptó. */
   let unauthorizedNotified = false;
 
   /** Publica los avisos del sistema pendientes; los que el canal no acepta, siguen pendientes. */
@@ -61,19 +61,12 @@ export function createDriver({
     });
   }
 
-  async function readGitHub(): Promise<OpenPullRequest[] | undefined> {
-    try {
-      const pullRequests = await github.listOpenPullRequests();
-      unauthorizedNotified = false;
-      return pullRequests;
-    } catch (error) {
-      if (error instanceof GitHubUnauthorizedError) {
-        if (!unauthorizedNotified) pendingSystemNotices.push(githubUnauthorizedNotice());
-        unauthorizedNotified = true;
-      }
-      log(`No se ha podido leer GitHub; se vuelve a intentar: ${describe(error)}`);
-      return undefined;
+  /** Avisa una sola vez de que GitHub rechaza el token, hasta que lo vuelva a aceptar. */
+  function noteUnauthorized(unauthorized: boolean) {
+    if (unauthorized && !unauthorizedNotified) {
+      pendingSystemNotices.push(githubUnauthorizedNotice());
     }
+    unauthorizedNotified = unauthorized;
   }
 
   async function forget(number: number) {
@@ -81,17 +74,24 @@ export function createDriver({
     await checkpointer.deleteThread(String(number));
   }
 
-  /** Arranca el hilo de la PR, reintenta su aviso pendiente o lo reanuda con la foto. */
-  async function advance(snapshot: PullRequestSnapshot) {
-    const config = threadConfig(snapshot.number);
-    if (!tracked.has(snapshot.number)) {
-      tracked.add(snapshot.number);
+  /**
+   * Arranca el hilo de la PR, reintenta su aviso pendiente o lo reanuda con la foto. La foto solo
+   * se lee de GitHub cuando hace falta: un aviso pendiente se reintenta con la que ya tiene el hilo.
+   */
+  async function advance(
+    pullRequest: OpenPullRequest,
+    snapshotOf: (pullRequest: OpenPullRequest) => Promise<PullRequestSnapshot>,
+  ) {
+    const config = threadConfig(pullRequest.number);
+    if (!tracked.has(pullRequest.number)) {
+      const snapshot = await snapshotOf(pullRequest);
+      tracked.add(pullRequest.number);
       await graph.invoke({ snapshot }, config);
       return;
     }
     const state = await graph.getState(config);
     if (state.tasks.some((task) => task.interrupts.length > 0)) {
-      await graph.invoke(new Command({ resume: snapshot }), config);
+      await graph.invoke(new Command({ resume: await snapshotOf(pullRequest) }), config);
     } else if (state.next.length > 0) {
       // Un nodo que falló (un aviso que el canal no aceptó) sigue pendiente en el checkpoint.
       await graph.invoke(null, config);
@@ -100,26 +100,50 @@ export function createDriver({
 
   return {
     async tick(now) {
-      const pullRequests = await readGitHub();
+      let unauthorized = false;
+      /** Anota si GitHub ha rechazado el token y lo deja en el log. */
+      const readFailed = (error: unknown, line: string) => {
+        if (error instanceof GitHubUnauthorizedError) unauthorized = true;
+        log(`${line}: ${describe(error)}`);
+      };
+
+      let pullRequests: OpenPullRequest[] | undefined;
+      try {
+        pullRequests = await github.listOpenPullRequests();
+      } catch (error) {
+        readFailed(error, 'No se ha podido leer GitHub; se vuelve a intentar');
+      }
+
+      if (pullRequests) {
+        const toTrack = pullRequests.filter((pullRequest) => isTracked(pullRequest, policy));
+        const stillTracked = new Set(toTrack.map((pullRequest) => pullRequest.number));
+        const gone = [...tracked].filter((number) => !stillTracked.has(number));
+        await Promise.all(gone.map(forget));
+
+        // Las comprobaciones exigidas se leen una vez por vuelta, y solo si alguna PR las necesita.
+        let required: Promise<string[]> | undefined;
+        const snapshotOf = async (pullRequest: OpenPullRequest): Promise<PullRequestSnapshot> => {
+          required ??= github.requiredChecks();
+          const checks = await github.checks(pullRequest.headSha, await required);
+          return { ...pullRequest, checks, observedAt: now };
+        };
+
+        // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.
+        await Promise.all(
+          toTrack.map(async (pullRequest) => {
+            try {
+              await advance(pullRequest, snapshotOf);
+            } catch (error) {
+              const line = `No se ha podido avanzar la PR #${pullRequest.number}; se reintenta`;
+              readFailed(error, line);
+            }
+          }),
+        );
+      }
+
+      // Una vuelta sin respuesta de GitHub no dice nada del token: se queda como estaba.
+      if (pullRequests || unauthorized) noteUnauthorized(unauthorized);
       await flushSystemNotices();
-      if (!pullRequests) return;
-
-      const toTrack = pullRequests.filter((pullRequest) => isTracked(pullRequest, policy));
-      const stillTracked = new Set(toTrack.map((pullRequest) => pullRequest.number));
-      const gone = [...tracked].filter((number) => !stillTracked.has(number));
-      await Promise.all(gone.map(forget));
-
-      // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.
-      await Promise.all(
-        toTrack.map(async (pullRequest) => {
-          try {
-            await advance({ ...pullRequest, observedAt: now });
-          } catch (error) {
-            const reason = describe(error);
-            log(`No se ha podido avanzar la PR #${pullRequest.number}; se reintenta: ${reason}`);
-          }
-        }),
-      );
     },
   };
 }

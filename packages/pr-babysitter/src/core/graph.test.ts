@@ -15,6 +15,7 @@ function snapshot(observedAt: number, overrides: Partial<PullRequestSnapshot> = 
     baseBranch: 'main',
     draft: false,
     headSha: 'a1b2c3d',
+    checks: [],
     observedAt,
     ...overrides,
   } satisfies PullRequestSnapshot;

@@ -4,7 +4,7 @@
  * falsos.
  */
 import type { Notice } from './notice.ts';
-import type { OpenPullRequest } from './pull-request.ts';
+import type { Check, OpenPullRequest } from './pull-request.ts';
 
 /**
  * Publica un aviso para el mantenedor. Solo envía: la respuesta se diseña en BH4. Si el canal no lo
@@ -22,6 +22,10 @@ export interface Notifier {
 export interface GitHubReader {
   /** Las PR abiertas contra la rama base. */
   listOpenPullRequests(): Promise<OpenPullRequest[]>;
+  /** Los nombres de las comprobaciones que exige ahora la rama base (decisión 6). */
+  requiredChecks(): Promise<string[]>;
+  /** El estado de cada comprobación exigida en un commit, en el orden de `required`. */
+  checks(sha: string, required: string[]): Promise<Check[]>;
 }
 
 /** GitHub rechaza el token (401): hay que avisar, porque no se arregla solo (decisión 3). */
