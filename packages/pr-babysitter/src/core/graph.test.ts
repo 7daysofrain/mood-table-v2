@@ -173,6 +173,17 @@ describe('hasta el estado final', () => {
     ]);
   });
 
+  it('una comprobación relanzada mientras espera al revisor: el estado final espera a que termine', async () => {
+    const { notices } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: PASSED }),
+      snapshot(7, { checks: PENDING, review: reviewed() }),
+      snapshot(9, { checks: PASSED, review: reviewed() }),
+    );
+
+    expect(summary(notices)).toEqual(['tracking', 'checksFinished', { status: 'readyToMerge' }]);
+  });
+
   it('el revisor revisa un push anterior: no hay estado final', async () => {
     const { notices, state } = await follow(
       snapshot(0),

@@ -88,7 +88,9 @@ export function afterChecksWait(
 
 /**
  * Al reanudar la espera del revisor con una foto: un push nuevo vuelve a la espera de las
- * comprobaciones, porque las de antes eran de otro push.
+ * comprobaciones, porque las de antes eran de otro push. Se termina con la revisión y las
+ * comprobaciones de esta foto acabadas: una comprobación relanzada, o una que el *ruleset* acaba de
+ * exigir, se espera como las demás.
  */
 export function afterReviewWait(
   current: TrackedPush,
@@ -97,7 +99,7 @@ export function afterReviewWait(
 ): { push: TrackedPush; next: ReviewStep } {
   const push = pushOf(current, snapshot);
   if (push !== current) return { push, next: 'newPush' };
-  if (reviewFinished(snapshot)) return { push, next: 'finished' };
+  if (reviewFinished(snapshot) && checksFinished(snapshot)) return { push, next: 'finished' };
   if (timedOut(push, snapshot, timeoutMs)) return { push, next: 'timedOut' };
   return { push, next: 'waiting' };
 }

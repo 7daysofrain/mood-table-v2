@@ -161,6 +161,18 @@ describe('al reanudar la espera del revisor', () => {
     expect(afterReviewWait(push, snapshot(), TIMEOUT)).toEqual({ push, next: 'finished' });
   });
 
+  it('con la revisión terminada, sigue esperando si una comprobación vuelve a estar pendiente', () => {
+    const now = snapshot({ checks: [passed('lint'), pending('e2e')], observedAt: 12 * MINUTE });
+
+    expect(afterReviewWait(push, now, TIMEOUT)).toEqual({ push, next: 'waiting' });
+  });
+
+  it('con la revisión terminada y una comprobación pendiente, se agota el tiempo a los 30 min', () => {
+    const now = snapshot({ checks: [passed('lint'), pending('e2e')], observedAt: 30 * MINUTE });
+
+    expect(afterReviewWait(push, now, TIMEOUT)).toEqual({ push, next: 'timedOut' });
+  });
+
   it('se agota el tiempo a los 30 min desde la primera foto con ese SHA', () => {
     const now = snapshot({ review: unreviewed, observedAt: 30 * MINUTE });
 
