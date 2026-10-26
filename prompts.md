@@ -1117,6 +1117,17 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *`octokit.paginate` lee `response.url` en las listas con `total_count` (los *check runs*); el `fetch` falso de los tests devolvía una URL vacía y fallaba. El falso, ya compartido entre los tests de los adaptadores, ahora devuelve la URL pedida, como el real.*
 - *Una PR con su estado final no se vuelve a leer hasta que llega un push nuevo: así la vuelta ahorra peticiones y el umbral de `docs/umbrales-para-specs.md` lo dice.*
 
+**Prompt 2** (respuesta al plan de la prueba a mano que propuso la IA):
+
+> Sí, haz la prueba a mano del 2.10 con ese plan: reconstruye el contenedor con esta rama, baja el tiempo de espera en el .env y abre la PR de prueba sin tarea.
+
+*La IA bajó la espera a 5 min y abrió una PR de usar y tirar sin tarea (#73), con un fallo de lint a propósito. Hizo un push a mitad de la espera y comprobó en Linear cada aviso: el push no avisó y el tiempo volvió a contar desde él. Al devolver la espera a 30 min, la #73 acabó en «necesita intervención» porque Codex se quedó en `running`. La #72 dio los otros casos: hallazgos del revisor, push nuevo tras el estado final y, al final, «lista para integrar». El sistema de permisos le impidió marcar la PR como lista para revisar y resolver los hilos; lo hizo el humano o se lo pidió de forma explícita.*
+
+*Ajustes:*
+- *Codex encontró dos fallos reales en la #72, y la IA los verificó contra el código antes de arreglarlos, cada uno con su test de regresión. Primero, un aviso reintentado tras un fallo de Linear podía dar el estado final de un push anterior. La causa era un atajo que la IA había añadido al grafo y que el diseño no tenía: se quitó. Segundo, una comprobación relanzada mientras se esperaba al revisor daba «necesita intervención» antes de tiempo.*
+- *La revisión automática de Codex no se disparó con ningún push nuevo (`9219fe5`, `0d9e70b`, `1cf8413`), solo al marcar la PR lista o al pedirla con `@codex review`. El humano creía que Codex estaba atascado; la IA le enseñó que respondía a cada petición en un minuto y que lo que fallaba era la revisión al hacer push. Es el caso de BH5.*
+- *Al corregir el `design.md` («Codex deja un único comentario»), se hizo con un commit propio, a petición del humano.*
+
 ---
 
 ### 7. Pull Requests

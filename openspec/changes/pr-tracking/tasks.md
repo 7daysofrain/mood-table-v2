@@ -132,7 +132,7 @@
   `docs/umbrales-para-specs.md`; los términos nuevos (*necesita intervención*, *issue buzón*) en el
   glosario de `docs/pr-babysitter.md` §8; README §2.2 si cambia; `prompts.md`.
   Verificar: los términos que usan los avisos están en el glosario.
-- [ ] 2.10 Prueba a mano con el contenedor en marcha: una PR que pasa todo y que Codex revisa sin
+- [x] 2.10 Prueba a mano con el contenedor en marcha: una PR que pasa todo y que Codex revisa sin
   hallazgos acaba en «lista para integrar»; una con una comprobación que falla, en «necesita
   intervención» con su nombre; con el tiempo de espera bajado a pocos minutos en el `.env`, una PR que
   Codex no revisa acaba por tiempo; un push nuevo a media espera no avisa.
