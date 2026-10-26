@@ -1,0 +1,6 @@
+{
+  "node_version": "24",
+  "graphs": {
+    "pr-tracking": "./src/studio.ts:graph"
+  }
+}
