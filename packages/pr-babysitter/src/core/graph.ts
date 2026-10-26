@@ -117,10 +117,6 @@ export function createTrackingGraph(
     return {};
   };
 
-  /** Con la misma foto: si el revisor ya ha terminado, o se ha agotado el tiempo, no se espera. */
-  const trasAvisarComprobaciones = (state: State): AfterReview =>
-    AFTER_REVIEW[afterReviewWait(pushIn(state), state.snapshot, timeoutMs).next];
-
   const esperarRevisor: GraphNode<{ InputSchema: typeof TrackingState; Nodes: AfterReview }> = (
     state,
   ) => {
@@ -144,7 +140,9 @@ export function createTrackingGraph(
     .addNode('avisarEstadoFinal', avisarEstadoFinal)
     .addEdge(START, 'avisarSeguimiento')
     .addEdge('avisarSeguimiento', 'esperarComprobaciones')
-    .addConditionalEdges('avisarComprobaciones', trasAvisarComprobaciones)
+    // Siempre a esperar, aunque el revisor ya haya terminado: si el aviso se reintenta tras un
+    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dirá.
+    .addEdge('avisarComprobaciones', 'esperarRevisor')
     .addEdge('avisarEstadoFinal', END)
     .compile({ checkpointer });
 }

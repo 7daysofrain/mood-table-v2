@@ -125,10 +125,11 @@ describe('hasta el estado final', () => {
     expect(state.next).toEqual([]);
   });
 
-  it('si el revisor ya ha terminado cuando terminan las comprobaciones, avisa de las dos cosas a la vez', async () => {
+  it('si el revisor ya ha terminado cuando terminan las comprobaciones, avisa del estado final con la foto siguiente', async () => {
     const { notices, state } = await follow(
       snapshot(0),
       snapshot(8, { checks: PASSED, review: reviewed() }),
+      snapshot(9, { checks: PASSED, review: reviewed() }),
     );
 
     expect(summary(notices)).toEqual(['tracking', 'checksFinished', { status: 'readyToMerge' }]);

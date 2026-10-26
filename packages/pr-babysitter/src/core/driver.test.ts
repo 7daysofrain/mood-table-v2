@@ -296,6 +296,7 @@ describe('hasta el estado final', () => {
     github.reviews[74] = reviewed('sha-74');
     await tick();
     await tick();
+    await tick();
     const reads = github.checksReads;
 
     await tick();
@@ -315,6 +316,7 @@ describe('hasta el estado final', () => {
     github.reviews[74] = reviewed('sha-74');
     await tick();
     await tick();
+    await tick();
 
     github.pullRequests = [pullRequest(74, { headSha: 'nuevo' })];
     await tick();
@@ -323,6 +325,7 @@ describe('hasta el estado final', () => {
 
     github.checks['nuevo'] = PASSED;
     github.reviews[74] = reviewed('nuevo');
+    await tick();
     await tick();
     expect(summary(notifier.notices).slice(3)).toEqual([
       [74, 'tracking'],
@@ -350,6 +353,28 @@ describe('hasta el estado final', () => {
     expect(summary(notifier.notices)).toEqual([
       [74, 'tracking'],
       [74, 'needsIntervention'],
+    ]);
+  });
+
+  it('un aviso reintentado tras un push nuevo no da el estado final del push anterior', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    // Las comprobaciones y la revisión terminan, pero Linear no acepta el aviso.
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    notifier.failing = true;
+    await tick();
+
+    // Llega un push nuevo antes de que Linear vuelva.
+    github.pullRequests = [pullRequest(74, { headSha: 'nuevo' })];
+    notifier.failing = false;
+    await tick();
+    await tick();
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
     ]);
   });
 
