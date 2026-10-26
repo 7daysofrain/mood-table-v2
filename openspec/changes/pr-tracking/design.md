@@ -16,9 +16,11 @@
     Hoy son seis: `lint`, `typecheck`, `test`, `e2e`, `sonar-issues` y `SonarCloud Code Analysis`.
     Cada una es un *check run* del SHA (`GET …/commits/{sha}/check-runs`). En un repo público se
     pueden leer sin permisos; el token sirve para el límite de 5000 peticiones por hora.
-  - Codex deja **un único comentario** por PR, de `chatgpt-codex-connector[bot]`, que va editando. Su
-    bloque `<!-- codex-review-state:v1 {…} -->` lleva `code_review.commit_sha`, `status`
-    (`running`, `completed`), `has_any_findings` y `has_unresolved_findings`.
+  - Codex deja **un comentario con su estado** por PR, de `chatgpt-codex-connector[bot]`, que va
+    editando. Su bloque `<!-- codex-review-state:v1 {…} -->` lleva `code_review.commit_sha`, `status`
+    (`running`, `completed`), `has_any_findings` y `has_unresolved_findings`. Puede dejar además otros
+    comentarios **sin** bloque: en la #67, uno antes (el repo no tenía entorno), y en la #69, un
+    resumen después (comprobado al implementar `MOO-84`, 26-oct).
   - En 3 de 12 PR (#64, #65, #67) el bloque se quedó en `running` y la PR se integró. En la #67, Codex
     dejó además un comentario de que el repo no tenía entorno. En la #62, `has_unresolved_findings`
     seguía en `true` con los hilos ya resueltos: no sigue a los hilos.
@@ -218,11 +220,12 @@ y «todos los *check runs* del SHA», que da el falso «terminadas» de antes.
 
 Sin D#: es un detalle de esta capability (`specs/pr-tracking`).
 
-### 7. El revisor se lee de un único comentario, y lo que no se entiende no ha terminado
+### 7. El revisor se lee de su bloque de estado, y lo que no se entiende no ha terminado
 
 El adaptador del revisor lee **solo** los comentarios de la cuenta del revisor
-(`chatgpt-codex-connector[bot]`, en la configuración) y saca de su bloque `codex-review-state` un
-estado de dominio: **SHA revisado**, **terminada o no** y **con hallazgos o no**.
+(`chatgpt-codex-connector[bot]`, en la configuración) y saca del **último que lleva el bloque**
+`codex-review-state` un estado de dominio: **SHA revisado**, **terminada o no** y **con hallazgos o
+no**. Los comentarios del revisor sin bloque no cuentan.
 
 - **Terminada** = `status` es `completed` y `commit_sha` es el último SHA de la PR. Es la comprobación
   de `workflow.md` §4.4, más estricta.
