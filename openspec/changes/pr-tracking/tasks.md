@@ -120,7 +120,7 @@
   Verificar: los tests nuevos fallan porque las reglas no existen.
 - [x] 2.6 Las reglas en `src/core/` y el tiempo de espera en la configuración (30 min por defecto).
   Verificar: los tests de 2.5 pasan.
-- [ ] 2.7 **(test en rojo)** Tests del grafo y del driver para el ciclo completo, con `Notifier` falso:
+- [x] 2.7 **(test en rojo)** Tests del grafo y del driver para el ciclo completo, con `Notifier` falso:
   la secuencia de avisos de cada escenario de `specs/pr-tracking`; un push nuevo mientras la sigue no
   avisa y los avisos siguientes son de ese push; un push nuevo tras el estado final vuelve a avisar de
   que la sigue.
