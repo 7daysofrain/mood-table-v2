@@ -37,7 +37,7 @@
   desde esa foto) y espera a las comprobaciones.
 - [x] 1.7 La entrada opcional del grafo que omite el aviso de seguimiento.
   Verificar: los tests de 1.6 y los del grafo que ya había en verde.
-- [ ] 1.8 **(test en rojo)** El driver, en `core/driver.test.ts`, un `describe` por requisito de
+- [x] 1.8 **(test en rojo)** El driver, en `core/driver.test.ts`, un `describe` por requisito de
   `specs/pr-tracking` que toca este change (`design.md` decisiones 2, 3 y 4):
   - detener: una PR que espera a sus comprobaciones avisa «Detenida» una vez y no avisa de nada más
     aunque terminen comprobaciones y revisión; con un aviso pendiente, primero ese y después
