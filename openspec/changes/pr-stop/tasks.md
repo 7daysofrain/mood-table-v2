@@ -52,7 +52,7 @@
   - si Linear rechaza «Detenida» o «Reanudada», se reintenta en la vuelta siguiente y la PR con la
     etiqueta no avanza mientras tanto;
   - una PR detenida que se cierra se olvida sin aviso.
-- [ ] 1.9 Detener y reanudar en `core/driver.ts`: el conjunto de PR detenidas, la guarda en `advance`,
+- [x] 1.9 Detener y reanudar en `core/driver.ts`: el conjunto de PR detenidas, la guarda en `advance`,
   terminar el aviso pendiente antes de «Detenida», conservar el hilo terminado y comparar su SHA al
   reanudar.
   Verificar: los tests de 1.8 y todos los del driver que ya había en verde; `pnpm lint`,
