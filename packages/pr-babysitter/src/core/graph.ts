@@ -42,6 +42,11 @@ const TrackingState = new StateSchema({
   snapshot: pullRequestSnapshotSchema,
   /** El push que se sigue, y desde cuándo cuenta la espera. Lo fija el aviso de seguimiento. */
   push: z.object({ sha: z.string(), seenAt: z.number() }).optional(),
+  /**
+   * Entrada opcional: la ejecución empieza sin el aviso de seguimiento, porque el driver ya ha
+   * avisado de que la reanuda (change pr-stop, decisión 2). Vale solo para esa ejecución.
+   */
+  silent: z.boolean().optional(),
 });
 
 type State = typeof TrackingState.State;
@@ -103,6 +108,13 @@ export function createTrackingGraph(
     return { push: { sha: snapshot.headSha, seenAt: snapshot.observedAt } };
   };
 
+  // Como `avisarSeguimiento`, pero sin aviso. Apaga `silent` para que no pase a la ejecución
+  // siguiente del mismo hilo.
+  const empezarSinAviso: GraphNode<typeof TrackingState> = ({ snapshot }) => ({
+    push: { sha: snapshot.headSha, seenAt: snapshot.observedAt },
+    silent: false,
+  });
+
   const esperarComprobaciones: GraphNode<{
     InputSchema: typeof TrackingState;
     Nodes: AfterChecks;
@@ -132,14 +144,20 @@ export function createTrackingGraph(
 
   return new StateGraph(TrackingState)
     .addNode('avisarSeguimiento', avisarSeguimiento)
+    .addNode('empezarSinAviso', empezarSinAviso)
     .addNode('esperarComprobaciones', esperarComprobaciones, {
       ends: Object.values(AFTER_CHECKS),
     })
     .addNode('avisarComprobaciones', avisarComprobaciones)
     .addNode('esperarRevisor', esperarRevisor, { ends: Object.values(AFTER_REVIEW) })
     .addNode('avisarEstadoFinal', avisarEstadoFinal)
-    .addEdge(START, 'avisarSeguimiento')
+    .addConditionalEdges(
+      START,
+      ({ silent }) => (silent ? 'empezarSinAviso' : 'avisarSeguimiento'),
+      ['avisarSeguimiento', 'empezarSinAviso'],
+    )
     .addEdge('avisarSeguimiento', 'esperarComprobaciones')
+    .addEdge('empezarSinAviso', 'esperarComprobaciones')
     // Siempre a esperar, aunque el revisor ya haya terminado: si el aviso se reintenta tras un
     // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dirá.
     .addEdge('avisarComprobaciones', 'esperarRevisor')
