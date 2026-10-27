@@ -138,16 +138,15 @@ export function createDriver({
   }
 
   /**
-   * Detiene la PR: la apunta como detenida en cuanto ve la etiqueta y termina la parada. Sin hilo
-   * (al arrancar, o un borrador que pasa a lista) la apunta sin aviso.
+   * Apunta la parada en cuanto ve la etiqueta, sin tocar GitHub, Linear ni el grafo: nada que falle
+   * después puede hacer que se pierda. Sin hilo (al arrancar, o un borrador que pasa a lista) no
+   * queda nada por terminar, y no se avisa.
    */
-  async function stop(pullRequest: OpenPullRequest) {
+  function noteStop(pullRequest: OpenPullRequest) {
     const { number } = pullRequest;
-    if (!stopped.has(number)) {
-      stopped.add(number);
-      if (tracked.has(number)) stopping.add(number);
-    }
-    await finishStopping(pullRequest);
+    if (!isStopped(pullRequest) || stopped.has(number)) return;
+    stopped.add(number);
+    if (tracked.has(number)) stopping.add(number);
   }
 
   /**
@@ -200,13 +199,14 @@ export function createDriver({
   }
 
   /**
-   * Publica primero los avisos de detenida y reanudada pendientes de la PR y después la detiene, la
-   * reanuda o la avanza, y publica los que eso encole.
+   * Apunta primero si la han detenido; después publica los avisos de detenida y reanudada
+   * pendientes de la PR, la detiene, la reanuda o la avanza, y publica los que eso encole.
    */
   async function advance(
     pullRequest: OpenPullRequest,
     snapshotOf: (pullRequest: OpenPullRequest) => Promise<PullRequestSnapshot>,
   ) {
+    noteStop(pullRequest);
     await flushTransitionNotices(pullRequest.number);
     await step(pullRequest, snapshotOf);
     await flushTransitionNotices(pullRequest.number);
@@ -223,7 +223,7 @@ export function createDriver({
     snapshotOf: (pullRequest: OpenPullRequest) => Promise<PullRequestSnapshot>,
   ) {
     if (isStopped(pullRequest)) {
-      await stop(pullRequest);
+      await finishStopping(pullRequest);
       return;
     }
     if (stopped.has(pullRequest.number)) {
