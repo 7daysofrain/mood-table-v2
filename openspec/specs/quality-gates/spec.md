@@ -178,30 +178,31 @@ positivo en SonarQube no cuenta.
 - **WHEN** vence la espera
 - **THEN** la comprobación de incidencias nuevas está en rojo e indica que el análisis no ha terminado, no que no haya incidencias
 
-### Requirement: Copilot revisa cada PR sin que nadie lo pida
+### Requirement: Codex revisa cada PR sin que nadie lo pida
 Cada PR a una rama de integración que no sea borrador SHALL recibir automáticamente una revisión de
-GitHub Copilot al abrirse y en cada push.
+Codex al abrirse y en cada push.
 
-> Traza: `MOO-42` («Revisión automática de Copilot»).
+> Traza: `MOO-66` (descripción de la tarea: «revisa cada PR al abrirse y en cada push»).
 
-#### Scenario: Revisión automática de Copilot
+#### Scenario: Revisión automática de Codex
 - **GIVEN** una PR nueva contra `main` que no es borrador
 - **WHEN** se abre o recibe un push
-- **THEN** Copilot la revisa sin que nadie lo pida
+- **THEN** Codex la revisa sin que nadie lo pida
 
 #### Scenario: PR en borrador (asumido)
 - **GIVEN** una PR en borrador contra `main`
 - **WHEN** recibe un push
-- **THEN** Copilot no la revisa hasta que se marca como lista para revisar
+- **THEN** Codex no la revisa hasta que se marca como lista para revisar
 
-### Requirement: Una PR con hilos de revisión sin resolver no se integra
+### Requirement: Ninguna PR se integra con hilos de revisión sin resolver
 Cada rama de integración MUST impedir que se integre una PR mientras tenga algún hilo de revisión sin
-resolver, incluidos los de Copilot.
+resolver, incluidos los de Codex.
 
-> Traza: `MOO-42` («Hilo de Copilot sin resolver»).
+> Traza: `MOO-42` («Hilo de Copilot sin resolver»); el revisor pasa a Codex en `MOO-66` («sus
+> hallazgos son hilos que bloquean la integración por la regla de hilos resueltos»).
 
-#### Scenario: Hilo de Copilot sin resolver
-- **GIVEN** una PR con todas las comprobaciones en verde y un hilo de Copilot sin resolver
+#### Scenario: Hilo de Codex sin resolver
+- **GIVEN** una PR con todas las comprobaciones en verde y un hilo de Codex sin resolver
 - **WHEN** se intenta integrar
 - **THEN** GitHub no deja integrarla
 - **AND** al resolver el hilo sí deja

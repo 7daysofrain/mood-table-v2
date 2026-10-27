@@ -36,7 +36,7 @@
   tachado.
 - [x] 1.4 Entrada en `prompts.md` sobre el cambio de revisor, con el formato de `course.md` §5.
   Verificar: tiene como mucho 3 prompts literales y la línea en cursiva.
-- [ ] 1.5 **Verificación en GitHub** (sin commit; *Risks* de `design.md`):
+- [x] 1.5 **Verificación en GitHub** (sin commit; *Risks* de `design.md`):
   - con la PR de esta tarea en borrador, un push no recibe revisión de Codex; al marcarla como
     lista, Codex la revisa sin que nadie lo pida y su comentario dice el último commit;
   - en un push posterior, Codex vuelve a revisar y el SHA cambia;
@@ -44,3 +44,15 @@
 
   Si Codex revisa el borrador, corregir el escenario «PR en borrador» con `/opsx:update` antes de
   archivar. Verificar: enlaces a los comentarios de Codex en la descripción de la PR.
+
+  Comprobado al archivar (27-oct):
+  - borrador sin revisión: en la descripción de #61 (pushes `317b0d1` y `5237e65`);
+  - al marcarla como lista, Codex revisa sin que nadie lo pida y dice el último commit:
+    [comentario en #61](https://github.com/7daysofrain/mood-table-v2/pull/61#issuecomment-6335070632)
+    con `5237e65`, el último commit de la PR;
+  - en cada push vuelve a revisar con otro SHA: en #72, revisiones en `07dc6ad` y `0d9e70b`, y
+    [comentario final](https://github.com/7daysofrain/mood-table-v2/pull/72#issuecomment-6420997817)
+    en `517ffc7`, el último commit;
+  - hilos: el *ruleset* tiene `required_review_thread_resolution` activo, y #72 se integró con sus
+    dos hilos de Codex resueltos. El botón bloqueado no se ha visto directamente: lo garantiza la
+    regla.
