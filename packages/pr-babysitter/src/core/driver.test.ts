@@ -23,6 +23,7 @@ function pullRequest(number: number, overrides: Partial<OpenPullRequest> = {}): 
     baseBranch: 'main',
     draft: false,
     headSha: `sha-${number}`,
+    labels: [],
     ...overrides,
   };
 }
@@ -427,5 +428,357 @@ describe('la cadencia', () => {
     running.stop();
 
     expect(events.slice(0, 5)).toEqual(['vuelta 0', 'fin', 'espera 60000', 'vuelta 60000', 'fin']);
+  });
+});
+
+/** Una PR del mantenedor con la etiqueta que detiene su seguimiento. */
+function stoppedPullRequest(number: number, overrides: Partial<OpenPullRequest> = {}) {
+  return pullRequest(number, { labels: ['babysitter:stop'], ...overrides });
+}
+
+/** Da `count` vueltas. */
+async function ticks(tick: () => Promise<void>, count: number) {
+  for (let index = 0; index < count; index++) await tick();
+}
+
+describe('la etiqueta babysitter:stop detiene el seguimiento de una PR', () => {
+  it('mientras espera sus comprobaciones: avisa una vez y no avisa de nada más aunque terminen', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    await tick();
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    await ticks(tick, 3);
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+    ]);
+  });
+
+  it('con un aviso pendiente: primero ese y después el de detenida', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = PASSED;
+    notifier.failing = true;
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    notifier.failing = false;
+    await tick();
+    github.reviews[74] = reviewed('sha-74');
+    await ticks(tick, 2);
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'stopped'],
+    ]);
+  });
+
+  it('con su estado final: avisa de que la detiene', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    await ticks(tick, 3);
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    await ticks(tick, 2);
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'readyToMerge'],
+      [74, 'stopped'],
+    ]);
+  });
+
+  it('un push nuevo no la reanuda ni avisa', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74)];
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74, { headSha: 'nuevo' })];
+    github.checks['nuevo'] = PASSED;
+    github.reviews[74] = reviewed('nuevo');
+    await ticks(tick, 3);
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+    ]);
+  });
+
+  it('un borrador con la etiqueta que pasa a lista para revisar no avisa y queda detenido', async () => {
+    const { github, notifier, tick } = setup([stoppedPullRequest(74, { draft: true })]);
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    await ticks(tick, 2);
+    expect(notifier.notices).toEqual([]);
+
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+    expect(summary(notifier.notices)).toEqual([[74, 'resumed']]);
+  });
+
+  it('otra etiqueta no la detiene', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74, { labels: ['dependencies'] })]);
+    await tick();
+
+    github.checks['sha-74'] = PASSED;
+    await tick();
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+    ]);
+  });
+});
+
+describe('quitar la etiqueta reanuda el seguimiento desde el último push', () => {
+  it('antes del estado final: avisa de que la reanuda, sin el de seguimiento, y sigue el último push', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74)];
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74, { headSha: 'nuevo' })];
+    await tick();
+
+    github.pullRequests = [pullRequest(74, { headSha: 'nuevo' })];
+    await tick();
+    github.checks['nuevo'] = PASSED;
+    await tick();
+    github.reviews[74] = reviewed('nuevo');
+    await tick();
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+      [74, 'checksFinished'],
+      [74, 'readyToMerge'],
+    ]);
+  });
+
+  it('tras más de 30 min detenida, el tiempo de espera cuenta desde que la reanuda', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74)];
+    await ticks(tick, 40);
+
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+    await ticks(tick, 29);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+    ]);
+
+    await tick();
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
+  });
+
+  it('en estado final sin push nuevo: solo avisa de que la reanuda', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    await ticks(tick, 3);
+    github.pullRequests = [stoppedPullRequest(74)];
+    await tick();
+
+    github.pullRequests = [pullRequest(74)];
+    await ticks(tick, 3);
+
+    expect(summary(notifier.notices).slice(3)).toEqual([
+      [74, 'stopped'],
+      [74, 'resumed'],
+    ]);
+  });
+
+  it('en estado final con un push nuevo: avisa de que la reanuda y sigue ese push', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    await ticks(tick, 3);
+    github.pullRequests = [stoppedPullRequest(74)];
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74, { headSha: 'nuevo' })];
+    await tick();
+
+    github.pullRequests = [pullRequest(74, { headSha: 'nuevo' })];
+    await tick();
+    github.checks['nuevo'] = PASSED;
+    github.reviews[74] = reviewed('nuevo');
+    await ticks(tick, 2);
+
+    expect(summary(notifier.notices).slice(3)).toEqual([
+      [74, 'stopped'],
+      [74, 'resumed'],
+      [74, 'checksFinished'],
+      [74, 'readyToMerge'],
+    ]);
+  });
+});
+
+describe('al arrancar, una PR con la etiqueta queda detenida', () => {
+  it('no avisa de ella, y al quitarle la etiqueta avisa de que la reanuda', async () => {
+    const { github, notifier, tick } = setup([stoppedPullRequest(74), pullRequest(75)]);
+    await ticks(tick, 2);
+    expect(summary(notifier.notices)).toEqual([[75, 'tracking']]);
+
+    github.pullRequests = [pullRequest(74), pullRequest(75)];
+    await tick();
+    github.checks['sha-74'] = PASSED;
+    await tick();
+
+    expect(summary(notifier.notices)).toEqual([
+      [75, 'tracking'],
+      [74, 'resumed'],
+      [74, 'checksFinished'],
+    ]);
+  });
+});
+
+describe('si el canal no acepta el aviso de detenida o de reanudada', () => {
+  it('reintenta el de detenida en la vuelta siguiente, y la PR no avanza mientras tanto', async () => {
+    const { github, notifier, log, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    github.checks['sha-74'] = PASSED;
+    notifier.failing = true;
+    await ticks(tick, 2);
+    expect(log).toHaveLength(2);
+
+    notifier.failing = false;
+    await ticks(tick, 2);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+    ]);
+  });
+
+  it('si le quitan la etiqueta antes de que salga el de detenida, avisa de los dos y la espera cuenta desde que la reanuda', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    // La detienen mientras Linear no acepta avisos, y le quitan la etiqueta antes de que vuelva.
+    github.pullRequests = [stoppedPullRequest(74)];
+    notifier.failing = true;
+    await ticks(tick, 40);
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+
+    notifier.failing = false;
+    await tick();
+    await ticks(tick, 29);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+    ]);
+
+    await tick();
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
+  });
+
+  it('con un aviso del grafo pendiente, si le quitan la etiqueta antes de que vuelva Linear, avisa de todo en orden y la espera cuenta desde que la reanuda', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    // El aviso de seguimiento no sale: queda pendiente en el hilo.
+    notifier.failing = true;
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    await ticks(tick, 40);
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+
+    notifier.failing = false;
+    await tick();
+    await ticks(tick, 29);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+    ]);
+
+    await tick();
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
+  });
+
+  it('si la vuelven a detener con el de reanudada pendiente, avisa de todo en orden y la espera cuenta desde que la reanuda', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74)];
+    await tick();
+
+    // La reanudan con Linear caído, la vuelven a detener y le quitan la etiqueta antes de que vuelva.
+    notifier.failing = true;
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74)];
+    await ticks(tick, 40);
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+
+    notifier.failing = false;
+    await tick();
+    await ticks(tick, 29);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+    ]);
+
+    await tick();
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
+  });
+
+  it('reintenta el de reanudada en la vuelta siguiente, antes que los del push', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74)];
+    await tick();
+
+    github.pullRequests = [pullRequest(74)];
+    github.checks['sha-74'] = PASSED;
+    notifier.failing = true;
+    await tick();
+
+    notifier.failing = false;
+    await ticks(tick, 2);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+      [74, 'checksFinished'],
+    ]);
+  });
+});
+
+describe('una PR detenida que se cierra', () => {
+  it('se olvida sin aviso: si vuelve sin la etiqueta, es nueva', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.pullRequests = [stoppedPullRequest(74)];
+    await tick();
+
+    github.pullRequests = [];
+    await tick();
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+    ]);
+
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'tracking']);
   });
 });

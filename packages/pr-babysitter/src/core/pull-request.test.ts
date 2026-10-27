@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { isTracked, type OpenPullRequest, type TrackingPolicy } from './pull-request.ts';
+import {
+  isStopped,
+  isTracked,
+  type OpenPullRequest,
+  STOP_LABEL,
+  type TrackingPolicy,
+} from './pull-request.ts';
 
 const policy: TrackingPolicy = { maintainer: '7daysofrain', baseBranch: 'main' };
 
@@ -13,6 +19,7 @@ function pullRequest(overrides: Partial<OpenPullRequest> = {}): OpenPullRequest 
     baseBranch: 'main',
     draft: false,
     headSha: 'a1b2c3d',
+    labels: [],
     ...overrides,
   };
 }
@@ -32,5 +39,24 @@ describe('qué PR sigue el PR Babysitter', () => {
 
   it('no sigue una PR contra otra rama', () => {
     expect(isTracked(pullRequest({ baseBranch: 'feature/entrega-2-JA' }), policy)).toBe(false);
+  });
+});
+
+describe('qué PR están detenidas', () => {
+  it('la etiqueta que detiene una PR es babysitter:stop', () => {
+    expect(STOP_LABEL).toBe('babysitter:stop');
+  });
+
+  it('está detenida con la etiqueta babysitter:stop, junto a otras o sola', () => {
+    expect(isStopped(pullRequest({ labels: ['babysitter:stop'] }))).toBe(true);
+    expect(isStopped(pullRequest({ labels: ['dependencies', 'babysitter:stop'] }))).toBe(true);
+  });
+
+  it('no está detenida sin etiquetas', () => {
+    expect(isStopped(pullRequest())).toBe(false);
+  });
+
+  it('no está detenida con otras etiquetas', () => {
+    expect(isStopped(pullRequest({ labels: ['dependencies', 'babysitter'] }))).toBe(false);
   });
 });

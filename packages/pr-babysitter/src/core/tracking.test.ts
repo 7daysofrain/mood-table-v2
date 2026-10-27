@@ -28,6 +28,7 @@ function snapshot(overrides: Partial<PullRequestSnapshot> = {}): PullRequestSnap
     baseBranch: 'main',
     draft: false,
     headSha: HEAD,
+    labels: [],
     checks: [passed('lint'), passed('e2e')],
     review: { reviewedSha: HEAD, completed: true, hasFindings: false },
     observedAt: 10 * MINUTE,

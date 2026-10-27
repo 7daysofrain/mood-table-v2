@@ -2,6 +2,8 @@
  * Con respuestas grabadas de la API de GitHub (`test/fixtures/github/`), recortadas a los campos
  * que se leen y algunos más:
  * - `open-pulls.json` (25-oct): la lista de PR abiertas contra `main` de ese día.
+ * - `open-pulls-stopped.json`: **derivado a mano** del anterior, con etiquetas: `babysitter:stop` en
+ *   la #69 y `dependencies` en la #41.
  * - `bad-credentials.json`: la respuesta a un token no válido.
  * - `main-rules.json` (26-oct): las reglas de `main`, con las seis comprobaciones exigidas.
  * - `check-runs-passed.json` (26-oct): los *check runs* del último push de la #69, todos superados.
@@ -40,6 +42,7 @@ describe('la lista de PR abiertas', () => {
         baseBranch: 'main',
         draft: true,
         headSha: '70c8dad40326ea0f7b20954b5e8896535bfcf6ec',
+        labels: [],
       },
       {
         number: 41,
@@ -49,7 +52,20 @@ describe('la lista de PR abiertas', () => {
         baseBranch: 'main',
         draft: false,
         headSha: '2856846ca5c464cceefc6b030936687e740b7cc3',
+        labels: [],
       },
+    ]);
+  });
+
+  it('da las etiquetas de cada PR por su nombre', async () => {
+    const body = await fixture('open-pulls-stopped.json');
+    const { fetch } = fakeFetch(() => json(body));
+
+    const pullRequests = await reader(fetch).listOpenPullRequests();
+
+    expect(pullRequests.map(({ number, labels }) => ({ number, labels }))).toEqual([
+      { number: 69, labels: ['babysitter:stop'] },
+      { number: 41, labels: ['dependencies'] },
     ]);
   });
 

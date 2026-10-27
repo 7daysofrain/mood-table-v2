@@ -43,6 +43,7 @@ const pullSchema = z.object({
   draft: z.boolean(),
   head: z.object({ sha: z.string() }),
   base: z.object({ ref: z.string() }),
+  labels: z.array(z.object({ name: z.string() })),
 });
 
 /** Lo que se lee de cada comentario de `GET /repos/{owner}/{repo}/issues/{number}/comments`. */
@@ -112,6 +113,7 @@ export function createGitHubReader({
           baseBranch: pull.base.ref,
           draft: pull.draft,
           headSha: pull.head.sha,
+          labels: pull.labels.map((label) => label.name),
         }));
     },
 

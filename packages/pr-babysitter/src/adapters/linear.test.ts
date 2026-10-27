@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { githubUnauthorizedNotice, trackingNotice } from '../core/notice.ts';
+import { githubUnauthorizedNotice, stoppedNotice, trackingNotice } from '../core/notice.ts';
 import type { OpenPullRequest } from '../core/pull-request.ts';
 import { createLinearNotifier } from './linear.ts';
 
@@ -26,6 +26,7 @@ const pullRequest: OpenPullRequest = {
   baseBranch: 'main',
   draft: false,
   headSha: 'a1b2c3d',
+  labels: [],
 };
 
 async function fixture(name: string): Promise<string> {
@@ -187,7 +188,8 @@ describe('el aviso de una PR', () => {
         issueId: TASK_ISSUE_ID,
         body: [
           `${PROFILE_URL} · #74 · Avisar de cada PR lista para revisar`,
-          'La sigo: espero a que terminen sus comprobaciones.',
+          'La sigo: espero a que terminen sus comprobaciones. ' +
+            'Para detenerla, ponle la etiqueta `babysitter:stop`.',
           'https://github.com/7daysofrain/mood-table-v2/pull/74',
         ].join('\n'),
       },
@@ -201,6 +203,23 @@ describe('el aviso de una PR', () => {
     await notifier().notify(trackingNotice(pullRequest));
 
     expect(comments(linear.graphql).map((comment) => comment.issueId)).toEqual([INBOX_ISSUE_ID]);
+  });
+
+  it('el de PR detenida va a su tarea, como los demás', async () => {
+    const linear = await fakeLinear();
+
+    await notifier().notify(stoppedNotice(pullRequest));
+
+    expect(comments(linear.graphql)).toEqual([
+      {
+        issueId: TASK_ISSUE_ID,
+        body: [
+          `${PROFILE_URL} · #74 · Avisar de cada PR lista para revisar`,
+          'Detengo su seguimiento. Para reanudarlo, quítale la etiqueta `babysitter:stop`.',
+          'https://github.com/7daysofrain/mood-table-v2/pull/74',
+        ].join('\n'),
+      },
+    ]);
   });
 });
 

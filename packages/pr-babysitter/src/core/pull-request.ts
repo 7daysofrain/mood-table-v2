@@ -19,6 +19,8 @@ export const openPullRequestSchema = z.object({
   draft: z.boolean(),
   /** El SHA del último push. */
   headSha: z.string().min(1),
+  /** Los nombres de sus etiquetas. */
+  labels: z.array(z.string()),
 });
 
 export type OpenPullRequest = z.infer<typeof openPullRequestSchema>;
@@ -72,4 +74,15 @@ export function isTracked(pullRequest: OpenPullRequest, policy: TrackingPolicy):
     pullRequest.baseBranch === policy.baseBranch &&
     !pullRequest.draft
   );
+}
+
+/**
+ * La etiqueta que detiene el seguimiento de una PR (change pr-stop, decisión 1). La pone o la quita
+ * una persona con permiso de escritura; el sistema solo la lee.
+ */
+export const STOP_LABEL = 'babysitter:stop';
+
+/** Si alguien ha detenido el seguimiento de la PR: tiene la etiqueta `STOP_LABEL`. */
+export function isStopped(pullRequest: OpenPullRequest): boolean {
+  return pullRequest.labels.includes(STOP_LABEL);
 }

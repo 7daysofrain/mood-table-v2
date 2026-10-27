@@ -209,4 +209,5 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Política de escalado** | `escalationPolicy` | Los casos en los que el sistema escala (§4.1). |
 | **Lista para integrar** | `readyToMerge` | Comprobaciones en verde, revisión del revisor del último push e hilos resueltos. |
 | **Necesita intervención** | `needsIntervention` | El otro estado final de una PR, cuando no está lista para integrar: falla una comprobación, el revisor tiene hallazgos o algo no termina a tiempo. El aviso dice el motivo, y la PR queda en manos del mantenedor. |
+| **PR detenida** | `stopped` | PR cuyo seguimiento ha detenido alguien con permiso de escritura en el repo: el sistema no avanza en ella hasta que se reanuda. No es lo mismo que *escalar*, donde es el sistema quien pausa la PR. |
 | **Issue buzón** | `inboxIssue` | Issue fijo de Linear donde el sistema avisa de lo que no tiene tarea: una PR sin tarea enlazada o un fallo del propio sistema (`linear.md` §9). |
