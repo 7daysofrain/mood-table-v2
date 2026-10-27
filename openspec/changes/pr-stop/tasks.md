@@ -68,7 +68,7 @@
     de `course.md` §5.
 
   Verificar: los enlaces del README y de las D# a `design.md` llevan a su sitio; `pnpm lint` en verde.
-- [ ] 1.11 **Prueba a mano** (sin commit), con la etiqueta ya creada y el sistema en marcha contra una
+- [x] 1.11 **Prueba a mano** (sin commit), con la etiqueta ya creada y el sistema en marcha contra una
   PR real del mantenedor:
   - ponerle `babysitter:stop` → aviso «Detenida» en su tarea de Linear, y nada más con un push nuevo;
   - parar y arrancar el sistema con la etiqueta puesta → ningún aviso de esa PR;
