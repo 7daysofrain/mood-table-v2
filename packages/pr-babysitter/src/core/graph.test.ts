@@ -273,3 +273,56 @@ describe('un push nuevo', () => {
     expect(summary(notices)).toEqual(['tracking', 'checksFinished']);
   });
 });
+
+describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', () => {
+  it('no avisa y se queda esperando las comprobaciones', async () => {
+    const { notifier, notices } = recordingNotifier();
+    const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: 30 * MINUTE });
+
+    await graph.invoke({ snapshot: snapshot(0), silent: true }, threadConfig(74));
+
+    const state = await graph.getState(threadConfig(74));
+    expect(notices).toEqual([]);
+    expect(state.next).toEqual(['esperarComprobaciones']);
+  });
+
+  it('en un hilo terminado, sigue el push de su foto y el tiempo cuenta desde ella', async () => {
+    const { notifier, notices } = recordingNotifier();
+    const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: 30 * MINUTE });
+    const config = threadConfig(74);
+    await graph.invoke({ snapshot: snapshot(0) }, config);
+    await graph.invoke(new Command({ resume: snapshot(29) }), config);
+    await graph.invoke(new Command({ resume: snapshot(30) }), config);
+    notices.length = 0;
+
+    await graph.invoke({ snapshot: snapshot(60, { headSha: 'nuevo' }), silent: true }, config);
+    await graph.invoke(new Command({ resume: snapshot(89, { headSha: 'nuevo' }) }), config);
+    expect(notices).toEqual([]);
+    await graph.invoke(new Command({ resume: snapshot(90, { headSha: 'nuevo' }) }), config);
+
+    expect(summary(notices)).toEqual([
+      {
+        status: 'needsIntervention',
+        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }, { kind: 'reviewUnfinished' }],
+      },
+    ]);
+  });
+
+  it('la ejecución siguiente que empieza con aviso vuelve a avisar', async () => {
+    const { notifier, notices } = recordingNotifier();
+    const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: 30 * MINUTE });
+    const config = threadConfig(74);
+    await graph.invoke({ snapshot: snapshot(0), silent: true }, config);
+    await graph.invoke(new Command({ resume: snapshot(30) }), config);
+
+    await graph.invoke({ snapshot: snapshot(40, { headSha: 'nuevo' }) }, config);
+
+    expect(summary(notices)).toEqual([
+      {
+        status: 'needsIntervention',
+        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }, { kind: 'reviewUnfinished' }],
+      },
+      'tracking',
+    ]);
+  });
+});

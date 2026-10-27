@@ -32,7 +32,7 @@
 - [x] 1.5 `stoppedNotice` y `resumedNotice` en `core/notice.ts`, y la pista en el aviso de seguimiento.
   Verificar: los tests de 1.4 en verde, y los que ya había del aviso de seguimiento, actualizados a su
   texto nuevo.
-- [ ] 1.6 **(test en rojo)** El grafo (`design.md` decisión 2) en `core/graph.test.ts`: una ejecución
+- [x] 1.6 **(test en rojo)** El grafo (`design.md` decisión 2) en `core/graph.test.ts`: una ejecución
   que empieza sin aviso de seguimiento no avisa, fija el push de la foto (el tiempo de espera cuenta
   desde esa foto) y espera a las comprobaciones.
 - [ ] 1.7 La entrada opcional del grafo que omite el aviso de seguimiento.
