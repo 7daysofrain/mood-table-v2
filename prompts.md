@@ -1166,6 +1166,17 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El `design.md` decía que el fixture grabado de las PR abiertas ya traía las etiquetas vacías, pero estaba recortado sin ellas. La IA se las añadió, como las devuelve GitHub, y derivó a mano el fixture con `babysitter:stop`, avisándolo en el test.*
 - *La entrada `silent` del grafo, si se quedaba en el estado del hilo, habría silenciado también la ejecución siguiente de un push nuevo. El nodo que la atiende la apaga, y un test lo comprueba.*
 - *En el paso 1.6 la IA esperaba un motivo de menos en «necesita intervención» (también falta la revisión). Era un error del test, no del código, y lo corrigió en el commit de ese paso, que aún no estaba subido.*
+- *En la prueba a mano, el humano pidió ver la PR de prueba en LangGraph Studio. La IA tuvo que explicar que Studio solo ve los hilos de su servidor local, no los del contenedor, y que eso no se arregla abriendo un puerto. El humano no sabía para qué servía entonces Studio y pidió priorizar verlo en vivo: la IA creó `MOO-93` (con change, prioridad *High*, antes de `MOO-81`) y avisó de que compite con la base de datos y el OpenAPI de la entrega.*
+
+**Prompt 3** (con la PR ya en revisión):
+
+> ha fallado, mira a ver que ha pasado
+
+*Codex revisó la PR tres veces, y cada vez encontró un fallo real del mismo tipo. Si Linear estaba caído cuando alguien ponía o quitaba la etiqueta, la parada podía perderse: el sistema seguía el hilo antiguo sin avisar, y la espera contaba también el rato detenida. La IA reprodujo cada caso con un test antes de arreglarlo. Los dos primeros arreglos taparon un punto cada uno (el aviso «Detenida» y el aviso pendiente del hilo). En la tercera ronda vio que la causa era una regla del propio diseño, apuntar la transición solo cuando su aviso sale, y la cambió de raíz: lo primero que hace el driver con cada PR es apuntar si tiene la etiqueta, antes de leer GitHub o avisar. El `design.md` y la D75 lo recogen.*
+
+*Ajustes:*
+- *SonarQube marcó un `await` dentro de un bucle, en la cola de avisos. El orden era intencionado; la IA lo reescribió como una función recursiva en lugar de pedir al humano que aceptara la incidencia.*
+- *El humano pidió esperar a que Codex no tuviera más hallazgos antes de reconstruir el contenedor con el arreglo.*
 
 ---
 
