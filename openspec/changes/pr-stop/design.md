@@ -121,7 +121,12 @@ El driver decide, en cada vuelta y para cada PR que sigue, según la etiqueta y 
     aviso y con la espera contando también el rato detenida. La segunda revisión encontró el mismo caso con un aviso
     del grafo pendiente: reintentarlo lanzaba antes de apuntar la parada. Ahora la parada se apunta
     primero, y terminarla (el aviso pendiente y después encolar «Detenida») se reintenta en cada
-    vuelta, también antes de reanudar si ya le han quitado la etiqueta.
+    vuelta, también antes de reanudar si ya le han quitado la etiqueta. La tercera, con el aviso «Reanudada» en
+    cola: publicar la cola lanzaba antes de ver que la habían vuelto a detener. La regla que queda:
+    **lo primero que hace el driver con cada PR es apuntar si tiene la etiqueta**, sin leer GitHub,
+    avisar ni tocar el grafo, así que nada que falle después puede perder la parada. Reanudar no se
+    apunta por adelantado: si algo falla, la PR sigue detenida, que es el estado seguro, y la espera
+    cuenta desde que se reanuda de verdad.
 - **Al reanudar con una ejecución nueva**, el driver lee primero la foto, después encola «Reanudada» y
   arranca la ejecución sin aviso de seguimiento, que no avisa de nada. Si la lectura falla, no se
   encola nada y se repite en la vuelta siguiente.
