@@ -74,6 +74,11 @@ export function createDriver({
    */
   const stopped = new Set<number>();
   /**
+   * Las PR detenidas cuya parada aún no ha terminado: el hilo tiene un aviso que el canal no ha
+   * aceptado, y la parada espera a que salga para encolar «Detenida» detrás.
+   */
+  const stopping = new Set<number>();
+  /**
    * Los avisos de detenida y reanudada de cada PR que el canal aún no ha aceptado, en orden. La PR no
    * avanza mientras tenga alguno: así llegan antes que los del grafo.
    */
@@ -110,6 +115,7 @@ export function createDriver({
   /** Olvida la PR del todo: la que ya no se sigue sale también de las detenidas, sin aviso. */
   async function drop(number: number) {
     stopped.delete(number);
+    stopping.delete(number);
     pendingTransitionNotices.delete(number);
     await forget(number);
   }
@@ -118,42 +124,55 @@ export function createDriver({
     pendingTransitionNotices.set(number, [...(pendingTransitionNotices.get(number) ?? []), notice]);
   }
 
-  /** Publica en orden los avisos de detenida y reanudada de la PR; si uno falla, lanza y quedan. */
-  async function flushTransitionNotices(number: number) {
-    const pending = pendingTransitionNotices.get(number) ?? [];
-    while (pending.length > 0) {
-      await notifier.notify(pending[0] as PullRequestNotice);
-      pending.shift();
-    }
-    pendingTransitionNotices.delete(number);
+  /**
+   * Publica en orden los avisos de detenida y reanudada de la PR, uno detrás de otro; si uno falla,
+   * lanza y quedan él y los siguientes.
+   */
+  async function flushTransitionNotices(number: number): Promise<void> {
+    const [next, ...rest] = pendingTransitionNotices.get(number) ?? [];
+    if (!next) return;
+    await notifier.notify(next);
+    if (rest.length > 0) pendingTransitionNotices.set(number, rest);
+    else pendingTransitionNotices.delete(number);
+    await flushTransitionNotices(number);
   }
 
   /**
-   * Detiene la PR: termina lo que estaba en curso (un aviso pendiente), la apunta como detenida,
-   * encola su aviso y olvida su hilo, salvo si terminó con el estado final, que se conserva para
-   * comparar su SHA al reanudar. Sin hilo (al arrancar, o un borrador que pasa a lista) la apunta
-   * sin aviso.
+   * Detiene la PR: la apunta como detenida en cuanto ve la etiqueta y termina la parada. Sin hilo
+   * (al arrancar, o un borrador que pasa a lista) la apunta sin aviso.
    */
   async function stop(pullRequest: OpenPullRequest) {
     const { number } = pullRequest;
-    if (stopped.has(number)) return;
-    if (!tracked.has(number)) {
+    if (!stopped.has(number)) {
       stopped.add(number);
-      return;
+      if (tracked.has(number)) stopping.add(number);
     }
+    await finishStopping(pullRequest);
+  }
+
+  /**
+   * Termina la parada de la PR, si le falta: lo que estaba en curso (un aviso pendiente del hilo),
+   * después encola «Detenida» y olvida el hilo, salvo si terminó con el estado final, que se
+   * conserva para comparar su SHA al reanudar. Si el aviso pendiente falla, lanza, y la parada se
+   * termina en la vuelta siguiente, también si para entonces le han quitado la etiqueta.
+   */
+  async function finishStopping(pullRequest: OpenPullRequest) {
+    const { number } = pullRequest;
+    if (!stopping.has(number)) return;
     const config = threadConfig(number);
     let state = await graph.getState(config);
     if (state.next.length > 0 && !waiting(state)) {
       await graph.invoke(null, config);
       state = await graph.getState(config);
     }
-    stopped.add(number);
+    stopping.delete(number);
     queueTransitionNotice(number, stoppedNotice(pullRequest));
     if (state.next.length > 0) await forget(number);
   }
 
   /**
-   * Reanuda la PR: si su hilo terminó con el estado final del mismo push, solo encola el aviso; si
+   * Reanuda la PR, después de terminar su parada si le faltaba (así «Detenida» va antes que
+   * «Reanudada»). Si su hilo terminó con el estado final del mismo push, solo encola el aviso; si
    * no, lee la foto, encola el aviso y empieza una ejecución nueva sin el aviso de seguimiento, con
    * el tiempo de espera contado desde esa foto. Si la lectura falla, sigue detenida y se repite en
    * la vuelta siguiente.
@@ -162,6 +181,7 @@ export function createDriver({
     pullRequest: OpenPullRequest,
     snapshotOf: (pullRequest: OpenPullRequest) => Promise<PullRequestSnapshot>,
   ) {
+    await finishStopping(pullRequest);
     const { number } = pullRequest;
     const config = threadConfig(number);
     if (tracked.has(number)) {

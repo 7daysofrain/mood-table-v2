@@ -687,6 +687,30 @@ describe('si el canal no acepta el aviso de detenida o de reanudada', () => {
     expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
   });
 
+  it('con un aviso del grafo pendiente, si le quitan la etiqueta antes de que vuelva Linear, avisa de todo en orden y la espera cuenta desde que la reanuda', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    // El aviso de seguimiento no sale: queda pendiente en el hilo.
+    notifier.failing = true;
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    await ticks(tick, 40);
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+
+    notifier.failing = false;
+    await tick();
+    await ticks(tick, 29);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+    ]);
+
+    await tick();
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
+  });
+
   it('reintenta el de reanudada en la vuelta siguiente, antes que los del push', async () => {
     const { github, notifier, tick } = setup([pullRequest(74)]);
     await tick();
