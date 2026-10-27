@@ -109,13 +109,19 @@ El driver decide, en cada vuelta y para cada PR que sigue, según la etiqueta y 
 
 - Dos avisos de PR nuevos en `notice.ts`, `stopped` y `resumed`, con su texto en `noticeSummary`. Van a
   la tarea de la PR como los demás; el adaptador de Linear no cambia.
-- **No se pierden sin cola propia:** el driver apunta la transición (detenida o reanudada) solo cuando
-  el aviso se ha publicado. Si Linear lo rechaza, en la vuelta siguiente la etiqueta sigue igual y lo
-  vuelve a intentar. Mientras tanto la PR con la etiqueta no avanza, por la guarda de la decisión 2.
-  Puede llegar dos veces, como cualquier aviso (`specs/pr-tracking`).
-- **Al reanudar con una ejecución nueva**, el driver lee primero la foto, después avisa «Reanudada» y
-  por último arranca la ejecución sin aviso de seguimiento. Si la lectura falla, no se avisa de nada y
-  se repite en la vuelta siguiente.
+- **No se pierden, con una cola por PR:** el driver apunta la transición (detenida o reanudada) en
+  cuanto ve la etiqueta, y encola su aviso. Antes y después de avanzar una PR, publica en orden los
+  avisos que tenga en cola; si Linear rechaza uno, queda en la cola con los siguientes y la PR no
+  avanza hasta que salgan. Así, si alguien quita la etiqueta antes de que salga «Detenida», el
+  mantenedor recibe «Detenida» y después «Reanudada», y la espera cuenta desde que se reanuda. Puede
+  llegar dos veces, como cualquier aviso (`specs/pr-tracking`). Una PR que deja de seguirse se olvida
+  con su cola.
+  - *Corregido tras la revisión de Codex en la #78:* la primera versión apuntaba la transición solo
+    cuando su aviso salía. Con Linear caído, quitar la etiqueta reanudaba el hilo antiguo sin ningún
+    aviso y con la espera contando también el rato detenida.
+- **Al reanudar con una ejecución nueva**, el driver lee primero la foto, después encola «Reanudada» y
+  arranca la ejecución sin aviso de seguimiento, que no avisa de nada. Si la lectura falla, no se
+  encola nada y se repite en la vuelta siguiente.
 - **Para descubrir la etiqueta**, el aviso de seguimiento termina con cómo detener la PR («Para
   detenerla, ponle la etiqueta `babysitter:stop`»), y el de «Detenida», con cómo reanudarla. Lo
   completa la etiqueta, con una descripción clara en el selector de GitHub, y el README.
