@@ -26,6 +26,7 @@ const pullRequest: OpenPullRequest = {
   baseBranch: 'main',
   draft: false,
   headSha: 'a1b2c3d',
+  labels: [],
 };
 
 async function fixture(name: string): Promise<string> {

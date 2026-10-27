@@ -17,6 +17,7 @@ const pullRequest: OpenPullRequest = {
   baseBranch: 'main',
   draft: false,
   headSha: 'a1b2c3d',
+  labels: [],
 };
 
 describe('el aviso de que el sistema sigue una PR', () => {

@@ -20,7 +20,7 @@
   - `adapters/github.test.ts`: `listOpenPullRequests` devuelve las etiquetas de cada PR;
   - `core/pull-request.test.ts`: `isStopped` es cierto solo con la etiqueta `babysitter:stop` (no con
     otras ni sin etiquetas).
-- [ ] 1.3 `labels` en `pullSchema` (adaptador) y en `openPullRequestSchema` (núcleo), `STOP_LABEL` e
+- [x] 1.3 `labels` en `pullSchema` (adaptador) y en `openPullRequestSchema` (núcleo), `STOP_LABEL` e
   `isStopped` en `core/pull-request.ts`, y las PR que construyen a mano los tests y `src/studio.ts`
   con `labels: []`.
   Verificar: los tests de 1.2 en verde; `pnpm typecheck` en verde.

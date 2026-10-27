@@ -23,6 +23,7 @@ function pullRequest(number: number, overrides: Partial<OpenPullRequest> = {}): 
     baseBranch: 'main',
     draft: false,
     headSha: `sha-${number}`,
+    labels: [],
     ...overrides,
   };
 }

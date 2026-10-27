@@ -38,6 +38,7 @@ function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}) 
     baseBranch: 'main',
     draft: false,
     headSha: HEAD,
+    labels: [],
     checks: PENDING,
     review: null,
     observedAt: minute * MINUTE,
