@@ -24,7 +24,7 @@
   `isStopped` en `core/pull-request.ts`, y las PR que construyen a mano los tests y `src/studio.ts`
   con `labels: []`.
   Verificar: los tests de 1.2 en verde; `pnpm typecheck` en verde.
-- [ ] 1.4 **(test en rojo)** Los avisos (`design.md` decisión 3) en `core/notice.test.ts`: `stopped` y
+- [x] 1.4 **(test en rojo)** Los avisos (`design.md` decisión 3) en `core/notice.test.ts`: `stopped` y
   `resumed` son avisos de PR, con su frase en `noticeSummary` («Detengo su seguimiento…» con cómo
   reanudarla, «Reanudo su seguimiento.»); el de seguimiento termina con cómo detenerla (nombra
   `babysitter:stop`). En `adapters/linear.test.ts`, que `stopped` va a la tarea de la PR como los

@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { githubUnauthorizedNotice, trackingNotice } from '../core/notice.ts';
+import { githubUnauthorizedNotice, stoppedNotice, trackingNotice } from '../core/notice.ts';
 import type { OpenPullRequest } from '../core/pull-request.ts';
 import { createLinearNotifier } from './linear.ts';
 
@@ -202,6 +202,23 @@ describe('el aviso de una PR', () => {
     await notifier().notify(trackingNotice(pullRequest));
 
     expect(comments(linear.graphql).map((comment) => comment.issueId)).toEqual([INBOX_ISSUE_ID]);
+  });
+
+  it('el de PR detenida va a su tarea, como los demás', async () => {
+    const linear = await fakeLinear();
+
+    await notifier().notify(stoppedNotice(pullRequest));
+
+    expect(comments(linear.graphql)).toEqual([
+      {
+        issueId: TASK_ISSUE_ID,
+        body: [
+          `${PROFILE_URL} · #74 · Avisar de cada PR lista para revisar`,
+          'Detengo su seguimiento. Para reanudarlo, quítale la etiqueta `babysitter:stop`.',
+          'https://github.com/7daysofrain/mood-table-v2/pull/74',
+        ].join('\n'),
+      },
+    ]);
   });
 });
 

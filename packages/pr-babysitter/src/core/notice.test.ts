@@ -5,6 +5,8 @@ import {
   finalNotice,
   githubUnauthorizedNotice,
   noticeSummary,
+  resumedNotice,
+  stoppedNotice,
   trackingNotice,
 } from './notice.ts';
 import type { OpenPullRequest } from './pull-request.ts';
@@ -36,6 +38,46 @@ describe('el aviso de que el sistema sigue una PR', () => {
     expect(noticeSummary(trackingNotice(pullRequest))).toBe(
       'La sigo: espero a que terminen sus comprobaciones.',
     );
+  });
+
+  it('termina diciendo cómo detener su seguimiento: con la etiqueta babysitter:stop', () => {
+    expect(noticeSummary(trackingNotice(pullRequest))).toMatch(
+      /Para detenerla, ponle la etiqueta `babysitter:stop`\.$/,
+    );
+  });
+});
+
+describe('el aviso de que el sistema ha detenido el seguimiento de una PR', () => {
+  it('identifica la PR y dice cómo reanudarlo: quitando la etiqueta babysitter:stop', () => {
+    const notice = stoppedNotice(pullRequest);
+
+    expect(notice).toEqual({
+      type: 'stopped',
+      pullRequest: {
+        number: 74,
+        title: 'Avisar de cada PR lista para revisar',
+        url: 'https://github.com/7daysofrain/mood-table-v2/pull/74',
+      },
+    });
+    expect(noticeSummary(notice)).toBe(
+      'Detengo su seguimiento. Para reanudarlo, quítale la etiqueta `babysitter:stop`.',
+    );
+  });
+});
+
+describe('el aviso de que el sistema ha reanudado el seguimiento de una PR', () => {
+  it('identifica la PR y dice que lo reanuda', () => {
+    const notice = resumedNotice(pullRequest);
+
+    expect(notice).toEqual({
+      type: 'resumed',
+      pullRequest: {
+        number: 74,
+        title: 'Avisar de cada PR lista para revisar',
+        url: 'https://github.com/7daysofrain/mood-table-v2/pull/74',
+      },
+    });
+    expect(noticeSummary(notice)).toBe('Reanudo su seguimiento.');
   });
 });
 
