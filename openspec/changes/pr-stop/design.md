@@ -150,7 +150,7 @@ El driver decide, en cada vuelta y para cada PR que sigue, según la etiqueta y 
 |---|---|
 | **1. Qué se reparte entre agentes** | Nada: sigue sin haber agentes. |
 | **2. Qué contexto recibe cada uno, y si es incorrecto** | El driver ve las etiquetas en la lista de PR; el grafo no sabe que existen. |
-| **3. Dónde vive el estado, y si algo falla a mitad** | La etiqueta, en GitHub, es el estado deseado; el driver guarda en memoria qué ha avisado. Un aviso que falla se reintenta en la vuelta siguiente sin que la PR avance (decisión 3). |
+| **3. Dónde vive el estado, y si algo falla a mitad** | La etiqueta, en GitHub, es el estado deseado; el driver guarda en memoria qué PR ha visto detenidas y los avisos de detenida y reanudada que aún no han salido. La parada se apunta antes de cualquier lectura o aviso, y un aviso que falla se reintenta en la vuelta siguiente sin que la PR avance (decisión 3). |
 | **4. Qué decisiones no necesitan LLM** | Todas: si está detenida, qué aviso toca y si se reanuda desde cero. |
 | **5. Cuándo vuelve el control a la persona** | Cuando quiere: poner la etiqueta le devuelve la PR, y quitarla se la vuelve a dar al sistema. |
 
