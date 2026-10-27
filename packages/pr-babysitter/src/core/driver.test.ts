@@ -663,6 +663,30 @@ describe('si el canal no acepta el aviso de detenida o de reanudada', () => {
     ]);
   });
 
+  it('si le quitan la etiqueta antes de que salga el de detenida, avisa de los dos y la espera cuenta desde que la reanuda', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    // La detienen mientras Linear no acepta avisos, y le quitan la etiqueta antes de que vuelva.
+    github.pullRequests = [stoppedPullRequest(74)];
+    notifier.failing = true;
+    await ticks(tick, 40);
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+
+    notifier.failing = false;
+    await tick();
+    await ticks(tick, 29);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+      [74, 'resumed'],
+    ]);
+
+    await tick();
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
+  });
+
   it('reintenta el de reanudada en la vuelta siguiente, antes que los del push', async () => {
     const { github, notifier, tick } = setup([pullRequest(74)]);
     await tick();

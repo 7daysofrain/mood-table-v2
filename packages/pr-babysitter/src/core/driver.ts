@@ -19,6 +19,7 @@ import { type BaseCheckpointSaver, Command } from '@langchain/langgraph';
 import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
 import {
   githubUnauthorizedNotice,
+  type PullRequestNotice,
   resumedNotice,
   stoppedNotice,
   type SystemNotice,
@@ -68,10 +69,15 @@ export function createDriver({
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
   /**
-   * Las PR detenidas: avisadas, o vistas ya con la etiqueta al arrancar o al dejar de ser borrador.
-   * No se persiste: al arrancar se reconstruye de las etiquetas (decisión 4).
+   * Las PR detenidas, desde que se ve la etiqueta, aunque su aviso aún no haya salido. No se
+   * persiste: al arrancar se reconstruye de las etiquetas (decisión 4).
    */
   const stopped = new Set<number>();
+  /**
+   * Los avisos de detenida y reanudada de cada PR que el canal aún no ha aceptado, en orden. La PR no
+   * avanza mientras tenga alguno: así llegan antes que los del grafo.
+   */
+  const pendingTransitionNotices = new Map<number, PullRequestNotice[]>();
   /** Avisos del sistema que el canal aún no ha aceptado. */
   const pendingSystemNotices: SystemNotice[] = [];
   /** Si ya se ha avisado de que GitHub rechaza el token, desde la última vuelta que lo aceptó. */
@@ -104,14 +110,29 @@ export function createDriver({
   /** Olvida la PR del todo: la que ya no se sigue sale también de las detenidas, sin aviso. */
   async function drop(number: number) {
     stopped.delete(number);
+    pendingTransitionNotices.delete(number);
     await forget(number);
   }
 
+  function queueTransitionNotice(number: number, notice: PullRequestNotice) {
+    pendingTransitionNotices.set(number, [...(pendingTransitionNotices.get(number) ?? []), notice]);
+  }
+
+  /** Publica en orden los avisos de detenida y reanudada de la PR; si uno falla, lanza y quedan. */
+  async function flushTransitionNotices(number: number) {
+    const pending = pendingTransitionNotices.get(number) ?? [];
+    while (pending.length > 0) {
+      await notifier.notify(pending[0] as PullRequestNotice);
+      pending.shift();
+    }
+    pendingTransitionNotices.delete(number);
+  }
+
   /**
-   * Detiene la PR: termina lo que estaba en curso (un aviso pendiente), avisa una vez y olvida su
-   * hilo, salvo si terminó con el estado final, que se conserva para comparar su SHA al reanudar.
-   * Sin hilo (al arrancar, o un borrador que pasa a lista) la apunta sin aviso. El aviso se apunta
-   * solo cuando sale: si el canal no lo acepta, se reintenta en la vuelta siguiente.
+   * Detiene la PR: termina lo que estaba en curso (un aviso pendiente), la apunta como detenida,
+   * encola su aviso y olvida su hilo, salvo si terminó con el estado final, que se conserva para
+   * comparar su SHA al reanudar. Sin hilo (al arrancar, o un borrador que pasa a lista) la apunta
+   * sin aviso.
    */
   async function stop(pullRequest: OpenPullRequest) {
     const { number } = pullRequest;
@@ -126,16 +147,16 @@ export function createDriver({
       await graph.invoke(null, config);
       state = await graph.getState(config);
     }
-    await notifier.notify(stoppedNotice(pullRequest));
     stopped.add(number);
+    queueTransitionNotice(number, stoppedNotice(pullRequest));
     if (state.next.length > 0) await forget(number);
   }
 
   /**
-   * Reanuda la PR: si su hilo terminó con el estado final del mismo push, solo avisa; si no, lee la
-   * foto, avisa y empieza una ejecución nueva sin el aviso de seguimiento, con el tiempo de espera
-   * contado desde esa foto. Si la lectura o el aviso fallan, sigue detenida y se repite en la vuelta
-   * siguiente.
+   * Reanuda la PR: si su hilo terminó con el estado final del mismo push, solo encola el aviso; si
+   * no, lee la foto, encola el aviso y empieza una ejecución nueva sin el aviso de seguimiento, con
+   * el tiempo de espera contado desde esa foto. Si la lectura falla, sigue detenida y se repite en
+   * la vuelta siguiente.
    */
   async function resume(
     pullRequest: OpenPullRequest,
@@ -146,16 +167,29 @@ export function createDriver({
     if (tracked.has(number)) {
       const state = await graph.getState(config);
       if (lastSnapshot(state.values).headSha === pullRequest.headSha) {
-        await notifier.notify(resumedNotice(pullRequest));
         stopped.delete(number);
+        queueTransitionNotice(number, resumedNotice(pullRequest));
         return;
       }
     }
     const snapshot = await snapshotOf(pullRequest);
-    await notifier.notify(resumedNotice(pullRequest));
     stopped.delete(number);
+    queueTransitionNotice(number, resumedNotice(pullRequest));
     tracked.add(number);
     await graph.invoke({ snapshot, silent: true }, config);
+  }
+
+  /**
+   * Publica primero los avisos de detenida y reanudada pendientes de la PR y después la detiene, la
+   * reanuda o la avanza, y publica los que eso encole.
+   */
+  async function advance(
+    pullRequest: OpenPullRequest,
+    snapshotOf: (pullRequest: OpenPullRequest) => Promise<PullRequestSnapshot>,
+  ) {
+    await flushTransitionNotices(pullRequest.number);
+    await step(pullRequest, snapshotOf);
+    await flushTransitionNotices(pullRequest.number);
   }
 
   /**
@@ -164,7 +198,7 @@ export function createDriver({
    * foto solo se lee de GitHub cuando hace falta: un aviso pendiente se reintenta con la que ya
    * tiene el hilo, y un hilo terminado sin push nuevo no se lee.
    */
-  async function advance(
+  async function step(
     pullRequest: OpenPullRequest,
     snapshotOf: (pullRequest: OpenPullRequest) => Promise<PullRequestSnapshot>,
   ) {
