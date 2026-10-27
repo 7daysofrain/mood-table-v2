@@ -35,8 +35,8 @@ describe('el aviso de que el sistema sigue una PR', () => {
   });
 
   it('dice que el sistema la sigue y espera a que terminen sus comprobaciones', () => {
-    expect(noticeSummary(trackingNotice(pullRequest))).toBe(
-      'La sigo: espero a que terminen sus comprobaciones.',
+    expect(noticeSummary(trackingNotice(pullRequest))).toMatch(
+      /^La sigo: espero a que terminen sus comprobaciones\./,
     );
   });
 

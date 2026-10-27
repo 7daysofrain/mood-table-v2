@@ -188,7 +188,8 @@ describe('el aviso de una PR', () => {
         issueId: TASK_ISSUE_ID,
         body: [
           `${PROFILE_URL} · #74 · Avisar de cada PR lista para revisar`,
-          'La sigo: espero a que terminen sus comprobaciones.',
+          'La sigo: espero a que terminen sus comprobaciones. ' +
+            'Para detenerla, ponle la etiqueta `babysitter:stop`.',
           'https://github.com/7daysofrain/mood-table-v2/pull/74',
         ].join('\n'),
       },

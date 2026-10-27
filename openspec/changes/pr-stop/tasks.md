@@ -29,7 +29,7 @@
   reanudarla, «Reanudo su seguimiento.»); el de seguimiento termina con cómo detenerla (nombra
   `babysitter:stop`). En `adapters/linear.test.ts`, que `stopped` va a la tarea de la PR como los
   demás.
-- [ ] 1.5 `stoppedNotice` y `resumedNotice` en `core/notice.ts`, y la pista en el aviso de seguimiento.
+- [x] 1.5 `stoppedNotice` y `resumedNotice` en `core/notice.ts`, y la pista en el aviso de seguimiento.
   Verificar: los tests de 1.4 en verde, y los que ya había del aviso de seguimiento, actualizados a su
   texto nuevo.
 - [ ] 1.6 **(test en rojo)** El grafo (`design.md` decisión 2) en `core/graph.test.ts`: una ejecución

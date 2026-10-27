@@ -3,7 +3,7 @@
  * del canal. El adaptador del canal decide a quién menciona, dónde lo publica y con qué formato;
  * aquí solo se decide qué se dice.
  */
-import type { OpenPullRequest } from './pull-request.ts';
+import { type OpenPullRequest, STOP_LABEL } from './pull-request.ts';
 import type { FinalState, InterventionReason } from './tracking.ts';
 
 /** La PR de la que habla un aviso: lo justo para identificarla. */
@@ -32,12 +32,29 @@ export interface FinalNotice {
   state: FinalState;
 }
 
+/** Alguien ha detenido el seguimiento de la PR: el sistema no avanza en ella (change pr-stop). */
+export interface StoppedNotice {
+  type: 'stopped';
+  pullRequest: NoticePullRequest;
+}
+
+/** Alguien ha reanudado el seguimiento de la PR (change pr-stop). */
+export interface ResumedNotice {
+  type: 'resumed';
+  pullRequest: NoticePullRequest;
+}
+
 /** GitHub rechaza el token: un aviso del sistema, no de una PR (decisión 3). */
 export interface GitHubUnauthorizedNotice {
   type: 'githubUnauthorized';
 }
 
-export type PullRequestNotice = TrackingNotice | ChecksFinishedNotice | FinalNotice;
+export type PullRequestNotice =
+  | TrackingNotice
+  | ChecksFinishedNotice
+  | FinalNotice
+  | StoppedNotice
+  | ResumedNotice;
 export type SystemNotice = GitHubUnauthorizedNotice;
 export type Notice = PullRequestNotice | SystemNotice;
 
@@ -57,6 +74,14 @@ export function finalNotice(pullRequest: OpenPullRequest, state: FinalState): Fi
   return { type: 'final', pullRequest: noticePullRequest(pullRequest), state };
 }
 
+export function stoppedNotice(pullRequest: OpenPullRequest): StoppedNotice {
+  return { type: 'stopped', pullRequest: noticePullRequest(pullRequest) };
+}
+
+export function resumedNotice(pullRequest: OpenPullRequest): ResumedNotice {
+  return { type: 'resumed', pullRequest: noticePullRequest(pullRequest) };
+}
+
 export function githubUnauthorizedNotice(): GitHubUnauthorizedNotice {
   return { type: 'githubUnauthorized' };
 }
@@ -70,11 +95,19 @@ export function isPullRequestNotice(notice: Notice): notice is PullRequestNotice
 export function noticeSummary(notice: Notice): string {
   switch (notice.type) {
     case 'tracking':
-      return 'La sigo: espero a que terminen sus comprobaciones.';
+      // Cómo detenerla, para que la etiqueta se descubra sin leer la documentación (pr-stop, 3).
+      return (
+        'La sigo: espero a que terminen sus comprobaciones. ' +
+        `Para detenerla, ponle la etiqueta \`${STOP_LABEL}\`.`
+      );
     case 'checksFinished':
       return 'Han terminado sus comprobaciones: espero a la revisión.';
     case 'final':
       return `${finalSummary(notice.state)} Dejo de seguirla.`;
+    case 'stopped':
+      return `Detengo su seguimiento. Para reanudarlo, quítale la etiqueta \`${STOP_LABEL}\`.`;
+    case 'resumed':
+      return 'Reanudo su seguimiento.';
     case 'githubUnauthorized':
       return 'No puedo leer GitHub: rechaza el token. Lo vuelvo a intentar cada vuelta.';
   }
