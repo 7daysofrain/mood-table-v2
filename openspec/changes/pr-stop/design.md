@@ -118,7 +118,10 @@ El driver decide, en cada vuelta y para cada PR que sigue, según la etiqueta y 
   con su cola.
   - *Corregido tras la revisión de Codex en la #78:* la primera versión apuntaba la transición solo
     cuando su aviso salía. Con Linear caído, quitar la etiqueta reanudaba el hilo antiguo sin ningún
-    aviso y con la espera contando también el rato detenida.
+    aviso y con la espera contando también el rato detenida. La segunda revisión encontró el mismo caso con un aviso
+    del grafo pendiente: reintentarlo lanzaba antes de apuntar la parada. Ahora la parada se apunta
+    primero, y terminarla (el aviso pendiente y después encolar «Detenida») se reintenta en cada
+    vuelta, también antes de reanudar si ya le han quitado la etiqueta.
 - **Al reanudar con una ejecución nueva**, el driver lee primero la foto, después encola «Reanudada» y
   arranca la ejecución sin aviso de seguimiento, que no avisa de nada. Si la lectura falla, no se
   encola nada y se repite en la vuelta siguiente.
