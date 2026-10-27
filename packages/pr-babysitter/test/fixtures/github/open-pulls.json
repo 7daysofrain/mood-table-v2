@@ -12,6 +12,7 @@
     "created_at": "2026-10-25T07:58:08Z",
     "updated_at": "2026-10-25T07:59:43Z",
     "draft": true,
+    "labels": [],
     "head": {
       "label": "7daysofrain:7daysofrain/moo-83-avisar-de-cada-pr-lista-para-revisar",
       "ref": "7daysofrain/moo-83-avisar-de-cada-pr-lista-para-revisar",
@@ -36,6 +37,7 @@
     "created_at": "2026-10-19T08:52:16Z",
     "updated_at": "2026-10-20T18:58:53Z",
     "draft": false,
+    "labels": [],
     "head": {
       "label": "7daysofrain:dependabot/npm_and_yarn/npm-minor-patch-a4e0e16526",
       "ref": "dependabot/npm_and_yarn/npm-minor-patch-a4e0e16526",

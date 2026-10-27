@@ -11,10 +11,10 @@
 
 ## 1. MOO-89 · infra
 
-- [ ] 1.1 El término *PR detenida* en el glosario de `docs/pr-babysitter.md` §8 (ya escrito en la rama
+- [x] 1.1 El término *PR detenida* en el glosario de `docs/pr-babysitter.md` §8 (ya escrito en la rama
   al refinar `MOO-74`).
   Verificar: el diff del commit es solo esa fila.
-- [ ] 1.2 **(test en rojo)** Las etiquetas en la foto (`design.md` decisión 1):
+- [x] 1.2 **(test en rojo)** Las etiquetas en la foto (`design.md` decisión 1):
   - `test/fixtures/github/open-pulls-stopped.json`: copia de `open-pulls.json` con la etiqueta
     `babysitter:stop` en una de las PR;
   - `adapters/github.test.ts`: `listOpenPullRequests` devuelve las etiquetas de cada PR;
