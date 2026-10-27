@@ -1147,6 +1147,26 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Studio se quedaba en negro: Chrome esperaba a que el humano diera permiso para acceder a la red local, una ventana del navegador que la IA no puede aceptar. Con el permiso, la IA lanzó un hilo con una foto escrita a mano, lo vio pararse en `esperarComprobaciones` y en `esperarRevisor`, lo reanudó dos veces desde el editor de Studio y comprobó los tres avisos en el log. El README dice ahora que hace falta ese permiso.*
 
+#### 6.31 Detener y reanudar el seguimiento de una PR: refinamiento, change e implementación (`MOO-74` y `MOO-89`)
+
+**Prompt 1** (en `/opsx:explore MOO-74`, cuando la IA ya discutía cómo detener una PR):
+
+> creo que estamos yendo demasiado rapido, esto son detalles de implementacion, vamos a /refine-story primero
+
+*Claude Code (`claude-opus-5-5`, 26-oct). La historia aún no tenía criterios y la exploración ya hablaba del mecanismo. El humano la paró y volvió a `/refine-story`: primero el comportamiento (detener, reanudar, un push nuevo no la reanuda, sigue detenida tras un reinicio, solo con permiso de escritura) y después el cómo. Con la historia estimada, la exploración del 27-oct eligió la etiqueta `babysitter:stop` frente a un comando en un comentario, un workflow de GitHub Actions o pasar la PR a borrador (D74), y el humano decidió que reanudar una PR en estado final sin push nuevo solo avise (D75). Salió el change `pr-stop`, con una tarea, `MOO-89`.*
+
+**Prompt 2:**
+
+> /opsx:apply MOO-74
+
+*Claude Code (`claude-opus-5-5`, 27-oct). La IA implementó la sección `MOO-89` del change con un commit por paso, en TDD. La guarda vive en un solo sitio, el driver, que nunca reanuda el hilo de una PR detenida; reanudar empieza una ejecución nueva sin el aviso de seguimiento, y el grafo solo gana esa entrada opcional.*
+
+*Ajustes:*
+- *La rama de la historia iba un commit por detrás de `main` (el archivado de `pr-review-codex`). La IA no la rebasó: creó la rama de la tarea desde `main` y le pasó los dos commits del change.*
+- *El `design.md` decía que el fixture grabado de las PR abiertas ya traía las etiquetas vacías, pero estaba recortado sin ellas. La IA se las añadió, como las devuelve GitHub, y derivó a mano el fixture con `babysitter:stop`, avisándolo en el test.*
+- *La entrada `silent` del grafo, si se quedaba en el estado del hilo, habría silenciado también la ejecución siguiente de un push nuevo. El nodo que la atiende la apaga, y un test lo comprueba.*
+- *En el paso 1.6 la IA esperaba un motivo de menos en «necesita intervención» (también falta la revisión). Era un error del test, no del código, y lo corrigió en el commit de ese paso, que aún no estaba subido.*
+
 ---
 
 ### 7. Pull Requests

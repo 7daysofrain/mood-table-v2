@@ -57,7 +57,7 @@
   reanudar.
   Verificar: los tests de 1.8 y todos los del driver que ya había en verde; `pnpm lint`,
   `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 1.10 Documentación:
+- [x] 1.10 Documentación:
   - README §2.2 (*PR Babysitter*, el driver): detener y reanudar una PR con la etiqueta, y qué hace
     con el hilo;
   - README §2.4 (*PR Babysitter*): cómo detener y reanudar el seguimiento de una PR, y crear la
