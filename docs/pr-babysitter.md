@@ -66,7 +66,7 @@ Se construye por tres razones:
 | BE1 | **Solo intervengo cuando hace falta.** | Las PR llegan a *lista para integrar* sin el mantenedor, salvo los casos de la política de escalado (§4.1). |
 | BE2 | **El merge es mío.** | El sistema nunca integra una PR; no tiene permiso para hacerlo. |
 | BE3 | **Juzga bien antes de actuar.** | Antes de dejarle arreglar, su triaje se mide contra PR ya cerradas y acierta lo suficiente. |
-| BE4 | **Cada decisión se puede explicar.** | Para cada PR se ve qué decidió cada agente, por qué y cuánto costó. Sus comentarios en la PR se identifican como del sistema. |
+| BE4 | **Cada decisión se puede explicar.** | Para cada PR se ve qué decidió cada agente, por qué y cuánto costó. Sus comentarios en la PR se identifican como del sistema. Cuando decide un modelo de decisión, el porqué es su probabilidad frente al umbral, o la regla que ha decidido por él (`MOO-75`). |
 | BE5 | **Respeta las reglas del repo.** | Sigue el protocolo de la PR de `workflow.md` §4.4 y no se sale del alcance de la PR. |
 | BE6 | **Un comentario ajeno no lo controla.** | Solo atiende a Codex, SonarQube y el mantenedor; un comentario de otra persona no le hace cambiar código ni publicar nada. |
 | BE7 | **Se recupera solo.** | Si la máquina se apaga, al volver retoma cada PR donde estaba. |
@@ -184,7 +184,7 @@ cada historia.
 | # | Pregunta | Se resuelve en |
 |---|---|---|
 | BQ1 | Por dónde avisa el sistema al mantenedor | BH1. ✅ **Resuelta (25-oct, `MOO-73`):** por Linear, con un comentario de una app propia en la tarea de la PR que menciona al mantenedor; lo que no tiene tarea va a un issue buzón (D70) |
-| BQ2 | Dónde ve el mantenedor las decisiones del modo sombra (un comentario resumen en la PR o solo en las trazas) | BH2 |
+| BQ2 | Dónde ve el mantenedor las decisiones del modo sombra (un comentario resumen en la PR o solo en las trazas) | BH2. ✅ **Resuelta (28-oct, `MOO-75`):** en un comentario resumen en la PR, firmado por el sistema, uno por push |
 | BQ3 | Qué hace con las PR de Dependabot si subir commits a su rama hace que Dependabot deje de mantenerla *(asumido: comprobarlo en su documentación)*: escalar en vez de arreglar, o pedirle a Dependabot que la rehaga | BH3 |
 | BQ4 | Por dónde contesta el mantenedor cuando el sistema escala | BH4 |
 | BQ5 | Los umbrales de BE3, BE8 y de la política (§4.1) | La spec de cada historia |
@@ -203,7 +203,9 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Comprobación** | `check` | Cada puerta automática de la PR: `lint`, `typecheck`, `test`, `e2e` y SonarQube. |
 | **Alcance de la PR** | `prScope` | Lo que la PR debe cambiar: su tarea y su spec, el plan de la *chore* o la actualización de la dependencia. Salirse de él es motivo para escalar. |
 | **Hallazgo** | `finding` | Algo que una PR debe atender: un comentario del revisor, una incidencia nueva de SonarQube o una comprobación que falla. |
-| **Triaje** | `triage` | Clasificar un hallazgo en **real** (`valid`), **no aplica** (`notApplicable`) o **exige criterio** (`needsJudgment`). |
+| **Triaje** | `triage` | Clasificar un hallazgo en **real** (`valid`), **no aplica** (`notApplicable`) o **exige criterio** (`needsJudgment`). La pregunta es si hay que arreglarlo en esta PR antes de integrarla: *real* es que sí. |
+| **No aplica** | `notApplicable` | Hallazgo que no hay que arreglar en esta PR: está equivocado, ya está resuelto, cae fuera del alcance de la PR o es un nit (una cuestión de gusto o una mejora menor que no merece un commit). |
+| **Exige criterio** | `needsJudgment` | Hallazgo que el sistema no decide solo. Sale cuando su confianza no llega al umbral, o por una regla: descartaría un hallazgo de severidad alta, no ha podido reunir su contexto o se ha llegado al tope de gasto de la PR. |
 | **Arreglo** | `fix` | Cambio que atiende un hallazgo. |
 | **Modo sombra** | `shadowMode` | El sistema decide y registra, pero no actúa. |
 | **Modo ensayo** | `dryRun` | El sistema arregla en local y deja el arreglo en una rama para revisarlo, pero no publica. |

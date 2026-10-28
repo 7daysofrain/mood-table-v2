@@ -26,7 +26,7 @@
   Verificar: el resultado de las tres, anotado en `design.md` (decisiones 2, 3 y 6) con un commit. Si
   el cliente no funciona con Ollama, la decisión 3 dice si va `fetch` o Jev; si el log pide permiso,
   el mantenedor decide si lo da.
-- [ ] 1.2 `docs/pr-babysitter.md`:
+- [x] 1.2 `docs/pr-babysitter.md`:
   - §7, BQ2 resuelta: comentario resumen en la PR (`MOO-75`, 28-oct);
   - §8, glosario: *triaje* (la pregunta es si hay que arreglarlo en esta PR), *no aplica* (incluye los
     nits que no merecen un commit) y *exige criterio* (sale del umbral de confianza y de las reglas:
