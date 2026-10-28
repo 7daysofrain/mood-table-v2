@@ -1,10 +1,10 @@
-import type { SourceMessage } from '@moodtable/shared';
-import { act, fireEvent, screen } from '@testing-library/react';
+import type { SourceMessage, StripState } from '@moodtable/shared';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { FakeContext } from '../test/fake-audio-context.ts';
 import { render } from '../test/render.tsx';
-import { App, type PanelConnection } from './App.tsx';
+import { App, type PanelConnection, type PanelEffectRequests } from './App.tsx';
 import { AudioPlayer } from './audio/player.ts';
 import type { ConnectionStatus, PositionListener } from './engine/connection.ts';
 
@@ -18,6 +18,7 @@ function fakeConnection() {
     source: undefined as SourceMessage | undefined,
     level: undefined as number | undefined,
     sourceLost: false as boolean,
+    strips: undefined as readonly StripState[] | undefined,
     start: vi.fn(),
     stop: vi.fn(),
     subscribe: (listener: () => void) => {
@@ -46,11 +47,16 @@ function fakeConnection() {
     connection.sourceLost = lost;
     notify();
   };
+  /** Las tiras del motor (mensaje `6`), que llegan en su propio aviso. */
+  const setStrips = (strips: readonly StripState[] | undefined) => {
+    connection.strips = strips;
+    notify();
+  };
   /** Una posición del fichero que llega del motor en el instante `arrivedAt` (ms). */
   const sendPosition = (position: number, arrivedAt: number) => {
     for (const listener of positionListeners) listener({ seq: 0, position }, arrivedAt);
   };
-  return { connection, setStatus, setSource, setSourceLost, sendPosition };
+  return { connection, setStatus, setSource, setSourceLost, setStrips, sendPosition };
 }
 
 describe('App', () => {
@@ -255,5 +261,180 @@ describe('oír el fichero de audio desde la cabecera', () => {
     expect(() => {
       Object.assign(window, { moodTableAudio: { state: 'silent' } });
     }).toThrow();
+  });
+});
+
+const BARRA: StripState = {
+  id: 'barra',
+  name: 'Barra',
+  ledCount: 60,
+  output: { type: 'virtual' },
+  effect: 'energy',
+};
+const CABINA: StripState = {
+  id: 'cabina',
+  name: 'Cabina',
+  ledCount: 30,
+  output: { type: 'virtual' },
+  effect: 'breathing',
+};
+
+/** El panel conectado al motor, con un fichero como fuente y un envío de cambios falso. */
+function panelWithStrips(source: SourceMessage = { kind: 'file', name: 'golpes.wav' }) {
+  const fake = fakeConnection();
+  const requests = { send: vi.fn() } satisfies PanelEffectRequests;
+  render(<App connection={fake.connection} requests={requests} />);
+  act(() => {
+    fake.setStatus('connected');
+    fake.setSource(source);
+    fake.setStrips([BARRA, CABINA]);
+  });
+  /** Se pierde la conexión: como la conexión real, olvida la fuente y las tiras. */
+  const disconnect = () => {
+    act(() => {
+      fake.connection.source = undefined;
+      fake.connection.strips = undefined;
+      fake.setStatus('disconnected');
+    });
+  };
+  return { ...fake, requests, disconnect };
+}
+
+const zone = (name: string) => screen.getByRole('region', { name });
+const strip = (name: string) => within(zone('Tiras')).getByRole('radio', { name: new RegExp(name) });
+const effect = (name: string) =>
+  within(zone('Efectos')).getByRole('button', { name: new RegExp(`^${name}`) });
+
+describe('las zonas Tiras y Efectos', () => {
+  it('Tiras lista las tiras del motor y, al abrir, la primera queda seleccionada', () => {
+    panelWithStrips();
+
+    expect(within(zone('Tiras')).getAllByRole('radio')).toHaveLength(2);
+    expect(strip('Barra')).toBeChecked();
+    expect(strip('Barra')).toHaveTextContent('60 LEDs · Virtual');
+    expect(strip('Cabina')).not.toBeChecked();
+  });
+
+  it('Efectos marca el efecto activo de la tira seleccionada', () => {
+    panelWithStrips();
+
+    expect(effect('Energía')).toHaveAttribute('aria-current', 'true');
+    expect(effect('Respiración')).not.toHaveAttribute('aria-current');
+  });
+
+  it('al seleccionar otra tira, Efectos muestra el activo de esa', () => {
+    panelWithStrips();
+
+    fireEvent.click(strip('Cabina'));
+
+    expect(strip('Cabina')).toBeChecked();
+    expect(effect('Respiración')).toHaveAttribute('aria-current', 'true');
+    expect(effect('Energía')).not.toHaveAttribute('aria-current');
+  });
+
+  it('pulsar un efecto lo envía para la tira seleccionada, una sola vez', () => {
+    const panel = panelWithStrips();
+    fireEvent.click(strip('Cabina'));
+
+    fireEvent.pointerDown(effect('Energía'));
+    fireEvent.click(effect('Energía'), { detail: 1 });
+
+    expect(panel.requests.send).toHaveBeenCalledTimes(1);
+    expect(panel.requests.send).toHaveBeenCalledWith('cabina', 'energy');
+  });
+
+  it('el activo cambia cuando lo dice el motor, no al pulsar', () => {
+    const panel = panelWithStrips();
+
+    fireEvent.pointerDown(effect('Respiración'));
+    expect(effect('Energía')).toHaveAttribute('aria-current', 'true');
+
+    act(() => {
+      panel.setStrips([{ ...BARRA, effect: 'breathing' }, CABINA]);
+    });
+    expect(effect('Respiración')).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('sin fuente de audio, energía está desactivado con su motivo', () => {
+    panelWithStrips({ kind: 'none' });
+
+    expect(effect('Energía')).toBeDisabled();
+    expect(within(zone('Efectos')).getByText('Necesita una fuente de audio')).toBeVisible();
+    expect(effect('Respiración')).toBeEnabled();
+  });
+
+  it('sin conexión, las dos zonas solo tienen su título', () => {
+    const panel = panelWithStrips();
+
+    panel.disconnect();
+
+    expect(zone('Tiras')).toHaveTextContent(/^Tiras$/);
+    expect(zone('Efectos')).toHaveTextContent(/^Efectos$/);
+  });
+
+  it('antes de que el motor diga sus tiras, las dos zonas solo tienen su título', () => {
+    render(<App connection={fakeConnection().connection} requests={{ send: vi.fn() }} />);
+
+    expect(zone('Tiras')).toHaveTextContent(/^Tiras$/);
+    expect(zone('Efectos')).toHaveTextContent(/^Efectos$/);
+  });
+
+  it('al volver la conexión, la tira que estaba seleccionada lo sigue estando', () => {
+    const panel = panelWithStrips();
+    fireEvent.click(strip('Cabina'));
+    panel.disconnect();
+
+    act(() => {
+      panel.setStatus('connected');
+      panel.setSource({ kind: 'file', name: 'golpes.wav' });
+      panel.setStrips([BARRA, CABINA]);
+    });
+
+    expect(strip('Cabina')).toBeChecked();
+  });
+
+  it('la tira seleccionada al abrir, sin pulsarla, sigue seleccionada aunque vuelvan en otro orden', () => {
+    const panel = panelWithStrips();
+    panel.disconnect();
+
+    act(() => {
+      panel.setStatus('connected');
+      panel.setStrips([CABINA, BARRA]);
+    });
+
+    expect(strip('Barra')).toBeChecked();
+    expect(effect('Energía')).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('tras reiniciar el motor, marca el efecto que pinta el motor, no el que tenía antes', () => {
+    const panel = panelWithStrips();
+    act(() => {
+      panel.setStrips([{ ...BARRA, effect: 'breathing' }, CABINA]);
+    });
+    panel.disconnect();
+
+    // El motor arranca otra vez con el efecto del fichero.
+    act(() => {
+      panel.setStatus('connected');
+      panel.setSource({ kind: 'file', name: 'golpes.wav' });
+      panel.setStrips([BARRA, CABINA]);
+    });
+
+    expect(effect('Energía')).toHaveAttribute('aria-current', 'true');
+    expect(effect('Respiración')).not.toHaveAttribute('aria-current');
+  });
+
+  it('al volver la conexión sin la tira que estaba seleccionada, queda la primera', () => {
+    const panel = panelWithStrips();
+    fireEvent.click(strip('Cabina'));
+    panel.disconnect();
+
+    act(() => {
+      panel.setStatus('connected');
+      panel.setStrips([BARRA]);
+    });
+
+    expect(strip('Barra')).toBeChecked();
+    expect(effect('Energía')).toHaveAttribute('aria-current', 'true');
   });
 });

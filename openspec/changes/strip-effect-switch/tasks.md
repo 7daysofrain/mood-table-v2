@@ -107,22 +107,22 @@
 
 ## 3. MOO-103 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests de la conexión en `packages/panel/src/engine/connection.test.ts`:
+- [x] 3.1 **(test en rojo)** Tests de la conexión en `packages/panel/src/engine/connection.test.ts`:
   guarda las tiras que llegan por el tipo `6` y avisa al cambiar; un mensaje `6` que no cumple el
   esquema no cambia nada; las olvida al perder la conexión (decisión 8).
   Verificar: los tests nuevos fallan porque la conexión no decodifica el tipo `6`.
-- [ ] 3.2 Las tiras en `packages/panel/src/engine/connection.ts` y en `PanelConnection`.
+- [x] 3.2 Las tiras en `packages/panel/src/engine/connection.ts` y en `PanelConnection`.
   Verificar: los tests de 3.1 pasan.
-- [ ] 3.3 **(test en rojo)** Tests del envío de cambios en
+- [x] 3.3 **(test en rojo)** Tests del envío de cambios en
   `packages/panel/src/engine/effect-requests.test.ts`, con un `fetch` falso: un cambio envía
   `PUT /api/strips/{stripId}/effect` con su cuerpo; con uno en camino, los siguientes esperan y solo se
   envía el último, y no se envía si coincide con el último enviado; un error de red o una respuesta de
   error no bloquea el siguiente (decisión 7).
   Verificar: los tests nuevos fallan porque el módulo no existe.
-- [ ] 3.4 El envío de cambios en `packages/panel/src/engine/effect-requests.ts`, y `/api` en el proxy de
+- [x] 3.4 El envío de cambios en `packages/panel/src/engine/effect-requests.ts`, y `/api` en el proxy de
   `packages/panel/vite.config.ts`.
   Verificar: los tests de 3.3 pasan.
-- [ ] 3.5 **(test en rojo)** Tests de las zonas (`packages/panel/src/strips/` y `effects/`, y
+- [x] 3.5 **(test en rojo)** Tests de las zonas (`packages/panel/src/strips/` y `effects/`, y
   `App.test.tsx` para la unión), con la conexión falsa: Tiras lista nombre, nº de LEDs y salida de
   cada tira y selecciona la primera; seleccionar otra cambia lo que muestra Efectos; Efectos etiqueta
   cada efecto como reactivo o de ambiente y marca el activo que dice la conexión, no el pulsado;
@@ -131,18 +131,18 @@
   título, y al volver la selección sigue por su `id`; sin indicadores de espera
   (`specs/instrument-control`, decisiones 5, 7, 8 y 9).
   Verificar: los tests nuevos fallan porque las zonas están vacías.
-- [ ] 3.6 Las zonas: el módulo de literales (con los nombres de los efectos como
+- [x] 3.6 Las zonas: el módulo de literales (con los nombres de los efectos como
   `Record<EffectId, string>` y la salida), las listas de Tiras y Efectos con componentes de Mantine,
   la selección por `id` en `App.tsx` y el hueco de cada zona en `PanelLayout.tsx`.
   Verificar: los tests de 3.5 pasan, los de `PanelLayout` y `panel-layout` siguen en verde, y con
   `pnpm dev` se cambia el efecto de la tira de la demo desde el panel.
-- [ ] 3.7 E2E del caso feliz en `e2e/effects.spec.ts`, con un motor propio (fichero de golpes y una
+- [x] 3.7 E2E del caso feliz en `e2e/effects.spec.ts`, con un motor propio (fichero de golpes y una
   tira con energía): la zona Tiras muestra la tira con su nombre, LEDs y salida, seleccionada; energía
   está marcado; al pulsar respiración, el visor pinta la tira de un solo color en menos de 100 ms desde
   el `pointerdown` y respiración queda marcado; al recargar el panel, respiración sigue marcado
   (`specs/instrument-control`, criterios de `MOO-94`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 3.8 README §1.3 (las zonas Tiras y Efectos, con una captura si cambia la de la sección) y
+- [x] 3.8 README §1.3 (las zonas Tiras y Efectos, con una captura si cambia la de la sección) y
   `prompts.md`. Comprobación a mano con la demo: el calentamiento de energía al elegirla en marcha
   (decisión 4), anotado en la PR.
   Verificar: lo que describe el README coincide con lo que muestra el panel.

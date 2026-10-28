@@ -13,6 +13,10 @@ interface PanelLayoutProps {
   audio?: ReactNode;
   /** Contenido de la zona «Visor». */
   viewer?: ReactNode;
+  /** Contenido de la zona «Tiras». */
+  strips?: ReactNode;
+  /** Contenido de la zona «Efectos». */
+  effects?: ReactNode;
 }
 
 /**
@@ -20,7 +24,7 @@ interface PanelLayoutProps {
  * debajo, tiras, efectos y controles en tres columnas. Cada historia pone su contenido en su zona; las
  * que aún no rellena ninguna, quedan vacías.
  */
-export function PanelLayout({ status, audio, viewer }: Readonly<PanelLayoutProps>) {
+export function PanelLayout({ status, audio, viewer, strips, effects }: Readonly<PanelLayoutProps>) {
   return (
     <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>
@@ -42,8 +46,8 @@ export function PanelLayout({ status, audio, viewer }: Readonly<PanelLayoutProps
             {viewer}
           </Zone>
           <SimpleGrid cols={3} flex={1}>
-            <Zone title="Tiras" />
-            <Zone title="Efectos" />
+            <Zone title="Tiras">{strips}</Zone>
+            <Zone title="Efectos">{effects}</Zone>
             <Zone title="Controles" />
           </SimpleGrid>
         </Stack>

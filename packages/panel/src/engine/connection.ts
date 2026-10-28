@@ -3,11 +3,12 @@
  * reintenta cada segundo mientras no hay conexión (decisión 15) y guarda el último frame de cada
  * tira, decodificado con el protocolo de `@moodtable/shared`, además de la fuente de audio y su último
  * nivel (decisión 5 del change virtual-strip-audio-file) y si la tarjeta de sonido está perdida
- * (decisión 5 del change soundcard-reconnect). No sabe nada de React: el visor lee los frames y el
- * vúmetro el nivel cuando dibujan, y la cabecera se suscribe a los cambios de estado, de fuente y
- * de la tarjeta. La posición del fichero de audio no se guarda: se avisa de cada una con su
- * instante de llegada, porque la sincronía del reproductor necesita la serie (decisión 8 del change
- * panel-audio-playback).
+ * (decisión 5 del change soundcard-reconnect), y las tiras con su efecto activo (decisión 8 del
+ * change strip-effect-switch). No sabe nada de React: el visor lee los frames y el vúmetro el nivel
+ * cuando dibujan, y la cabecera y las zonas Tiras y Efectos se suscriben a los cambios de estado, de
+ * fuente, de la tarjeta y de las tiras. La posición del fichero de audio no se guarda: se avisa de
+ * cada una con su instante de llegada, porque la sincronía del reproductor necesita la serie
+ * (decisión 8 del change panel-audio-playback).
  */
 import {
   decodeFrame,
@@ -15,8 +16,10 @@ import {
   decodePosition,
   decodeSource,
   decodeSourceStatus,
+  decodeStrips,
   type PositionMessage,
   type SourceMessage,
+  type StripState,
 } from '@moodtable/shared';
 
 export type ConnectionStatus = 'connected' | 'disconnected';
@@ -56,6 +59,7 @@ export class EngineConnection {
   private currentSource: SourceMessage | undefined;
   private lastLevel: number | undefined;
   private lost = false;
+  private currentStrips: readonly StripState[] | undefined;
 
   constructor(
     url: string,
@@ -94,6 +98,14 @@ export class EngineConnection {
    */
   get sourceLost(): boolean {
     return this.lost;
+  }
+
+  /**
+   * Las tiras declaradas, en el orden del fichero, con el efecto que pinta cada una, según el último
+   * mensaje del motor. Sin conexión, `undefined`.
+   */
+  get strips(): readonly StripState[] | undefined {
+    return this.currentStrips;
   }
 
   /** Avisa de cada cambio de estado. Devuelve la función para darse de baja. */
@@ -169,6 +181,13 @@ export class EngineConnection {
         this.notify();
         return;
       }
+      // Cada mensaje es la foto completa: sustituye a la anterior.
+      const strips = decodeStrips(message);
+      if (strips) {
+        this.currentStrips = strips.strips;
+        this.notify();
+        return;
+      }
       const sourceStatus = decodeSourceStatus(message);
       if (sourceStatus && (sourceStatus === 'lost') !== this.lost) {
         this.lost = sourceStatus === 'lost';
@@ -189,14 +208,16 @@ export class EngineConnection {
 
   /**
    * Sin conexión no se sabe qué hay en el motor: ni frames, ni fuente, ni nivel, ni si la tarjeta
-   * está perdida. No avisa: la fuente y su estado solo llegan con la conexión abierta, así que
-   * siempre se olvidan a la vez que se pierde, y ese cambio de estado ya avisa.
+   * está perdida, ni sus tiras. No avisa: la fuente, su estado y las tiras solo llegan con la
+   * conexión abierta, así que siempre se olvidan a la vez que se pierde, y ese cambio de estado ya
+   * avisa.
    */
   private forget(): void {
     this.lastFrames.clear();
     this.currentSource = undefined;
     this.lastLevel = undefined;
     this.lost = false;
+    this.currentStrips = undefined;
   }
 
   private setStatus(status: ConnectionStatus): void {
