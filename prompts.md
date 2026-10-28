@@ -1262,6 +1262,21 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Comprobó a mano que el test del OpenAPI falla al cambiar un esquema de la ruta y dice cómo regenerarlo.*
 - *Al separar `buildServer` de `startServer`, si el motor no puede escuchar, ahora cierra la app antes de dar el error.*
 
+#### 6.36 Cambiar el efecto de una tira desde el panel (`MOO-103`)
+
+**Prompt 1** (con la PR de `MOO-102` integrada):
+
+> mergeada, sigue
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA implementó la sección `MOO-103` del change con un commit por paso, en TDD: la conexión del panel guarda las tiras del mensaje `6`, un módulo envía cada elección por la API con un `PUT` en camino como mucho, y las zonas Tiras y Efectos se rellenan con componentes de Mantine (consultó en Context7 `Radio.Card`). Lo probó con `pnpm dev` en el navegador: energía y respiración se cambian desde el panel, y el ratón y Enter envían un solo `PUT` cada uno. El E2E mide desde el `pointerdown` hasta el primer frame de la respiración: entre 30 y 40 ms en tres ejecuciones, contra los 100 de E1.*
+
+*Ajustes:*
+- *El diseño decía «un `PUT` en camino como mucho». La IA lo aplicó por tira: con una sola cola, cambiar una tira y enseguida otra perdería el primer cambio, y el desorden que se quiere evitar solo importa dentro de la misma tira. Tras un fallo, la elección pendiente se envía aunque coincida con la fallida.*
+- *El efecto activo se marca con `aria-current` y no con `aria-pressed`, que daría a entender que pulsarlo otra vez lo apaga.*
+- *En el navegador vio que la etiqueta oculta del grupo de tiras dejaba una línea vacía encima de la lista, que los tests no podían ver, y la corrigió.*
+- *En el README quitó lo que no había comprobado: que las tiras se eligen con las flechas (la demo tiene una sola) y que otro panel ve el mismo efecto (non-goal de la historia).*
+- *Comprobó a mano el calentamiento de energía al elegirla con la música sonando (decisión 4): no se aprecia, porque el análisis ya está en marcha (D79).*
+
 ---
 
 ### 7. Pull Requests

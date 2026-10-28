@@ -142,7 +142,7 @@
   el `pointerdown` y respiración queda marcado; al recargar el panel, respiración sigue marcado
   (`specs/instrument-control`, criterios de `MOO-94`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 3.8 README §1.3 (las zonas Tiras y Efectos, con una captura si cambia la de la sección) y
+- [x] 3.8 README §1.3 (las zonas Tiras y Efectos, con una captura si cambia la de la sección) y
   `prompts.md`. Comprobación a mano con la demo: el calentamiento de energía al elegirla en marcha
   (decisión 4), anotado en la PR.
   Verificar: lo que describe el README coincide con lo que muestra el panel.
