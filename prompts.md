@@ -1333,6 +1333,34 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Con la #88 integrada, la IA implementó `MOO-91` en su propia PR: si una comprobación falla, el grafo va directo al estado final, sin el aviso de comprobaciones terminadas, y no dice que la revisión no ha terminado si no llegó a pedirla. Para eso, el estado final recibe el push que se sigue.*
 
+#### 6.39 Verificar `MOO-81` con las trazas de LangSmith y archivar su change
+
+**Prompt 1** (con la PR de `MOO-91` integrada):
+
+> Sin hallazgos, mergeada ya
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA comprobó en Linear que las dos tareas hijas estaban en Done y pasó `/opsx:verify`: 18 de 18 tareas, los 6 requisitos nuevos o modificados implementados y cada escenario con su test o su prueba a mano, sin problemas. El requisito retirado lo comprobó buscando escrituras en GitHub: solo queda `createComment`, desde la petición de revisión.*
+
+**Prompt 2:**
+
+> para la verificacion de que todo ha funcionado como se esperaba. ¿has usado langsmith?
+
+*La IA reconoció que no: había verificado lo que sale del sistema (GitHub, Linear, el log), no por dónde pasa el grafo, y en dos pruebas lo había deducido. Recomendó leer las trazas que el contenedor ya había enviado, sin repetir ninguna prueba, y avisó de que LangSmith no ve lo que hace Codex.*
+
+**Prompt 3:**
+
+> ok, mira las trazas. Igual aprobechamos que tenemos esta herramienta para añadir en el workflow una memoria de que se use langsmith también para realizar las pruebas. Sería un capa de pruebas extra, no sustituye otras
+
+*La IA leyó con la API de LangSmith los hilos de la #88, #90, #91 y #92. Confirmaron el camino esperado, y en la #90 aclararon lo que la prueba no aislaba: tras el reinicio, la foto traía a la vez la marca de la petición y la revisión en marcha. También mostraron que el reinicio repite los avisos de seguimiento y de comprobaciones terminadas, algo que la spec ya aceptaba. Para la regla propuso `openspec/config.yaml` y no `workflow.md`, porque el motor de la mesa no usa LangGraph y las pruebas a mano nacen en `tasks.md`.*
+
+**Prompt 4** (cuando la IA avisó de que la regla es otra tarea y propuso una *Chore* con su PR):
+
+> Métela en el archivado
+
+*Ajustes:*
+- *La regla va en la PR de archivado de `MOO-81` por decisión del humano, aunque sea del arnés; la PR lo explica.*
+- *El resultado de las trazas quedó en `design.md`, antes de archivar el change.*
+
 ---
 
 ### 7. Pull Requests
