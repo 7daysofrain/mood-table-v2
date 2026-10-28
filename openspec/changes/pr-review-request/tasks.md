@@ -91,7 +91,7 @@
     con el formato de `course.md` §5.
 
   Verificar: los enlaces del README y de las D# a `design.md` llevan a su sitio; `pnpm lint` en verde.
-- [ ] 1.12 **Prueba a mano** (sin commit), con los permisos nuevos del PAT y el sistema en marcha:
+- [x] 1.12 **Prueba a mano** (sin commit), con los permisos nuevos del PAT y el sistema en marcha:
   - con el PAT, intentar integrar una PR de sparring por la API (`PUT /pulls/{n}/merge`) → GitHub
     responde 403 y la PR sigue abierta;
   - una PR real del mantenedor: al pasar las comprobaciones aparece la petición firmada, el revisor

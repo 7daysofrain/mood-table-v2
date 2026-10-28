@@ -1318,6 +1318,17 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *GitHub da el límite de la API con un 403, como un token sin permiso. La IA no lo trata como petición rechazada, que no se reintenta, sino como un fallo pasajero, y lo prueba.*
 - *El diseño decía que un borrador que pasa a lista con las comprobaciones en verde la pide con la primera foto. En realidad la pide en la vuelta siguiente, como ya pasaba con el aviso de comprobaciones terminadas; la IA corrigió el test, no el código.*
 
+**Prompt 3** (cuando la IA esperaba los permisos de escritura del PAT para la prueba a mano):
+
+> Ya los tiene
+
+*La IA comprobó que el PAT no puede integrar: el `PUT /merge` de una PR de sparring (#89) contra una rama base desechable, para que el *ruleset* no tapara el resultado y, si integraba, no tocara `main`, dio 403 y pedía `contents=write`. Desplegó la rama en el contenedor de casa y abrió una PR de prueba (#90). Un vigilante en segundo plano reinició el contenedor 5 s después de la petición del sistema: no hubo una segunda, Codex revisó ese push con *Manual request* y llegó «Lista para integrar».*
+
+*Ajustes:*
+- *Los commits de las PR desechables llevaban `Refs MOO-90`, así que Linear las adjuntó a la tarea, y la #90, abierta, la pasó a *In Review*. Al cerrarla volvió sola a *In Progress*. La IA lo avisó; las PR de prueba no deben citar la tarea.*
+- *Cuando el sistema volvió a evaluar la PR tras el reinicio, Codex ya estaba revisando ese push, así que la prueba no aisló la marca de la petición. La IA la leyó aparte, con el adaptador real contra la #90: cuenta para el push pedido y no para el anterior.*
+- *Con la pregunta de si apagar ya la *Automatic review*, la IA recomendó esperar a que las dos tareas estén integradas (D68): el contenedor corre código que no está en `main`, y la PR en revisión también necesita la suya.*
+
 ---
 
 ### 7. Pull Requests
