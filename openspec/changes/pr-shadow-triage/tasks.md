@@ -45,7 +45,7 @@
     mismo fichero y línea;
   - en `core/tracking.test.ts`, si hay que triar: sí con «necesita intervención» por una comprobación
     que falla o por hallazgos del revisor; no si está lista para integrar o si es solo por tiempo.
-- [ ] 1.4 Las reglas en `core/triage.ts` (el hallazgo, sus clases, el umbral, el reparto del tope y
+- [x] 1.4 Las reglas en `core/triage.ts` (el hallazgo, sus clases, el umbral, el reparto del tope y
   la clave) y la regla de si hay que triar en `core/tracking.ts`.
   Verificar: los tests de 1.3 en verde; `pnpm typecheck` en verde.
 - [ ] 1.5 **(test en rojo)** Los adaptadores (`design.md` decisiones 2, 3 y 5):
