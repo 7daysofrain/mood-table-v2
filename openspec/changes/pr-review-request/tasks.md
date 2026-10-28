@@ -14,7 +14,7 @@
 
 ## 1. MOO-90 · infra
 
-- [ ] 1.1 **Prueba a mano** (sin commit) del texto de la petición (`design.md` decisión 1 y riesgo
+- [x] 1.1 **Prueba a mano** (sin commit) del texto de la petición (`design.md` decisión 1 y riesgo
   de la firma): en una PR de sparring del mantenedor, escribir con su cuenta el comentario exacto de
   la decisión 1, con el SHA del último push.
   Verificar: el revisor revisa ese push como con un `@codex review` solo (su bloque pasa a `running`

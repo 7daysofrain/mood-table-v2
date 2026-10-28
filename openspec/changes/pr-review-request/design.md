@@ -59,7 +59,9 @@
 
 ### 1. La petición sale con el PAT del mantenedor, firmada y con una marca oculta
 
-- **El comentario** (el texto exacto lo fija el paso 1.1 de `tasks.md`):
+- **El comentario** (comprobado en la PR de sparring #87, paso 1.1 de `tasks.md`: el revisor revisa
+  el push como con un `@codex review` solo, con disparador *Manual request*, y la firma no cambia la
+  revisión):
 
   ```
   @codex review
