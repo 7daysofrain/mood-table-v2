@@ -113,7 +113,7 @@
   Verificar: los tests nuevos fallan porque la conexión no decodifica el tipo `6`.
 - [x] 3.2 Las tiras en `packages/panel/src/engine/connection.ts` y en `PanelConnection`.
   Verificar: los tests de 3.1 pasan.
-- [ ] 3.3 **(test en rojo)** Tests del envío de cambios en
+- [x] 3.3 **(test en rojo)** Tests del envío de cambios en
   `packages/panel/src/engine/effect-requests.test.ts`, con un `fetch` falso: un cambio envía
   `PUT /api/strips/{stripId}/effect` con su cuerpo; con uno en camino, los siguientes esperan y solo se
   envía el último, y no se envía si coincide con el último enviado; un error de red o una respuesta de
