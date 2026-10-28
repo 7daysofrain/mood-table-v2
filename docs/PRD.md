@@ -73,7 +73,7 @@ tiras en un fichero.
 |---|---|---|---|
 | E1 | **Se toca en directo, de manera fluida.** | Al mover un control, la luz responde mientras arrastras, sin saltos ni tirones. | MVP |
 | E2 | **La luz sigue a la música.** | Reacciona a los golpes y a la energía del tema, y no se nota que llegue tarde. | MVP |
-| E3 | **Varios efectos para elegir.** | Se cambia de efecto en caliente, sin que la luz se pare, entre efectos reactivos y de ambiente. | MVP |
+| E3 | **Varios efectos para elegir.** | Se cambia de efecto en caliente, sin que la luz se pare, entre efectos reactivos y de ambiente. Al volver a un efecto, la tira recupera los valores con que lo dejó (decisión del DJ al refinar MOO-96). | MVP |
 | E4 | **Cada tira, su efecto.** | Varias tiras a la vez, cada una con su efecto y sus valores. | MVP (la segunda tira física, *should*) |
 | E5 | **Se controla con el hardware que elijas.** | El mismo instrumento se toca desde el panel web y, en el futuro, desde una pantalla táctil, una Traktor F1 o un mando propio. | MVP: panel · Visión: el resto |
 | E6 | **Autónomo.** | Se enchufa y vuelve como estaba, sin portátil ni internet, incluso tras un corte de luz. | MVP |
@@ -196,9 +196,9 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | **Golpe** | *(no aparece en el código)* | Cada sonido corto y fuerte de la música, como el bombo, que destaca sobre lo que suena alrededor. Los efectos reactivos lo marcan con la luz. |
 | **Efecto** | `effect` | Algoritmo que decide los colores de una tira en cada instante. **Reactivo** si usa el audio; **de ambiente** si no. |
 | **Parámetro** | `param` | Cada ajuste que declara un efecto (p. ej. *sensibilidad*), con su tipo, rango y valor por defecto. Lo define el código. |
-| **Valor** | `value` | Lo que vale ahora un parámetro en una tira concreta. Lo decide el DJ y se guarda. |
+| **Valor** | `value` | Lo que vale ahora un parámetro en una tira concreta. Lo decide el DJ y se guarda. Cada tira guarda los valores de todos sus efectos, no solo los del activo. |
 | **Control** | *(solo UI)* | Elemento del panel que representa un parámetro: slider, selector de color o desplegable. *El DJ mueve un control → cambia el valor de un parámetro.* |
-| **Estado del instrumento** | `instrumentState` | Efecto activo y valores de cada tira. Es lo que vuelve al arrancar (H5). **"Estado" a secas no se usa**: la memoria interna de un efecto entre frames es otra cosa y se nombra aparte en la spec del motor (p. ej. `effectMemory`). |
+| **Estado del instrumento** | `instrumentState` | Efecto activo de cada tira y los valores de todos sus efectos, también los no activos (decisión del DJ al refinar MOO-96). Es lo que vuelve al arrancar (H5). **"Estado" a secas no se usa**: la memoria interna de un efecto entre frames es otra cosa y se nombra aparte en la spec del motor (p. ej. `effectMemory`). |
 | **Motor** | `engine` | El proceso que, en cada frame, lee la fuente de audio, calcula los colores de cada tira con su efecto y los envía a sus salidas. También sirve el panel y la API. |
 | **Frame** | `frame` | Cada fotograma que calcula el motor: los colores de todos los LEDs de una tira en un instante (unos 60 por segundo). La tira física y el visor reciben los mismos frames. |
 | **Fichero de configuración** | `config` | Fichero JSON donde se declaran las tiras (nombre, número de LEDs, salida) y la fuente de audio. Las tiras solo se cambian aquí, no desde el panel (p. ej. `config/demo.json`). |
