@@ -11,7 +11,7 @@
 
 ## 1. MOO-105 · shared
 
-- [ ] 1.1 **(test en rojo)** Tests de los esquemas de parámetros en
+- [x] 1.1 **(test en rojo)** Tests de los esquemas de parámetros en
   `packages/shared/src/effects.test.ts`: el periodo acepta 1 y 20 y rechaza 0,5 y 25; el esquema de la
   respiración lleva `x-control: "color"` en el color y `x-scale: "log"` en el periodo; la respiración
   rechaza un campo que no declara y la energía rechaza `{ "period": 7 }` y acepta `{}`; cada efecto
