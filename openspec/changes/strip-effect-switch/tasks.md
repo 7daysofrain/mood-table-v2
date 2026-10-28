@@ -23,7 +23,7 @@
   con su ejemplo, que es el primer mensaje JSON del protocolo, cuándo se envía (al conectarse y a todos
   en cada cambio) y que la posición en la lista es el índice de la tira en los frames.
   Verificar: los tests de 1.1 pasan y el documento describe exactamente lo que hace el código.
-- [ ] 1.3 **(test en rojo)** Tests de la regla de la fuente de audio en
+- [x] 1.3 **(test en rojo)** Tests de la regla de la fuente de audio en
   `packages/shared/src/effects.test.ts`: `breathing` no necesita fuente y `energy` sí, y la respuesta
   sale de `usesAudio` del catálogo para todos sus efectos (decisión 5).
   Verificar: los tests nuevos fallan porque la función no existe.
