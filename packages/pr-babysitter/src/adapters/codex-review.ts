@@ -1,6 +1,7 @@
 /**
  * Adaptador del revisor (change pr-tracking, decisión 7): saca el estado de la revisión de Codex de
- * su bloque `codex-review-state` en los comentarios de la PR. El núcleo solo ve el estado de
+ * su bloque `codex-review-state` en los comentarios de la PR, y se la pide (change
+ * pr-review-request, decisiones 1-3). El núcleo solo ve el estado de
  * dominio (`Review`), así que otro revisor (BA3) sería otro adaptador.
  *
  * Solo cuentan los comentarios de la cuenta del revisor: los de otras cuentas no llegan al núcleo
@@ -11,7 +12,7 @@
  */
 import * as z from 'zod';
 
-import type { ReviewReader } from '../core/ports.ts';
+import type { ReviewReader, ReviewRequests } from '../core/ports.ts';
 import type { Review } from '../core/pull-request.ts';
 import type { PullRequestComment } from './github.ts';
 
@@ -64,4 +65,65 @@ function parseBlock(text: string): Review | null {
   // Terminada sin decir si hay hallazgos: no se sabe qué ha pasado.
   if (completed && has_any_findings === null) return null;
   return { reviewedSha: commit_sha, completed, hasFindings: has_any_findings === true };
+}
+
+export interface CodexReviewRequestsOptions {
+  /** La cuenta de GitHub del mantenedor, dueña del token: la única cuyas peticiones cuentan. */
+  maintainer: string;
+  listComments: (pullRequestNumber: number) => Promise<PullRequestComment[]>;
+  createComment: (pullRequestNumber: number, body: string) => Promise<void>;
+}
+
+const REQUEST_MARK = /<!-- pr-babysitter:review-request (.*?) -->/gs;
+
+const requestMarkSchema = z.object({ sha: z.string().min(1) });
+
+/**
+ * La petición es un comentario `@codex review`, lo único que Codex atiende, escrito con el token
+ * del mantenedor: una GitHub App no vale (BA7). Lleva una firma visible, porque en GitHub sale a su
+ * nombre (BE4), y una marca oculta con el SHA del push, comprobadas en la #87 (decisión 1).
+ *
+ * Solo cuentan las marcas de los comentarios del mantenedor: el repo es público, y una copiada por
+ * otra cuenta haría que el sistema no la pidiera nunca (BE6). Un `@codex review` sin marca no dice
+ * de qué push es, y no cuenta (decisión 3).
+ */
+export function createCodexReviewRequests({
+  maintainer,
+  listComments,
+  createComment,
+}: CodexReviewRequestsOptions): ReviewRequests {
+  return {
+    async requested(pullRequestNumber, sha) {
+      return (await listComments(pullRequestNumber))
+        .filter((comment) => comment.author === maintainer)
+        .flatMap((comment) => [...comment.body.matchAll(REQUEST_MARK)])
+        .some((mark) => parseRequestMark(mark[1] ?? '') === sha);
+    },
+
+    async request(pullRequestNumber, sha) {
+      await createComment(pullRequestNumber, requestBody(sha));
+    },
+  };
+}
+
+function requestBody(sha: string): string {
+  const mark = JSON.stringify({ sha } satisfies z.infer<typeof requestMarkSchema>);
+  return [
+    '@codex review',
+    '',
+    `Lo pide el PR Babysitter: las comprobaciones de \`${sha.slice(0, 7)}\` han pasado.`,
+    `<!-- pr-babysitter:review-request ${mark} -->`,
+  ].join('\n');
+}
+
+/** El SHA de una marca, o `null` si no se entiende. */
+function parseRequestMark(text: string): string | null {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  const parsed = requestMarkSchema.safeParse(json);
+  return parsed.success ? parsed.data.sha : null;
 }

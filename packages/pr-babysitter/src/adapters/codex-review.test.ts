@@ -214,8 +214,8 @@ describe('la petición de revisión', () => {
   const OTHER_77 = '3f9e2b7c41d8a6e05b1c9d2f7a4e8b6c0d5f1a23';
 
   /** Las peticiones sobre unos comentarios leídos por el adaptador de GitHub. */
-  async function requestsOn(recorded: RecordedComment[]) {
-    const { fetch } = fakeFetch(() => json(JSON.stringify(recorded)));
+  function requestsOn(recorded: RecordedComment[]) {
+    const { fetch, calls } = fakeFetch(() => json(JSON.stringify(recorded)));
     const github = createGitHubReader({
       owner: '7daysofrain',
       repo: 'mood-table-v2',
@@ -232,11 +232,11 @@ describe('la petición de revisión', () => {
         return Promise.resolve();
       },
     });
-    return { requests, written };
+    return { requests, written, calls };
   }
 
   it('pide la revisión con un comentario que empieza por @codex review', async () => {
-    const { requests, written } = await requestsOn([]);
+    const { requests, written } = requestsOn([]);
 
     await requests.request(77, HEAD_77);
 
@@ -246,7 +246,7 @@ describe('la petición de revisión', () => {
   });
 
   it('dice que la pide el PR Babysitter, con el SHA corto, y lleva la marca con el completo', async () => {
-    const { requests, written } = await requestsOn([]);
+    const { requests, written } = requestsOn([]);
 
     await requests.request(77, HEAD_77);
 
@@ -258,23 +258,24 @@ describe('la petición de revisión', () => {
   });
 
   it('reconoce su propia petición, escrita por el mantenedor', async () => {
-    const first = await requestsOn([]);
+    const first = requestsOn([]);
     await first.requests.request(77, HEAD_77);
-    const own = { user: { login: MAINTAINER, type: 'User' }, updated_at: '', body: first.written[0]!.body };
+    const body = first.written[0]!.body;
+    const own = { user: { login: MAINTAINER, type: 'User' }, updated_at: '', body };
 
-    const { requests } = await requestsOn([own]);
+    const { requests } = requestsOn([own]);
 
     await expect(requests.requested(77, HEAD_77)).resolves.toBe(true);
   });
 
   it('cuenta la marca del mantenedor con ese SHA (#77)', async () => {
-    const { requests } = await requestsOn(await comments(77));
+    const { requests } = requestsOn(await comments(77));
 
     await expect(requests.requested(77, OTHER_77)).resolves.toBe(true);
   });
 
   it('no cuenta la marca de otra cuenta, ni un @codex review sin marca (#77)', async () => {
-    const { requests } = await requestsOn(await comments(77));
+    const { requests } = requestsOn(await comments(77));
 
     await expect(requests.requested(77, HEAD_77)).resolves.toBe(false);
   });
@@ -285,26 +286,13 @@ describe('la petición de revisión', () => {
       updated_at: '',
       body: `<!-- pr-babysitter:review-request {"sha":"${HEAD_77}" -->`,
     };
-    const { requests } = await requestsOn([broken]);
+    const { requests } = requestsOn([broken]);
 
     await expect(requests.requested(77, HEAD_77)).resolves.toBe(false);
   });
 
   it('lee los comentarios de la PR', async () => {
-    const recorded = await comments(77);
-    const { fetch, calls } = fakeFetch(() => json(JSON.stringify(recorded)));
-    const github = createGitHubReader({
-      owner: '7daysofrain',
-      repo: 'mood-table-v2',
-      baseBranch: 'main',
-      token: () => 'ghp_x',
-      fetch,
-    });
-    const requests = createCodexReviewRequests({
-      maintainer: MAINTAINER,
-      listComments: (number) => github.listComments(number),
-      createComment: () => Promise.resolve(),
-    });
+    const { requests, calls } = requestsOn(await comments(77));
 
     await requests.requested(77, HEAD_77);
 

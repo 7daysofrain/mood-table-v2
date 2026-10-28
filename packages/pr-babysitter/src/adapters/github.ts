@@ -1,6 +1,8 @@
 /**
- * Adaptador de lectura de GitHub (change pr-tracking, decisiones 3, 4 y 6), con octokit. Solo lee:
- * el token es de solo lectura y el sistema no escribe nada en GitHub (D64).
+ * Adaptador de GitHub (change pr-tracking, decisiones 3, 4 y 6), con octokit. Lee, y solo escribe
+ * comentarios en una PR, para pedir la revisión (change pr-review-request, decisión 2): el token
+ * tiene escritura en *Issues* y *Pull requests*, pero no en *Contents*, así que no puede subir
+ * commits ni integrar (D64).
  *
  * Las comprobaciones exigidas salen de las reglas de la rama base, no de los *check runs* que haya:
  * justo después de un push aún no hay ninguno, y con «todos los que haya» una lista vacía daría las
@@ -13,7 +15,11 @@
 import { Octokit, RequestError } from 'octokit';
 import * as z from 'zod';
 
-import { GitHubUnauthorizedError, type GitHubReader } from '../core/ports.ts';
+import {
+  GitHubRequestRejectedError,
+  GitHubUnauthorizedError,
+  type GitHubReader,
+} from '../core/ports.ts';
 import type { Check, OpenPullRequest } from '../core/pull-request.ts';
 
 /** Un comentario de una PR: quién lo escribe y qué dice. */
@@ -81,6 +87,8 @@ export function createGitHubReader({
 }: GitHubReaderOptions): GitHubReader & {
   /** Los comentarios de una PR, del primero al último. Para el adaptador del revisor. */
   listComments(pullRequestNumber: number): Promise<PullRequestComment[]>;
+  /** Publica un comentario en una PR. Para la petición de revisión. */
+  createComment(pullRequestNumber: number, body: string): Promise<void>;
 } {
   const octokit = new Octokit({
     request: fetch ? { fetch } : {},
@@ -172,6 +180,12 @@ export function createGitHubReader({
         .parse(comments)
         .map((comment) => ({ author: comment.user.login, body: comment.body }));
     },
+
+    async createComment(pullRequestNumber: number, body: string): Promise<void> {
+      await write(() =>
+        octokit.rest.issues.createComment({ owner, repo, issue_number: pullRequestNumber, body }),
+      );
+    },
   };
 }
 
@@ -185,4 +199,27 @@ async function read<T>(request: () => Promise<T>): Promise<T> {
     }
     throw error;
   }
+}
+
+/**
+ * Hace una escritura. Como una lectura, un 401 es el token rechazado; otro 4xx que no sea el límite
+ * de la API es una petición rechazada, que no se arregla sola (change pr-review-request, decisión 6).
+ */
+async function write<T>(request: () => Promise<T>): Promise<T> {
+  try {
+    return await read(request);
+  } catch (error) {
+    if (error instanceof RequestError && isRejection(error)) {
+      throw new GitHubRequestRejectedError(error.message, { cause: error });
+    }
+    throw error;
+  }
+}
+
+/** Un 4xx que no es el token ni el límite de la API, que GitHub da con 429 o con 403 y cabeceras. */
+function isRejection({ status, response }: RequestError): boolean {
+  if (status < 400 || status >= 500 || status === 401 || status === 429) return false;
+  const headers = response?.headers ?? {};
+  const limited = headers['x-ratelimit-remaining'] === '0' || headers['retry-after'] !== undefined;
+  return !(status === 403 && limited);
 }

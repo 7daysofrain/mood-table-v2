@@ -36,7 +36,31 @@ export interface ReviewReader {
   review(pullRequestNumber: number): Promise<Review | null>;
 }
 
+/**
+ * Las peticiones de revisión del sistema (change pr-review-request, decisiones 2 y 3): saber si ya
+ * ha pedido la revisión de un push y pedirla. Qué revisor hay detrás y cómo se le pide es del
+ * adaptador (BA3).
+ *
+ * Lanza como `GitHubReader`. Si GitHub rechaza la petición por algo que no se arregla solo (p. ej.
+ * el token no tiene permiso), lanza `GitHubRequestRejectedError` (decisión 6).
+ */
+export interface ReviewRequests {
+  /** Si el sistema ya ha pedido la revisión de ese push, con su token. */
+  requested(pullRequestNumber: number, sha: string): Promise<boolean>;
+  /** Pide al revisor que revise ese push. */
+  request(pullRequestNumber: number, sha: string): Promise<void>;
+}
+
 /** GitHub rechaza el token (401): hay que avisar, porque no se arregla solo (decisión 3). */
 export class GitHubUnauthorizedError extends Error {
   override readonly name = 'GitHubUnauthorizedError';
+}
+
+/**
+ * GitHub rechaza una escritura con un 4xx que no es el token ni el límite de la API (p. ej. un 403
+ * porque el token no tiene permiso): reintentarla no la arregla (change pr-review-request, decisión
+ * 6).
+ */
+export class GitHubRequestRejectedError extends Error {
+  override readonly name = 'GitHubRequestRejectedError';
 }

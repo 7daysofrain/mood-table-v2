@@ -53,7 +53,7 @@
   - `adapters/github.test.ts`: `createComment` publica en `issues/{n}/comments`; un 401 lanza
     `GitHubUnauthorizedError`; un 403 o un 422 lanzan el error de petición rechazada; un 5xx, un
     error cualquiera.
-- [ ] 1.7 El puerto `ReviewRequests` y el error de petición rechazada en `core/ports.ts`,
+- [x] 1.7 El puerto `ReviewRequests` y el error de petición rechazada en `core/ports.ts`,
   `createComment` en `adapters/github.ts` y el adaptador de la petición en
   `adapters/codex-review.ts`.
   Verificar: los tests de 1.6 en verde, y los que ya había de los dos adaptadores.
