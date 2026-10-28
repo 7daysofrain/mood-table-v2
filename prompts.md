@@ -1329,6 +1329,10 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Cuando el sistema volvió a evaluar la PR tras el reinicio, Codex ya estaba revisando ese push, así que la prueba no aisló la marca de la petición. La IA la leyó aparte, con el adaptador real contra la #90: cuenta para el push pedido y no para el anterior.*
 - *Con la pregunta de si apagar ya la *Automatic review*, la IA recomendó esperar a que las dos tareas estén integradas (D68): el contenedor corre código que no está en `main`, y la PR en revisión también necesita la suya.*
 
+*En la #88, Codex encontró tres fallos. La IA verificó cada uno contra el código antes de tocarlo. Dos eran reales y los arregló con un test de regresión: al detener una PR con un aviso pendiente, el driver seguía hasta pedir la revisión; y al reintentar un nodo tras un push nuevo, pedía la revisión con la foto vieja. El segundo acotaba un riesgo que el diseño daba por aceptado, y la IA lo avisó. El tercero era real, pero era el trabajo de `MOO-91`: la IA lo contestó sin tocar el código, comprobando antes que integrar sin él no empeoraba nada respecto a `main`. La revisión del último push la pidió el propio sistema, que ya corría ese código en el contenedor. Cuando el humano vio la PR «con temas sin resolver», la IA comprobó que los tres hilos estaban resueltos: lo que seguía en pie era el resumen de Codex, que no actualiza ese campo, y el aviso de estado final de Linear.*
+
+*Con la #88 integrada, la IA implementó `MOO-91` en su propia PR: si una comprobación falla, el grafo va directo al estado final, sin el aviso de comprobaciones terminadas, y no dice que la revisión no ha terminado si no llegó a pedirla. Para eso, el estado final recibe el push que se sigue.*
+
 ---
 
 ### 7. Pull Requests

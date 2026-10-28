@@ -103,29 +103,29 @@
 
 ## 2. MOO-91 · infra
 
-- [ ] 2.1 **(test en rojo)** Las reglas (`design.md` decisión 4) en `core/tracking.test.ts`:
+- [x] 2.1 **(test en rojo)** Las reglas (`design.md` decisión 4) en `core/tracking.test.ts`:
   - `afterChecksWait` distingue comprobaciones que pasan y que fallan;
   - sin `reviewSince`, el estado final nunca dice «la revisión no ha terminado»: con una fallida, solo
     qué falla, y además «el revisor tiene hallazgos» si el revisor ya terminó el último push con
     hallazgos; con una sin terminar a tiempo, solo qué no ha terminado;
   - con `reviewSince`, como hoy.
-- [ ] 2.2 Las reglas en `core/tracking.ts`: el paso de comprobaciones fallidas y el estado final con
+- [x] 2.2 Las reglas en `core/tracking.ts`: el paso de comprobaciones fallidas y el estado final con
   el push que se sigue.
   Verificar: los tests de 2.1 en verde, y los que ya había de `tracking.ts`, adaptados al paso nuevo.
-- [ ] 2.3 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
+- [x] 2.3 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
   `specs/pr-tracking` que toca esta sección: con una comprobación fallida, el único aviso es el de
   estado final («necesita intervención» y qué falla), sin el de comprobaciones terminadas y sin
   petición de revisión; con una comprobación sin terminar a los 30 min, el aviso no dice que la
   revisión no ha terminado; si el aviso de fallo se reintenta con la foto de un push anterior, el
   hilo termina y el push nuevo vuelve a empezar el seguimiento.
-- [ ] 2.4 La arista de comprobaciones fallidas a `avisarEstadoFinal` en `core/graph.ts` y el estado
+- [x] 2.4 La arista de comprobaciones fallidas a `avisarEstadoFinal` en `core/graph.ts` y el estado
   final con el push que se sigue.
   Verificar: los tests de 2.3 y todos los del grafo y del driver en verde; `pnpm lint`,
   `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 2.5 Documentación: README §2.2 (*PR Babysitter*, el grafo), la salida directa al estado final
+- [x] 2.5 Documentación: README §2.2 (*PR Babysitter*, el grafo), la salida directa al estado final
   cuando falla una comprobación; `prompts.md` §6, lo que añada esta tarea a la entrada de la historia.
   Verificar: `pnpm lint` en verde.
-- [ ] 2.6 **Prueba a mano** (sin commit): una PR de sparring del mantenedor con una comprobación que
+- [x] 2.6 **Prueba a mano** (sin commit): una PR de sparring del mantenedor con una comprobación que
   falla → en Linear, solo el aviso de estado final con qué falla, y en la PR, ninguna petición de
   revisión del sistema.
   Verificar: enlace al aviso de Linear en la descripción de la PR; la PR de sparring, cerrada sin

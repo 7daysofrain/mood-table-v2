@@ -173,20 +173,6 @@ describe('hasta el estado final', () => {
     expect(summary(notices)).toEqual(['tracking']);
   });
 
-  it('falla una comprobación: necesita intervención, con cuál', async () => {
-    const { notices } = await follow(
-      snapshot(0),
-      snapshot(5, { checks: FAILED }),
-      snapshot(9, { checks: FAILED, review: reviewed() }),
-    );
-
-    expect(summary(notices)).toEqual([
-      'tracking',
-      'checksFinished',
-      { status: 'needsIntervention', reasons: [{ kind: 'checksFailed', checks: ['e2e'] }] },
-    ]);
-  });
-
   it('el revisor tiene hallazgos: necesita intervención', async () => {
     const { notices } = await follow(
       snapshot(0),
@@ -330,7 +316,7 @@ describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', (
     expect(summary(notices)).toEqual([
       {
         status: 'needsIntervention',
-        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }, { kind: 'reviewUnfinished' }],
+        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }],
       },
     ]);
   });
@@ -347,7 +333,7 @@ describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', (
     expect(summary(notices)).toEqual([
       {
         status: 'needsIntervention',
-        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }, { kind: 'reviewUnfinished' }],
+        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }],
       },
       'tracking',
     ]);
@@ -470,5 +456,76 @@ describe('si GitHub no acepta la petición de revisión', () => {
 
     expect(recorded.requests).toEqual([{ number: 74, sha: HEAD }]);
     expect((await graph.getState(config)).next).toEqual(['esperarRevisor']);
+  });
+});
+
+describe('si falla una comprobación, el sistema avisa del estado final sin esperar a la revisión', () => {
+  it('el único aviso es el de estado final, con qué falla, y no pide la revisión', async () => {
+    const { notices, requests, state } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: FAILED }),
+    );
+
+    expect(summary(notices)).toEqual([
+      'tracking',
+      { status: 'needsIntervention', reasons: [{ kind: 'checksFailed', checks: ['e2e'] }] },
+    ]);
+    expect(requests).toEqual([]);
+    expect(state.next).toEqual([]);
+  });
+
+  it('si el revisor ya había revisado el último push con hallazgos, lo dice también', async () => {
+    const { notices } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: FAILED, review: reviewed(HEAD, true) }),
+    );
+
+    expect(summary(notices)).toEqual([
+      'tracking',
+      {
+        status: 'needsIntervention',
+        reasons: [{ kind: 'checksFailed', checks: ['e2e'] }, { kind: 'reviewFindings' }],
+      },
+    ]);
+  });
+
+  it('con una comprobación sin terminar a los 30 min, no dice que la revisión no ha terminado', async () => {
+    const { notices } = await follow(snapshot(0), snapshot(29), snapshot(30));
+
+    expect(summary(notices)).toEqual([
+      'tracking',
+      { status: 'needsIntervention', reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }] },
+    ]);
+  });
+
+  it('si el aviso se reintenta con la foto de un push anterior, el hilo termina y el push nuevo vuelve a empezar', async () => {
+    const notices: Notice[] = [];
+    const channel = { failing: false };
+    const notifier: Notifier = {
+      notify(notice) {
+        if (channel.failing) return Promise.reject(new Error('Linear no responde'));
+        notices.push(notice);
+        return Promise.resolve();
+      },
+    };
+    const graph = trackingGraph(notifier);
+    const config = threadConfig(74);
+    await graph.invoke({ snapshot: snapshot(0) }, config);
+    channel.failing = true;
+    await expect(
+      graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), config),
+    ).rejects.toThrow('Linear no responde');
+
+    channel.failing = false;
+    await graph.invoke(null, config);
+    expect((await graph.getState(config)).next).toEqual([]);
+    await graph.invoke({ snapshot: snapshot(8, { headSha: 'nuevo' }) }, config);
+
+    expect(summary(notices)).toEqual([
+      'tracking',
+      { status: 'needsIntervention', reasons: [{ kind: 'checksFailed', checks: ['e2e'] }] },
+      'tracking',
+    ]);
+    expect((await graph.getState(config)).next).toEqual(['esperarComprobaciones']);
   });
 });

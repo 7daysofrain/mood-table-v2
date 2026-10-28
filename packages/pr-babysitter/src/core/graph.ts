@@ -100,6 +100,7 @@ export function threadConfig(pullRequestNumber: number) {
 const AFTER_CHECKS = {
   waiting: 'esperarComprobaciones',
   checksFinished: 'avisarComprobaciones',
+  checksFailed: 'avisarEstadoFinal',
   timedOut: 'avisarEstadoFinal',
 } as const satisfies Record<ChecksStep, string>;
 
@@ -179,8 +180,9 @@ export function createTrackingGraph(
     return new Command({ update: { snapshot, push }, goto: AFTER_REVIEW[next] });
   };
 
-  const avisarEstadoFinal: GraphNode<typeof TrackingState> = async ({ snapshot }) => {
-    await notifier.notify(finalNotice(snapshot, finalState(snapshot)));
+  const avisarEstadoFinal: GraphNode<typeof TrackingState> = async (state) => {
+    const { snapshot } = state;
+    await notifier.notify(finalNotice(snapshot, finalState(snapshot, pushIn(state))));
     return {};
   };
 
