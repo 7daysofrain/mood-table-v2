@@ -78,7 +78,7 @@
   cambio de valores; `/api/openapi.json` describe la ruta nueva con su cuerpo, el rango del periodo y
   las respuestas `200`, `400` y `404` (`specs/instrument-control`, decisiones 4 y 6).
   Verificar: los tests nuevos fallan porque la ruta no existe.
-- [ ] 2.6 La ruta en `packages/engine/src/adapters/server.ts`, con los esquemas de `shared` y los
+- [x] 2.6 La ruta en `packages/engine/src/adapters/server.ts`, con los esquemas de `shared` y los
   errores con `{ message }`, y `docs/openapi.yaml` regenerado con `pnpm openapi`.
   Verificar: los tests de 2.5 y el de `openapi.test.ts` pasan, y con `pnpm dev` un
   `curl -X PUT …/api/strips/<id>/values` cambia la tira en el visor.

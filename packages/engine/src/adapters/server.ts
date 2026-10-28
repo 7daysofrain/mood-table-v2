@@ -39,9 +39,12 @@ import {
   encodeStrips,
   SetEffectBodySchema,
   SetEffectResponseSchema,
+  SetValuesBodySchema,
+  SetValuesResponseSchema,
   type SourceMessage,
   type SourceStatus,
   type StripsMessage,
+  type StripState,
 } from '@moodtable/shared';
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 import Type from 'typebox';
@@ -115,6 +118,12 @@ const NEEDS_AUDIO_SOURCE = 'necesita una fuente de audio';
 /** Lo que se dice de un cuerpo que no es `{ "effect": "<id>" }`. */
 const BAD_BODY = 'el cuerpo debe ser un objeto JSON con el campo `effect` y ninguno más';
 
+/** Lo que se dice de un cuerpo de la ruta de valores que no es JSON. */
+const BAD_VALUES_BODY = 'el cuerpo debe ser un objeto JSON con todos los valores del efecto activo';
+
+/** La ruta de los valores de una tira (decisión 4 del change strip-effect-values). */
+const VALUES_ROUTE = '/api/strips/:stripId/values';
+
 /**
  * El mensaje de un `400`: si el cuerpo tiene la forma buena, lo que falla es el efecto, y se dicen
  * los que hay, como en el fichero de configuración.
@@ -128,6 +137,13 @@ function describeBadRequest(body: unknown): string {
   }
   const allowed = EFFECT_CATALOG.map((effect) => `\`${effect.id}\``).join(', ');
   return `«${field[1]}» no es un efecto (hay: ${allowed})`;
+}
+
+/** La tira `stripId` como la ven los paneles. Solo se pide de una tira que el búfer conoce. */
+function stripState(strips: PanelStrips | undefined, stripId: string): StripState {
+  const strip = strips?.snapshot().strips.find((each) => each.id === stripId);
+  if (!strip) throw new Error(`La tira «${stripId}» no está en la foto de las tiras`);
+  return strip;
 }
 
 const PANEL_NOT_BUILT =
@@ -149,10 +165,10 @@ function panelHost({ address, family }: AddressInfo): string {
 }
 
 /**
- * La API: hoy, cambiar el efecto de una tira (decisión 6). Va en su propio plugin, así que su
- * validador y su forma de responder los errores no tocan las demás rutas. Valida con TypeBox, como
- * `Value.Check`: el AJV de Fastify quitaría en silencio los campos de más (`removeAdditional`), y
- * el esquema los rechaza.
+ * La API: cambiar el efecto de una tira (decisión 6) y sus valores (decisión 4 del change
+ * strip-effect-values). Va en su propio plugin, así que su validador y su forma de responder los
+ * errores no tocan las demás rutas. Valida con TypeBox, como `Value.Check`: el AJV de Fastify
+ * quitaría en silencio los campos de más (`removeAdditional`), y el esquema los rechaza.
  */
 function apiPlugin(strips: PanelStrips | undefined) {
   return (plugin: FastifyInstance, _options: unknown, done: () => void): void => {
@@ -162,7 +178,11 @@ function apiPlugin(strips: PanelStrips | undefined) {
     // Los 400 (un JSON roto o que no cumple el esquema) responden `{ message }`, como los demás.
     api.setErrorHandler((error: FastifyError, request, reply) => {
       if (error.statusCode !== 400) throw error;
-      void reply.code(400).send({ message: describeBadRequest(request.body) });
+      const message =
+        request.routeOptions.url === VALUES_ROUTE
+          ? BAD_VALUES_BODY
+          : describeBadRequest(request.body);
+      void reply.code(400).send({ message });
     });
     api.put(
       '/api/strips/:stripId/effect',
@@ -177,7 +197,10 @@ function apiPlugin(strips: PanelStrips | undefined) {
           params: Type.Object({ stripId: Type.String({ description: 'El `id` de la tira' }) }),
           body: SetEffectBodySchema,
           response: {
-            200: { description: 'La tira, con su efecto activo y sus valores', ...SetEffectResponseSchema },
+            200: {
+              description: 'La tira, con su efecto activo y sus valores',
+              ...SetEffectResponseSchema,
+            },
             400: { description: 'El cuerpo no es válido o el efecto no existe', ...ApiErrorSchema },
             404: { description: 'La tira no existe', ...ApiErrorSchema },
             409: { description: 'El efecto necesita fuente de audio y no hay', ...ApiErrorSchema },
@@ -197,8 +220,51 @@ function apiPlugin(strips: PanelStrips | undefined) {
           void reply.code(409).send({ message });
           return;
         }
-        const strip = strips?.snapshot().strips.find((each) => each.id === stripId);
-        if (!strip) throw new Error(`La tira «${stripId}» no está en la foto de las tiras`);
+        void reply.send(stripState(strips, stripId));
+      },
+    );
+    api.put(
+      VALUES_ROUTE,
+      {
+        // El esquema del cuerpo es la unión de los de todos los efectos, para el OpenAPI. Lo que
+        // decide es el esquema del efecto activo, que solo conoce el búfer: Fastify no rechaza
+        // nada aquí, y el `400` dice qué falla con el efecto que tiene la tira.
+        attachValidation: true,
+        schema: {
+          summary: 'Cambia los valores de una tira',
+          description:
+            'Todos los valores del efecto activo de la tira, que la pinta con ellos desde el ' +
+            'pulso siguiente, sin reiniciar el efecto. Todos los paneles reciben las tiras por ' +
+            'el WebSocket del visor. Unos valores iguales a los que tiene no cambian nada.',
+          tags: ['tiras'],
+          params: Type.Object({ stripId: Type.String({ description: 'El `id` de la tira' }) }),
+          body: SetValuesBodySchema,
+          response: {
+            200: {
+              description: 'La tira, con su efecto activo y sus valores nuevos',
+              ...SetValuesResponseSchema,
+            },
+            400: {
+              description: 'Los valores no cumplen el esquema del efecto activo',
+              ...ApiErrorSchema,
+            },
+            404: { description: 'La tira no existe', ...ApiErrorSchema },
+          },
+        },
+      },
+      (request, reply) => {
+        const { stripId } = request.params;
+        const result = strips?.setValues(stripId, request.body) ?? 'unknown-strip';
+        if (result === 'unknown-strip') {
+          void reply.code(404).send({ message: `la tira «${stripId}» no existe` });
+          return;
+        }
+        const strip = stripState(strips, stripId);
+        if (typeof result === 'object') {
+          const message = `la tira «${stripId}», efecto \`${strip.effect}\`: ${result.invalid}`;
+          void reply.code(400).send({ message });
+          return;
+        }
         void reply.send(strip);
       },
     );
@@ -221,8 +287,8 @@ export async function buildServer({
       info: {
         title: 'Mood Table · API del motor',
         description:
-          'Los mandos del instrumento. El estado (las tiras, su efecto activo, los frames) llega ' +
-          'por el WebSocket del visor: docs/instructions/viewer-protocol.md.',
+          'Los mandos del instrumento. El estado (las tiras, su efecto activo y sus valores, los ' +
+          'frames) llega por el WebSocket del visor: docs/instructions/viewer-protocol.md.',
         version: '1.0.0',
       },
     },
