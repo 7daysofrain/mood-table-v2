@@ -122,7 +122,7 @@
 - [x] 3.4 El envío de cambios en `packages/panel/src/engine/effect-requests.ts`, y `/api` en el proxy de
   `packages/panel/vite.config.ts`.
   Verificar: los tests de 3.3 pasan.
-- [ ] 3.5 **(test en rojo)** Tests de las zonas (`packages/panel/src/strips/` y `effects/`, y
+- [x] 3.5 **(test en rojo)** Tests de las zonas (`packages/panel/src/strips/` y `effects/`, y
   `App.test.tsx` para la unión), con la conexión falsa: Tiras lista nombre, nº de LEDs y salida de
   cada tira y selecciona la primera; seleccionar otra cambia lo que muestra Efectos; Efectos etiqueta
   cada efecto como reactivo o de ambiente y marca el activo que dice la conexión, no el pulsado;
