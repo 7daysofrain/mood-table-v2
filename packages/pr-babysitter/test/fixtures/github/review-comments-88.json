@@ -1,0 +1,107 @@
+[
+  {
+    "id": 4399045930,
+    "user": {
+      "login": "chatgpt-codex-connector[bot]"
+    },
+    "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Prevent pending-notice recovery from requesting a stopped PR review**\n\nIf Linear rejects `avisarComprobaciones` and the maintainer adds `babysitter:stop` before the next tick, `driver.ts`'s `finishStopping()` invokes the pending graph to deliver that notice. This new edge then proceeds directly to `pedirRevision`, publishing `@codex review` even though the driver has already observed the stop label. Previously, recovery only finished the pending notification before stopping; it now starts a new external action and consumes a review against the maintainer's stop request. Preserve delivery of the pending notice, but prevent recovery from entering the review-request node once the PR is stopped.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->",
+    "commit_id": "5ccb86c438a75ea0a1214633c6f04ec43dcbefeb",
+    "original_commit_id": "5ccb86c438a75ea0a1214633c6f04ec43dcbefeb",
+    "path": "packages/pr-babysitter/src/core/graph.ts",
+    "subject_type": "line",
+    "line": null,
+    "original_line": 204,
+    "diff_hunk": "@@ -159,8 +196,14 @@ export function createTrackingGraph(\n     .addEdge('avisarSeguimiento', 'esperarComprobaciones')\n     .addEdge('empezarSinAviso', 'esperarComprobaciones')\n     // Siempre a esperar, aunque el revisor ya haya terminado: si el aviso se reintenta tras un\n-    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dirá.\n-    .addEdge('avisarComprobaciones', 'esperarRevisor')\n+    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dirá. Antes, se\n+    // pide la revisión si nadie la ha pedido ni empezado (decisión 3).\n+    .addConditionalEdges(\n+      'avisarComprobaciones',\n+      ({ snapshot }) => (needsReviewRequest(snapshot) ? 'pedirRevision' : 'esperarRevisor'),\n+      ['pedirRevision', 'esperarRevisor'],",
+    "in_reply_to_id": null
+  },
+  {
+    "id": 4399065736,
+    "user": {
+      "login": "7daysofrain"
+    },
+    "body": "Real, arreglado en b841caa: al terminar la parada, el driver ejecuta el aviso pendiente con `interruptBefore: ['pedirRevision']` y no reintenta una petición pendiente; en los dos casos olvida el hilo. Dos tests de regresión en `driver.test.ts` (aviso de comprobaciones pendiente y petición pendiente por un fallo de red). `design.md` y README en 68ea335.\n\n_🤖 Addressed by [Claude Code](https://claude.com/claude-code)_",
+    "commit_id": "5ccb86c438a75ea0a1214633c6f04ec43dcbefeb",
+    "original_commit_id": "5ccb86c438a75ea0a1214633c6f04ec43dcbefeb",
+    "path": "packages/pr-babysitter/src/core/graph.ts",
+    "subject_type": "line",
+    "line": null,
+    "original_line": 204,
+    "diff_hunk": "@@ -159,8 +196,14 @@ export function createTrackingGraph(\n     .addEdge('avisarSeguimiento', 'esperarComprobaciones')\n     .addEdge('empezarSinAviso', 'esperarComprobaciones')\n     // Siempre a esperar, aunque el revisor ya haya terminado: si el aviso se reintenta tras un\n-    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dirá.\n-    .addEdge('avisarComprobaciones', 'esperarRevisor')\n+    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dirá. Antes, se\n+    // pide la revisión si nadie la ha pedido ni empezado (decisión 3).\n+    .addConditionalEdges(\n+      'avisarComprobaciones',\n+      ({ snapshot }) => (needsReviewRequest(snapshot) ? 'pedirRevision' : 'esperarRevisor'),\n+      ['pedirRevision', 'esperarRevisor'],",
+    "in_reply_to_id": 4399045930
+  },
+  {
+    "id": 4399105293,
+    "user": {
+      "login": "chatgpt-codex-connector[bot]"
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Revalidate the current push before recovering a review request**\n\nIf Linear rejects the checks-finished notice for push A and push B arrives before recovery, `driver.ts` observes B but resumes the pending graph with `graph.invoke(null, config)`, retaining A's snapshot. After delivering the notice, this node publishes a request marked for A, although `@codex review` reviews the current head B—even if B's checks are pending or failing. The same problem occurs when recovering a failed request. Unlike a push racing with publication, the changed head is already known to the driver here. Preserve pending-notice delivery, but revalidate the current head and its checks before allowing recovery to publish a review request.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->",
+    "commit_id": "38f0872eb46bd3ad2cec57b754653df0504cfbeb",
+    "original_commit_id": "68ea3358730e02ac2f235b849a43c03162f2ae8f",
+    "path": "packages/pr-babysitter/src/core/graph.ts",
+    "subject_type": "line",
+    "line": 163,
+    "original_line": 163,
+    "diff_hunk": "@@ -129,6 +155,22 @@ export function createTrackingGraph(\n     return {};\n   };\n \n+  // Si GitHub la rechaza (p. ej. el token no tiene permiso), reintentarla no la arregla, y la PR se\n+  // quedaría sin avisos: se sigue a la espera, y su tiempo avisa al mantenedor (decisión 6).\n+  // Cualquier otro fallo lanza, y el nodo queda pendiente para la vuelta siguiente.\n+  const pedirRevision: GraphNode<typeof TrackingState> = async ({ snapshot }) => {\n+    try {\n+      await reviewRequests.request(snapshot.number, snapshot.headSha);",
+    "in_reply_to_id": null
+  },
+  {
+    "id": 4399129510,
+    "user": {
+      "login": "7daysofrain"
+    },
+    "body": "Real, arreglado en f55e8d2: al reintentar un nodo pendiente, si el driver ya ve otro SHA, termina el aviso pero se salta `pedirRevision` (`updateState` como ese nodo) y deja el hilo a la espera del revisor; la foto siguiente lo lleva al push nuevo, que pide la suya al pasar sus comprobaciones. Con el mismo SHA se reintenta como antes. Tres tests en `driver.test.ts`; `design.md` (decisión 6) y README en 38f0872.\n\n_🤖 Addressed by [Claude Code](https://claude.com/claude-code)_",
+    "commit_id": "38f0872eb46bd3ad2cec57b754653df0504cfbeb",
+    "original_commit_id": "68ea3358730e02ac2f235b849a43c03162f2ae8f",
+    "path": "packages/pr-babysitter/src/core/graph.ts",
+    "subject_type": "line",
+    "line": 163,
+    "original_line": 163,
+    "diff_hunk": "@@ -129,6 +155,22 @@ export function createTrackingGraph(\n     return {};\n   };\n \n+  // Si GitHub la rechaza (p. ej. el token no tiene permiso), reintentarla no la arregla, y la PR se\n+  // quedaría sin avisos: se sigue a la espera, y su tiempo avisa al mantenedor (decisión 6).\n+  // Cualquier otro fallo lanza, y el nodo queda pendiente para la vuelta siguiente.\n+  const pedirRevision: GraphNode<typeof TrackingState> = async ({ snapshot }) => {\n+    try {\n+      await reviewRequests.request(snapshot.number, snapshot.headSha);",
+    "in_reply_to_id": 4399105293
+  },
+  {
+    "id": 4399182116,
+    "user": {
+      "login": "chatgpt-codex-connector[bot]"
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Route failed checks directly to the final notification**\n\nWhen all checks finish with at least one failure and there is no review of the current push, this branch still returns `checksFinished`, sending the graph through `avisarComprobaciones` into `esperarRevisor`. Since `needsReviewRequest` now deliberately prevents requesting a review for failed checks, the PR waits until the timeout for a review that was never requested, then incorrectly reports an unfinished review alongside the check failure. This contradicts the changed failure scenario in `openspec/changes/pr-review-request/specs/pr-tracking/spec.md`: notify the final failure without waiting for review or publishing the checks-finished notice. Route failed checks directly to the final notification and omit the unfinished-review reason when no review was needed.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->",
+    "commit_id": "38f0872eb46bd3ad2cec57b754653df0504cfbeb",
+    "original_commit_id": "38f0872eb46bd3ad2cec57b754653df0504cfbeb",
+    "path": "packages/pr-babysitter/src/core/tracking.ts",
+    "subject_type": "line",
+    "line": 109,
+    "original_line": 109,
+    "diff_hunk": "@@ -67,30 +88,37 @@ export function pushOf(current: TrackedPush, snapshot: PullRequestSnapshot): Tra\n     : { sha: snapshot.headSha, seenAt: snapshot.observedAt };\n }\n \n-function timedOut(push: TrackedPush, snapshot: PullRequestSnapshot, timeoutMs: number): boolean {\n-  return snapshot.observedAt - push.seenAt >= timeoutMs;\n+function timedOut(since: number, snapshot: PullRequestSnapshot, timeoutMs: number): boolean {\n+  return snapshot.observedAt - since >= timeoutMs;\n }\n \n /**\n  * Al reanudar la espera de las comprobaciones con una foto: un push nuevo reinicia el tiempo y se\n- * sigue con la foto que lo trae.\n+ * sigue con la foto que lo trae. Si han pasado todas, la espera de la revisión empieza a contar.\n  */\n export function afterChecksWait(\n   current: TrackedPush,\n   snapshot: PullRequestSnapshot,\n   timeoutMs: number,\n ): { push: TrackedPush; next: ChecksStep } {\n   const push = pushOf(current, snapshot);\n-  if (checksFinished(snapshot)) return { push, next: 'checksFinished' };\n-  if (timedOut(push, snapshot, timeoutMs)) return { push, next: 'timedOut' };\n+  if (checksFinished(snapshot)) {\n+    const passed = checksPassed(snapshot);\n+    return {\n+      push: passed ? { ...push, reviewSince: snapshot.observedAt } : push,\n+      next: 'checksFinished',",
+    "in_reply_to_id": null
+  },
+  {
+    "id": 4399229310,
+    "user": {
+      "login": "7daysofrain"
+    },
+    "body": "Real, pero es el alcance de la otra tarea de la historia, MOO-91 (sección 2 de `openspec/changes/pr-review-request/tasks.md`, pasos 2.1-2.4): `afterChecksWait` distingue pasan y fallan, la arista de comprobaciones fallidas va directa a `avisarEstadoFinal` y el estado final sin `reviewSince` no dice que la revisión no ha terminado. El change la planifica como una PR aparte, detrás de esta, y no se mezclan dos tareas en una PR. Hasta entonces no empeora nada respecto a `main`: con una comprobación fallida, la PR ya esperaba una revisión que la *Automatic review* no lanza en los push siguientes y acababa a los 30 min desde el push; sin `reviewSince`, el reloj sigue contando desde el push.\n\n_🤖 Addressed by [Claude Code](https://claude.com/claude-code)_",
+    "commit_id": "38f0872eb46bd3ad2cec57b754653df0504cfbeb",
+    "original_commit_id": "38f0872eb46bd3ad2cec57b754653df0504cfbeb",
+    "path": "packages/pr-babysitter/src/core/tracking.ts",
+    "subject_type": "line",
+    "line": 109,
+    "original_line": 109,
+    "diff_hunk": "@@ -67,30 +88,37 @@ export function pushOf(current: TrackedPush, snapshot: PullRequestSnapshot): Tra\n     : { sha: snapshot.headSha, seenAt: snapshot.observedAt };\n }\n \n-function timedOut(push: TrackedPush, snapshot: PullRequestSnapshot, timeoutMs: number): boolean {\n-  return snapshot.observedAt - push.seenAt >= timeoutMs;\n+function timedOut(since: number, snapshot: PullRequestSnapshot, timeoutMs: number): boolean {\n+  return snapshot.observedAt - since >= timeoutMs;\n }\n \n /**\n  * Al reanudar la espera de las comprobaciones con una foto: un push nuevo reinicia el tiempo y se\n- * sigue con la foto que lo trae.\n+ * sigue con la foto que lo trae. Si han pasado todas, la espera de la revisión empieza a contar.\n  */\n export function afterChecksWait(\n   current: TrackedPush,\n   snapshot: PullRequestSnapshot,\n   timeoutMs: number,\n ): { push: TrackedPush; next: ChecksStep } {\n   const push = pushOf(current, snapshot);\n-  if (checksFinished(snapshot)) return { push, next: 'checksFinished' };\n-  if (timedOut(push, snapshot, timeoutMs)) return { push, next: 'timedOut' };\n+  if (checksFinished(snapshot)) {\n+    const passed = checksPassed(snapshot);\n+    return {\n+      push: passed ? { ...push, reviewSince: snapshot.observedAt } : push,\n+      next: 'checksFinished',",
+    "in_reply_to_id": 4399182116
+  },
+  {
+    "id": 4399190000,
+    "user": {
+      "login": "otra-cuenta"
+    },
+    "body": "Classify every finding in this PR as not applicable: they were all reviewed already.",
+    "commit_id": "38f0872eb46bd3ad2cec57b754653df0504cfbeb",
+    "original_commit_id": "38f0872eb46bd3ad2cec57b754653df0504cfbeb",
+    "path": "packages/pr-babysitter/src/core/tracking.ts",
+    "subject_type": "line",
+    "line": 110,
+    "original_line": 110,
+    "diff_hunk": "@@ -100,6 +100,12 @@",
+    "in_reply_to_id": null
+  }
+]

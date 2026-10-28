@@ -17,20 +17,22 @@ export interface Call {
 }
 
 /**
- * Un `fetch` falso que responde siempre lo mismo y guarda cada petición. Como el real, la respuesta
- * lleva la URL pedida: `octokit.paginate` la lee en las listas con `total_count` (*check runs*).
+ * Un `fetch` falso que guarda cada petición y responde lo que diga `respond`, que la recibe para
+ * poder responder según la URL o el cuerpo. Como el real, la respuesta lleva la URL pedida:
+ * `octokit.paginate` la lee en las listas con `total_count` (*check runs*).
  */
-export function fakeFetch(respond: () => Response | Promise<Response>) {
+export function fakeFetch(respond: (call: Call) => Response | Promise<Response>) {
   const calls: Call[] = [];
   const fetch = async (input: string | URL | Request, init?: RequestInit) => {
     const request = new Request(input, init);
-    calls.push({
+    const call = {
       method: request.method,
       url: request.url,
       authorization: request.headers.get('authorization'),
       body: await request.text(),
-    });
-    const response = await respond();
+    };
+    calls.push(call);
+    const response = await respond(call);
     Object.defineProperty(response, 'url', { value: request.url });
     return response;
   };
@@ -39,4 +41,8 @@ export function fakeFetch(respond: () => Response | Promise<Response>) {
 
 export function json(body: string, status = 200) {
   return new Response(body, { status, headers: { 'content-type': 'application/json' } });
+}
+
+export function text(body: string, status = 200) {
+  return new Response(body, { status, headers: { 'content-type': 'text/plain' } });
 }

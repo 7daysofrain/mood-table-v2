@@ -48,7 +48,7 @@
 - [x] 1.4 Las reglas en `core/triage.ts` (el hallazgo, sus clases, el umbral, el reparto del tope y
   la clave) y la regla de si hay que triar en `core/tracking.ts`.
   Verificar: los tests de 1.3 en verde; `pnpm typecheck` en verde.
-- [ ] 1.5 **(test en rojo)** Los adaptadores (`design.md` decisiones 2, 3 y 5):
+- [x] 1.5 **(test en rojo)** Los adaptadores (`design.md` decisiones 2, 3 y 5):
   - `test/fixtures/github/review-comments-85.json` y `-88.json` (comentarios de revisión en línea, con
     uno de otra cuenta añadido) y un log de un *job* que falla;
   - `adapters/findings.test.ts`: solo los comentarios de la cuenta del revisor sobre el SHA pedido,
