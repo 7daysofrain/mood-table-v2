@@ -56,7 +56,8 @@ function run(strips: StripConfig[], fps: number, seconds: number, changes: Chang
   );
   for (let pulse = 0; pulse <= seconds * fps; pulse++) {
     for (const change of changes) {
-      if (Math.abs(change.at * fps - pulse) < 1e-9) control.setEffect(change.stripId, change.effect);
+      if (Math.abs(change.at * fps - pulse) > 1e-9) continue;
+      control.setEffect(change.stripId, change.effect);
     }
     loop.tick((pulse * 1000) / fps);
   }
@@ -121,7 +122,7 @@ describe('energía con el fichero de golpes', () => {
     expect(breathingFrames.at(0)?.colors).not.toEqual(breathingFrames.at(-1)?.colors);
   });
 
-  it('una tira que pasa de la respiración a energía, pasados 2 s, se ilumina con cada golpe y se apaga en el silencio', () => {
+  it('al pasar de la respiración a energía, a los 2 s se ilumina con cada golpe y se apaga', () => {
     const [frames = []] = run([strip('demo', 'breathing')], 60, 6, [
       { at: 0.5, stripId: 'demo', effect: 'energy' },
     ]);

@@ -81,7 +81,7 @@
   type provider, swagger, la ruta con los esquemas de `shared` y los errores con `{ message }`) y
   `startServer`, que lo usa y escucha; el servidor recibe `Commands`.
   Verificar: los tests de 2.6 pasan y los del servidor que ya había siguen en verde.
-- [ ] 2.8 **(test en rojo)** Tests del mensaje de las tiras en `server.test.ts`: un panel que se
+- [x] 2.8 **(test en rojo)** Tests del mensaje de las tiras en `server.test.ts`: un panel que se
   conecta recibe el tipo `6` después de la fuente (y del estado de la tarjeta, si lo hay); un cambio
   llega a todos los paneles conectados; el mensaje lleva solo id, nombre, nº de LEDs, salida y efecto
   (decisiones 2 y 3).

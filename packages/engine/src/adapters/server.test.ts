@@ -9,19 +9,27 @@ import {
   decodePosition,
   decodeSource,
   decodeSourceStatus,
+  decodeStrips,
   type FrameMessage,
   type LevelMessage,
   type PositionMessage,
   type SourceMessage,
   type SourceStatus,
   type StripConfig,
+  type StripsMessage,
 } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { createControl } from '../core/control.ts';
+import { type ControlBuffer, createControl } from '../core/control.ts';
 import { createFrameLoop, type FrameLoopOptions, type LoopStrip } from '../core/frame-loop.ts';
 import { MemoryAudioSource } from './memory-audio-source.ts';
-import { buildServer, type EngineApp, type EngineServer, startServer } from './server.ts';
+import {
+  buildServer,
+  type EngineApp,
+  type EngineServer,
+  type PanelStrips,
+  startServer,
+} from './server.ts';
 
 const GOLPES = fileURLToPath(new URL('../../test/fixtures/golpes.wav', import.meta.url));
 
@@ -72,6 +80,7 @@ interface Received {
   levels: LevelMessage[];
   positions: PositionMessage[];
   statuses: SourceStatus[];
+  strips: StripsMessage[];
   /** El tipo de cada mensaje (su primer byte), en el orden en que llega. */
   types: number[];
 }
@@ -84,6 +93,7 @@ async function connectAll(url: string): Promise<Received> {
     levels: [],
     positions: [],
     statuses: [],
+    strips: [],
     types: [],
   };
   const client = new WebSocket(`${url.replace('http', 'ws')}/ws`);
@@ -101,6 +111,8 @@ async function connectAll(url: string): Promise<Received> {
     if (position) received.positions.push(position);
     const status = decodeSourceStatus(message);
     if (status) received.statuses.push(status);
+    const strips = decodeStrips(message);
+    if (strips) received.strips.push(strips);
   });
   clients.push(client);
   await new Promise((resolve, reject) => {
@@ -519,29 +531,26 @@ const demo: StripConfig = {
   effect: 'energy',
 };
 
-/**
- * La app del motor, sin escuchar, con un búfer de control real para la tira «demo» y la foto de las
- * tiras como la monta la raíz de composición.
- */
+/** Las tiras de `control` como las recibe el servidor: sus mandos, su foto y su aviso. */
+function panelStripsOf(strips: StripConfig[], control: ControlBuffer): PanelStrips {
+  return {
+    ...control,
+    snapshot: () => ({
+      strips: strips.map(({ id, name, ledCount, output }, index) => ({
+        id,
+        name,
+        ledCount,
+        output,
+        effect: control.slot(index).effect,
+      })),
+    }),
+  };
+}
+
+/** La app del motor, sin escuchar, con un búfer de control real para una tira. */
 async function apiWith(strip: StripConfig, hasAudioSource: boolean) {
   const control = createControl({ strips: [strip], hasAudioSource });
-  const built = await buildServer({
-    panelDir,
-    strips: {
-      ...control,
-      snapshot: () => ({
-        strips: [
-          {
-            id: strip.id,
-            name: strip.name,
-            ledCount: strip.ledCount,
-            output: strip.output,
-            effect: control.slot(0).effect,
-          },
-        ],
-      }),
-    },
-  });
+  const built = await buildServer({ panelDir, strips: panelStripsOf([strip], control) });
   apps.push(built);
   return { app: built.app, control };
 }
@@ -659,5 +668,121 @@ describe('el OpenAPI de la API', () => {
     }>();
 
     expect(Object.keys(document.paths)).toEqual(['/api/strips/{stripId}/effect']);
+  });
+});
+
+describe('las tiras que recibe cada panel', () => {
+  const second: StripConfig = { ...demo, id: 'barra', name: 'Barra', ledCount: 30 };
+
+  /** El motor escuchando, con las tiras «demo» (energía) y «barra» (energía) en un búfer real. */
+  /** Lo que el mensaje cuenta de `strip`, sin su efecto. */
+  function stateOf({ id, name, ledCount, output }: StripConfig) {
+    return { id, name, ledCount, output };
+  }
+
+  async function startWithStrips(
+    options: { source?: SourceMessage; card?: FakeSoundcardStatus } = {},
+  ) {
+    const strips = [demo, second];
+    const control = createControl({ strips, hasAudioSource: true });
+    server = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      ...(options.source ? { source: options.source } : {}),
+      ...(options.card ? { watchSourceStatus: options.card.watch } : {}),
+      strips: panelStripsOf(strips, control),
+    });
+    return { url: server.url, control };
+  }
+
+  it('al conectarse, un panel recibe las tiras en el orden del fichero, tras la fuente', async () => {
+    const { url } = await startWithStrips();
+
+    const received = await connectAll(url);
+    await until(() => received.strips.length === 1);
+
+    expect(received.types).toEqual([2, 6]);
+    expect(received.strips[0]?.strips.map((strip) => strip.id)).toEqual(['demo', 'barra']);
+  });
+
+  it('con la tarjeta de sonido, las recibe después de la fuente y de su estado', async () => {
+    const { url } = await startWithStrips({
+      source: SOUNDCARD,
+      card: new FakeSoundcardStatus('connected'),
+    });
+
+    const received = await connectAll(url);
+    await until(() => received.strips.length === 1);
+
+    expect(received.types).toEqual([2, 5, 6]);
+  });
+
+  it('el mensaje lleva solo el id, el nombre, los LEDs, la salida y el efecto de cada tira', async () => {
+    const { url } = await startWithStrips();
+
+    const received = await connectAll(url);
+    await until(() => received.strips.length === 1);
+
+    expect(received.strips[0]).toEqual({
+      strips: [
+        { ...stateOf(demo), effect: 'energy' },
+        { ...stateOf(second), effect: 'energy' },
+      ],
+    });
+  });
+
+  it('un cambio de efecto llega a todos los paneles conectados', async () => {
+    const { url, control } = await startWithStrips();
+    const first = await connectAll(url);
+    const other = await connectAll(url);
+    await until(() => first.strips.length === 1 && other.strips.length === 1);
+
+    control.setEffect('barra', 'breathing');
+    await until(() => first.strips.length === 2 && other.strips.length === 2);
+
+    for (const received of [first, other]) {
+      expect(received.strips[1]?.strips.map((strip) => strip.effect)).toEqual([
+        'energy',
+        'breathing',
+      ]);
+    }
+  });
+
+  it('un panel que se conecta tras un cambio recibe el efecto que pinta el motor', async () => {
+    const { url, control } = await startWithStrips();
+
+    control.setEffect('demo', 'breathing');
+    const received = await connectAll(url);
+    await until(() => received.strips.length === 1);
+
+    expect(received.strips[0]?.strips[0]?.effect).toBe('breathing');
+  });
+
+  it('al cerrar el servidor, deja de escuchar los cambios de las tiras', async () => {
+    const strips = [demo];
+    const control = createControl({ strips, hasAudioSource: true });
+    let watching = 0;
+    const closing = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      strips: {
+        ...panelStripsOf(strips, control),
+        watch: (listener) => {
+          watching++;
+          const unwatch = control.watch(listener);
+          return () => {
+            watching--;
+            unwatch();
+          };
+        },
+      },
+    });
+    expect(watching).toBe(1);
+
+    await closing.close();
+
+    expect(watching).toBe(0);
   });
 });
