@@ -98,7 +98,7 @@
     investigaciones y el change), con el formato de `course.md` §5.
 
   Verificar: los enlaces del README y de las D# a `design.md` llevan a su sitio; `pnpm lint` en verde.
-- [ ] 1.11 **Prueba a mano** (sin commit), con el sistema en marcha y la clave en su `.env`: una PR
+- [x] 1.11 **Prueba a mano** (sin commit), con el sistema en marcha y la clave en su `.env`: una PR
   de prueba del mantenedor con un fallo de `lint` y otra con un hallazgo de Codex.
   Verificar, en cada una: el aviso final de Linear es el de siempre; en LangSmith, el hilo de la PR
   pasa por `triar` antes de `avisarEstadoFinal`, y su salida trae la clase, la probabilidad y el
