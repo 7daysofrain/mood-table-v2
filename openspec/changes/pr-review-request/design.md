@@ -195,6 +195,12 @@ Una regla pura en `core/tracking.ts`, sobre la foto, decide si hace falta pedirl
 - **Una petición puede repetirse** si GitHub la acepta pero la respuesta no llega y el nodo se
   reintenta con la foto que tenía. Es el mismo trato que los avisos («MAY llegar dos veces»): raro, y
   como mucho una revisión de más.
+- **Un reintento tras un push nuevo no pide la revisión** (hallazgo de Codex en la #88): si el nodo
+  pendiente es el aviso de comprobaciones terminadas o la propia petición y el driver ya ve otro SHA,
+  la petición de la foto vieja haría que el revisor revisara el push nuevo, quizá con sus
+  comprobaciones sin terminar. El driver termina el aviso, se salta `pedirRevision` y deja el hilo a
+  la espera del revisor; la foto siguiente lo lleva al push nuevo, que la pide al pasar sus
+  comprobaciones. Con el mismo SHA, se reintenta como siempre.
 
 ### 7. Una lectura más por PR y vuelta
 
