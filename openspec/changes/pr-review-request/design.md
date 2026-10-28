@@ -36,7 +36,9 @@
     y no revisó. En la #71 (Dependabot) no hizo nada.
 - **`pr-stop` (`MOO-74`)** pone la guarda de «PR detenida» en el driver: ningún nodo corre en una PR
   detenida, tampoco el nuevo. Se archiva antes que este change, que toca requisitos distintos de
-  `pr-tracking`.
+  `pr-tracking`. Su única excepción es terminar el aviso pendiente al detenerla, y ahí el driver
+  para el hilo antes de `pedirRevision` y no reintenta una petición pendiente: pedirla no es
+  terminar lo que estaba en curso (hallazgo de Codex en la #88).
 
 ## Goals / Non-Goals
 
