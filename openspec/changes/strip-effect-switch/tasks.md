@@ -47,7 +47,7 @@
   `pnpm-workspace.yaml` y en `packages/engine/package.json` con `"catalog:"`, en las versiones
   publicadas hace más de la antigüedad mínima de pnpm.
   Verificar: `pnpm install` y `pnpm typecheck` en verde.
-- [ ] 2.2 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`,
+- [x] 2.2 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`,
   con las tiras y el registro de efectos a mano: `setEffect` da `changed` y cambia el efecto activo;
   el efecto que ya está activo da `unchanged`, no crea ranura ni avisa; una tira que no existe da
   `unknown-strip`; un reactivo sin fuente da `needs-audio-source` y no toca la tira; quien se suscribe
