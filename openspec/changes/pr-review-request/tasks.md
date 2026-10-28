@@ -122,7 +122,7 @@
   final con el push que se sigue.
   Verificar: los tests de 2.3 y todos los del grafo y del driver en verde; `pnpm lint`,
   `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 2.5 Documentación: README §2.2 (*PR Babysitter*, el grafo), la salida directa al estado final
+- [x] 2.5 Documentación: README §2.2 (*PR Babysitter*, el grafo), la salida directa al estado final
   cuando falla una comprobación; `prompts.md` §6, lo que añada esta tarea a la entrada de la historia.
   Verificar: `pnpm lint` en verde.
 - [ ] 2.6 **Prueba a mano** (sin commit): una PR de sparring del mantenedor con una comprobación que
