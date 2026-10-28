@@ -11,7 +11,7 @@
 
 ## 1. MOO-101 · shared
 
-- [ ] 1.1 **(test en rojo)** Tests del tipo `6` en `packages/shared/src/viewer-protocol.test.ts`:
+- [x] 1.1 **(test en rojo)** Tests del tipo `6` en `packages/shared/src/viewer-protocol.test.ts`:
   `encodeStrips` da el byte `6` seguido del JSON en UTF-8 del ejemplo de `design.md` (decisión 3), y
   `decodeStrips` lo devuelve igual, también con nombres con acentos. `decodeStrips` rechaza otro tipo,
   un JSON roto y uno que no cumple el esquema (sin `effect`, un efecto que no está en el catálogo, un
