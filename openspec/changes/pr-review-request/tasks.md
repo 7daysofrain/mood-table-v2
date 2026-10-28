@@ -76,7 +76,7 @@
   `adapters/config.ts`, el PAT con *Issues* y *Pull requests* en escritura y sin *Contents*, y que
   `GITHUB_MAINTAINER` es su dueño.
   Verificar: los tests de la configuración en verde.
-- [ ] 1.11 Documentación:
+- [x] 1.11 Documentación:
   - README §2.2 (*PR Babysitter*): el puerto `ReviewRequests`, su adaptador y el nodo
     `pedirRevision`;
   - README §2.4 (*PR Babysitter*): pararlo ya no es «no escribe en GitHub», sino que una petición
