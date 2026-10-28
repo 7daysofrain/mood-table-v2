@@ -81,7 +81,10 @@ que dice el mensaje `6`.
 ```
 
 Esperar a la cola, y no solo a soltar, evita un salto atrás: al soltar, el último valor puede estar
-aún pendiente, y el eco que llega antes es el anterior. Si el motor no aplica el valor, el control
+aún pendiente, y el eco que llega antes es el anterior. Si el motor aplicó el último valor, el control
+espera además a que la tira llegue con otros valores: el motor manda el eco antes de responder al
+`PUT`, pero van por conexiones distintas y la respuesta puede llegar antes (precisado al implementar
+`MOO-107`, a raíz de la revisión de la PR). Si el motor no aplica el valor, el control
 acaba en el que pinta el motor (escenario *Un valor que no llega al motor*): el panel nunca miente en
 reposo.
 
