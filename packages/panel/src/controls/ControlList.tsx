@@ -86,7 +86,7 @@ function FieldHeader({ id, name, value }: Readonly<{ id: string; name: string; v
 function ColorField({ control, value, onChange, onRelease }: Readonly<FieldProps<ColorControl, string>>) {
   const id = useId();
   return (
-    <div role="group" aria-labelledby={id}>
+    <fieldset aria-labelledby={id} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
       <FieldHeader id={id} name={control.name} value={value.toUpperCase()} />
       <ColorPicker
         format="hex"
@@ -97,7 +97,7 @@ function ColorField({ control, value, onChange, onRelease }: Readonly<FieldProps
         saturationLabel={CONTROL_LABELS.saturation}
         hueLabel={CONTROL_LABELS.hue}
       />
-    </div>
+    </fieldset>
   );
 }
 

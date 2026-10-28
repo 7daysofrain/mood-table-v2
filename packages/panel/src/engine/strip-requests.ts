@@ -19,7 +19,8 @@ export type FetchLike = (url: string, init: RequestInit) => Promise<Pick<Respons
  * Los cuerpos de las dos rutas son objetos planos.
  */
 function canonical(body: unknown): string {
-  const fields = typeof body === 'object' && body !== null ? Object.keys(body).sort() : undefined;
+  if (typeof body !== 'object' || body === null) return JSON.stringify(body);
+  const fields = Object.keys(body).sort((a, b) => a.localeCompare(b));
   return JSON.stringify(body, fields);
 }
 

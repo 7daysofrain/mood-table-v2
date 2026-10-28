@@ -116,7 +116,7 @@ async function drag(page: Page, target: Locator, distance: number): Promise<void
   await page.mouse.down();
   for (let step = 1; step <= DRAG_STEPS; step++) {
     await page.mouse.move(startX + (distance * step) / DRAG_STEPS, y);
-    await page.waitForTimeout(STEP_PAUSE_MS);
+    await page.waitForTimeout(STEP_PAUSE_MS); // NOSONAR: el ritmo de un arrastre a mano es tiempo
   }
   await page.mouse.up();
 }
