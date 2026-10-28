@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Fija cómo el DJ cambia el efecto de cada tira con el motor en marcha: lo que ve en las zonas Tiras y
-Efectos del panel, la ruta de la API que recibe el cambio y cómo se entera cada panel del efecto que
-pinta cada tira.
+Fija cómo el DJ cambia el efecto de cada tira y los valores de ese efecto con el motor en marcha: lo
+que ve en las zonas Tiras, Efectos y Controles del panel, las rutas de la API que reciben cada cambio
+y cómo se entera cada panel del efecto y los valores con que pinta cada tira.
 
 ## Requirements
 
