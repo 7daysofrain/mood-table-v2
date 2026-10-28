@@ -1432,6 +1432,35 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El valor del slider se muestra sin unidad («4,0»): el control no conoce el efecto, y la unidad ya va en el nombre del parámetro.*
 - *Para medir «menos de 100 ms desde cada movimiento», el E2E cuenta desde el movimiento hasta el primer frame tras el eco de un `PUT` que salió después de él, así que incluye lo que el cambio espera en la cola.*
 
+#### 6.44 La revisión de la #96, y verificar y archivar el change de `MOO-95`
+
+**Prompt 1** (con la #96 abierta):
+
+> Sí, Auto-fix
+
+**Prompt 2** (al ver que Codex no había revisado el push con los arreglos):
+
+> codex no se deberia de haber lanzado automaticamente con el nuevo push?
+
+**Prompt 3:**
+
+> no hace falta. Porfa lanza codex otra vez a mano. Ademas deberiamos de hacer dogfooding y tener el babysitter arrancado
+
+**Prompt 4** (con la #96 integrada):
+
+> verifica y archiva
+
+*Claude Code (`claude-opus-5-5`, 28-oct). Con Auto-fix activado, la IA atendió la revisión de la #96 comprobando cada hallazgo contra el código antes de cambiarlo. SonarQube tumbó el quality gate por un `sort()` sin función de comparación (fiabilidad) y marcó otras dos incidencias. Codex encontró tres fallos reales del panel, cada uno arreglado con un test que fallaba antes:*
+- *El slider se atascaba con las flechas por debajo de ~1,7 s: el redondeo a centésimas devolvía cada paso a la misma posición.*
+- *Al soltar, el control podía saltar atrás un momento: el eco del motor y la respuesta del `PUT` van por conexiones distintas, y la respuesta puede adelantarse. El control espera ahora el eco si el motor aplicó el valor; D85 y la decisión 2 lo recogen.*
+- *Si otro panel cambiaba el efecto a medio arrastre, el valor local sobrevivía y volvía con la respiración.*
+
+*Que Codex no revisara el push nuevo no era un fallo: lo pide el PR Babysitter (D68), y Docker estaba apagado. La IA lo arrancó con el código de `main`, comprobó que no duplicaría la petición hecha a mano, y en el push siguiente el Babysitter pidió la revisión solo. Antes de archivar comprobó en Linear que las tres tareas de `MOO-95` estaban en Done. `/opsx:verify` cotejó las 21 tareas y los 14 requisitos con el código y los tests, sin problemas críticos ni advertencias.*
+
+*Ajustes:*
+- *Sincronizó las specs a mano, para que el requisito nuevo de la respiración quede junto a ella y no al final de `effects`.*
+- *Hizo el commit de la sincronización solo con las specs, porque `git mv` ya había dejado el movimiento del change en el índice (6.37).*
+
 ---
 
 ### 7. Pull Requests
