@@ -14,13 +14,14 @@ import {
   type PositionMessage,
   type SourceMessage,
   type SourceStatus,
+  type StripConfig,
 } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createControl } from '../core/control.ts';
 import { createFrameLoop, type FrameLoopOptions, type LoopStrip } from '../core/frame-loop.ts';
 import { MemoryAudioSource } from './memory-audio-source.ts';
-import { type EngineServer, startServer } from './server.ts';
+import { buildServer, type EngineApp, type EngineServer, startServer } from './server.ts';
 
 const GOLPES = fileURLToPath(new URL('../../test/fixtures/golpes.wav', import.meta.url));
 
@@ -48,6 +49,7 @@ function loopOf(strips: LoopStrip[], options: FrameLoopOptions = {}) {
 
 let panelDir: string;
 let server: EngineServer | undefined;
+const apps: EngineApp[] = [];
 const clients: WebSocket[] = [];
 
 beforeEach(async () => {
@@ -57,6 +59,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   for (const client of clients.splice(0)) client.close();
+  for (const each of apps.splice(0)) await each.close();
   await server?.close();
   server = undefined;
   await rm(panelDir, { recursive: true, force: true });
@@ -505,5 +508,156 @@ describe('el fichero de audio en /audio', () => {
       expect(response.status).toBe(200);
       await expectBytes(response, audioBytes);
     }
+  });
+});
+
+const demo: StripConfig = {
+  id: 'demo',
+  name: 'Tira de prueba',
+  output: { type: 'virtual' },
+  ledCount: 60,
+  effect: 'energy',
+};
+
+/**
+ * La app del motor, sin escuchar, con un búfer de control real para la tira «demo» y la foto de las
+ * tiras como la monta la raíz de composición.
+ */
+async function apiWith(strip: StripConfig, hasAudioSource: boolean) {
+  const control = createControl({ strips: [strip], hasAudioSource });
+  const built = await buildServer({
+    panelDir,
+    strips: {
+      ...control,
+      snapshot: () => ({
+        strips: [
+          {
+            id: strip.id,
+            name: strip.name,
+            ledCount: strip.ledCount,
+            output: strip.output,
+            effect: control.slot(0).effect,
+          },
+        ],
+      }),
+    },
+  });
+  apps.push(built);
+  return { app: built.app, control };
+}
+
+/** `PUT /api/strips/{stripId}/effect` con `body` tal cual, como texto JSON. */
+function putEffect(app: EngineApp['app'], stripId: string, body: string) {
+  return app.inject({
+    method: 'PUT',
+    url: `/api/strips/${stripId}/effect`,
+    headers: { 'content-type': 'application/json' },
+    payload: body,
+  });
+}
+
+describe('la API: cambiar el efecto de una tira', () => {
+  it('responde 200 con la tira y su efecto nuevo, y la tira cambia', async () => {
+    const { app, control } = await apiWith(demo, true);
+
+    const response = await putEffect(app, 'demo', '{"effect":"breathing"}');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ...demo, effect: 'breathing' });
+    expect(control.slot(0).effect).toBe('breathing');
+  });
+
+  it('responde 200 también si la tira ya tenía ese efecto', async () => {
+    const { app } = await apiWith(demo, true);
+
+    const response = await putEffect(app, 'demo', '{"effect":"energy"}');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual(demo);
+  });
+
+  it('con una tira que no existe, responde 404 con un mensaje que la nombra', async () => {
+    const { app } = await apiWith(demo, true);
+
+    const response = await putEffect(app, 'luces', '{"effect":"breathing"}');
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ message: 'la tira «luces» no existe' });
+  });
+
+  it('con un efecto que no existe, responde 400 con { message } y la tira no cambia', async () => {
+    const { app, control } = await apiWith(demo, true);
+
+    const response = await putEffect(app, 'demo', '{"effect":"strobe"}');
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      message: '«strobe» no es un efecto (hay: `breathing`, `energy`)',
+    });
+    expect(control.slot(0).effect).toBe('energy');
+  });
+
+  it.each([
+    ['que no es JSON', '{"effect":'],
+    ['sin efecto', '{}'],
+    ['con campos de más', '{"effect":"breathing","speed":2}'],
+    ['que no es un objeto', '"breathing"'],
+  ])('con un cuerpo %s, responde 400 con { message } y la tira no cambia', async (_name, body) => {
+    const { app, control } = await apiWith(demo, true);
+
+    const response = await putEffect(app, 'demo', body);
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      message: 'el cuerpo debe ser un objeto JSON con el campo `effect` y ninguno más',
+    });
+    expect(control.slot(0).effect).toBe('energy');
+  });
+
+  it('sin fuente de audio, un efecto reactivo responde 409 y la tira sigue igual', async () => {
+    const { app, control } = await apiWith({ ...demo, effect: 'breathing' }, false);
+
+    const response = await putEffect(app, 'demo', '{"effect":"energy"}');
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      message: 'la tira «demo», efecto `energy`: necesita una fuente de audio',
+    });
+    expect(control.slot(0).effect).toBe('breathing');
+  });
+
+  it('sin tiras, toda tira responde 404', async () => {
+    const built = await buildServer({ panelDir });
+    apps.push(built);
+
+    const response = await putEffect(built.app, 'demo', '{"effect":"breathing"}');
+
+    expect(response.statusCode).toBe(404);
+  });
+});
+
+describe('el OpenAPI de la API', () => {
+  it('en /api/openapi.json describe la ruta con su cuerpo y sus respuestas 200, 400, 404 y 409', async () => {
+    const { app } = await apiWith(demo, true);
+
+    const response = await app.inject({ method: 'GET', url: '/api/openapi.json' });
+    const document = response.json<{
+      paths: Record<string, Record<string, { requestBody?: unknown; responses: object }>>;
+    }>();
+    const route = document.paths['/api/strips/{stripId}/effect']?.put;
+
+    expect(response.statusCode).toBe(200);
+    expect(route?.requestBody).toBeDefined();
+    expect(Object.keys(route?.responses ?? {}).sort()).toEqual(['200', '400', '404', '409']);
+  });
+
+  it('solo describe la API, no el panel, el visor ni el fichero de audio', async () => {
+    const { app } = await apiWith(demo, true);
+
+    const document = (await app.inject({ method: 'GET', url: '/api/openapi.json' })).json<{
+      paths: object;
+    }>();
+
+    expect(Object.keys(document.paths)).toEqual(['/api/strips/{stripId}/effect']);
   });
 });

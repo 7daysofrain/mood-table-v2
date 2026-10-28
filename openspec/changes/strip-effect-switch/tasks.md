@@ -70,7 +70,7 @@
   el audio en cada pulso si hay fuente (desaparece `needsBands`). `startEngine` en `engine.ts` recibe
   el búfer. Los comentarios de cabecera dejan de decir que el análisis se omite.
   Verificar: los tests de 2.4 y todos los del motor pasan, frames dorados incluidos.
-- [ ] 2.6 **(test en rojo)** Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con
+- [x] 2.6 **(test en rojo)** Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con
   `inject` y un búfer real: `PUT /api/strips/{stripId}/effect` responde `200` con la tira y su efecto,
   también si ya lo tenía; `404` con la tira en el mensaje; `400` con `{ message }` para un efecto que
   no existe y para un cuerpo mal formado; `409` sin fuente, con el mensaje de la decisión 5;
