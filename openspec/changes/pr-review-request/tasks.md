@@ -72,7 +72,7 @@
   `snapshotOf`, el montaje en `src/main.ts` y uno de mentira en `src/studio.ts`.
   Verificar: los tests de 1.8 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde; el grafo se abre en LangGraph Studio con el nodo nuevo.
-- [ ] 1.10 Configuración: en `.env.example` y en el comentario de `githubToken` de
+- [x] 1.10 Configuración: en `.env.example` y en el comentario de `githubToken` de
   `adapters/config.ts`, el PAT con *Issues* y *Pull requests* en escritura y sin *Contents*, y que
   `GITHUB_MAINTAINER` es su dueño.
   Verificar: los tests de la configuración en verde.
