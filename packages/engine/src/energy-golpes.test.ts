@@ -6,11 +6,12 @@
  */
 import { fileURLToPath } from 'node:url';
 
-import type { StripConfig } from '@moodtable/shared';
+import type { EffectId, StripConfig } from '@moodtable/shared';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { loadAudioFile } from './adapters/audio-file.ts';
 import type { AudioSource } from './core/audio/audio-source.ts';
+import { createControl } from './core/control.ts';
 import { breathing } from './core/effects/breathing.ts';
 import { energy } from './core/effects/energy.ts';
 import { createFrameLoop, type LightOutput } from './core/frame-loop.ts';
@@ -29,9 +30,17 @@ function strip(id: string, effect: 'energy' | 'breathing', ledCount = 60): Strip
   return { id, name: id, output: { type: 'virtual' }, ledCount, effect };
 }
 
+/** Un cambio de efecto que hace el DJ en el instante `at` (segundos). */
+interface Change {
+  at: number;
+  stripId: string;
+  effect: EffectId;
+}
+
 /** Los frames de cada tira desde el arranque hasta `seconds`, con su instante. */
-function run(strips: StripConfig[], fps: number, seconds: number) {
+function run(strips: StripConfig[], fps: number, seconds: number, changes: Change[] = []) {
   const frames = strips.map(() => [] as { time: number; colors: Uint8Array }[]);
+  const control = createControl({ strips, effects: [energy, breathing], hasAudioSource: true });
   const loop = createFrameLoop(
     strips.map((config, index) => {
       const output: LightOutput = {
@@ -41,10 +50,17 @@ function run(strips: StripConfig[], fps: number, seconds: number) {
       };
       return { config, outputs: [output] };
     }),
+    control,
     fps,
-    { effects: [energy, breathing], audioSource: golpes },
+    { audioSource: golpes },
   );
-  for (let pulse = 0; pulse <= seconds * fps; pulse++) loop.tick((pulse * 1000) / fps);
+  for (let pulse = 0; pulse <= seconds * fps; pulse++) {
+    for (const change of changes) {
+      if (Math.abs(change.at * fps - pulse) > 1e-9) continue;
+      control.setEffect(change.stripId, change.effect);
+    }
+    loop.tick((pulse * 1000) / fps);
+  }
   return frames;
 }
 
@@ -104,6 +120,21 @@ describe('energía con el fichero de golpes', () => {
     expect(silent.every(({ colors }) => isDark(colors))).toBe(true);
     expect(breathingFrames.every(({ colors }) => !isDark(colors))).toBe(true);
     expect(breathingFrames.at(0)?.colors).not.toEqual(breathingFrames.at(-1)?.colors);
+  });
+
+  it('al pasar de la respiración a energía, a los 2 s se ilumina con cada golpe y se apaga', () => {
+    const [frames = []] = run([strip('demo', 'breathing')], 60, 6, [
+      { at: 0.5, stripId: 'demo', effect: 'energy' },
+    ]);
+
+    // 2 s después del cambio. El fichero dura 4 s y vuelve a empezar: el segundo 5 es su golpe 1.
+    for (const hit of [3, 5]) {
+      const during = between(frames, hit, hit + 0.1).map(({ colors }) => brightest(colors));
+      expect(Math.max(...during)).toBeGreaterThan(100);
+      expect(between(frames, hit + 0.5, hit + 0.99).every(({ colors }) => isDark(colors))).toBe(
+        true,
+      );
+    }
   });
 
   it('da los frames de referencia en una tira de 60 LEDs a 60 fps', async () => {

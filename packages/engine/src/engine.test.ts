@@ -1,10 +1,11 @@
-import type { Config } from '@moodtable/shared';
+import type { Config, StripConfig } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MemoryOutput } from './adapters/memory-output.ts';
+import { createControl } from './core/control.ts';
 import { breathing } from './core/effects/breathing.ts';
 import { defaultParams } from './core/effects/effect.ts';
-import { sourceMessage, startEngine, startupMessage } from './engine.ts';
+import { sourceMessage, startEngine, startupMessage, stripsMessage } from './engine.ts';
 
 const demoStrip = {
   id: 'demo',
@@ -27,7 +28,12 @@ afterEach(() => {
 describe('el motor en marcha', () => {
   it('con una tira y una salida en memoria, le llegan frames de respiración', () => {
     const output = new MemoryOutput();
-    const engine = startEngine({ config, createOutputs: () => [output], clock: Date.now });
+    const engine = startEngine({
+      config,
+      control: createControl({ strips: config.strips, hasAudioSource: false }),
+      createOutputs: () => [output],
+      clock: Date.now,
+    });
 
     vi.advanceTimersByTime(1000);
     engine.stop();
@@ -50,8 +56,10 @@ describe('el motor en marcha', () => {
   it('pide las salidas de cada tira declarada, con su posición en el fichero', () => {
     const second = { ...demoStrip, id: 'segunda', ledCount: 10 };
     const asked: string[] = [];
+    const strips = [demoStrip, second];
     const engine = startEngine({
-      config: { ...config, strips: [demoStrip, second] },
+      config: { ...config, strips },
+      control: createControl({ strips, hasAudioSource: false }),
       createOutputs: (strip, index) => {
         asked.push(`${index}:${strip.id}`);
         return [];
@@ -103,5 +111,32 @@ describe('la fuente de audio que se anuncia a los paneles', () => {
 
   it('sin fuente de audio, dice que no hay ninguna', () => {
     expect(sourceMessage(config)).toEqual({ kind: 'none' });
+  });
+});
+
+describe('las tiras que se anuncian a los paneles', () => {
+  const second = { ...demoStrip, id: 'barra', name: 'Barra', ledCount: 30 };
+  const twoStrips: Config = { ...config, strips: [demoStrip, second] };
+
+  it('son las del fichero, en su orden, con el efecto activo de cada una en el búfer', () => {
+    const control = createControl({ strips: twoStrips.strips, hasAudioSource: true });
+    control.setEffect('barra', 'energy');
+
+    expect(stripsMessage(twoStrips, control)).toEqual({
+      strips: [
+        { ...demoStrip, effect: 'breathing' },
+        { ...second, effect: 'energy' },
+      ],
+    });
+  });
+
+  it('no llevan el resto de la tira, aunque el fichero gane campos', () => {
+    // Lo que H3 y H4 añadan a la tira (orden de color, puerto…) no sale al panel sin decidirlo.
+    const withMore = { ...demoStrip, colorOrder: 'GRB' } as StripConfig;
+    const control = createControl({ strips: [withMore], hasAudioSource: false });
+
+    const [strip] = stripsMessage({ ...config, strips: [withMore] }, control).strips;
+
+    expect(Object.keys(strip ?? {})).toEqual(['id', 'name', 'ledCount', 'output', 'effect']);
   });
 });

@@ -43,22 +43,22 @@
 
 ## 2. MOO-102 · engine
 
-- [ ] 2.1 `@fastify/swagger` y `@fastify/type-provider-typebox` (5.x) en el catálogo de
+- [x] 2.1 `@fastify/swagger` y `@fastify/type-provider-typebox` (6.x) en el catálogo de
   `pnpm-workspace.yaml` y en `packages/engine/package.json` con `"catalog:"`, en las versiones
   publicadas hace más de la antigüedad mínima de pnpm.
   Verificar: `pnpm install` y `pnpm typecheck` en verde.
-- [ ] 2.2 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`,
+- [x] 2.2 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`,
   con las tiras y el registro de efectos a mano: `setEffect` da `changed` y cambia el efecto activo;
   el efecto que ya está activo da `unchanged`, no crea ranura ni avisa; una tira que no existe da
   `unknown-strip`; un reactivo sin fuente da `needs-audio-source` y no toca la tira; quien se suscribe
   recibe un aviso por cada `changed` y ninguno por los demás; dos `setEffect` seguidos dejan la ranura
   del último (`specs/instrument-control`, decisión 1).
   Verificar: los tests nuevos fallan porque el búfer no existe.
-- [ ] 2.3 El búfer en `packages/engine/src/core/control.ts`: el puerto `Commands`, la creación con las
+- [x] 2.3 El búfer en `packages/engine/src/core/control.ts`: el puerto `Commands`, la creación con las
   tiras, el registro y si hay fuente, la ranura de cada tira (memoria y parámetros por defecto creados
   en `setEffect`), el efecto activo de cada tira y la suscripción.
   Verificar: los tests de 2.2 pasan y `pnpm lint` no da errores de fronteras.
-- [ ] 2.4 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts` (y
+- [x] 2.4 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts` (y
   `energy-golpes.test.ts` para el fichero de golpes): un cambio entra entero en el pulso siguiente;
   los frames de la otra tira salen idénticos a los de una ejecución sin el cambio; elegir el efecto
   activo deja los frames idénticos; con fuente y todas las tiras con respiración, una tira que pasa a
@@ -66,39 +66,39 @@
   `null` (`specs/effects`, decisiones 1 y 4).
   Verificar: los tests nuevos fallan porque el bucle no lee el búfer; los frames dorados siguen en
   verde.
-- [ ] 2.5 `createFrameLoop` recibe el búfer y lee la ranura de cada tira al empezar el pulso, y analiza
+- [x] 2.5 `createFrameLoop` recibe el búfer y lee la ranura de cada tira al empezar el pulso, y analiza
   el audio en cada pulso si hay fuente (desaparece `needsBands`). `startEngine` en `engine.ts` recibe
   el búfer. Los comentarios de cabecera dejan de decir que el análisis se omite.
   Verificar: los tests de 2.4 y todos los del motor pasan, frames dorados incluidos.
-- [ ] 2.6 **(test en rojo)** Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con
+- [x] 2.6 **(test en rojo)** Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con
   `inject` y un búfer real: `PUT /api/strips/{stripId}/effect` responde `200` con la tira y su efecto,
   también si ya lo tenía; `404` con la tira en el mensaje; `400` con `{ message }` para un efecto que
   no existe y para un cuerpo mal formado; `409` sin fuente, con el mensaje de la decisión 5;
   `/api/openapi.json` describe la ruta con su cuerpo y las respuestas `200`, `400`, `404` y `409`
   (`specs/instrument-control`, decisión 6).
   Verificar: los tests nuevos fallan porque la ruta no existe.
-- [ ] 2.7 La ruta y el OpenAPI en `packages/engine/src/adapters/server.ts`: `buildServer` (plugins,
+- [x] 2.7 La ruta y el OpenAPI en `packages/engine/src/adapters/server.ts`: `buildServer` (plugins,
   type provider, swagger, la ruta con los esquemas de `shared` y los errores con `{ message }`) y
   `startServer`, que lo usa y escucha; el servidor recibe `Commands`.
   Verificar: los tests de 2.6 pasan y los del servidor que ya había siguen en verde.
-- [ ] 2.8 **(test en rojo)** Tests del mensaje de las tiras en `server.test.ts`: un panel que se
+- [x] 2.8 **(test en rojo)** Tests del mensaje de las tiras en `server.test.ts`: un panel que se
   conecta recibe el tipo `6` después de la fuente (y del estado de la tarjeta, si lo hay); un cambio
   llega a todos los paneles conectados; el mensaje lleva solo id, nombre, nº de LEDs, salida y efecto
   (decisiones 2 y 3).
   Verificar: los tests nuevos fallan porque el servidor no envía el tipo `6`.
-- [ ] 2.9 El tipo `6` en el servidor (lo envía al conectarse y lo difunde con cada aviso), la foto de
+- [x] 2.9 El tipo `6` en el servidor (lo envía al conectarse y lo difunde con cada aviso), la foto de
   las tiras (`stripsMessage` en `engine.ts`, junto a `sourceMessage`) y la unión en `main.ts`: crea el
   búfer con la configuración, se lo da al servidor y al motor, y conecta su aviso con el servidor.
   Verificar: los tests de 2.8 pasan, `pnpm lint` no da errores de fronteras y, con `pnpm dev`, un
   `curl -X PUT …/api/strips/<id>/effect` cambia la tira en el visor.
-- [ ] 2.10 **(test en rojo)** Test en `packages/engine/src/openapi.test.ts`: el OpenAPI que genera el
+- [x] 2.10 **(test en rojo)** Test en `packages/engine/src/openapi.test.ts`: el OpenAPI que genera el
   código, en YAML, es igual a `docs/openapi.yaml`; si no, el mensaje dice que se ejecute
   `pnpm openapi`.
   Verificar: el test falla porque el fichero no existe.
-- [ ] 2.11 `pnpm openapi` (en la raíz y en `@moodtable/engine`) monta la app con `buildServer`, sin
+- [x] 2.11 `pnpm openapi` (en la raíz y en `@moodtable/engine`) monta la app con `buildServer`, sin
   escuchar, y escribe `docs/openapi.yaml`; se genera y se commitea.
   Verificar: el test de 2.10 pasa, y al cambiar a mano un esquema de la ruta vuelve a fallar.
-- [ ] 2.12 Documentación: D77-D82 en `docs/idea-mood-table.md` §10, según `design.md`, con el inciso
+- [x] 2.12 Documentación: D77-D82 en `docs/idea-mood-table.md` §10, según `design.md`, con el inciso
   de D28 sobre omitir el análisis tachado y apuntando a D79. README §2.1 (diagrama y *El motor funciona
   sin audio*), §2.2 (*Análisis de audio*, *Búfer de control*, adaptadores *API HTTP* y *Visor*) y §4
   (la ruta con un ejemplo de petición y respuesta, enlaces a `docs/openapi.yaml` y al protocolo del

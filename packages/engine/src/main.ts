@@ -1,9 +1,10 @@
 /**
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
- * adaptadores. Carga la configuración y la fuente de audio, si la declara, arranca el servidor del
- * panel (que anuncia la fuente y el estado de la tarjeta, envía su nivel y la posición del fichero
- * y sirve el fichero) y el motor, y da a cada tira sus salidas: el visor siempre (D43); la salida
- * Adalight de las tiras físicas llega con H3. Si la configuración no sirve, el fichero de audio no
+ * adaptadores. Carga la configuración y la fuente de audio, si la declara, crea el búfer de
+ * control, arranca el servidor del panel (que anuncia la fuente, el estado de la tarjeta y las
+ * tiras, envía su nivel y la posición del fichero, sirve el fichero y recibe los mandos de la API)
+ * y el motor, y da a cada tira sus salidas: el visor siempre (D43); la salida Adalight de las tiras
+ * físicas llega con H3. Si la configuración no sirve, el fichero de audio no
  * se puede leer o su formato no vale, la tarjeta de sonido no se puede abrir, o el servidor no
  * puede escuchar, el motor no arranca: dice qué falla y termina con código 1.
  */
@@ -14,7 +15,8 @@ import { loadConfig, REPO_ROOT } from './adapters/config-file.ts';
 import { startServer } from './adapters/server.ts';
 import { openSoundcard } from './adapters/soundcard.ts';
 import { spawnCapture } from './adapters/soundcard.hardware.ts';
-import { sourceMessage, startEngine, startupMessage } from './engine.ts';
+import { createControl } from './core/control.ts';
+import { sourceMessage, startEngine, startupMessage, stripsMessage } from './engine.ts';
 
 /** El build del panel, que sirve el motor (decisión 12). */
 const PANEL_DIR = join(REPO_ROOT, 'packages', 'panel', 'dist');
@@ -36,6 +38,13 @@ async function main(): Promise<string | undefined> {
       : undefined;
   if (soundcard && !soundcard.ok) return soundcard.error;
 
+  // El búfer de control, antes que el servidor y el bucle, que dependen de él (decisión 1 del
+  // change strip-effect-switch).
+  const control = createControl({
+    strips: loaded.config.strips,
+    hasAudioSource: audioSource !== undefined,
+  });
+
   const { host, port } = loaded.config.server;
   let server;
   try {
@@ -46,6 +55,7 @@ async function main(): Promise<string | undefined> {
       source: sourceMessage(loaded.config),
       audioBytes: audio?.ok ? audio.bytes : undefined,
       watchSourceStatus: soundcard?.onStatus,
+      strips: { ...control, snapshot: () => stripsMessage(loaded.config, control) },
     });
   } catch (error) {
     // Un `arecord` vivo, o un intento pendiente, mantendría el proceso en marcha, y el motor no
@@ -57,6 +67,7 @@ async function main(): Promise<string | undefined> {
   console.log(startupMessage(loaded.file, loaded.config, server.url));
   startEngine({
     config: loaded.config,
+    control,
     createOutputs: (_strip, index) => [server.viewerOutput(index)],
     audioSource: audio?.source ?? soundcard?.source,
     levelOutputs: [server.levelOutput],

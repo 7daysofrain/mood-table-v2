@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "node src/main.ts",
     "fixtures": "node test/fixtures/golpes.ts",
+    "openapi": "node src/write-openapi.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fastify/static": "catalog:",
+    "@fastify/swagger": "catalog:",
+    "@fastify/type-provider-typebox": "catalog:",
     "@fastify/websocket": "catalog:",
     "@moodtable/shared": "workspace:*",
     "fastify": "catalog:",

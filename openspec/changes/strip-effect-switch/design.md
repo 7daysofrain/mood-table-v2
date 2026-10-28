@@ -197,8 +197,9 @@ apagada).
   adaptadores dentro del proceso, que llaman a `Commands` directamente.
 - **Esquemas en `shared`** (cuerpo, respuesta y error), para que el panel use los mismos tipos.
 - **OpenAPI con `@fastify/swagger`** a partir de los esquemas de la ruta, con
-  `@fastify/type-provider-typebox` 5.x (admite `typebox` 1.x, comprobado con Context7 el 28-oct).
-  Se sirve en `/api/openapi.json`. Sin Swagger UI: una página y una dependencia para una ruta.
+  `@fastify/type-provider-typebox` 6.x (admite `typebox` 1.x, comprobado con npm el 28-oct; la 5.x
+  pide `@sinclair/typebox` ≤ 0.34). Se sirve en `/api/openapi.json`. Sin Swagger UI: una página y una
+  dependencia para una ruta.
 - **`docs/openapi.yaml` generado y commiteado**: `pnpm openapi` lo escribe y un test falla si no
   coincide con lo que genera el código, con el comando en el mensaje. El corrector de la entrega lee el
   repositorio, no el motor en marcha. El README §4 resume la ruta con un ejemplo y enlaza el fichero y

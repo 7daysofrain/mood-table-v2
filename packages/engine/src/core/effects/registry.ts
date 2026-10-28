@@ -1,7 +1,7 @@
 /**
  * Registro de efectos del motor (decisión 10 del change virtual-strip-audio-file): el render de cada
- * efecto del catálogo de `@moodtable/shared`, con el mismo id y el mismo `usesAudio`. El bucle busca
- * aquí el efecto que declara cada tira.
+ * efecto del catálogo de `@moodtable/shared`, con el mismo id y el mismo `usesAudio`. El búfer de
+ * control busca aquí el efecto de cada tira, al arrancar y en cada cambio.
  */
 import { breathing } from './breathing.ts';
 import type { Effect } from './effect.ts';
