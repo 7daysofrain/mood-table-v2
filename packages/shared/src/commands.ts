@@ -6,7 +6,6 @@
 import Type, { type Static } from 'typebox';
 
 import { EffectIdSchema } from './effects.ts';
-import { StripStateSchema } from './viewer-protocol.ts';
 
 /** Un cuerpo con campos de más es un error de quien llama, no algo que ignorar. */
 const CLOSED = { additionalProperties: false } as const;
@@ -15,7 +14,7 @@ const CLOSED = { additionalProperties: false } as const;
 export const SetEffectBodySchema = Type.Object({ effect: EffectIdSchema }, CLOSED);
 
 /** La respuesta `200`: la tira con su efecto activo, con la misma forma que en el mensaje `6`. */
-export const SetEffectResponseSchema = StripStateSchema;
+export { StripStateSchema as SetEffectResponseSchema } from './viewer-protocol.ts';
 
 /** La respuesta de cualquier error de la API (`400`, `404`, `409`): una frase que dice qué pasa. */
 export const ApiErrorSchema = Type.Object({ message: Type.String({ minLength: 1 }) }, CLOSED);
