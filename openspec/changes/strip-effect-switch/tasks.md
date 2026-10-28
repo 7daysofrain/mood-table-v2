@@ -107,7 +107,7 @@
 
 ## 3. MOO-103 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests de la conexión en `packages/panel/src/engine/connection.test.ts`:
+- [x] 3.1 **(test en rojo)** Tests de la conexión en `packages/panel/src/engine/connection.test.ts`:
   guarda las tiras que llegan por el tipo `6` y avisa al cambiar; un mensaje `6` que no cumple el
   esquema no cambia nada; las olvida al perder la conexión (decisión 8).
   Verificar: los tests nuevos fallan porque la conexión no decodifica el tipo `6`.

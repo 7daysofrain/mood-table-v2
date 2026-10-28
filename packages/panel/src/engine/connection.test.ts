@@ -4,6 +4,8 @@ import {
   encodePosition,
   encodeSource,
   encodeSourceStatus,
+  encodeStrips,
+  type StripsMessage,
 } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -527,5 +529,99 @@ describe('la posición del fichero de audio', () => {
     expect(connection.source).toEqual({ kind: 'file', name: 'golpes.wav' });
     expect(connection.frames).toEqual(new Map([[0, Uint8Array.of(1, 2, 3)]]));
     expect(connection.level).toBe(0.5);
+  });
+});
+
+describe('las tiras del motor', () => {
+  const STRIPS: StripsMessage = {
+    strips: [
+      { id: 'barra', name: 'Barra', ledCount: 60, output: { type: 'virtual' }, effect: 'energy' },
+      { id: 'cabina', name: 'Cabina', ledCount: 30, output: { type: 'virtual' }, effect: 'breathing' },
+    ],
+  };
+
+  it('guarda las tiras que llegan, con su efecto activo, y avisa', () => {
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    connection.start();
+    lastSocket().open();
+    listener.mockClear();
+
+    lastSocket().receive(encodeStrips(STRIPS));
+
+    expect(connection.strips).toEqual(STRIPS.strips);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('cada mensaje nuevo sustituye al anterior entero y avisa', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeStrips(STRIPS));
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    const [barra, cabina] = STRIPS.strips;
+    if (!barra || !cabina) throw new Error('Faltan tiras');
+
+    lastSocket().receive(encodeStrips({ strips: [{ ...barra, effect: 'breathing' }, cabina] }));
+
+    expect(connection.strips?.map((strip) => strip.effect)).toEqual(['breathing', 'breathing']);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('sin mensaje de tiras, no las sabe', () => {
+    connection.start();
+    lastSocket().open();
+
+    expect(connection.strips).toBeUndefined();
+  });
+
+  it('un mensaje de tiras que no cumple su esquema no cambia nada ni avisa', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeStrips(STRIPS));
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    const unknownEffect = new TextEncoder().encode(
+      JSON.stringify({ strips: [{ ...STRIPS.strips[0], effect: 'strobe' }] }),
+    );
+
+    lastSocket().receive(Uint8Array.of(6, ...unknownEffect));
+    lastSocket().receive(Uint8Array.of(6, 0x7b));
+
+    expect(connection.strips).toEqual(STRIPS.strips);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('al perder la conexión con el motor, las olvida', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeStrips(STRIPS));
+
+    lastSocket().drop();
+
+    expect(connection.strips).toBeUndefined();
+  });
+
+  it('al pararla, también las olvida', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeStrips(STRIPS));
+
+    connection.stop();
+
+    expect(connection.strips).toBeUndefined();
+  });
+
+  it('unas tiras que llegan tarde por una conexión ya cerrada no cuentan', () => {
+    connection.start();
+    const closed = lastSocket();
+    closed.open();
+    closed.drop();
+    vi.advanceTimersByTime(1000);
+    lastSocket().open();
+
+    closed.receive(encodeStrips(STRIPS));
+
+    expect(connection.strips).toBeUndefined();
   });
 });
