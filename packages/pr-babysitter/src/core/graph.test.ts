@@ -41,6 +41,7 @@ function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}) 
     labels: [],
     checks: PENDING,
     review: null,
+    reviewRequested: false,
     observedAt: minute * MINUTE,
     ...overrides,
   } satisfies PullRequestSnapshot;
@@ -198,12 +199,12 @@ describe('hasta el estado final', () => {
 });
 
 describe('el tiempo de espera', () => {
-  it('la revisión no termina en 30 min desde que se vio el push: necesita intervención', async () => {
+  it('la revisión no termina en 30 min desde que pasan las comprobaciones: necesita intervención', async () => {
     const { notices, state } = await follow(
       snapshot(0),
       snapshot(5, { checks: PASSED }),
-      snapshot(29, { checks: PASSED, review: running() }),
-      snapshot(30, { checks: PASSED, review: running() }),
+      snapshot(34, { checks: PASSED, review: running() }),
+      snapshot(35, { checks: PASSED, review: running() }),
     );
 
     expect(summary(notices)).toEqual([

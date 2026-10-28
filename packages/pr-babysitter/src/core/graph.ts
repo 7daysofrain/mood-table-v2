@@ -40,8 +40,13 @@ import {
 const TrackingState = new StateSchema({
   /** La última foto de la PR que ha recibido el hilo. */
   snapshot: pullRequestSnapshotSchema,
-  /** El push que se sigue, y desde cuándo cuenta la espera. Lo fija el aviso de seguimiento. */
-  push: z.object({ sha: z.string(), seenAt: z.number() }).optional(),
+  /**
+   * El push que se sigue, y desde cuándo cuentan las esperas de comprobaciones y revisión. Lo fija
+   * el aviso de seguimiento.
+   */
+  push: z
+    .object({ sha: z.string(), seenAt: z.number(), reviewSince: z.number().optional() })
+    .optional(),
   /**
    * Entrada opcional: la ejecución empieza sin el aviso de seguimiento, porque el driver ya ha
    * avisado de que la reanuda (change pr-stop, decisión 2). Vale solo para esa ejecución.

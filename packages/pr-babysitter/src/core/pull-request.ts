@@ -49,12 +49,14 @@ export const reviewSchema = z.object({
 export type Review = z.infer<typeof reviewSchema>;
 
 /**
- * Lo que recibe un hilo al reanudarse: la PR, sus comprobaciones, la revisión y cuándo la vio el
+ * Lo que recibe un hilo al reanudarse: la PR, sus comprobaciones, la revisión, si el sistema ya ha
+ * pedido la revisión del último push (change pr-review-request, decisión 2) y cuándo la vio el
  * driver (ms desde epoch).
  */
 export const pullRequestSnapshotSchema = openPullRequestSchema.extend({
   checks: z.array(checkSchema),
   review: reviewSchema.nullable(),
+  reviewRequested: z.boolean(),
   observedAt: z.number(),
 });
 

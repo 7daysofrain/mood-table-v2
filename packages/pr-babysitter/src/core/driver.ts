@@ -280,7 +280,7 @@ export function createDriver({
             required.then((names) => github.checks(pullRequest.headSha, names)),
             reviewer.review(pullRequest.number),
           ]);
-          return { ...pullRequest, checks, review, observedAt: now };
+          return { ...pullRequest, checks, review, reviewRequested: false, observedAt: now };
         };
 
         // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.

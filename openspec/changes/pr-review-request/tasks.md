@@ -39,7 +39,7 @@
   - `afterReviewWait` cuenta el tiempo de espera desde `reviewSince`: comprobaciones que tardan 20 min
     y revisión que termina 20 min después no dan `timedOut`; 30 min desde `reviewSince` sí. Sin
     `reviewSince`, desde `seenAt`, como hoy.
-- [ ] 1.5 Las reglas en `core/tracking.ts`, `reviewSince` en `TrackedPush` y en el estado del grafo,
+- [x] 1.5 Las reglas en `core/tracking.ts`, `reviewSince` en `TrackedPush` y en el estado del grafo,
   y `reviewRequested` en la foto (`core/pull-request.ts`), con las fotos que construyen a mano los
   tests y `src/studio.ts` en `reviewRequested: false`.
   Verificar: los tests de 1.4 en verde; `pnpm typecheck` en verde.
