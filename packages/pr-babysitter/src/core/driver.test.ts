@@ -44,6 +44,8 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     requests: [] as { number: number; sha: string }[],
     /** Las veces que se ha leído si el sistema ya ha pedido la revisión de un push. */
     requestedReads: [] as { number: number; sha: string }[],
+    /** Si falla solo la petición de revisión. */
+    requestFailure: undefined as Error | undefined,
     failure: undefined as Error | undefined,
     /** Si falla solo la lectura de las comprobaciones. */
     checksFailure: undefined as Error | undefined,
@@ -71,6 +73,7 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
       return read(github.requests.some((r) => r.number === number && r.sha === sha));
     },
     request(number, sha) {
+      if (github.requestFailure) return Promise.reject(github.requestFailure);
       github.requests.push({ number, sha });
       return Promise.resolve();
     },
@@ -844,6 +847,44 @@ describe('el sistema pide la revisión cuando pasan las comprobaciones del últi
     await ticks(tick, 3);
 
     expect(github.requests).toEqual([]);
+  });
+
+  it('una PR detenida con el aviso de comprobaciones pendiente lo publica, pero no la pide', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = PASSED;
+    notifier.failing = true;
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    notifier.failing = false;
+    await ticks(tick, 2);
+
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'stopped'],
+    ]);
+    expect(github.requests).toEqual([]);
+  });
+
+  it('una PR detenida con la petición pendiente por un fallo de red no la pide', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = PASSED;
+    github.requestFailure = new Error('fetch failed');
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    github.requestFailure = undefined;
+    await ticks(tick, 2);
+
+    expect(github.requests).toEqual([]);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'stopped'],
+    ]);
   });
 });
 

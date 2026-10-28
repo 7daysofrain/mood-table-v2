@@ -81,6 +81,12 @@ export interface TrackingOptions {
   log: (line: string) => void;
 }
 
+/**
+ * El nodo que pide la revisión. El driver lo nombra para no entrar en él al terminar la parada de
+ * una PR (change pr-stop, decisión 3): pedirla no es terminar lo que estaba en curso.
+ */
+export const REVIEW_REQUEST_NODE = 'pedirRevision';
+
 /** La última foto que guarda un hilo, validada: `getState` da sus valores sin tipo. */
 export function lastSnapshot(values: unknown): PullRequestSnapshot {
   return z.object({ snapshot: pullRequestSnapshotSchema }).parse(values).snapshot;
@@ -185,7 +191,7 @@ export function createTrackingGraph(
       ends: Object.values(AFTER_CHECKS),
     })
     .addNode('avisarComprobaciones', avisarComprobaciones)
-    .addNode('pedirRevision', pedirRevision)
+    .addNode(REVIEW_REQUEST_NODE, pedirRevision)
     .addNode('esperarRevisor', esperarRevisor, { ends: Object.values(AFTER_REVIEW) })
     .addNode('avisarEstadoFinal', avisarEstadoFinal)
     .addConditionalEdges(
@@ -200,10 +206,10 @@ export function createTrackingGraph(
     // pide la revisión si nadie la ha pedido ni empezado (decisión 3).
     .addConditionalEdges(
       'avisarComprobaciones',
-      ({ snapshot }) => (needsReviewRequest(snapshot) ? 'pedirRevision' : 'esperarRevisor'),
-      ['pedirRevision', 'esperarRevisor'],
+      ({ snapshot }) => (needsReviewRequest(snapshot) ? REVIEW_REQUEST_NODE : 'esperarRevisor'),
+      [REVIEW_REQUEST_NODE, 'esperarRevisor'],
     )
-    .addEdge('pedirRevision', 'esperarRevisor')
+    .addEdge(REVIEW_REQUEST_NODE, 'esperarRevisor')
     .addEdge('avisarEstadoFinal', END)
     .compile({ checkpointer });
 }

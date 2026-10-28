@@ -16,7 +16,12 @@
  */
 import { type BaseCheckpointSaver, Command } from '@langchain/langgraph';
 
-import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
+import {
+  createTrackingGraph,
+  lastSnapshot,
+  REVIEW_REQUEST_NODE,
+  threadConfig,
+} from './graph.ts';
 import {
   githubUnauthorizedNotice,
   type PullRequestNotice,
@@ -161,14 +166,17 @@ export function createDriver({
    * después encola «Detenida» y olvida el hilo, salvo si terminó con el estado final, que se
    * conserva para comparar su SHA al reanudar. Si el aviso pendiente falla, lanza, y la parada se
    * termina en la vuelta siguiente, también si para entonces le han quitado la etiqueta.
+   *
+   * Solo termina el aviso: el hilo se para antes de pedir la revisión, y una petición pendiente no
+   * se reintenta. Pedirla sería una acción nueva en una PR detenida (change pr-review-request).
    */
   async function finishStopping(pullRequest: OpenPullRequest) {
     const { number } = pullRequest;
     if (!stopping.has(number)) return;
     const config = threadConfig(number);
     let state = await graph.getState(config);
-    if (state.next.length > 0 && !waiting(state)) {
-      await graph.invoke(null, config);
+    if (state.next.length > 0 && !waiting(state) && !state.next.includes(REVIEW_REQUEST_NODE)) {
+      await graph.invoke(null, { ...config, interruptBefore: [REVIEW_REQUEST_NODE] });
       state = await graph.getState(config);
     }
     stopping.delete(number);
