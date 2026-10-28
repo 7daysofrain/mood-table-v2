@@ -91,7 +91,7 @@
   búfer con la configuración, se lo da al servidor y al motor, y conecta su aviso con el servidor.
   Verificar: los tests de 2.8 pasan, `pnpm lint` no da errores de fronteras y, con `pnpm dev`, un
   `curl -X PUT …/api/strips/<id>/effect` cambia la tira en el visor.
-- [ ] 2.10 **(test en rojo)** Test en `packages/engine/src/openapi.test.ts`: el OpenAPI que genera el
+- [x] 2.10 **(test en rojo)** Test en `packages/engine/src/openapi.test.ts`: el OpenAPI que genera el
   código, en YAML, es igual a `docs/openapi.yaml`; si no, el mensaje dice que se ejecute
   `pnpm openapi`.
   Verificar: el test falla porque el fichero no existe.
