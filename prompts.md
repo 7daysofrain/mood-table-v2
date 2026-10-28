@@ -1333,6 +1333,50 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Con la #88 integrada, la IA implementó `MOO-91` en su propia PR: si una comprobación falla, el grafo va directo al estado final, sin el aviso de comprobaciones terminadas, y no dice que la revisión no ha terminado si no llegó a pedirla. Para eso, el estado final recibe el push que se sigue.*
 
+#### 6.39 Mover los controles del efecto: refinamiento, estimación, exploración y change (`MOO-95`)
+
+**Prompt 1** (en `/refine-story MOO-95`, el caso feliz del humano):
+
+> quiero que al tener seleccionado el efecto de respiración en una tira determinada me salgan los controles de dicho efecto en la parte de UI designada. Pueda cambiar esos controles y ver el efecto en las tiras con una latencia baja
+
+*Claude Code (`claude-opus-5-5`, 28-oct). En el INVEST, la IA marcó dos avisos: la historia toca tres áreas y «latencia baja» no se puede comprobar. La segunda la resolvió con el umbral de E1 que ya estaba en `docs/umbrales-para-specs.md` (≤ 100 ms de control a luz). Partió el texto en dos escenarios, porque describe dos acciones. El subagente `poke-holes`, que solo recibió el ID, los non-goals y el texto literal, devolvió 8 candidatos. El humano aceptó la recomendación, y la historia quedó con 7 escenarios GWT. Uno salió de `poke-holes` y no estaba en el caso feliz: cambiar el periodo a media respiración no da un salto de brillo.*
+
+**Prompt 2** (en `/estimate-story MOO-95`):
+
+> Mi carta es un 5. El punto mas caro que veo es el generador de UI que tenemos que hacer un mapeo completo de inputs a controles.
+
+*El estimador, que no vio la carta, también sacó un 5, pero puso el coste en el motor y en el tiempo real (la cadencia del arrastre y la fase de la respiración), no en el panel. La IA señaló que coincidir con motivos distintos quiere decir que el riesgo puede estar en cualquiera de los dos sitios. Avisó además de que el mapeo «completo» no entra en la historia: solo hacen falta el slider y el selector de color.*
+
+**Prompt 3** (en `/opsx:explore MOO-95`, cuando la IA recomendaba que la orden de valores nombrara su efecto):
+
+> Esto parece un tema de racing condition entonces. ¿se va a dar con un servidor local? Me parece que puede introducir una complejidad excesiva para un caso muy raro
+
+*La exploración fue decisión por decisión. En la de las colas de envío, el humano no la entendió y preguntó si era throttle o debounce. La IA separó los dos temas: el ritmo de envío ya estaba resuelto (un envío en camino y el último pendiente, sin reloj), y lo que se decidía era el orden entre dos órdenes distintas, con un caso práctico. Con este prompt, la IA dio los números sin inflarlos: en local casi nunca pasa; con la Pi por WiFi es posible, pero exige soltar un control y pulsar otro efecto en el mismo instante, y hoy no haría ningún daño. Cambió su recomendación: dos colas y esquemas de parámetros cerrados, porque al mirarlo vio que el de la energía aceptaba cualquier objeto. El caso de dos efectos con un parámetro del mismo nombre quedó como riesgo aceptado, con la salida apuntada (D86). Las otras decisiones: el periodo de 1 a 20 s en escala logarítmica (D84), el control sigue al dedo mientras se arrastra (D85), `PUT …/values` con todos los valores (D87), extensiones `x-` en el esquema (D88) y los valores en el mensaje `6` (D89). `/opsx:propose` escribió el change `strip-effect-values`, con una sección por tarea: `MOO-105` (shared), `MOO-106` (engine) y `MOO-107` (panel).*
+
+*Ajustes:*
+- *La IA había dado por acordado que los nombres de los parámetros irían en inglés, en el `title` del esquema, apoyándose en algo falso que había dicho ella: que el panel ya estaba en inglés. Sigue en castellano hasta `MOO-104`. Lo corrigió, se lo preguntó al humano y los nombres van en `literals.ts`, en castellano (decisión 9).*
+- *El commit del change y del PRD (Q2 resuelta en el rango del periodo, Q8 ampliada a los valores) se hizo desde un *worktree* temporal: la sesión de `MOO-81` había cambiado de rama la carpeta compartida.*
+
+#### 6.40 Los parámetros de la respiración y el contrato de cambio de valor (`MOO-105`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-95
+
+*Claude Code (`claude-opus-5-5`, 28-oct). Como `MOO-101` en `MOO-94`, la IA sacó la rama de la tarea de la rama de la historia, para que el change y el PRD lleguen a `main` con esta PR. Implementó la sección `MOO-105` en TDD, con un commit por paso: los esquemas de parámetros cerrados y en el catálogo, con el rango del periodo y las extensiones `x-`; los valores en el mensaje de las tiras, como una unión discriminada por efecto; y los esquemas de la ruta de valores. Antes del paso 1.3 se paró: con `values` obligatorio en cada tira, el motor y el panel se quedaban en rojo, y el `tasks.md` daba por hecho que la tarea podía integrarse sola.*
+
+**Prompt 2** (cuando la IA propuso adaptar el motor y los tests del panel en esta PR):
+
+> Pero vamos a hacer esta fontaneria solo para cubrir un caso de test o es una sitiacion real que se puede dar, porque no te creas que tengo claro lo que me cuetnas
+
+*Antes de contestar, la IA lo comprobó en el código: el panel descarta en silencio un mensaje `6` que no cumple el esquema, así que con el motor sin adaptar las zonas Tiras y Efectos se quedarían vacías en `main`, y el CI ni siquiera dejaría integrar la PR. Separó lo real (una línea en el motor, que manda los valores por defecto, los únicos posibles hasta `setValues`) de lo que solo son datos de test (las tiras falsas de los fixtures). Reconoció que el fallo venía de su `tasks.md`: había copiado el patrón de `MOO-101`, en el que el mensaje `6` era nuevo y no lo usaba nadie. El humano había pedido antes las opciones con sus consecuencias (adaptar los usos aquí, dejar `values` opcional hasta `MOO-106` o llevar el cambio a `MOO-106`), y eligió la primera.*
+
+*Ajustes:*
+- *La adaptación va dentro del paso 1.4, no en un paso aparte, para que ningún commit deje el código sin compilar. El `tasks.md` se actualizó en su propio commit.*
+- *El tipo de TypeBox no conserva las claves `x-`, aunque el esquema sí: el test las lee como datos, que es como lo hará el panel.*
+- *`registry.test.ts` del motor comparaba el catálogo entero. Ahora compara solo id y `usesAudio`, y `MOO-106` lo rehace con el esquema.*
+- *`viewer-protocol.md` no cuenta cómo se comportará el mensaje durante el arrastre: es la fuente del formato, y eso llega con `MOO-107`.*
+
 ---
 
 ### 7. Pull Requests

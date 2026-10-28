@@ -41,7 +41,7 @@
   (la tira), con tests de `Value.Check` que aceptan el ejemplo de `design.md` (decisión 4) y rechazan
   un periodo fuera de rango y un campo de más.
   Verificar: `pnpm test` y `pnpm typecheck` en verde.
-- [ ] 1.6 `prompts.md`: la entrada de la exploración y la propuesta del change (las decisiones de
+- [x] 1.6 `prompts.md`: la entrada de la exploración y la propuesta del change (las decisiones de
   `design.md` y cómo se llegó a ellas, con la marcha atrás de la decisión 3) y la de esta tarea.
   Verificar: sigue el formato de `docs/instructions/course.md` §5.
 
