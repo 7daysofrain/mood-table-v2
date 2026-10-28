@@ -16,8 +16,8 @@ export interface FrameContext {
   /** Segundos desde el frame anterior. */
   dt: number;
   /**
-   * Rasgos del audio del pulso, los mismos para todas las tiras. `null` si no hay fuente de audio o
-   * si ninguna tira tiene un efecto que use audio (decisión 4 del change virtual-strip-audio-file).
+   * Rasgos del audio del pulso, los mismos para todas las tiras. `null` solo si no hay fuente de
+   * audio (decisión 4 del change strip-effect-switch).
    */
   audio: AudioFeatures | null;
 }
@@ -25,7 +25,7 @@ export interface FrameContext {
 export interface Effect<P, M> {
   /** Identificador estable: `"breathing"`, `"spectrum"`… */
   id: string;
-  /** Reactivo (`true`) o de ambiente (`false`): el bucle solo analiza el audio si alguno lo usa. */
+  /** Reactivo (`true`) o de ambiente (`false`), como `usesAudio` del catálogo de efectos. */
   usesAudio: boolean;
   /** Tipos, rangos y valores por defecto de los parámetros: el panel genera sus controles con él. */
   paramsSchema: TSchema;

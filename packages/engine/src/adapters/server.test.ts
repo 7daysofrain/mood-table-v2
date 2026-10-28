@@ -17,7 +17,8 @@ import {
 } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { createFrameLoop } from '../core/frame-loop.ts';
+import { createControl } from '../core/control.ts';
+import { createFrameLoop, type FrameLoopOptions, type LoopStrip } from '../core/frame-loop.ts';
 import { MemoryAudioSource } from './memory-audio-source.ts';
 import { type EngineServer, startServer } from './server.ts';
 
@@ -35,6 +36,15 @@ const strip = {
   ledCount: 60,
   effect: 'breathing' as const,
 };
+
+/** El bucle a 60 fps con su búfer de control, como lo monta la raíz de composición. */
+function loopOf(strips: LoopStrip[], options: FrameLoopOptions = {}) {
+  const control = createControl({
+    strips: strips.map((each) => each.config),
+    hasAudioSource: options.audioSource !== undefined,
+  });
+  return createFrameLoop(strips, control, 60, options);
+}
 
 let panelDir: string;
 let server: EngineServer | undefined;
@@ -177,7 +187,7 @@ describe('el servidor del motor', () => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
     const first = await connect(server.url);
     const second = await connect(server.url);
-    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60);
+    const loop = loopOf([{ config: strip, outputs: [server.viewerOutput(0)] }]);
 
     for (let pulse = 0; pulse < 5; pulse++) loop.tick((pulse * 1000) / 60);
     await until(() => first.length === 5 && second.length === 5);
@@ -192,12 +202,11 @@ describe('el servidor del motor', () => {
   it('cada tira envía su índice', async () => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
     const frames = await connect(server.url);
-    const loop = createFrameLoop(
+    const loop = loopOf(
       [
         { config: strip, outputs: [server.viewerOutput(0)] },
         { config: { ...strip, id: 'corta', ledCount: 10 }, outputs: [server.viewerOutput(1)] },
       ],
-      60,
     );
 
     loop.tick(0);
@@ -242,7 +251,7 @@ describe('el servidor del motor', () => {
     const tone = Float32Array.from({ length: 44_100 }, (_, index) =>
       Math.sin((2 * Math.PI * 1000 * index) / 44_100),
     );
-    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60, {
+    const loop = loopOf([{ config: strip, outputs: [server.viewerOutput(0)] }], {
       audioSource: new MemoryAudioSource(tone, 44_100),
       levelOutputs: [server.levelOutput],
     });
@@ -261,7 +270,7 @@ describe('el servidor del motor', () => {
   it('sin fuente de audio, ningún mensaje de nivel', async () => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
     const received = await connectAll(server.url);
-    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60, {
+    const loop = loopOf([{ config: strip, outputs: [server.viewerOutput(0)] }], {
       levelOutputs: [server.levelOutput],
     });
 
@@ -281,7 +290,7 @@ describe('el servidor del motor', () => {
     const first = await connectAll(server.url);
     const second = await connectAll(server.url);
     // Un fichero de 1 s a 60 Hz: la posición de cada pulso es su instante.
-    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60, {
+    const loop = loopOf([{ config: strip, outputs: [server.viewerOutput(0)] }], {
       audioSource: new MemoryAudioSource(new Float32Array(60), 60),
       positionOutputs: [server.positionOutput],
     });
@@ -301,7 +310,7 @@ describe('el servidor del motor', () => {
   it('sin fuente de audio, ningún mensaje de posición', async () => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
     const received = await connectAll(server.url);
-    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60, {
+    const loop = loopOf([{ config: strip, outputs: [server.viewerOutput(0)] }], {
       positionOutputs: [server.positionOutput],
     });
 
@@ -423,7 +432,7 @@ describe('el estado de la tarjeta de sonido', () => {
   ])('%s, ningún mensaje de estado', async (_name, source) => {
     server = await startServer({ host: '127.0.0.1', port: 0, panelDir, source });
     const received = await connectAll(server.url);
-    const loop = createFrameLoop([{ config: strip, outputs: [server.viewerOutput(0)] }], 60);
+    const loop = loopOf([{ config: strip, outputs: [server.viewerOutput(0)] }]);
 
     loop.tick(0);
     await until(() => received.frames.length === 1);

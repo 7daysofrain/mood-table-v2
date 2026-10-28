@@ -1,7 +1,7 @@
 /**
- * Arranque del motor: monta el bucle con las tiras de la configuración y sus salidas y lo pone en
- * marcha con el temporizador. `main.ts` le pasa las piezas reales; los tests, una salida en
- * memoria.
+ * Arranque del motor: monta el bucle con las tiras de la configuración, sus salidas y el búfer de
+ * control, y lo pone en marcha con el temporizador. `main.ts` le pasa las piezas reales; los tests,
+ * una salida en memoria.
  */
 import { basename } from 'node:path';
 
@@ -9,6 +9,7 @@ import type { Config, SourceMessage, StripConfig } from '@moodtable/shared';
 
 import { startTicker, type Ticker } from './adapters/ticker.ts';
 import type { AudioSource } from './core/audio/audio-source.ts';
+import type { ControlBuffer } from './core/control.ts';
 import {
   createFrameLoop,
   type LevelOutput,
@@ -18,6 +19,8 @@ import {
 
 export interface EngineOptions {
   config: Config;
+  /** El búfer de control, creado con las tiras de `config`: el bucle lee de él el efecto de cada una. */
+  control: ControlBuffer;
   /**
    * Las salidas de cada tira, con su posición en el fichero. Las decide la raíz de composición
    * (decisión 2).
@@ -35,6 +38,7 @@ export interface EngineOptions {
 
 export function startEngine({
   config,
+  control,
   createOutputs,
   audioSource,
   levelOutputs,
@@ -43,6 +47,7 @@ export function startEngine({
 }: EngineOptions): Ticker {
   const loop = createFrameLoop(
     config.strips.map((strip, index) => ({ config: strip, outputs: createOutputs(strip, index) })),
+    control,
     config.fps,
     { audioSource, levelOutputs, positionOutputs },
   );

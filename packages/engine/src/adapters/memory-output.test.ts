@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { createControl } from '../core/control.ts';
 import { createFrameLoop } from '../core/frame-loop.ts';
 import { MemoryOutput } from './memory-output.ts';
 
@@ -13,7 +14,8 @@ describe('la salida en memoria', () => {
       ledCount: 60,
       effect: 'breathing' as const,
     };
-    const loop = createFrameLoop([{ config, outputs: [output] }], 60);
+    const control = createControl({ strips: [config], hasAudioSource: false });
+    const loop = createFrameLoop([{ config, outputs: [output] }], control, 60);
 
     loop.tick(0);
     loop.tick(1000);

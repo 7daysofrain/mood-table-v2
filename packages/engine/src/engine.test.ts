@@ -2,6 +2,7 @@ import type { Config } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MemoryOutput } from './adapters/memory-output.ts';
+import { createControl } from './core/control.ts';
 import { breathing } from './core/effects/breathing.ts';
 import { defaultParams } from './core/effects/effect.ts';
 import { sourceMessage, startEngine, startupMessage } from './engine.ts';
@@ -27,7 +28,12 @@ afterEach(() => {
 describe('el motor en marcha', () => {
   it('con una tira y una salida en memoria, le llegan frames de respiración', () => {
     const output = new MemoryOutput();
-    const engine = startEngine({ config, createOutputs: () => [output], clock: Date.now });
+    const engine = startEngine({
+      config,
+      control: createControl({ strips: config.strips, hasAudioSource: false }),
+      createOutputs: () => [output],
+      clock: Date.now,
+    });
 
     vi.advanceTimersByTime(1000);
     engine.stop();
@@ -50,8 +56,10 @@ describe('el motor en marcha', () => {
   it('pide las salidas de cada tira declarada, con su posición en el fichero', () => {
     const second = { ...demoStrip, id: 'segunda', ledCount: 10 };
     const asked: string[] = [];
+    const strips = [demoStrip, second];
     const engine = startEngine({
-      config: { ...config, strips: [demoStrip, second] },
+      config: { ...config, strips },
+      control: createControl({ strips, hasAudioSource: false }),
       createOutputs: (strip, index) => {
         asked.push(`${index}:${strip.id}`);
         return [];

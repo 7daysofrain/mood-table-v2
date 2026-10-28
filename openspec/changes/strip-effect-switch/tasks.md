@@ -66,7 +66,7 @@
   `null` (`specs/effects`, decisiones 1 y 4).
   Verificar: los tests nuevos fallan porque el bucle no lee el búfer; los frames dorados siguen en
   verde.
-- [ ] 2.5 `createFrameLoop` recibe el búfer y lee la ranura de cada tira al empezar el pulso, y analiza
+- [x] 2.5 `createFrameLoop` recibe el búfer y lee la ranura de cada tira al empezar el pulso, y analiza
   el audio en cada pulso si hay fuente (desaparece `needsBands`). `startEngine` en `engine.ts` recibe
   el búfer. Los comentarios de cabecera dejan de decir que el análisis se omite.
   Verificar: los tests de 2.4 y todos los del motor pasan, frames dorados incluidos.

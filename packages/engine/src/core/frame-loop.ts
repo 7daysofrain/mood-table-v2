@@ -3,17 +3,21 @@
  * su efecto y lo entrega a sus salidas. Es una función pura del instante: no lee el reloj ni
  * programa temporizadores (decisión 7), así que los tests pasan el instante a mano.
  *
+ * El efecto de cada tira lo lee del búfer de control al empezar cada pulso (decisión 1 del change
+ * strip-effect-switch): no sabe qué mando lo ha cambiado, ni crea la ranura.
+ *
  * Con fuente de audio, pide en cada pulso la ventana que acaba en su instante (la fuente es *pull*,
- * D50), mide el nivel y, solo si alguna tira tiene un efecto que usa audio, calcula las bandas, una
- * vez para todas (decisiones 4 y 11 del change virtual-strip-audio-file). Si la fuente sabe en qué
+ * D50), mide el nivel y calcula las bandas, una vez para todas las tiras (decisión 11 del change
+ * virtual-strip-audio-file), aunque ninguna tenga un efecto reactivo: así una tira puede pasar a
+ * uno en cualquier momento (decisión 4 del change strip-effect-switch). Si la fuente sabe en qué
  * punto está, entrega esa posición en cada pulso (decisión 9 del change panel-audio-playback).
  */
 import type { StripConfig } from '@moodtable/shared';
 
 import { type AudioAnalyzer, createAudioAnalyzer } from './audio/analysis.ts';
 import type { AudioSource } from './audio/audio-source.ts';
-import { defaultParams, type Effect, type FrameContext } from './effects/effect.ts';
-import { type AnyEffect, EFFECTS } from './effects/registry.ts';
+import type { ControlBuffer } from './control.ts';
+import type { FrameContext } from './effects/effect.ts';
 
 /** El pulso al que pertenece un frame. Es el mismo objeto en todos los frames. */
 export interface Tick {
@@ -57,8 +61,6 @@ export interface PositionOutput {
 }
 
 export interface FrameLoopOptions {
-  /** Los efectos entre los que elige cada tira. Por defecto, el registro del motor. */
-  effects?: readonly AnyEffect[];
   /** La fuente de audio, si el instrumento tiene. Sin ella, ni nivel ni análisis. */
   audioSource?: AudioSource;
   /** Quién recibe el nivel de la fuente en cada pulso: el visor, los tests… */
@@ -75,77 +77,56 @@ export interface FrameLoop {
   tick(now: number): void;
 }
 
-/** Lo que el bucle guarda de cada tira: su búfer preasignado, sus salidas y su efecto. */
-interface StripSlot {
+/** Lo que el bucle guarda de cada tira: su búfer preasignado y sus salidas. */
+interface StripFrame {
   frame: Uint8Array;
   outputs: LightOutput[];
-  /** Su efecto es reactivo: hace falta analizar el audio. */
-  usesAudio: boolean;
-  render(ctx: FrameContext, out: Uint8Array): void;
-}
-
-function createSlot<P, M>(strip: LoopStrip, effect: Effect<P, M>): StripSlot {
-  const params = defaultParams(effect);
-  const memory = effect.createMemory(strip.config);
-  return {
-    frame: new Uint8Array(strip.config.ledCount * 3),
-    outputs: strip.outputs,
-    usesAudio: effect.usesAudio,
-    render: (ctx, out) => {
-      effect.render(ctx, params, memory, out);
-    },
-  };
 }
 
 /** Lo que el bucle necesita para escuchar la fuente de audio en cada pulso. */
 interface Listener {
   source: AudioSource;
   analyzer: AudioAnalyzer;
-  /** Alguna tira tiene un efecto reactivo: hace falta analizar las bandas. */
-  needsBands: boolean;
   levelOutputs: readonly LevelOutput[];
   positionOutputs: readonly PositionOutput[];
 }
 
 /**
- * Lee la ventana del pulso, mide el nivel, deja en `ctx.audio` las bandas si alguna tira las usa y
- * entrega el nivel y, si la fuente la sabe, la posición del fichero. No crea objetos.
+ * Lee la ventana del pulso, mide el nivel, deja en `ctx.audio` las bandas y entrega el nivel y, si
+ * la fuente la sabe, la posición del fichero. No crea objetos.
  */
 function listen(
-  { source, analyzer, needsBands, levelOutputs, positionOutputs }: Listener,
+  { source, analyzer, levelOutputs, positionOutputs }: Listener,
   tick: Tick,
   ctx: FrameContext,
 ): void {
   source.read(tick.time, analyzer.window);
   const level = analyzer.level();
-  ctx.audio = needsBands ? analyzer.update(ctx.dt) : null;
+  ctx.audio = analyzer.update(ctx.dt);
   for (const output of levelOutputs) output.write(level, tick);
   if (!source.positionAt) return;
   const position = source.positionAt(tick.time);
   for (const output of positionOutputs) output.write(position, tick);
 }
 
+/**
+ * `strips` son las tiras del fichero, en su orden: la posición de cada una es la de su ranura en
+ * `control`, que se crea con las mismas tiras.
+ */
 export function createFrameLoop(
   strips: readonly LoopStrip[],
+  control: ControlBuffer,
   fps: number,
-  { effects = EFFECTS, audioSource, levelOutputs = [], positionOutputs = [] }: FrameLoopOptions = {},
+  { audioSource, levelOutputs = [], positionOutputs = [] }: FrameLoopOptions = {},
 ): FrameLoop {
-  // Cada tira arranca con el efecto que declara el fichero (specs/effects). El fichero ya valida el
-  // id contra el catálogo, y un test comprueba que el registro tiene los mismos.
-  const slots = strips.map((strip) => {
-    const effect = effects.find((each) => each.id === strip.config.effect);
-    if (!effect) {
-      throw new Error(
-        `la tira «${strip.config.id}» declara el efecto «${strip.config.effect}», que el motor no tiene`,
-      );
-    }
-    return createSlot(strip, effect);
-  });
-  // El nivel se mide siempre que hay fuente; las bandas, solo si alguna tira las usa (decisión 4).
+  const frames: StripFrame[] = strips.map((strip) => ({
+    frame: new Uint8Array(strip.config.ledCount * 3),
+    outputs: strip.outputs,
+  }));
+  // Sin fuente, ni nivel ni bandas: `ctx.audio` se queda en `null`.
   const listener: Listener | undefined = audioSource && {
     source: audioSource,
     analyzer: createAudioAnalyzer(audioSource.sampleRate, audioSource.silenceThreshold),
-    needsBands: slots.some((slot) => slot.usesAudio),
     levelOutputs,
     positionOutputs,
   };
@@ -169,9 +150,11 @@ export function createFrameLoop(
 
       if (listener) listen(listener, tick, ctx);
 
-      for (const slot of slots) {
-        slot.render(ctx, slot.frame);
-        for (const output of slot.outputs) output.write(slot.frame, tick);
+      // La ranura que hay al empezar el pulso: un cambio posterior entra en el siguiente.
+      let index = 0;
+      for (const { frame, outputs } of frames) {
+        control.slot(index++).render(ctx, frame);
+        for (const output of outputs) output.write(frame, tick);
       }
     },
   };

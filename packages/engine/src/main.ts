@@ -14,6 +14,7 @@ import { loadConfig, REPO_ROOT } from './adapters/config-file.ts';
 import { startServer } from './adapters/server.ts';
 import { openSoundcard } from './adapters/soundcard.ts';
 import { spawnCapture } from './adapters/soundcard.hardware.ts';
+import { createControl } from './core/control.ts';
 import { sourceMessage, startEngine, startupMessage } from './engine.ts';
 
 /** El build del panel, que sirve el motor (decisión 12). */
@@ -36,6 +37,13 @@ async function main(): Promise<string | undefined> {
       : undefined;
   if (soundcard && !soundcard.ok) return soundcard.error;
 
+  // El búfer de control, antes que el servidor y el bucle, que dependen de él (decisión 1 del
+  // change strip-effect-switch).
+  const control = createControl({
+    strips: loaded.config.strips,
+    hasAudioSource: audioSource !== undefined,
+  });
+
   const { host, port } = loaded.config.server;
   let server;
   try {
@@ -57,6 +65,7 @@ async function main(): Promise<string | undefined> {
   console.log(startupMessage(loaded.file, loaded.config, server.url));
   startEngine({
     config: loaded.config,
+    control,
     createOutputs: (_strip, index) => [server.viewerOutput(index)],
     audioSource: audio?.source ?? soundcard?.source,
     levelOutputs: [server.levelOutput],
