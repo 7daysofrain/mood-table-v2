@@ -4,8 +4,11 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { AudioControl } from './audio/AudioControl.tsx';
 import { AudioPlayer } from './audio/player.ts';
 import { EngineConnection, viewerUrl } from './engine/connection.ts';
+import { EffectRequests } from './engine/effect-requests.ts';
+import { EffectList } from './effects/EffectList.tsx';
 import { AudioSourceIndicator } from './layout/AudioSourceIndicator.tsx';
 import { PanelLayout } from './layout/PanelLayout.tsx';
+import { StripList } from './strips/StripList.tsx';
 import { Viewer } from './viewer/Viewer.tsx';
 
 /** Lo que el panel usa de la conexión con el motor: así los tests pueden darle una falsa. */
@@ -23,6 +26,9 @@ export type PanelConnection = Pick<
   | 'stop'
 >;
 
+/** Lo que el panel usa del envío de los cambios de efecto. */
+export type PanelEffectRequests = Pick<EffectRequests, 'send'>;
+
 /** Lo que el panel usa del reproductor del fichero de audio. */
 export type PanelPlayer = Pick<
   AudioPlayer,
@@ -33,16 +39,26 @@ export type PanelPlayer = Pick<
  * Componente raíz del panel: se conecta al motor en la misma dirección que sirve el panel, la
  * cabecera muestra la fuente de audio, su nivel y el estado de la conexión, y el visor dibuja sus
  * frames. Con un fichero como fuente, la cabecera deja oírlo al ritmo del visor (change
- * panel-audio-playback). El resto de zonas las rellenan las historias de H2 y H4.
+ * panel-audio-playback). Las zonas Tiras y Efectos muestran las tiras del motor y cambian el
+ * efecto de la seleccionada (change strip-effect-switch). La zona Controles la rellena H2.
  */
 export function App({
   connection: provided,
   player: providedPlayer,
-}: Readonly<{ connection?: PanelConnection; player?: PanelPlayer }>) {
+  requests: providedRequests,
+}: Readonly<{
+  connection?: PanelConnection;
+  player?: PanelPlayer;
+  requests?: PanelEffectRequests;
+}>) {
   const [connection] = useState<PanelConnection>(
     () => provided ?? new EngineConnection(viewerUrl(window.location)),
   );
   const [player] = useState<PanelPlayer>(() => providedPlayer ?? new AudioPlayer(connection));
+  const [requests] = useState<PanelEffectRequests>(() => providedRequests ?? new EffectRequests());
+  // La tira seleccionada se guarda por su `id`, también sin conexión: al volver, si sigue declarada,
+  // vuelve a estar seleccionada, y si no, la primera (decisión 8).
+  const [selectedId, setSelectedId] = useState<string>();
 
   useEffect(() => {
     connection.start();
@@ -70,6 +86,8 @@ export function App({
   const status = useSyncExternalStore(subscribe, () => connection.status);
   const source = useSyncExternalStore(subscribe, () => connection.source);
   const sourceLost = useSyncExternalStore(subscribe, () => connection.sourceLost);
+  const strips = useSyncExternalStore(subscribe, () => connection.strips);
+  const selected = strips?.find((strip) => strip.id === selectedId) ?? strips?.[0];
 
   return (
     <PanelLayout
@@ -81,6 +99,23 @@ export function App({
         </Group>
       }
       viewer={<Viewer source={connection} />}
+      strips={
+        strips &&
+        selected && (
+          <StripList strips={strips} selectedId={selected.id} onSelect={setSelectedId} />
+        )
+      }
+      effects={
+        selected && (
+          <EffectList
+            active={selected.effect}
+            hasAudioSource={source !== undefined && source.kind !== 'none'}
+            onChoose={(effect) => {
+              requests.send(selected.id, effect);
+            }}
+          />
+        )
+      }
     />
   );
 }

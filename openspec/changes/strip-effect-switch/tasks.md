@@ -131,7 +131,7 @@
   título, y al volver la selección sigue por su `id`; sin indicadores de espera
   (`specs/instrument-control`, decisiones 5, 7, 8 y 9).
   Verificar: los tests nuevos fallan porque las zonas están vacías.
-- [ ] 3.6 Las zonas: el módulo de literales (con los nombres de los efectos como
+- [x] 3.6 Las zonas: el módulo de literales (con los nombres de los efectos como
   `Record<EffectId, string>` y la salida), las listas de Tiras y Efectos con componentes de Mantine,
   la selección por `id` en `App.tsx` y el hueco de cada zona en `PanelLayout.tsx`.
   Verificar: los tests de 3.5 pasan, los de `PanelLayout` y `panel-layout` siguen en verde, y con
