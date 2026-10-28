@@ -193,11 +193,16 @@ describe('solo el revisor decide el estado final', () => {
       observedAt: 0,
     };
 
-    const withOthers = finalState({ ...pullRequest, review: (await reviewOf(62)).review });
-    const withoutOthers = finalState({
-      ...pullRequest,
-      review: (await reviewOf(62, onlyCodex)).review,
-    });
+    const push = { sha: pullRequest.headSha, seenAt: 0, reviewSince: 0 };
+
+    const withOthers = finalState(
+      { ...pullRequest, review: (await reviewOf(62)).review },
+      push,
+    );
+    const withoutOthers = finalState(
+      { ...pullRequest, review: (await reviewOf(62, onlyCodex)).review },
+      push,
+    );
 
     expect(recorded.length).toBeGreaterThan(onlyCodex.length);
     expect(withOthers).toEqual(withoutOthers);

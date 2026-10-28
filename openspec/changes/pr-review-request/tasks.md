@@ -103,7 +103,7 @@
 
 ## 2. MOO-91 · infra
 
-- [ ] 2.1 **(test en rojo)** Las reglas (`design.md` decisión 4) en `core/tracking.test.ts`:
+- [x] 2.1 **(test en rojo)** Las reglas (`design.md` decisión 4) en `core/tracking.test.ts`:
   - `afterChecksWait` distingue comprobaciones que pasan y que fallan;
   - sin `reviewSince`, el estado final nunca dice «la revisión no ha terminado»: con una fallida, solo
     qué falla, y además «el revisor tiene hallazgos» si el revisor ya terminó el último push con
