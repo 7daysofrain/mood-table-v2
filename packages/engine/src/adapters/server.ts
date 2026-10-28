@@ -5,7 +5,8 @@
  * `@moodtable/shared` y lo envía a todos los navegadores conectados. Por la misma conexión, cada
  * navegador recibe la fuente de audio al conectarse y su nivel y la posición del fichero en cada
  * pulso. Con la tarjeta de sonido, también su estado: al conectarse y cada vez que cambia
- * (decisión 3 del change soundcard-reconnect). Con un fichero como fuente, lo sirve en `/audio`
+ * (decisión 3 del change soundcard-reconnect). Y las tiras con su efecto activo, también al
+ * conectarse y cada vez que cambia el de una (decisión 3 del change strip-effect-switch). Con un fichero como fuente, lo sirve en `/audio`
  * para que el panel lo oiga (decisión 6 del change panel-audio-playback).
  *
  * Es también el adaptador *API HTTP* (decisiones 2 y 6 del change strip-effect-switch): por HTTP
@@ -35,6 +36,7 @@ import {
   encodePosition,
   encodeSource,
   encodeSourceStatus,
+  encodeStrips,
   SetEffectBodySchema,
   SetEffectResponseSchema,
   type SourceMessage,
@@ -233,13 +235,15 @@ export async function buildServer({
     app.get('/', (_request, reply) => reply.code(503).type('text/plain').send(PANEL_NOT_BUILT));
   }
   // El navegador solo recibe. Al conectarse, la fuente de audio, que no cambia mientras el motor
-  // corre (decisión 5 del change virtual-strip-audio-file), y el último estado de la tarjeta, si lo
-  // hay; los frames y el nivel, en cada pulso.
+  // corre (decisión 5 del change virtual-strip-audio-file), el último estado de la tarjeta, si lo
+  // hay, y las tiras con el efecto que pinta cada una; los frames y el nivel, en cada pulso.
   const sourceMessage = encodeSource(source);
   let statusMessage: Uint8Array | undefined;
+  let stripsMessage = strips && encodeStrips(strips.snapshot());
   app.get(VIEWER_PATH, { websocket: true }, (socket) => {
     socket.send(sourceMessage);
     if (statusMessage) socket.send(statusMessage);
+    if (stripsMessage) socket.send(stripsMessage);
   });
   // El fichero entero, tal cual: el panel lo pide una vez por conexión. Son los bytes que el motor
   // leyó al arrancar, no el disco de ahora, así que se oye lo mismo que se analiza aunque el
@@ -264,6 +268,11 @@ export async function buildServer({
   const unwatchSourceStatus = watchSourceStatus?.((status) => {
     statusMessage = encodeSourceStatus(status);
     broadcast(statusMessage);
+  });
+  // Siempre la foto completa, venga el cambio del mando que venga (decisión 2).
+  const unwatchStrips = strips?.watch(() => {
+    stripsMessage = encodeStrips(strips.snapshot());
+    broadcast(stripsMessage);
   });
 
   return {
@@ -290,6 +299,7 @@ export async function buildServer({
     },
     close() {
       unwatchSourceStatus?.();
+      unwatchStrips?.();
       return app.close();
     },
   };

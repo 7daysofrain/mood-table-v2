@@ -86,7 +86,7 @@
   llega a todos los paneles conectados; el mensaje lleva solo id, nombre, nº de LEDs, salida y efecto
   (decisiones 2 y 3).
   Verificar: los tests nuevos fallan porque el servidor no envía el tipo `6`.
-- [ ] 2.9 El tipo `6` en el servidor (lo envía al conectarse y lo difunde con cada aviso), la foto de
+- [x] 2.9 El tipo `6` en el servidor (lo envía al conectarse y lo difunde con cada aviso), la foto de
   las tiras (`stripsMessage` en `engine.ts`, junto a `sourceMessage`) y la unión en `main.ts`: crea el
   búfer con la configuración, se lo da al servidor y al motor, y conecta su aviso con el servidor.
   Verificar: los tests de 2.8 pasan, `pnpm lint` no da errores de fronteras y, con `pnpm dev`, un

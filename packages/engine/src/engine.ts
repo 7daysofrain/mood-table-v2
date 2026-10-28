@@ -5,7 +5,7 @@
  */
 import { basename } from 'node:path';
 
-import type { Config, SourceMessage, StripConfig } from '@moodtable/shared';
+import type { Config, SourceMessage, StripConfig, StripsMessage } from '@moodtable/shared';
 
 import { startTicker, type Ticker } from './adapters/ticker.ts';
 import type { AudioSource } from './core/audio/audio-source.ts';
@@ -81,4 +81,21 @@ export function sourceMessage(config: Config): SourceMessage {
   return audioSource.type === 'file'
     ? { kind: 'file', name: basename(audioSource.path) }
     : { kind: 'soundcard', name: audioSource.name };
+}
+
+/**
+ * Las tiras tal como se anuncian a los paneles (decisión 3 del change strip-effect-switch): las del
+ * fichero, en su orden, con el efecto que pinta cada una según el búfer de control. Solo lo que
+ * muestra el panel: lo que H3 y H4 añadan a la tira no sale sin decidirlo.
+ */
+export function stripsMessage(config: Config, control: ControlBuffer): StripsMessage {
+  return {
+    strips: config.strips.map(({ id, name, ledCount, output }, index) => ({
+      id,
+      name,
+      ledCount,
+      output,
+      effect: control.slot(index).effect,
+    })),
+  };
 }
