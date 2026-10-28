@@ -21,6 +21,7 @@ rules:
     - Write in Spanish
     - One section per Linear task, headed "## N. MOO-n · <area>" (engine, panel, shared, db, infra, firmware); one task = one PR
     - Each step is commit-sized - makes sense on its own and leaves the code compiling and tests green; with TDD, the red test is its own step, marked as such
+    - In a PR Babysitter change, each manual test step also reads the LangSmith trace of every test PR's thread (README §2.4) and records the node path and the snapshot that decided it; this adds to the checks in GitHub and Linear, never replaces them
 
 operations:
   apply:
