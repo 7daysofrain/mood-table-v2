@@ -25,9 +25,16 @@ const envSchema = z.object({
 });
 
 export interface Config {
-  /** PAT fine-grained de solo lectura, limitado al repo (decisión 3). */
+  /**
+   * PAT fine-grained del mantenedor, limitado al repo (decisión 3): *Issues* y *Pull requests* en
+   * escritura, para pedir la revisión, y sin *Contents*, así que no puede subir commits ni integrar
+   * (change pr-review-request, decisión 1).
+   */
   githubToken: string;
-  /** Login de GitHub del mantenedor: solo se siguen sus PR. */
+  /**
+   * Login de GitHub del mantenedor, dueño de `githubToken`: solo se siguen sus PR, y solo cuentan las
+   * peticiones de revisión de su cuenta (change pr-review-request, decisión 3).
+   */
   githubMaintainer: string;
   /** Cuenta de GitHub del revisor: solo cuentan sus comentarios (decisión 7). */
   githubReviewer: string;
@@ -40,8 +47,8 @@ export interface Config {
   /** Tiempo entre vueltas (decisión 8). */
   pollIntervalMs: number;
   /**
-   * Cuánto se espera, desde que se ve un push, a que terminen comprobaciones y revisión
-   * (decisión 8).
+   * Cuánto se esperan las comprobaciones, desde que se ve un push, y la revisión, desde que pasan
+   * (decisión 8; change pr-review-request, decisión 5).
    */
   trackingTimeoutMs: number;
 }

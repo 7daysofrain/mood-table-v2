@@ -11,11 +11,13 @@
  * - `check-runs-in-progress.json`: **derivado a mano** del anterior, porque un push recién hecho no
  *   se puede grabar a posteriori: `e2e` en marcha, `lint` neutral, `sonar-issues` saltada y sin el
  *   *check run* de `SonarCloud Code Analysis`.
+ * Las respuestas a un comentario nuevo no se han grabado: los tests de la escritura solo miran el
+ * código de estado.
  */
 import { describe, expect, it } from 'vitest';
 
 import { fakeFetch, fixture, json } from '../../test/fake-github.ts';
-import { GitHubUnauthorizedError } from '../core/ports.ts';
+import { GitHubRequestRejectedError, GitHubUnauthorizedError } from '../core/ports.ts';
 import { createGitHubReader } from './github.ts';
 
 function reader(fetch: typeof globalThis.fetch, token: () => string | Promise<string> = () => 'ghp_x') {
@@ -199,5 +201,74 @@ describe('los fallos de GitHub', () => {
     const error: unknown = await reader(fetch).listOpenPullRequests().catch((e: unknown) => e);
     expect(error).toBeInstanceOf(Error);
     expect(error).not.toBeInstanceOf(GitHubUnauthorizedError);
+  });
+});
+
+describe('un comentario nuevo', () => {
+  /** El error que da `createComment` con una respuesta de GitHub, o `undefined` si la acepta. */
+  async function commentError(response: () => Response) {
+    const { fetch } = fakeFetch(response);
+    return reader(fetch)
+      .createComment(77, 'Hola')
+      .then(() => undefined)
+      .catch((error: unknown) => error);
+  }
+
+  it('se publica en los comentarios de la PR, con el token del proveedor', async () => {
+    const { fetch, calls } = fakeFetch(() => json('{"id":1}', 201));
+
+    await reader(fetch, () => 'ghp_token').createComment(77, '@codex review');
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({
+      method: 'POST',
+      url: 'https://api.github.com/repos/7daysofrain/mood-table-v2/issues/77/comments',
+      authorization: 'token ghp_token',
+    });
+    expect(JSON.parse(calls[0]!.body)).toEqual({ body: '@codex review' });
+  });
+
+  it('un 401 da el error de token rechazado', async () => {
+    const body = await fixture('bad-credentials.json');
+
+    expect(await commentError(() => json(body, 401))).toBeInstanceOf(GitHubUnauthorizedError);
+  });
+
+  it('un 403 sin permiso o un 422 dan el error de petición rechazada', async () => {
+    const forbidden = '{"message":"Resource not accessible by personal access token"}';
+    const invalid = '{"message":"Validation Failed"}';
+
+    expect(await commentError(() => json(forbidden, 403))).toBeInstanceOf(
+      GitHubRequestRejectedError,
+    );
+    expect(await commentError(() => json(invalid, 422))).toBeInstanceOf(
+      GitHubRequestRejectedError,
+    );
+  });
+
+  it('el límite de la API no es una petición rechazada: se arregla sola', async () => {
+    const limited = (status: number, headers: Record<string, string>) => () =>
+      new Response('{"message":"API rate limit exceeded"}', {
+        status,
+        headers: { 'content-type': 'application/json', ...headers },
+      });
+
+    for (const response of [
+      limited(403, { 'x-ratelimit-remaining': '0' }),
+      limited(403, { 'retry-after': '60' }),
+      limited(429, {}),
+    ]) {
+      const error = await commentError(response);
+      expect(error).toBeInstanceOf(Error);
+      expect(error).not.toBeInstanceOf(GitHubRequestRejectedError);
+    }
+  });
+
+  it('un error del servidor da un error que no es de token ni de petición rechazada', async () => {
+    const error = await commentError(() => json('{"message":"Server Error"}', 502));
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(GitHubUnauthorizedError);
+    expect(error).not.toBeInstanceOf(GitHubRequestRejectedError);
   });
 });

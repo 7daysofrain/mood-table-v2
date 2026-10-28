@@ -8,6 +8,9 @@
  * vuelta. Si el `Notifier` falla, el nodo del aviso queda pendiente en el último checkpoint y el
  * driver lo reintenta (decisión 4).
  *
+ * Pedir la revisión (change pr-review-request, decisión 2) es también un nodo propio, después del
+ * aviso de comprobaciones terminadas, por lo mismo: en la espera, se pediría en cada vuelta.
+ *
  * Qué toca después de cada espera lo deciden las reglas puras de `tracking.ts`; aquí solo se
  * traduce cada paso a su nodo. Las esperas devuelven un `Command`, porque a la vez guardan la foto
  * y eligen el nodo siguiente. Al avisar del estado final, el hilo termina; un push nuevo lo vuelve
@@ -26,13 +29,14 @@ import {
 import * as z from 'zod';
 
 import { checksFinishedNotice, finalNotice, trackingNotice } from './notice.ts';
-import type { Notifier } from './ports.ts';
+import { GitHubRequestRejectedError, type Notifier, type ReviewRequests } from './ports.ts';
 import { type PullRequestSnapshot, pullRequestSnapshotSchema } from './pull-request.ts';
 import {
   afterChecksWait,
   afterReviewWait,
   type ChecksStep,
   finalState,
+  needsReviewRequest,
   type ReviewStep,
   type TrackedPush,
 } from './tracking.ts';
@@ -40,8 +44,13 @@ import {
 const TrackingState = new StateSchema({
   /** La última foto de la PR que ha recibido el hilo. */
   snapshot: pullRequestSnapshotSchema,
-  /** El push que se sigue, y desde cuándo cuenta la espera. Lo fija el aviso de seguimiento. */
-  push: z.object({ sha: z.string(), seenAt: z.number() }).optional(),
+  /**
+   * El push que se sigue, y desde cuándo cuentan las esperas de comprobaciones y revisión. Lo fija
+   * el aviso de seguimiento.
+   */
+  push: z
+    .object({ sha: z.string(), seenAt: z.number(), reviewSince: z.number().optional() })
+    .optional(),
   /**
    * Entrada opcional: la ejecución empieza sin el aviso de seguimiento, porque el driver ya ha
    * avisado de que la reanuda (change pr-stop, decisión 2). Vale solo para esa ejecución.
@@ -56,10 +65,27 @@ export interface TrackingWait {
   waitingFor: 'checks' | 'review';
 }
 
-export interface TrackingOptions {
-  /** Cuánto se espera, desde que se ve un push, a comprobaciones y revisión (decisión 8). */
-  timeoutMs: number;
+/** Lo que el grafo necesita de fuera. */
+export interface TrackingPorts {
+  notifier: Notifier;
+  reviewRequests: ReviewRequests;
 }
+
+export interface TrackingOptions {
+  /**
+   * Cuánto se espera a las comprobaciones, desde que se ve un push, y a la revisión, desde que
+   * pasan (change pr-review-request, decisión 5).
+   */
+  timeoutMs: number;
+  /** Una línea por petición de revisión que GitHub rechaza, para el log de errores. */
+  log: (line: string) => void;
+}
+
+/**
+ * El nodo que pide la revisión. El driver lo nombra para no entrar en él al terminar la parada de
+ * una PR (change pr-stop, decisión 3): pedirla no es terminar lo que estaba en curso.
+ */
+export const REVIEW_REQUEST_NODE = 'pedirRevision';
 
 /** La última foto que guarda un hilo, validada: `getState` da sus valores sin tipo. */
 export function lastSnapshot(values: unknown): PullRequestSnapshot {
@@ -99,9 +125,9 @@ function waitFor(waitingFor: TrackingWait['waitingFor']) {
 }
 
 export function createTrackingGraph(
-  notifier: Notifier,
+  { notifier, reviewRequests }: TrackingPorts,
   checkpointer: BaseCheckpointSaver,
-  { timeoutMs }: TrackingOptions,
+  { timeoutMs, log }: TrackingOptions,
 ) {
   const avisarSeguimiento: GraphNode<typeof TrackingState> = async ({ snapshot }) => {
     await notifier.notify(trackingNotice(snapshot));
@@ -129,6 +155,22 @@ export function createTrackingGraph(
     return {};
   };
 
+  // Si GitHub la rechaza (p. ej. el token no tiene permiso), reintentarla no la arregla, y la PR se
+  // quedaría sin avisos: se sigue a la espera, y su tiempo avisa al mantenedor (decisión 6).
+  // Cualquier otro fallo lanza, y el nodo queda pendiente para la vuelta siguiente.
+  const pedirRevision: GraphNode<typeof TrackingState> = async ({ snapshot }) => {
+    try {
+      await reviewRequests.request(snapshot.number, snapshot.headSha);
+    } catch (error) {
+      if (!(error instanceof GitHubRequestRejectedError)) throw error;
+      log(
+        `GitHub rechaza la petición de revisión de la PR #${snapshot.number}; ` +
+          `se espera al revisor: ${error.message}`,
+      );
+    }
+    return {};
+  };
+
   const esperarRevisor: GraphNode<{ InputSchema: typeof TrackingState; Nodes: AfterReview }> = (
     state,
   ) => {
@@ -149,6 +191,7 @@ export function createTrackingGraph(
       ends: Object.values(AFTER_CHECKS),
     })
     .addNode('avisarComprobaciones', avisarComprobaciones)
+    .addNode(REVIEW_REQUEST_NODE, pedirRevision)
     .addNode('esperarRevisor', esperarRevisor, { ends: Object.values(AFTER_REVIEW) })
     .addNode('avisarEstadoFinal', avisarEstadoFinal)
     .addConditionalEdges(
@@ -159,8 +202,14 @@ export function createTrackingGraph(
     .addEdge('avisarSeguimiento', 'esperarComprobaciones')
     .addEdge('empezarSinAviso', 'esperarComprobaciones')
     // Siempre a esperar, aunque el revisor ya haya terminado: si el aviso se reintenta tras un
-    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dirá.
-    .addEdge('avisarComprobaciones', 'esperarRevisor')
+    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dirá. Antes, se
+    // pide la revisión si nadie la ha pedido ni empezado (decisión 3).
+    .addConditionalEdges(
+      'avisarComprobaciones',
+      ({ snapshot }) => (needsReviewRequest(snapshot) ? REVIEW_REQUEST_NODE : 'esperarRevisor'),
+      [REVIEW_REQUEST_NODE, 'esperarRevisor'],
+    )
+    .addEdge(REVIEW_REQUEST_NODE, 'esperarRevisor')
     .addEdge('avisarEstadoFinal', END)
     .compile({ checkpointer });
 }

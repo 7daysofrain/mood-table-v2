@@ -16,7 +16,12 @@
  */
 import { type BaseCheckpointSaver, Command } from '@langchain/langgraph';
 
-import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
+import {
+  createTrackingGraph,
+  lastSnapshot,
+  REVIEW_REQUEST_NODE,
+  threadConfig,
+} from './graph.ts';
 import {
   githubUnauthorizedNotice,
   type PullRequestNotice,
@@ -29,6 +34,7 @@ import {
   type GitHubReader,
   type Notifier,
   type ReviewReader,
+  type ReviewRequests,
 } from './ports.ts';
 import {
   isStopped,
@@ -41,11 +47,16 @@ import {
 export interface DriverOptions {
   github: GitHubReader;
   reviewer: ReviewReader;
+  /** Las peticiones de revisión del sistema: si ya la ha pedido, para la foto, y pedirla. */
+  reviewRequests: ReviewRequests;
   notifier: Notifier;
   /** Donde guarda cada hilo su estado. `MemorySaver` hasta BE7 (D73). */
   checkpointer: BaseCheckpointSaver;
   policy: TrackingPolicy;
-  /** Cuánto se espera, desde que se ve un push, a comprobaciones y revisión (decisión 8). */
+  /**
+   * Cuánto se espera a las comprobaciones, desde que se ve un push, y a la revisión, desde que
+   * pasan (change pr-review-request, decisión 5).
+   */
   timeoutMs: number;
   /** Una línea por fallo, para el log de errores. */
   log: (line: string) => void;
@@ -59,13 +70,14 @@ export interface Driver {
 export function createDriver({
   github,
   reviewer,
+  reviewRequests,
   notifier,
   checkpointer,
   policy,
   timeoutMs,
   log,
 }: DriverOptions): Driver {
-  const graph = createTrackingGraph(notifier, checkpointer, { timeoutMs });
+  const graph = createTrackingGraph({ notifier, reviewRequests }, checkpointer, { timeoutMs, log });
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
   /**
@@ -150,18 +162,44 @@ export function createDriver({
   }
 
   /**
+   * Reintenta el nodo que falló en el hilo de la PR, con la foto que tenía. Si entretanto ha llegado
+   * un push, la petición de revisión de esa foto ya no vale: `@codex review` revisaría el push
+   * nuevo, quizá con sus comprobaciones sin terminar. Entonces termina el aviso pendiente, pero se
+   * salta `pedirRevision` como si hubiera corrido, y el hilo sigue a la espera del revisor, que con
+   * la foto siguiente verá el push nuevo (change pr-review-request, decisión 6).
+   */
+  async function retryPending(pullRequest: OpenPullRequest) {
+    const config = threadConfig(pullRequest.number);
+    const state = await graph.getState(config);
+    if (lastSnapshot(state.values).headSha === pullRequest.headSha) {
+      await graph.invoke(null, config);
+      return;
+    }
+    if (!state.next.includes(REVIEW_REQUEST_NODE)) {
+      await graph.invoke(null, { ...config, interruptBefore: [REVIEW_REQUEST_NODE] });
+    }
+    if ((await graph.getState(config)).next.includes(REVIEW_REQUEST_NODE)) {
+      await graph.updateState(config, {}, REVIEW_REQUEST_NODE);
+      await graph.invoke(null, config);
+    }
+  }
+
+  /**
    * Termina la parada de la PR, si le falta: lo que estaba en curso (un aviso pendiente del hilo),
    * después encola «Detenida» y olvida el hilo, salvo si terminó con el estado final, que se
    * conserva para comparar su SHA al reanudar. Si el aviso pendiente falla, lanza, y la parada se
    * termina en la vuelta siguiente, también si para entonces le han quitado la etiqueta.
+   *
+   * Solo termina el aviso: el hilo se para antes de pedir la revisión, y una petición pendiente no
+   * se reintenta. Pedirla sería una acción nueva en una PR detenida (change pr-review-request).
    */
   async function finishStopping(pullRequest: OpenPullRequest) {
     const { number } = pullRequest;
     if (!stopping.has(number)) return;
     const config = threadConfig(number);
     let state = await graph.getState(config);
-    if (state.next.length > 0 && !waiting(state)) {
-      await graph.invoke(null, config);
+    if (state.next.length > 0 && !waiting(state) && !state.next.includes(REVIEW_REQUEST_NODE)) {
+      await graph.invoke(null, { ...config, interruptBefore: [REVIEW_REQUEST_NODE] });
       state = await graph.getState(config);
     }
     stopping.delete(number);
@@ -242,7 +280,7 @@ export function createDriver({
       await graph.invoke(new Command({ resume: await snapshotOf(pullRequest) }), config);
     } else if (state.next.length > 0) {
       // Un nodo que falló (un aviso que el canal no aceptó) sigue pendiente en el checkpoint.
-      await graph.invoke(null, config);
+      await retryPending(pullRequest);
     } else if (lastSnapshot(state.values).headSha !== pullRequest.headSha) {
       // Terminó con el estado final de otro push: una ejecución nueva en el mismo hilo.
       await graph.invoke({ snapshot: await snapshotOf(pullRequest) }, config);
@@ -276,11 +314,12 @@ export function createDriver({
         let required: Promise<string[]> | undefined;
         const snapshotOf = async (pullRequest: OpenPullRequest): Promise<PullRequestSnapshot> => {
           required ??= github.requiredChecks();
-          const [checks, review] = await Promise.all([
+          const [checks, review, reviewRequested] = await Promise.all([
             required.then((names) => github.checks(pullRequest.headSha, names)),
             reviewer.review(pullRequest.number),
+            reviewRequests.requested(pullRequest.number, pullRequest.headSha),
           ]);
-          return { ...pullRequest, checks, review, observedAt: now };
+          return { ...pullRequest, checks, review, reviewRequested, observedAt: now };
         };
 
         // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.

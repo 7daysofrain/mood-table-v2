@@ -1,0 +1,112 @@
+[
+  {
+    "body": "To use Codex here, [create an environment for this repo](https://chatgpt.com/codex/cloud/settings/environments).",
+    "created_at": "2026-10-27T14:40:05Z",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/77#issuecomment-6444907119",
+    "id": 6444907119,
+    "updated_at": "2026-10-27T14:40:05Z",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "type": "Bot"
+    }
+  },
+  {
+    "body": "## [![Quality Gate Passed](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/checks/QualityGateBadge/qg-passed-20px.png 'Quality Gate Passed')](https://sonarcloud.io/dashboard?id=7daysofrain_mood-table-v2&pullRequest=77) **Quality Gate passed**  \nIssues  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed-16px.png '') [0 New issues](https://sonarcloud.io/project/issues?id=7daysofrain_mood-table-v2&pullRequest=77&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/accepted-16px.png '') [0 Accepted issues](https://sonarcloud.io/project/issues?id=7daysofrain_mood-table-v2&pullRequest=77&issueStatuses=ACCEPTED)\n\nMeasures  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed-16px.png '') [0 Security Hotspots](https://sonarcloud.io/project/security_hotspots?id=7daysofrain_mood-table-v2&pullRequest=77&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed-16px.png '') [0.0% Coverage on New Code](https://sonarcloud.io/component_measures?id=7daysofrain_mood-table-v2&pullRequest=77&metric=new_coverage&view=list)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed-16px.png '') [0.0% Duplication on New Code](https://sonarcloud.io/component_measures?id=7daysofrain_mood-table-v2&pullRequest=77&metric=new_duplicated_lines_density&view=list)  \n  \n<!-- sqra-placement-anchor -->\n[See analysis details on SonarQube Cloud](https://sonarcloud.io/dashboard?id=7daysofrain_mood-table-v2&pullRequest=77)\n\n",
+    "created_at": "2026-10-27T14:41:05Z",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/77#issuecomment-6444929837",
+    "id": 6444929837,
+    "updated_at": "2026-10-27T14:41:05Z",
+    "user": {
+      "login": "sonarqubecloud[bot]",
+      "type": "Bot"
+    }
+  },
+  {
+    "body": "@codex review",
+    "created_at": "2026-10-27T14:50:22Z",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/77#issuecomment-6445146882",
+    "id": 6445146882,
+    "updated_at": "2026-10-27T14:50:22Z",
+    "user": {
+      "login": "pr-babysitter-7daysofrain[bot]",
+      "type": "Bot"
+    }
+  },
+  {
+    "body": "To use Codex here, [create a Codex account and connect to github](https://chatgpt.com/codex/cloud/settings/connectors).",
+    "created_at": "2026-10-27T14:50:26Z",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/77#issuecomment-6445148740",
+    "id": 6445148740,
+    "updated_at": "2026-10-27T14:50:26Z",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "type": "Bot"
+    }
+  },
+  {
+    "body": "@codex review",
+    "created_at": "2026-10-27T14:55:58Z",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/77#issuecomment-6445283016",
+    "id": 6445283016,
+    "updated_at": "2026-10-27T14:55:58Z",
+    "user": {
+      "login": "7daysofrain",
+      "type": "User"
+    }
+  },
+  {
+    "body": "<!-- codex-pull-request-review-summary -->\n<!-- codex-review-state:v1 {\"code_review\":{\"commit_sha\":\"c71a45080d5fea0ce2479b0e5b525f9e1cb85361\",\"has_any_findings\":false,\"has_unresolved_findings\":false,\"status\":\"completed\"},\"security_review\":{\"commit_sha\":null,\"has_any_findings\":null,\"has_unresolved_findings\":null,\"status\":null}} -->\n\n## Codex Review Summary\n\nThis comment shows the latest Codex review activity on this pull request.\n\n| Review | Status | Commit | Review trigger |\n| --- | --- | --- | --- |\n| 📝 **Code Review** | ✅ **Completed** <relative-time datetime=\"2026-10-27T14:57:02.055635Z\">2026-10-27T14:57:02.055635Z</relative-time> | `c71a450` | Manual request |\n\n\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\" or \"@codex security review\".\n\nCodex reacts with 👀 while any review is running, comments if it has suggestions, and reacts with 👍 once all reviews finish with no findings.\n\n</details>",
+    "created_at": "2026-10-27T14:56:13Z",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/77#issuecomment-6445289147",
+    "id": 6445289147,
+    "updated_at": "2026-10-27T14:57:03Z",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "type": "Bot"
+    }
+  },
+  {
+    "body": "<!-- codex-review-receipt:v1 -->\n\nCodex Review: Didn't find any major issues. Delightful!\n\n**Reviewed commit:** `c71a45080d`\n\n<details> <summary>ℹ️ About Codex in GitHub</summary>\n<br/>\n\n[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you\n- Open a pull request for review\n- Mark a draft as ready\n- Comment \"@codex review\".\n\nIf Codex has suggestions, it will comment; otherwise it will react with 👍.\n\n\n\n\nCodex can also answer questions or update the PR. Try commenting \"@codex address that feedback\".\n            \n</details>",
+    "created_at": "2026-10-27T14:57:00Z",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/77#issuecomment-6445308455",
+    "id": 6445308455,
+    "updated_at": "2026-10-27T14:57:00Z",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "type": "Bot"
+    }
+  },
+  {
+    "body": "Prueba de BA7 terminada: Codex rechaza la petición de una GitHub App y atiende la del mantenedor. Se cierra sin integrar.",
+    "created_at": "2026-10-27T15:02:06Z",
+    "html_url": "https://github.com/7daysofrain/mood-table-v2/pull/77#issuecomment-6445430330",
+    "id": 6445430330,
+    "updated_at": "2026-10-27T15:02:06Z",
+    "user": {
+      "login": "7daysofrain",
+      "type": "User"
+    }
+  },
+  {
+    "id": 1,
+    "html_url": "derivado a mano",
+    "user": {
+      "login": "alguien-de-fuera",
+      "type": "User"
+    },
+    "created_at": "2026-10-27T15:03:00Z",
+    "updated_at": "2026-10-27T15:03:00Z",
+    "body": "@codex review\n\nLo pide el PR Babysitter: las comprobaciones de `c71a450` han pasado.\n<!-- pr-babysitter:review-request {\"sha\":\"c71a45080d5fea0ce2479b0e5b525f9e1cb85361\"} -->"
+  },
+  {
+    "id": 2,
+    "html_url": "derivado a mano",
+    "user": {
+      "login": "7daysofrain",
+      "type": "User"
+    },
+    "created_at": "2026-10-27T15:04:00Z",
+    "updated_at": "2026-10-27T15:04:00Z",
+    "body": "@codex review\n\nLo pide el PR Babysitter: las comprobaciones de `3f9e2b7` han pasado.\n<!-- pr-babysitter:review-request {\"sha\":\"3f9e2b7c41d8a6e05b1c9d2f7a4e8b6c0d5f1a23\"} -->"
+  }
+]

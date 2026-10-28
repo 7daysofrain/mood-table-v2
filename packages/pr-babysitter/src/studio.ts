@@ -9,7 +9,7 @@
 import { MemorySaver } from '@langchain/langgraph';
 
 import { createTrackingGraph } from './core/graph.ts';
-import type { Notifier } from './core/ports.ts';
+import type { Notifier, ReviewRequests } from './core/ports.ts';
 
 /** El tiempo de espera por defecto del contenedor (`TRACKING_TIMEOUT_MINUTES`). */
 const TIMEOUT_MS = 30 * 60_000;
@@ -22,6 +22,21 @@ const notifier: Notifier = {
   },
 };
 
+/**
+ * En lugar de comentar en GitHub, escribe la petición en el log. Si ya se ha pedido lo dice la foto
+ * (`reviewRequested`), así que el grafo no lo pregunta.
+ */
+const reviewRequests: ReviewRequests = {
+  requested: () => Promise.resolve(false),
+  request(pullRequestNumber, sha) {
+    console.log(`Petición de revisión: PR #${pullRequestNumber}, push ${sha}`);
+    return Promise.resolve();
+  },
+};
+
 // El servidor de Studio cambia el checkpointer del grafo por el suyo en cada ejecución; este solo
 // cumple la firma de `createTrackingGraph`.
-export const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: TIMEOUT_MS });
+export const graph = createTrackingGraph({ notifier, reviewRequests }, new MemorySaver(), {
+  timeoutMs: TIMEOUT_MS,
+  log: (line) => console.error(line),
+});

@@ -2,16 +2,21 @@
  * Las reglas del seguimiento de una PR (change pr-tracking, decisiones 6, 7 y 8): funciones puras
  * sobre la foto, sin LangGraph ni reloj. El grafo traduce cada paso a su nodo.
  *
- * El tiempo de espera es uno solo, para comprobaciones y revisión juntas, y cuenta desde que el
- * sistema **ve** el push (la primera foto con ese SHA), no desde la fecha del commit. Un push nuevo
- * lo reinicia.
+ * Hay dos tiempos de espera, del mismo largo (change pr-review-request, decisión 5): el de las
+ * comprobaciones cuenta desde que el sistema **ve** el push (la primera foto con ese SHA), no desde
+ * la fecha del commit; el de la revisión, desde que las ve pasar, que es cuando la pide. Un push
+ * nuevo los reinicia.
  */
 import type { PullRequestSnapshot } from './pull-request.ts';
 
-/** El push que se sigue: su SHA y cuándo lo vio el sistema por primera vez (ms desde epoch). */
+/**
+ * El push que se sigue: su SHA, cuándo lo vio el sistema por primera vez y, si sus comprobaciones
+ * han pasado, cuándo lo vio (ms desde epoch). Desde `reviewSince` cuenta la espera de la revisión.
+ */
 export interface TrackedPush {
   sha: string;
   seenAt: number;
+  reviewSince?: number;
 }
 
 /** Por qué una PR necesita intervención. */
@@ -35,6 +40,22 @@ export type ReviewStep = 'waiting' | 'finished' | 'timedOut' | 'newPush';
 /** Han terminado cuando ninguna exigida está pendiente, pasen o fallen. */
 export function checksFinished(snapshot: PullRequestSnapshot): boolean {
   return snapshot.checks.every((check) => check.status !== 'pending');
+}
+
+/** Han pasado cuando ninguna exigida está pendiente ni ha fallado. */
+export function checksPassed(snapshot: PullRequestSnapshot): boolean {
+  return snapshot.checks.every((check) => check.status === 'passed');
+}
+
+/**
+ * Si hay que pedir la revisión (change pr-review-request, decisión 3): las comprobaciones han
+ * pasado, y ni el revisor ha empezado con el último push, en cualquier estado, ni el sistema la ha
+ * pedido ya. Lo primero cubre su revisión automática y la que pide el mantenedor; lo segundo, las
+ * peticiones del propio sistema, también tras un reinicio.
+ */
+export function needsReviewRequest(snapshot: PullRequestSnapshot): boolean {
+  const reviewing = snapshot.review?.reviewedSha === snapshot.headSha;
+  return checksPassed(snapshot) && !reviewing && !snapshot.reviewRequested;
 }
 
 /** Ha terminado si está completada y lo que revisó es el último push (`workflow.md` §4.4). */
@@ -67,13 +88,13 @@ export function pushOf(current: TrackedPush, snapshot: PullRequestSnapshot): Tra
     : { sha: snapshot.headSha, seenAt: snapshot.observedAt };
 }
 
-function timedOut(push: TrackedPush, snapshot: PullRequestSnapshot, timeoutMs: number): boolean {
-  return snapshot.observedAt - push.seenAt >= timeoutMs;
+function timedOut(since: number, snapshot: PullRequestSnapshot, timeoutMs: number): boolean {
+  return snapshot.observedAt - since >= timeoutMs;
 }
 
 /**
  * Al reanudar la espera de las comprobaciones con una foto: un push nuevo reinicia el tiempo y se
- * sigue con la foto que lo trae.
+ * sigue con la foto que lo trae. Si han pasado todas, la espera de la revisión empieza a contar.
  */
 export function afterChecksWait(
   current: TrackedPush,
@@ -81,8 +102,14 @@ export function afterChecksWait(
   timeoutMs: number,
 ): { push: TrackedPush; next: ChecksStep } {
   const push = pushOf(current, snapshot);
-  if (checksFinished(snapshot)) return { push, next: 'checksFinished' };
-  if (timedOut(push, snapshot, timeoutMs)) return { push, next: 'timedOut' };
+  if (checksFinished(snapshot)) {
+    const passed = checksPassed(snapshot);
+    return {
+      push: passed ? { ...push, reviewSince: snapshot.observedAt } : push,
+      next: 'checksFinished',
+    };
+  }
+  if (timedOut(push.seenAt, snapshot, timeoutMs)) return { push, next: 'timedOut' };
   return { push, next: 'waiting' };
 }
 
@@ -90,7 +117,8 @@ export function afterChecksWait(
  * Al reanudar la espera del revisor con una foto: un push nuevo vuelve a la espera de las
  * comprobaciones, porque las de antes eran de otro push. Se termina con la revisión y las
  * comprobaciones de esta foto acabadas: una comprobación relanzada, o una que el *ruleset* acaba de
- * exigir, se espera como las demás.
+ * exigir, se espera como las demás. El tiempo cuenta desde que pasaron las comprobaciones; si no
+ * pasaron, desde el push.
  */
 export function afterReviewWait(
   current: TrackedPush,
@@ -100,6 +128,8 @@ export function afterReviewWait(
   const push = pushOf(current, snapshot);
   if (push !== current) return { push, next: 'newPush' };
   if (reviewFinished(snapshot) && checksFinished(snapshot)) return { push, next: 'finished' };
-  if (timedOut(push, snapshot, timeoutMs)) return { push, next: 'timedOut' };
+  if (timedOut(push.reviewSince ?? push.seenAt, snapshot, timeoutMs)) {
+    return { push, next: 'timedOut' };
+  }
   return { push, next: 'waiting' };
 }
