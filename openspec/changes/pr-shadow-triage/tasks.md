@@ -77,7 +77,7 @@
   `src/main.ts` y uno falso en `src/studio.ts`.
   Verificar: los tests de 1.7 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde; el grafo se abre en LangGraph Studio con el nodo nuevo.
-- [ ] 1.9 Configuración: `DECISION_MODEL_BASE_URL`, `DECISION_MODEL`, `DECISION_MODEL_API_KEY`,
+- [x] 1.9 Configuración: `DECISION_MODEL_BASE_URL`, `DECISION_MODEL`, `DECISION_MODEL_API_KEY`,
   `DECISION_MODEL_INPUT_PRICE_PER_MTOK`, `TRIAGE_THRESHOLD` y `TRIAGE_BUDGET_USD` en
   `adapters/config.ts` y `.env.example`, con los valores por defecto de las decisiones 3, 4 y 6 y la
   clave obligatoria.
