@@ -112,6 +112,10 @@ describe('el búfer de control', () => {
     expect(later).toEqual(['breathing', 'energy']);
   });
 
+  it('no da la ranura de una posición sin tira', () => {
+    expect(() => twoStrips().control.slot(2)).toThrow(RangeError);
+  });
+
   it('de dos cambios seguidos de la misma tira queda la ranura del último', () => {
     const { control } = twoStrips();
 

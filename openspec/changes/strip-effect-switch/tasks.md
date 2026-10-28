@@ -54,7 +54,7 @@
   recibe un aviso por cada `changed` y ninguno por los demás; dos `setEffect` seguidos dejan la ranura
   del último (`specs/instrument-control`, decisión 1).
   Verificar: los tests nuevos fallan porque el búfer no existe.
-- [ ] 2.3 El búfer en `packages/engine/src/core/control.ts`: el puerto `Commands`, la creación con las
+- [x] 2.3 El búfer en `packages/engine/src/core/control.ts`: el puerto `Commands`, la creación con las
   tiras, el registro y si hay fuente, la ranura de cada tira (memoria y parámetros por defecto creados
   en `setEffect`), el efecto activo de cada tira y la suscripción.
   Verificar: los tests de 2.2 pasan y `pnpm lint` no da errores de fronteras.
