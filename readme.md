@@ -581,6 +581,7 @@ La herramienta de desarrollo que sigue las PR (§2.2) no se despliega con el ins
 - **Sin estado propio:** al reiniciarse reconstruye desde GitHub qué PR sigue y cuáles están detenidas (D73, D75). Pararlo no deja nada a medias, porque no escribe en GitHub.
 - **Detener el seguimiento de una PR:** se le pone la etiqueta `babysitter:stop` (solo puede quien tiene permiso de escritura en el repo). En la vuelta siguiente, hasta 60 s después, llega a su tarea de Linear el aviso de que está detenida; quitándole la etiqueta, el de que se reanuda. Para parar el sistema entero, `docker compose down`.
 - **Al desplegarlo por primera vez**, hay que crear la etiqueta en el repo: `gh label create "babysitter:stop" --description "El PR Babysitter deja de seguir esta PR mientras la tenga"`. Sin ella no se puede detener ninguna PR; el sistema funciona igual.
+- **Trazas en LangSmith** (D76). Con `LANGSMITH_TRACING=true` y una API key en el `.env` (y `docker compose up -d` para recrear el contenedor), cada ejecución del grafo llega a [LangSmith](https://smith.langchain.com), al proyecto de `LANGSMITH_PROJECT` (`pr-babysitter`): los nodos por los que pasa, el estado de entrada y salida de cada uno y sus tiempos. En la pestaña *Threads* del proyecto, cada PR es un hilo que lleva su número, porque LangGraph copia el `thread_id` a la metadata de cada ejecución. Si la cuenta de LangSmith es de la región UE, hace falta además `LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com`: sin él, LangSmith rechaza cada envío (403) y no llega ninguna traza, sin nada en el log. Las envía la librería `langsmith`, que ya viene con `@langchain/core`: no hay código propio. En el contenedor de casa están siempre encendidas; en `.env.example`, apagadas. Studio (§2.2) no lee el `.env`, así que no las envía. Qué datos salen y el límite del plan gratuito, en §2.5.
 
 #### Sacrificios
 
@@ -627,6 +628,13 @@ Necesita dos credenciales, y cada una tiene el mínimo de permisos que pide lo q
 - **Dónde viven:** en el `.env` del contenedor, que no se commitea (está en el `.gitignore` y fuera del contexto de la imagen); el repo solo tiene `.env.example`, sin valores.
 - **Todo lo que llega de fuera se valida** con zod antes de usarse: la configuración y las respuestas de GitHub y de Linear.
 - **Riesgo apuntado para BH3:** para hacer push hace falta `Contents: write`, y en GitHub ese permiso también deja integrar. Cómo se separa una cosa de la otra es una pregunta abierta (PB, BQ7).
+
+Las trazas (§2.4, D76) añaden una tercera credencial y un destino nuevo para los datos:
+
+- **LangSmith:** una API key personal del plan gratuito, en el mismo `.env`. No da permisos sobre GitHub ni Linear: solo escribe trazas en la cuenta del mantenedor.
+- **Qué sale de casa:** el estado del grafo en cada nodo, es decir, la foto de cada PR (`src/core/pull-request.ts`: número, título, URL, autor, rama base, borrador, SHA, etiquetas, comprobaciones y estado del revisor) y el push que espera. Todo es público en GitHub, y por eso se acepta para el grafo actual; BH2, cuando lleguen los agentes, lo revisa. **No salen** los textos de los avisos (se construyen dentro del nodo y no quedan en el estado) ni los tokens (la configuración no pasa por el grafo). Si un aviso falla, el mensaje de error de Linear sí queda en la traza.
+- **Límite del plan gratuito:** sin tarjeta, LangSmith deja de aceptar trazas al llegar a 5.000 al mes, sin coste. El driver genera una por PR y por minuto mientras espera, así que en un mes con muchas PR se puede llegar al corte y dejar de ver las últimas. Si algún día se añade una tarjeta, hay que revisar antes ese volumen.
+- **Al parar el contenedor se pueden perder las últimas trazas:** la librería las envía en segundo plano y `main.ts` no espera a que terminen (D76). Lo que importa, los avisos, ya está en Linear.
 
 #### Análisis automático en cada PR
 
