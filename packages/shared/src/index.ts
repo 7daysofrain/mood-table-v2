@@ -6,6 +6,14 @@
 export const SHARED_PACKAGE_NAME = '@moodtable/shared';
 
 export {
+  type ApiError,
+  ApiErrorSchema,
+  type SetEffectBody,
+  SetEffectBodySchema,
+  SetEffectResponseSchema,
+} from './commands.ts';
+
+export {
   AudioSourceConfigSchema,
   ConfigFileSchema,
   parseConfig,

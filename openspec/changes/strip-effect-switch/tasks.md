@@ -31,7 +31,7 @@
   de su propia comprobación.
   Verificar: los tests de 1.3 pasan y los de `config.test.ts` (tira reactiva sin fuente) siguen en
   verde sin cambiarlos.
-- [ ] 1.5 Los esquemas de la ruta en `packages/shared/src/commands.ts`, exportados: el cuerpo
+- [x] 1.5 Los esquemas de la ruta en `packages/shared/src/commands.ts`, exportados: el cuerpo
   (`SetEffectBodySchema`, `{ effect }` con el id del catálogo y sin campos de más), la respuesta (la
   tira, con `StripStateSchema`) y el error (`ApiErrorSchema`, `{ message }`), con tests de
   `Value.Check` que aceptan el ejemplo de `design.md` (decisión 6) y rechazan un efecto que no existe y
