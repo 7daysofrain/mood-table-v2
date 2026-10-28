@@ -441,6 +441,17 @@ describe('el estado de la tarjeta de sonido', () => {
     expect(card.watchers).toBe(0);
   });
 
+  it('si no puede escuchar, falla y deja de escuchar el estado de la tarjeta', async () => {
+    server = await startServer({ host: '127.0.0.1', port: 0, panelDir });
+    const busy = Number(new URL(server.url).port);
+    const card = new FakeSoundcardStatus('connected');
+
+    await expect(
+      startServer({ host: '127.0.0.1', port: busy, panelDir, watchSourceStatus: card.watch }),
+    ).rejects.toThrow();
+    expect(card.watchers).toBe(0);
+  });
+
   it.each([
     ['con un fichero', { kind: 'file' as const, name: 'golpes.wav' }],
     ['sin fuente', undefined],
