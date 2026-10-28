@@ -57,7 +57,7 @@
   y el registro del motor toma el esquema de parámetros del catálogo de `shared` en vez de repetirlo
   (con un test en `registry.test.ts` que comprueba que es el mismo).
   Verificar: los tests de 2.1 pasan y los frames dorados no cambian.
-- [ ] 2.3 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`:
+- [x] 2.3 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`:
   `setValues` da `changed` y la ranura pinta con los valores nuevos desde el pulso siguiente, sin
   reiniciar la memoria; los mismos valores dan `unchanged` y no avisan; una tira que no existe da
   `unknown-strip`; un periodo fuera de rango, un campo de más o los valores de otro efecto dan
