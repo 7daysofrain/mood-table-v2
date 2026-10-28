@@ -35,7 +35,7 @@
     decide.
 
   Verificar: el diff del commit son solo esos puntos.
-- [ ] 1.3 **(test en rojo)** Las reglas del triaje (`design.md` decisiones 2, 4 y 6) en
+- [x] 1.3 **(test en rojo)** Las reglas del triaje (`design.md` decisiones 2, 4 y 6) en
   `core/triage.test.ts`:
   - la clase de cada hallazgo, una prueba por fila de la tabla de la decisión 4, con 0,80 y 0,20 en
     los bordes, y su porqué;
