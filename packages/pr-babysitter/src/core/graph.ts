@@ -100,7 +100,7 @@ export function threadConfig(pullRequestNumber: number) {
 const AFTER_CHECKS = {
   waiting: 'esperarComprobaciones',
   checksFinished: 'avisarComprobaciones',
-  checksFailed: 'avisarComprobaciones',
+  checksFailed: 'avisarEstadoFinal',
   timedOut: 'avisarEstadoFinal',
 } as const satisfies Record<ChecksStep, string>;
 

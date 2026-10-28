@@ -118,7 +118,7 @@
   petición de revisión; con una comprobación sin terminar a los 30 min, el aviso no dice que la
   revisión no ha terminado; si el aviso de fallo se reintenta con la foto de un push anterior, el
   hilo termina y el push nuevo vuelve a empezar el seguimiento.
-- [ ] 2.4 La arista de comprobaciones fallidas a `avisarEstadoFinal` en `core/graph.ts` y el estado
+- [x] 2.4 La arista de comprobaciones fallidas a `avisarEstadoFinal` en `core/graph.ts` y el estado
   final con el push que se sigue.
   Verificar: los tests de 2.3 y todos los del grafo y del driver en verde; `pnpm lint`,
   `pnpm typecheck` y `pnpm test` en verde.
