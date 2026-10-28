@@ -100,7 +100,8 @@ export interface TriageBudget {
 /** Bytes por token al estimar: conservador, porque los tokens reales son algo menos (paso 1.1). */
 const BYTES_PER_TOKEN = 3;
 
-function estimatedTokens(value: unknown): number {
+/** Los tokens que costará mandar un valor al modelo, estimados por su tamaño en JSON. */
+export function estimatedTokens(value: unknown): number {
   return Math.ceil(new TextEncoder().encode(JSON.stringify(value)).length / BYTES_PER_TOKEN);
 }
 

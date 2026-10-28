@@ -28,15 +28,17 @@ const PUSH_88_P1 = '5ccb86c438a75ea0a1214633c6f04ec43dcbefeb';
 /** El *check run* de `sonar-issues` en `check-runs-failed.json`. */
 const SONAR_ISSUES_JOB = 121264937094;
 
-type Route = (call: Call) => Response | Promise<Response> | undefined;
+/** Responde a una petición por su ruta, sin la *query*; `undefined` deja la grabada. */
+type Route = (call: Call & { path: string }) => Response | Promise<Response> | undefined;
 
 /** Un GitHub falso con las respuestas grabadas; `override` responde antes que ellas. */
 function github(override: Route = () => undefined) {
   const { fetch, calls } = fakeFetch(async (call) => {
-    const answer = await override(call);
-    if (answer) return answer;
     const path = new URL(call.url).pathname;
-    if (path.endsWith('/pulls/88')) return json(await fixture('pull-88.json'));
+    const answer = await override({ ...call, path });
+    if (answer) return answer;
+    // El título y la descripción de la #88 valen para cualquier PR.
+    if (/\/pulls\/\d+$/.test(path)) return json(await fixture('pull-88.json'));
     const comments = /\/pulls\/(\d+)\/comments$/.exec(path);
     if (comments) return json(await fixture(`review-comments-${comments[1]}.json`));
     if (path.endsWith('/check-runs')) return json(await fixture('check-runs-failed.json'));
@@ -125,8 +127,8 @@ describe('los hallazgos del revisor', () => {
   it('las respuestas en los hilos no son hallazgos, aunque sean del revisor', async () => {
     const recorded = JSON.parse(await fixture('review-comments-88.json')) as Record<string, unknown>[];
     const reply = { ...recorded[0], id: 1, in_reply_to_id: 4399182116, original_commit_id: PUSH_88 };
-    const { findings } = github(({ url }) =>
-      url.endsWith('/pulls/88/comments') ? json(JSON.stringify([...recorded, reply])) : undefined,
+    const { findings } = github(({ path }) =>
+      path.endsWith('/pulls/88/comments') ? json(JSON.stringify([...recorded, reply])) : undefined,
     );
 
     const { findings: read } = await findings.read(88, PUSH_88, []);
@@ -189,7 +191,7 @@ describe('las comprobaciones que fallan', () => {
     const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues']);
     const check = read.find((finding) => finding.source === 'check');
 
-    expect(check).toEqual({ source: 'check', name: 'sonar-issues', log: expect.any(String) });
+    expect(check).toEqual({ source: 'check', name: 'sonar-issues', log: expect.any(String) as string });
     const log = check?.source === 'check' ? (check.log ?? '') : '';
     expect(log.startsWith('##[group]Run node tooling/ci/check-sonar-issues.ts')).toBe(true);
     expect(log).toContain('3 incidencias nuevas de SonarQube en la PR:');
@@ -210,8 +212,8 @@ describe('las comprobaciones que fallan', () => {
   it('el log se corta por el principio, hasta 16 KiB', async () => {
     const lines = Array.from({ length: 2000 }, (_, i) => `2026-10-28T17:09:21.0000000Z línea ${i}`);
     const long = ['##[group]Run pnpm test', ...lines, '##[error]Process completed with exit code 1.'];
-    const { findings } = github(({ url }) =>
-      url.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? text(long.join('\n')) : undefined,
+    const { findings } = github(({ path }) =>
+      path.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? text(long.join('\n')) : undefined,
     );
 
     const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues']);
@@ -224,8 +226,8 @@ describe('las comprobaciones que fallan', () => {
   });
 
   it('sin un error marcado, el log es su final', async () => {
-    const { findings } = github(({ url }) =>
-      url.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? text('primera\nsegunda\núltima') : undefined,
+    const { findings } = github(({ path }) =>
+      path.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? text('primera\nsegunda\núltima') : undefined,
     );
 
     const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues']);
@@ -234,8 +236,8 @@ describe('las comprobaciones que fallan', () => {
   });
 
   it('sin log que leer, el hallazgo va sin contexto', async () => {
-    const { findings, calls } = github(({ url }) =>
-      url.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? json('{"message":"Not Found"}', 404) : undefined,
+    const { findings, calls } = github(({ path }) =>
+      path.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? json('{"message":"Not Found"}', 404) : undefined,
     );
 
     const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues', 'SonarCloud Code Analysis']);
@@ -257,16 +259,16 @@ describe('si GitHub falla', () => {
   });
 
   it('con un 5xx al leer los comentarios, lanza para que se reintente', async () => {
-    const { findings } = github(({ url }) =>
-      url.endsWith('/pulls/88/comments') ? json('{"message":"Server Error"}', 502) : undefined,
+    const { findings } = github(({ path }) =>
+      path.endsWith('/pulls/88/comments') ? json('{"message":"Server Error"}', 502) : undefined,
     );
 
     await expect(findings.read(88, PUSH_88, [])).rejects.toThrow();
   });
 
   it('con un 5xx al leer un log, lanza para que se reintente', async () => {
-    const { findings } = github(({ url }) =>
-      url.includes('/actions/jobs/') ? json('{"message":"Server Error"}', 502) : undefined,
+    const { findings } = github(({ path }) =>
+      path.includes('/actions/jobs/') ? json('{"message":"Server Error"}', 502) : undefined,
     );
 
     await expect(findings.read(88, PUSH_88, ['sonar-issues'])).rejects.toThrow();

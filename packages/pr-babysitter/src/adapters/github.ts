@@ -1,6 +1,7 @@
 /**
- * Adaptador de GitHub (change pr-tracking, decisiones 3, 4 y 6), con octokit. Lee, y solo escribe
- * comentarios en una PR, para pedir la revisión (change pr-review-request, decisión 2): el token
+ * Adaptador de GitHub (change pr-tracking, decisiones 3, 4 y 6), con octokit. Lee, también los
+ * hallazgos que tría el sistema (change pr-shadow-triage, decisión 2), y solo escribe comentarios en
+ * una PR, para pedir la revisión (change pr-review-request, decisión 2): el token
  * tiene escritura en *Issues* y *Pull requests*, pero no en *Contents*, así que no puede subir
  * commits ni integrar (D64).
  *
@@ -27,6 +28,24 @@ export interface PullRequestComment {
   /** Login de GitHub de la cuenta que lo escribe. */
   author: string;
   body: string;
+}
+
+/** Un comentario de revisión en línea, tal como se hizo: en qué push, fichero y línea. */
+export interface ReviewComment {
+  /** Login de GitHub de la cuenta que lo escribe. */
+  author: string;
+  body: string;
+  /**
+   * El push sobre el que se hizo. No el `commit_id`, que GitHub mueve al push siguiente si la línea
+   * no cambia (la #88).
+   */
+  originalSha: string;
+  path: string;
+  /** La línea en ese push, o `null` si el comentario es del fichero entero. */
+  originalLine: number | null;
+  diffHunk: string | null;
+  /** El comentario al que contesta, si es una respuesta en un hilo. */
+  inReplyTo: number | null;
 }
 
 export interface GitHubReaderOptions {
@@ -58,6 +77,20 @@ const commentSchema = z.object({
   body: z.string(),
 });
 
+/** Lo que se lee de una PR de `GET /repos/{owner}/{repo}/pulls/{number}`, para el triaje. */
+const pullTextSchema = z.object({ title: z.string(), body: z.string().nullable() });
+
+/** Lo que se lee de cada comentario de `GET /repos/{owner}/{repo}/pulls/{number}/comments`. */
+const reviewCommentSchema = z.object({
+  user: z.object({ login: z.string() }),
+  body: z.string(),
+  original_commit_id: z.string(),
+  path: z.string(),
+  original_line: z.number().nullable().optional(),
+  diff_hunk: z.string().nullable().optional(),
+  in_reply_to_id: z.number().nullable().optional(),
+});
+
 /** Lo que se lee de cada regla de `GET /repos/{owner}/{repo}/rules/branches/{branch}`. */
 const ruleSchema = z.object({
   type: z.string(),
@@ -70,9 +103,12 @@ const requiredStatusChecksSchema = z.object({
 
 /** Lo que se lee de cada *check run* de `GET /repos/{owner}/{repo}/commits/{ref}/check-runs`. */
 const checkRunSchema = z.object({
+  id: z.number(),
   name: z.string(),
   status: z.string(),
   conclusion: z.string().nullable(),
+  /** La app que la ejecuta: solo las de GitHub Actions son un *job* con log. */
+  app: z.object({ slug: z.string() }).nullable().optional(),
 });
 
 /** Las conclusiones que cuentan como superadas (`sonar-issues` se salta: `linear.md` §7). */
@@ -89,6 +125,15 @@ export function createGitHubReader({
   listComments(pullRequestNumber: number): Promise<PullRequestComment[]>;
   /** Publica un comentario en una PR. Para la petición de revisión. */
   createComment(pullRequestNumber: number, body: string): Promise<void>;
+  /** El título y la descripción de una PR. Para el triaje. */
+  getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;
+  /** Los comentarios de revisión en línea de una PR, del primero al último. Para el triaje. */
+  listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]>;
+  /**
+   * El log entero del *job* de una comprobación en un commit, o `null` si no es un *job* de GitHub
+   * Actions o GitHub no lo da. Para el triaje.
+   */
+  jobLog(sha: string, checkName: string): Promise<string | null>;
 } {
   const octokit = new Octokit({
     request: fetch ? { fetch } : {},
@@ -98,6 +143,18 @@ export function createGitHubReader({
   octokit.hook.before('request', async (options) => {
     options.headers.authorization = `token ${await token()}`;
   });
+
+  async function checkRuns(sha: string) {
+    const runs = await read(() =>
+      octokit.paginate(octokit.rest.checks.listForRef, {
+        owner,
+        repo,
+        ref: sha,
+        per_page: 100,
+      }),
+    );
+    return z.array(checkRunSchema).parse(runs);
+  }
 
   return {
     async listOpenPullRequests(): Promise<OpenPullRequest[]> {
@@ -148,18 +205,10 @@ export function createGitHubReader({
     },
 
     async checks(sha: string, required: string[]): Promise<Check[]> {
-      const runs = await read(() =>
-        octokit.paginate(octokit.rest.checks.listForRef, {
-          owner,
-          repo,
-          ref: sha,
-          per_page: 100,
-        }),
-      );
-      const checkRuns = z.array(checkRunSchema).parse(runs);
+      const runs = await checkRuns(sha);
       return required.map((name) => {
         // GitHub da el *check run* más reciente de cada nombre (`filter=latest`).
-        const run = checkRuns.find((checkRun) => checkRun.name === name);
+        const run = runs.find((checkRun) => checkRun.name === name);
         if (run?.status !== 'completed') return { name, status: 'pending' };
         const passed = PASSING_CONCLUSIONS.has(run.conclusion ?? '');
         return { name, status: passed ? 'passed' : 'failed' };
@@ -185,6 +234,53 @@ export function createGitHubReader({
       await write(() =>
         octokit.rest.issues.createComment({ owner, repo, issue_number: pullRequestNumber, body }),
       );
+    },
+
+    async getPullRequest(pullRequestNumber: number) {
+      const { data } = await read(() =>
+        octokit.rest.pulls.get({ owner, repo, pull_number: pullRequestNumber }),
+      );
+      const pull = pullTextSchema.parse(data);
+      return { title: pull.title, body: pull.body ?? '' };
+    },
+
+    async listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]> {
+      const comments = await read(() =>
+        octokit.paginate(octokit.rest.pulls.listReviewComments, {
+          owner,
+          repo,
+          pull_number: pullRequestNumber,
+          per_page: 100,
+        }),
+      );
+      return z
+        .array(reviewCommentSchema)
+        .parse(comments)
+        .map((comment) => ({
+          author: comment.user.login,
+          body: comment.body,
+          originalSha: comment.original_commit_id,
+          path: comment.path,
+          originalLine: comment.original_line ?? null,
+          diffHunk: comment.diff_hunk ?? null,
+          inReplyTo: comment.in_reply_to_id ?? null,
+        }));
+    },
+
+    async jobLog(sha: string, checkName: string): Promise<string | null> {
+      const run = (await checkRuns(sha)).find((checkRun) => checkRun.name === checkName);
+      if (run?.app?.slug !== 'github-actions') return null;
+      try {
+        const { data } = await read(() =>
+          octokit.rest.actions.downloadJobLogsForWorkflowRun({ owner, repo, job_id: run.id }),
+        );
+        return typeof data === 'string' ? data : String(data);
+      } catch (error) {
+        // Un log que GitHub no da (caducado, borrado o sin permiso) deja el hallazgo sin contexto;
+        // la red, un 5xx o el límite de la API se reintentan.
+        if (error instanceof RequestError && isRejection(error)) return null;
+        throw error;
+      }
     },
   };
 }

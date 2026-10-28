@@ -59,7 +59,7 @@
     `state` con `pr_author_description` y cada hallazgo por su clave, un `noul` por hallazgo con su
     identidad en las instrucciones y los criterios de la decisión 5); la probabilidad de cada uno y
     `usage`; partir la petición si no cabe; un error del proveedor lanza.
-- [ ] 1.6 Los puertos `Findings` y `Triager` en `core/ports.ts`, los adaptadores
+- [x] 1.6 Los puertos `Findings` y `Triager` en `core/ports.ts`, los adaptadores
   `adapters/findings.ts` y `adapters/decision-model.ts`, las lecturas nuevas de `adapters/github.ts`
   y, si funciona con Ollama, `@langchain/typesafe` en el catálogo de pnpm.
   Verificar: los tests de 1.5 en verde, y los que ya había de los adaptadores.

@@ -89,9 +89,11 @@ flowchart TD
   (`adapters/findings.ts`) los construye con dos lecturas de GitHub, solo en las PR que llegan aquí:
   - **del revisor:** los comentarios de revisión en línea de su cuenta sobre ese SHA, con la severidad
     sacada de la insignia (P1 es *alta*; otro revisor la traduce en su adaptador, BA3), el título, el
-    texto sin la insignia, el fichero, la línea y el `diff_hunk`. Si el comentario se ha quedado
-    desfasado por un push posterior, GitHub da `line: null`, y vale `original_line` (paso 1.1: tres de
-    los seis de Codex en la #85 y la #88);
+    texto sin la insignia, el fichero, la línea y el `diff_hunk`. «Sobre ese SHA» es
+    `original_commit_id`, el push en que se hizo, con su `original_line`: GitHub mueve `commit_id` y
+    `line` al push siguiente si la línea no cambia (en la #88, un comentario de `68ea335` aparece en
+    `38f0872`), y da `line: null` si se ha quedado desfasado (tres de los seis de Codex en la #85 y
+    la #88). P0, si Codex la usa, también es *alta*;
   - **de las comprobaciones que fallan:** el final del log del paso que falla, hasta un tamaño máximo
     *(asumido: 16 KiB)*. Si GitHub no da el log, el hallazgo va sin contexto (decisión 4). GitHub da el
     log del *job* entero (`GET /actions/jobs/{id}/logs`), y su final es la limpieza del *job*, no el
