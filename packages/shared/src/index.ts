@@ -11,6 +11,9 @@ export {
   type SetEffectBody,
   SetEffectBodySchema,
   SetEffectResponseSchema,
+  type SetValuesBody,
+  SetValuesBodySchema,
+  SetValuesResponseSchema,
 } from './commands.ts';
 
 export {

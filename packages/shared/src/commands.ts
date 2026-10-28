@@ -5,7 +5,7 @@
  */
 import Type, { type Static } from 'typebox';
 
-import { EffectIdSchema } from './effects.ts';
+import { EFFECT_CATALOG, type EffectId, EffectIdSchema, type EffectValues } from './effects.ts';
 
 /** Un cuerpo con campos de más es un error de quien llama, no algo que ignorar. */
 const CLOSED = { additionalProperties: false } as const;
@@ -13,8 +13,27 @@ const CLOSED = { additionalProperties: false } as const;
 /** El cuerpo de `PUT /api/strips/{stripId}/effect`: el id del efecto, uno del catálogo. */
 export const SetEffectBodySchema = Type.Object({ effect: EffectIdSchema }, CLOSED);
 
-/** La respuesta `200`: la tira con su efecto activo, con la misma forma que en el mensaje `6`. */
-export { StripStateSchema as SetEffectResponseSchema } from './viewer-protocol.ts';
+/**
+ * Las respuestas `200` de las dos rutas: la tira con su efecto activo y sus valores, con la misma
+ * forma que en el mensaje `6`.
+ */
+export {
+  StripStateSchema as SetEffectResponseSchema,
+  StripStateSchema as SetValuesResponseSchema,
+} from './viewer-protocol.ts';
+
+/** Los valores de cualquier efecto del catálogo: el cuerpo de la ruta de valores. */
+export type SetValuesBody = EffectValues<EffectId>;
+
+/**
+ * El cuerpo de `PUT /api/strips/{stripId}/values`: todos los valores del efecto activo (decisión 4
+ * del change strip-effect-values). Es la unión de los esquemas de parámetros del catálogo, para que el
+ * OpenAPI describa cada forma con sus rangos; la validación que decide es la del efecto activo, y la
+ * hace el motor. `Unsafe` le da su tipo, que el `map` pierde; el esquema es el mismo.
+ */
+export const SetValuesBodySchema = Type.Unsafe<SetValuesBody>(
+  Type.Union(EFFECT_CATALOG.map((effect) => effect.paramsSchema)),
+);
 
 /** La respuesta de cualquier error de la API (`400`, `404`, `409`): una frase que dice qué pasa. */
 export const ApiErrorSchema = Type.Object({ message: Type.String({ minLength: 1 }) }, CLOSED);

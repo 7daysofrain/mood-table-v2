@@ -36,7 +36,7 @@
   efecto en `commands.test.ts`, llevan `values`.
   Verificar: los tests de 1.3 pasan, el documento describe exactamente lo que hace el código, y
   `pnpm typecheck`, `pnpm test` y `pnpm test:e2e` en verde.
-- [ ] 1.5 Los esquemas de la ruta de valores en `packages/shared/src/commands.ts`, exportados: el
+- [x] 1.5 Los esquemas de la ruta de valores en `packages/shared/src/commands.ts`, exportados: el
   cuerpo (`SetValuesBodySchema`, la unión de los esquemas de parámetros del catálogo) y la respuesta
   (la tira), con tests de `Value.Check` que aceptan el ejemplo de `design.md` (decisión 4) y rechazan
   un periodo fuera de rango y un campo de más.
