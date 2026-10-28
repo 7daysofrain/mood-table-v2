@@ -171,13 +171,13 @@ tiras en un fichero.
 | # | Pregunta | Cómo se resuelve |
 |---|---|---|
 | Q1 | ¿Cuántos LEDs por tira admite el instrumento con fluidez? | Con la prueba de rendimiento (A1, A2). **Resuelta en parte (17-oct):** por CPU, una tira de 600 LEDs cabe con margen ([resultados](spikes/moo-12-rendimiento-pi.md)); falta Adalight (A2, H3), que será el límite real. |
-| Q2 | ¿Qué controles tiene cada efecto? Por ejemplo, sensibilidad, color o velocidad. | Decisión del DJ, a partir de los efectos de la v1. **Resuelta para la *respiración*:** color (por defecto, blanco cálido) y periodo, los segundos de una respiración completa (por defecto, 4); toda la tira a la vez, con una onda suave de casi apagado al máximo (decisión del DJ al especificar MOO-13). Los efectos reactivos, pendientes. |
+| Q2 | ¿Qué controles tiene cada efecto? Por ejemplo, sensibilidad, color o velocidad. | Decisión del DJ, a partir de los efectos de la v1. **Resuelta para la *respiración*:** color (por defecto, blanco cálido) y periodo, los segundos de una respiración completa (por defecto, 4); toda la tira a la vez, con una onda suave de casi apagado al máximo (decisión del DJ al especificar MOO-13). El periodo va de 1 a 20 s, con un slider en escala logarítmica (decisión del DJ al explorar MOO-95). Los efectos reactivos, pendientes. |
 | Q3 | Al cambiar de efecto, ¿se pasa con un **fundido** o con un **corte seco**? | ✅ **Resuelta:** corte seco (decisión del DJ al crear MOO-94). Si se echa en falta un fundido, irá en otra historia. |
 | Q4 | ¿Qué hacen los efectos reactivos cuando hay **silencio** o no hay fuente de audio? ¿Se apagan o quedan con un mínimo? | ✅ **Resuelta:** en silencio, un efecto reactivo se apaga y uno de ambiente sigue (decisión del DJ al refinar MOO-14). |
 | Q5 | Si la tira física falla (el Light Box se desconecta), ¿qué pasa? ¿El resto sigue funcionando y el panel avisa? | Decisión de producto. |
 | Q6 | ¿Cuál será el mando físico definitivo: la F1, un mando propio u otro? | Más adelante (visión, §5.3). |
 | Q7 | ¿El instrumento se adapta solo al volumen de la entrada (una señal muy baja o saturada), o eso lo resuelve el DJ con un control de sensibilidad (H2, Q2)? | Decisión del DJ. |
-| Q8 | Si un cambio de efecto no llega al motor (el motor se ha caído o lo rechaza), ¿qué ve el DJ en el panel? | Decisión del DJ. Mientras tanto, el panel solo marca el efecto que pinta el motor (MOO-94). |
+| Q8 | Si un cambio de efecto o de valor no llega al motor (el motor se ha caído o lo rechaza), ¿qué ve el DJ en el panel? | Decisión del DJ. Mientras tanto, el panel solo marca el efecto que pinta el motor (MOO-94), y al soltar un control este vuelve al valor que pinta el motor (MOO-95). |
 
 ## 8. Glosario
 
