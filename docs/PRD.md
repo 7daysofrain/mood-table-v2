@@ -73,7 +73,7 @@ tiras en un fichero.
 |---|---|---|---|
 | E1 | **Se toca en directo, de manera fluida.** | Al mover un control, la luz responde mientras arrastras, sin saltos ni tirones. | MVP |
 | E2 | **La luz sigue a la música.** | Reacciona a los golpes y a la energía del tema, y no se nota que llegue tarde. | MVP |
-| E3 | **Varios efectos para elegir.** | Se cambia de efecto en caliente, sin cortes, entre efectos reactivos y de ambiente. | MVP |
+| E3 | **Varios efectos para elegir.** | Se cambia de efecto en caliente, sin que la luz se pare, entre efectos reactivos y de ambiente. | MVP |
 | E4 | **Cada tira, su efecto.** | Varias tiras a la vez, cada una con su efecto y sus valores. | MVP (la segunda tira física, *should*) |
 | E5 | **Se controla con el hardware que elijas.** | El mismo instrumento se toca desde el panel web y, en el futuro, desde una pantalla táctil, una Traktor F1 o un mando propio. | MVP: panel · Visión: el resto |
 | E6 | **Autónomo.** | Se enchufa y vuelve como estaba, sin portátil ni internet, incluso tras un corte de luz. | MVP |
@@ -172,11 +172,12 @@ tiras en un fichero.
 |---|---|---|
 | Q1 | ¿Cuántos LEDs por tira admite el instrumento con fluidez? | Con la prueba de rendimiento (A1, A2). **Resuelta en parte (17-oct):** por CPU, una tira de 600 LEDs cabe con margen ([resultados](spikes/moo-12-rendimiento-pi.md)); falta Adalight (A2, H3), que será el límite real. |
 | Q2 | ¿Qué controles tiene cada efecto? Por ejemplo, sensibilidad, color o velocidad. | Decisión del DJ, a partir de los efectos de la v1. **Resuelta para la *respiración*:** color (por defecto, blanco cálido) y periodo, los segundos de una respiración completa (por defecto, 4); toda la tira a la vez, con una onda suave de casi apagado al máximo (decisión del DJ al especificar MOO-13). Los efectos reactivos, pendientes. |
-| Q3 | Al cambiar de efecto, ¿se pasa con un **fundido** o con un **corte seco**? | Decisión del DJ. |
+| Q3 | Al cambiar de efecto, ¿se pasa con un **fundido** o con un **corte seco**? | ✅ **Resuelta:** corte seco (decisión del DJ al crear MOO-94). Si se echa en falta un fundido, irá en otra historia. |
 | Q4 | ¿Qué hacen los efectos reactivos cuando hay **silencio** o no hay fuente de audio? ¿Se apagan o quedan con un mínimo? | ✅ **Resuelta:** en silencio, un efecto reactivo se apaga y uno de ambiente sigue (decisión del DJ al refinar MOO-14). |
 | Q5 | Si la tira física falla (el Light Box se desconecta), ¿qué pasa? ¿El resto sigue funcionando y el panel avisa? | Decisión de producto. |
 | Q6 | ¿Cuál será el mando físico definitivo: la F1, un mando propio u otro? | Más adelante (visión, §5.3). |
 | Q7 | ¿El instrumento se adapta solo al volumen de la entrada (una señal muy baja o saturada), o eso lo resuelve el DJ con un control de sensibilidad (H2, Q2)? | Decisión del DJ. |
+| Q8 | Si un cambio de efecto no llega al motor (el motor se ha caído o lo rechaza), ¿qué ve el DJ en el panel? | Decisión del DJ. Mientras tanto, el panel solo marca el efecto que pinta el motor (MOO-94). |
 
 ## 8. Glosario
 
