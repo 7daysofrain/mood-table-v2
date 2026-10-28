@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FakeContext } from '../test/fake-audio-context.ts';
 import { render } from '../test/render.tsx';
-import { App, type PanelConnection, type PanelEffectRequests } from './App.tsx';
+import { App, type PanelConnection, type PanelEffectRequests, type PanelValueRequests } from './App.tsx';
 import { AudioPlayer } from './audio/player.ts';
 import type { ConnectionStatus, PositionListener } from './engine/connection.ts';
 
@@ -285,7 +285,12 @@ const CABINA: StripState = {
 function panelWithStrips(source: SourceMessage = { kind: 'file', name: 'golpes.wav' }) {
   const fake = fakeConnection();
   const requests = { send: vi.fn() } satisfies PanelEffectRequests;
-  render(<App connection={fake.connection} requests={requests} />);
+  const valueRequests = {
+    send: vi.fn(),
+    busy: () => false,
+    subscribe: () => () => false,
+  } satisfies PanelValueRequests;
+  render(<App connection={fake.connection} requests={requests} valueRequests={valueRequests} />);
   act(() => {
     fake.setStatus('connected');
     fake.setSource(source);
@@ -299,7 +304,7 @@ function panelWithStrips(source: SourceMessage = { kind: 'file', name: 'golpes.w
       fake.setStatus('disconnected');
     });
   };
-  return { ...fake, requests, disconnect };
+  return { ...fake, requests, valueRequests, disconnect };
 }
 
 const zone = (name: string) => screen.getByRole('region', { name });
@@ -438,5 +443,66 @@ describe('las zonas Tiras y Efectos', () => {
 
     expect(strip('Barra')).toBeChecked();
     expect(effect('Energía')).toHaveAttribute('aria-current', 'true');
+  });
+});
+
+describe('la zona Controles', () => {
+  const FONDO: StripState = { ...CABINA, id: 'fondo', name: 'Fondo', values: { color: '#2040FF', period: 7 } };
+  const period = () => within(zone('Controles')).getByRole('slider', { name: 'Periodo (s)' });
+  const color = () => within(zone('Controles')).getByRole('group', { name: 'Color' });
+
+  it('con la energía en la tira seleccionada, solo tiene su título', () => {
+    panelWithStrips();
+
+    expect(zone('Controles')).toHaveTextContent(/^Controles$/);
+  });
+
+  it('con la respiración, muestra el color y el periodo que dice el motor', () => {
+    panelWithStrips();
+
+    fireEvent.click(strip('Cabina'));
+
+    expect(color()).toHaveTextContent('#FFA957');
+    expect(period()).toHaveAttribute('aria-valuetext', '4,0 s');
+  });
+
+  it('al seleccionar otra tira, muestra los valores de esa', () => {
+    const panel = panelWithStrips();
+    act(() => {
+      panel.setStrips([BARRA, CABINA, FONDO]);
+    });
+    fireEvent.click(strip('Cabina'));
+
+    fireEvent.click(strip('Fondo'));
+
+    expect(color()).toHaveTextContent('#2040FF');
+    expect(period()).toHaveAttribute('aria-valuetext', '7,0 s');
+  });
+
+  it('mover un control envía todos los valores de la tira seleccionada', () => {
+    const panel = panelWithStrips();
+    fireEvent.click(strip('Cabina'));
+
+    fireEvent.keyDown(period(), { key: 'ArrowRight' });
+
+    expect(panel.valueRequests.send).toHaveBeenCalledWith(
+      'cabina',
+      expect.objectContaining({ color: '#FFA957' }),
+    );
+  });
+
+  it('sin conexión, solo tiene su título, y al volver muestra lo que pinta el motor', () => {
+    const panel = panelWithStrips();
+    fireEvent.click(strip('Cabina'));
+
+    panel.disconnect();
+    expect(zone('Controles')).toHaveTextContent(/^Controles$/);
+
+    act(() => {
+      panel.setStatus('connected');
+      panel.setStrips([BARRA, { ...CABINA, values: { color: '#2040FF', period: 7 } }]);
+    });
+    expect(color()).toHaveTextContent('#2040FF');
+    expect(period()).toHaveAttribute('aria-valuetext', '7,0 s');
   });
 });

@@ -107,7 +107,7 @@
 - [x] 3.4 La función de traducción y los nombres de los parámetros en `literals.ts`, con un tipo que
   obliga a tener el de cada parámetro de cada efecto.
   Verificar: los tests de 3.3 pasan y `pnpm typecheck` falla si se quita un nombre.
-- [ ] 3.5 **(test en rojo)** Tests de la zona Controles (componente y `App.test.tsx`), con la conexión
+- [x] 3.5 **(test en rojo)** Tests de la zona Controles (componente y `App.test.tsx`), con la conexión
   y la cola falsas: con la respiración muestra el color y el periodo que dice la conexión; con la
   energía, solo el título; al seleccionar otra tira muestra sus valores; mover un control envía todos
   los valores de la tira; mientras se arrastra, el control sigue al dedo aunque llegue un eco
