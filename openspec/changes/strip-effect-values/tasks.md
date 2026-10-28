@@ -65,7 +65,7 @@
   cambiar el valor de una tira no cambia los frames de otra; `setEffect` sigue empezando con los
   valores por defecto (decisión 8).
   Verificar: los tests nuevos fallan porque `setValues` no existe.
-- [ ] 2.4 `setValues` en el puerto `Commands` y en el búfer (`packages/engine/src/core/control.ts`):
+- [x] 2.4 `setValues` en el puerto `Commands` y en el búfer (`packages/engine/src/core/control.ts`):
   los valores de cada ranura como una referencia que se sustituye fuera del bucle; la foto de las
   tiras (`stripsMessage` en `engine.ts`) lleva los valores de cada ranura.
   Verificar: los tests de 2.3 pasan, los del bucle siguen en verde y `pnpm lint` no da errores de

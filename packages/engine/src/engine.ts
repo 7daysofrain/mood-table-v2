@@ -7,7 +7,6 @@ import { basename } from 'node:path';
 
 import type {
   Config,
-  EffectId,
   SourceMessage,
   StripConfig,
   StripsMessage,
@@ -17,8 +16,6 @@ import type {
 import { startTicker, type Ticker } from './adapters/ticker.ts';
 import type { AudioSource } from './core/audio/audio-source.ts';
 import type { ControlBuffer } from './core/control.ts';
-import { defaultParams } from './core/effects/effect.ts';
-import { EFFECTS } from './core/effects/registry.ts';
 import {
   createFrameLoop,
   type LevelOutput,
@@ -100,19 +97,10 @@ export function sourceMessage(config: Config): SourceMessage {
 export function stripsMessage(config: Config, control: ControlBuffer): StripsMessage {
   return {
     strips: config.strips.map(({ id, name, ledCount, output }, index) => {
-      const { effect } = control.slot(index);
-      // El tipo no ve que los valores son los de `effect`: salen de su esquema en el registro.
-      return { id, name, ledCount, output, effect, values: defaultValues(effect) } as StripState;
+      const { effect, values } = control.slot(index);
+      // El tipo no ve que los valores son los de `effect`: el búfer solo acepta los que cumplen su
+      // esquema.
+      return { id, name, ledCount, output, effect, values } as StripState;
     }),
   };
-}
-
-/**
- * Los valores de un efecto mientras el DJ no los pueda cambiar: los de por defecto, los mismos con
- * que la ranura lo pinta. `MOO-106` los lee de la ranura.
- */
-function defaultValues(id: EffectId): unknown {
-  const effect = EFFECTS.find((each) => each.id === id);
-  if (!effect) throw new RangeError(`No hay ningún efecto «${id}» en el registro`);
-  return defaultParams(effect);
 }
