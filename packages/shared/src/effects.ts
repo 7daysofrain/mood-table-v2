@@ -6,16 +6,56 @@
  */
 import Type, { type Static } from 'typebox';
 
+/** Blanco cálido: el de una bombilla incandescente (unos 2700 K). */
+const WARM_WHITE = '#FFA957';
+
+/**
+ * Unos valores con campos que el efecto no declara se rechazan: así unos valores atrasados de otro
+ * efecto no caen en el activo (decisión 3 del change strip-effect-values).
+ */
+const CLOSED = { additionalProperties: false } as const;
+
+/**
+ * *Respiración*: color y segundos de una respiración completa (subir y bajar). Valores por
+ * defecto: la decisión del DJ sobre PRD Q2 (decisión 5 del change virtual-strip-breathing). El
+ * periodo va de 1 a 20 s (decisión 1 del change strip-effect-values). Las extensiones `x-` le dicen
+ * al panel qué control pintar, y la validación no las tiene en cuenta (decisión 5).
+ */
+export const BreathingParamsSchema = Type.Object(
+  {
+    color: Type.String({ pattern: '^#[0-9A-Fa-f]{6}$', default: WARM_WHITE, 'x-control': 'color' }),
+    period: Type.Number({ minimum: 1, maximum: 20, default: 4, 'x-scale': 'log' }),
+  },
+  CLOSED,
+);
+
+export type BreathingParams = Static<typeof BreathingParamsSchema>;
+
+/**
+ * *Energía*: sin parámetros, como la de la v1 (decisión 1 del change virtual-strip-audio-file). La
+ * sensibilidad llega con H2.
+ */
+export const EnergyParamsSchema = Type.Object({}, CLOSED);
+
+export type EnergyParams = Static<typeof EnergyParamsSchema>;
+
 /**
  * Los efectos que existen (decisión 10 del change virtual-strip-audio-file): su id, en inglés como
- * el resto del fichero, y si son reactivos (`true`) o de ambiente (`false`).
+ * el resto del fichero, si son reactivos (`true`) o de ambiente (`false`) y el esquema de sus
+ * parámetros, con el que el motor valida y el panel dibuja (decisión 5 del change
+ * strip-effect-values).
  */
 export const EFFECT_CATALOG = [
-  { id: 'breathing', usesAudio: false },
-  { id: 'energy', usesAudio: true },
+  { id: 'breathing', usesAudio: false, paramsSchema: BreathingParamsSchema },
+  { id: 'energy', usesAudio: true, paramsSchema: EnergyParamsSchema },
 ] as const;
 
 export type EffectId = (typeof EFFECT_CATALOG)[number]['id'];
+
+/** Los valores de un efecto, por su id: `EffectValues<'breathing'>` es `BreathingParams`. */
+export type EffectValues<E extends EffectId> = Static<
+  Extract<(typeof EFFECT_CATALOG)[number], { id: E }>['paramsSchema']
+>;
 
 /**
  * El id de un efecto del catálogo, para el fichero, el protocolo del visor y la API. La unión se
@@ -33,25 +73,3 @@ export const EffectIdSchema = Type.Unsafe<EffectId>(
 export function needsAudioSource(effect: EffectId): boolean {
   return EFFECT_CATALOG.some((each) => each.id === effect && each.usesAudio);
 }
-
-/** Blanco cálido: el de una bombilla incandescente (unos 2700 K). */
-const WARM_WHITE = '#FFA957';
-
-/**
- * *Respiración*: color y segundos de una respiración completa (subir y bajar). Valores por
- * defecto: la decisión del DJ sobre PRD Q2 (decisión 5 del change virtual-strip-breathing).
- */
-export const BreathingParamsSchema = Type.Object({
-  color: Type.String({ pattern: '^#[0-9A-Fa-f]{6}$', default: WARM_WHITE }),
-  period: Type.Number({ exclusiveMinimum: 0, default: 4 }),
-});
-
-export type BreathingParams = Static<typeof BreathingParamsSchema>;
-
-/**
- * *Energía*: sin parámetros, como la de la v1 (decisión 1 del change virtual-strip-audio-file). La
- * sensibilidad llega con H2.
- */
-export const EnergyParamsSchema = Type.Object({});
-
-export type EnergyParams = Static<typeof EnergyParamsSchema>;

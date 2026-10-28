@@ -17,7 +17,7 @@
   rechaza un campo que no declara y la energía rechaza `{ "period": 7 }` y acepta `{}`; cada efecto
   del catálogo trae su esquema de parámetros (decisiones 1, 3 y 5).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 1.2 Los esquemas en `packages/shared/src/effects.ts`: `minimum`, `maximum` y las extensiones
+- [x] 1.2 Los esquemas en `packages/shared/src/effects.ts`: `minimum`, `maximum` y las extensiones
   `x-` de la respiración, `additionalProperties: false` en todos, y el esquema de parámetros de cada
   efecto en `EFFECT_CATALOG`, con un tipo que da los valores de cada efecto por su id.
   Verificar: los tests de 1.1 pasan y `pnpm typecheck` en verde.

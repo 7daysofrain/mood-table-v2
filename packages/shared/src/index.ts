@@ -31,6 +31,7 @@ export {
   EnergyParamsSchema,
   type BreathingParams,
   type EffectId,
+  type EffectValues,
   type EnergyParams,
   needsAudioSource,
 } from './effects.ts';

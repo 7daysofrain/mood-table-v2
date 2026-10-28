@@ -37,11 +37,11 @@ describe('los parámetros de la respiración', () => {
   });
 
   it('pide un selector de color para el color', () => {
-    expect(BreathingParamsSchema.properties.color['x-control']).toBe('color');
+    expect(BreathingParamsSchema.properties.color).toMatchObject({ 'x-control': 'color' });
   });
 
   it('pide una escala logarítmica para el periodo', () => {
-    expect(BreathingParamsSchema.properties.period['x-scale']).toBe('log');
+    expect(BreathingParamsSchema.properties.period).toMatchObject({ 'x-scale': 'log' });
   });
 
   it('rechaza un campo que no declara', () => {
