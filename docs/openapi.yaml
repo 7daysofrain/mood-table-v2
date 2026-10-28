@@ -43,48 +43,102 @@ paths:
           description: El `id` de la tira
       responses:
         "200":
-          description: La tira, con su efecto activo
+          description: La tira, con su efecto activo y sus valores
           content:
             application/json:
               schema:
-                description: La tira, con su efecto activo
-                type: object
-                required:
-                  - id
-                  - name
-                  - ledCount
-                  - output
-                  - effect
-                properties:
-                  id:
-                    type: string
-                    minLength: 1
-                  name:
-                    type: string
-                    minLength: 1
-                  ledCount:
-                    type: integer
-                    minimum: 1
-                  output:
-                    anyOf:
-                      - type: object
-                        required:
-                          - type
-                        properties:
-                          type:
-                            type: string
-                            enum:
-                              - virtual
-                        additionalProperties: false
-                  effect:
-                    anyOf:
-                      - type: string
+                description: La tira, con su efecto activo y sus valores
+                anyOf:
+                  - type: object
+                    required:
+                      - id
+                      - name
+                      - ledCount
+                      - output
+                      - effect
+                      - values
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      ledCount:
+                        type: integer
+                        minimum: 1
+                      output:
+                        anyOf:
+                          - type: object
+                            required:
+                              - type
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - virtual
+                            additionalProperties: false
+                      effect:
+                        type: string
                         enum:
                           - breathing
-                      - type: string
+                      values:
+                        type: object
+                        required:
+                          - color
+                          - period
+                        properties:
+                          color:
+                            type: string
+                            pattern: ^#[0-9A-Fa-f]{6}$
+                            default: "#FFA957"
+                            x-control: color
+                          period:
+                            type: number
+                            minimum: 1
+                            maximum: 20
+                            default: 4
+                            x-scale: log
+                        additionalProperties: false
+                    additionalProperties: false
+                  - type: object
+                    required:
+                      - id
+                      - name
+                      - ledCount
+                      - output
+                      - effect
+                      - values
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      ledCount:
+                        type: integer
+                        minimum: 1
+                      output:
+                        anyOf:
+                          - type: object
+                            required:
+                              - type
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - virtual
+                            additionalProperties: false
+                      effect:
+                        type: string
                         enum:
                           - energy
-                additionalProperties: false
+                      values:
+                        type: object
+                        properties: {}
+                        additionalProperties: false
+                    additionalProperties: false
         "400":
           description: El cuerpo no es válido o el efecto no existe
           content:

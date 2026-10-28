@@ -6,8 +6,8 @@ import { render } from '../../test/render.tsx';
 import { StripList } from './StripList.tsx';
 
 const STRIPS: readonly StripState[] = [
-  { id: 'barra', name: 'Barra', ledCount: 60, output: { type: 'virtual' }, effect: 'energy' },
-  { id: 'cabina', name: 'Cabina', ledCount: 1, output: { type: 'virtual' }, effect: 'breathing' },
+  { id: 'barra', name: 'Barra', ledCount: 60, output: { type: 'virtual' }, effect: 'energy', values: {} },
+  { id: 'cabina', name: 'Cabina', ledCount: 1, output: { type: 'virtual' }, effect: 'breathing', values: { color: '#FFA957', period: 4 } },
 ];
 
 describe('la lista de tiras', () => {

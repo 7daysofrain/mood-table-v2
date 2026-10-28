@@ -118,14 +118,14 @@ describe('las tiras que se anuncian a los paneles', () => {
   const second = { ...demoStrip, id: 'barra', name: 'Barra', ledCount: 30 };
   const twoStrips: Config = { ...config, strips: [demoStrip, second] };
 
-  it('son las del fichero, en su orden, con el efecto activo de cada una en el búfer', () => {
+  it('son las del fichero, en su orden, con el efecto activo de cada una en el búfer y sus valores', () => {
     const control = createControl({ strips: twoStrips.strips, hasAudioSource: true });
     control.setEffect('barra', 'energy');
 
     expect(stripsMessage(twoStrips, control)).toEqual({
       strips: [
-        { ...demoStrip, effect: 'breathing' },
-        { ...second, effect: 'energy' },
+        { ...demoStrip, effect: 'breathing', values: { color: '#FFA957', period: 4 } },
+        { ...second, effect: 'energy', values: {} },
       ],
     });
   });
@@ -137,6 +137,13 @@ describe('las tiras que se anuncian a los paneles', () => {
 
     const [strip] = stripsMessage({ ...config, strips: [withMore] }, control).strips;
 
-    expect(Object.keys(strip ?? {})).toEqual(['id', 'name', 'ledCount', 'output', 'effect']);
+    expect(Object.keys(strip ?? {})).toEqual([
+      'id',
+      'name',
+      'ledCount',
+      'output',
+      'effect',
+      'values',
+    ]);
   });
 });

@@ -535,8 +535,8 @@ describe('la posición del fichero de audio', () => {
 describe('las tiras del motor', () => {
   const STRIPS: StripsMessage = {
     strips: [
-      { id: 'barra', name: 'Barra', ledCount: 60, output: { type: 'virtual' }, effect: 'energy' },
-      { id: 'cabina', name: 'Cabina', ledCount: 30, output: { type: 'virtual' }, effect: 'breathing' },
+      { id: 'barra', name: 'Barra', ledCount: 60, output: { type: 'virtual' }, effect: 'energy', values: {} },
+      { id: 'cabina', name: 'Cabina', ledCount: 30, output: { type: 'virtual' }, effect: 'breathing', values: { color: '#FFA957', period: 4 } },
     ],
   };
 
@@ -562,7 +562,7 @@ describe('las tiras del motor', () => {
     const [barra, cabina] = STRIPS.strips;
     if (!barra || !cabina) throw new Error('Faltan tiras');
 
-    lastSocket().receive(encodeStrips({ strips: [{ ...barra, effect: 'breathing' }, cabina] }));
+    lastSocket().receive(encodeStrips({ strips: [{ ...barra, effect: 'breathing', values: { color: '#FFA957', period: 4 } }, cabina] }));
 
     expect(connection.strips?.map((strip) => strip.effect)).toEqual(['breathing', 'breathing']);
     expect(listener).toHaveBeenCalledTimes(1);

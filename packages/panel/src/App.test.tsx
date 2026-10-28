@@ -270,6 +270,7 @@ const BARRA: StripState = {
   ledCount: 60,
   output: { type: 'virtual' },
   effect: 'energy',
+  values: {},
 };
 const CABINA: StripState = {
   id: 'cabina',
@@ -277,6 +278,7 @@ const CABINA: StripState = {
   ledCount: 30,
   output: { type: 'virtual' },
   effect: 'breathing',
+  values: { color: '#FFA957', period: 4 },
 };
 
 /** El panel conectado al motor, con un fichero como fuente y un envío de cambios falso. */
@@ -350,7 +352,7 @@ describe('las zonas Tiras y Efectos', () => {
     expect(effect('Energía')).toHaveAttribute('aria-current', 'true');
 
     act(() => {
-      panel.setStrips([{ ...BARRA, effect: 'breathing' }, CABINA]);
+      panel.setStrips([{ ...BARRA, effect: 'breathing', values: { color: '#FFA957', period: 4 } }, CABINA]);
     });
     expect(effect('Respiración')).toHaveAttribute('aria-current', 'true');
   });
@@ -409,7 +411,7 @@ describe('las zonas Tiras y Efectos', () => {
   it('tras reiniciar el motor, marca el efecto que pinta el motor, no el que tenía antes', () => {
     const panel = panelWithStrips();
     act(() => {
-      panel.setStrips([{ ...BARRA, effect: 'breathing' }, CABINA]);
+      panel.setStrips([{ ...BARRA, effect: 'breathing', values: { color: '#FFA957', period: 4 } }, CABINA]);
     });
     panel.disconnect();
 

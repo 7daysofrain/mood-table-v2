@@ -18,13 +18,14 @@ describe('el cuerpo del cambio de efecto', () => {
 });
 
 describe('la respuesta del cambio de efecto', () => {
-  it('acepta la tira con su efecto activo, como en el mensaje de las tiras', () => {
+  it('acepta la tira con su efecto activo y sus valores, como en el mensaje de las tiras', () => {
     const strip = {
       id: 'demo',
       name: 'Tira de prueba',
       ledCount: 60,
       output: { type: 'virtual' },
       effect: 'breathing',
+      values: { color: '#FFA957', period: 4 },
     };
 
     expect(Value.Check(SetEffectResponseSchema, strip)).toBe(true);

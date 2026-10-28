@@ -26,7 +26,7 @@
   `decodeStrips` rechaza una tira sin `values`, una con valores de otro efecto (los de la respiración
   en una tira con energía) y una con un periodo fuera de rango.
   Verificar: los tests nuevos fallan porque las tiras no llevan valores.
-- [ ] 1.4 `StripStateSchema` como unión discriminada por `effect`, generada del catálogo, en
+- [x] 1.4 `StripStateSchema` como unión discriminada por `effect`, generada del catálogo, en
   `packages/shared/src/viewer-protocol.ts`. La sección del mensaje `6` en
   `docs/instructions/viewer-protocol.md`, con `values` en el ejemplo y que también se envía en cada
   cambio de valores. Y sus usos, para que el motor y el panel no se rompan hasta `MOO-106`: el
