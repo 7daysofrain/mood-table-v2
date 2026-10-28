@@ -167,12 +167,26 @@ describe('los valores que muestra un control', () => {
     expect(draft.period()).toBe(6);
   });
 
-  it('el valor local es de su tira: otra tira muestra los suyos', () => {
+  it('el valor local es de su tira: otra tira muestra los suyos, y al volver, los del motor', () => {
     const draft = draftOf(cabina(4));
     draft.change('period', 6);
 
     draft.echo({ ...cabina(9), id: 'barra' });
-
     expect(draft.period()).toBe(9);
+
+    draft.echo(cabina(4));
+    expect(draft.period()).toBe(4);
+  });
+
+  it('si la tira cambia de efecto a medio arrastre, al volver muestra los valores del motor', () => {
+    const draft = draftOf(cabina(4));
+    draft.change('period', 6);
+
+    draft.echo({ ...cabina(4), effect: 'energy', values: {} });
+    draft.echo(cabina(4));
+
+    expect(draft.period()).toBe(4);
+    draft.change('color', '#0000FF');
+    expect(draft.queue.send).toHaveBeenLastCalledWith('cabina', { color: '#0000FF', period: 4 });
   });
 });

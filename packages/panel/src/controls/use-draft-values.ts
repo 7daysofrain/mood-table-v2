@@ -6,7 +6,7 @@
  * hace temblar el control bajo el dedo, y al soltar no salta atrás al valor anterior. Si el motor no
  * aplica el valor, el control acaba en el que pinta.
  */
-import type { SetValuesBody, StripState } from '@moodtable/shared';
+import type { EffectId, SetValuesBody, StripState } from '@moodtable/shared';
 import { useEffect, useRef, useState } from 'react';
 
 import type { StripRequests } from '../engine/strip-requests.ts';
@@ -16,9 +16,10 @@ export type ValueRequests = Pick<StripRequests<SetValuesBody>, 'send' | 'busy' |
 
 type Values = Record<string, unknown>;
 
-/** Los valores locales de la tira que el DJ está tocando. */
+/** Los valores locales de la tira que el DJ está tocando, con el efecto que tenía. */
 interface Draft {
   stripId: string;
+  effect: EffectId;
   values: Values;
   /** Hasta que suelta el control. */
   dragging: boolean;
@@ -53,9 +54,15 @@ export function useDraftValues(strip: StripState | undefined, requests: ValueReq
     [requests],
   );
 
+  // Un valor local es de una tira con un efecto. Si el panel la deja de mostrar así (otra tira
+  // seleccionada, u otro efecto, que vuelve con sus valores por defecto), se descarta: el control
+  // pudo desaparecer a medio arrastre, sin soltarse nunca.
+  const sameStrip = draft?.stripId === strip?.id && draft?.effect === strip?.effect;
+  if (draft && !sameStrip) setDraft(undefined);
+
   const local =
     draft !== undefined &&
-    draft.stripId === strip?.id &&
+    sameStrip &&
     (draft.dragging || draft.applied === undefined || draft.applied.over === engineValues);
   const values = local ? draft.values : engineValues;
 
@@ -63,7 +70,7 @@ export function useDraftValues(strip: StripState | undefined, requests: ValueReq
   const change = (param: string, value: unknown) => {
     if (!strip || !values) return;
     const next = { ...values, [param]: value };
-    setDraft({ stripId: strip.id, values: next, dragging: true });
+    setDraft({ stripId: strip.id, effect: strip.effect, values: next, dragging: true });
     // El motor valida los valores con el esquema del efecto activo (D87).
     requests.send(strip.id, next);
   };
