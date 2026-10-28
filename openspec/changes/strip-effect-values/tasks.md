@@ -119,7 +119,7 @@
   hueco en `PanelLayout.tsx`.
   Verificar: los tests de 3.5 pasan, los de `PanelLayout` y `panel-layout` siguen en verde, y con
   `pnpm dev` se mueve el periodo de la tira de la demo desde el panel.
-- [ ] 3.7 E2E del caso feliz en `e2e/controls.spec.ts`, con un motor propio y una tira con la
+- [x] 3.7 E2E del caso feliz en `e2e/controls.spec.ts`, con un motor propio y una tira con la
   respiración: la zona Controles muestra el color y el periodo; al arrastrar el periodo y el color, el
   visor pinta el cambio en menos de 100 ms desde cada movimiento; al soltar, la tira se queda con el
   valor; al recargar el panel, los controles muestran esos valores (`specs/instrument-control`,
