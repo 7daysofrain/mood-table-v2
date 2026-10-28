@@ -21,7 +21,7 @@
   `x-` de la respiración, `additionalProperties: false` en todos, y el esquema de parámetros de cada
   efecto en `EFFECT_CATALOG`, con un tipo que da los valores de cada efecto por su id.
   Verificar: los tests de 1.1 pasan y `pnpm typecheck` en verde.
-- [ ] 1.3 **(test en rojo)** Tests del mensaje `6` en `packages/shared/src/viewer-protocol.test.ts`:
+- [x] 1.3 **(test en rojo)** Tests del mensaje `6` en `packages/shared/src/viewer-protocol.test.ts`:
   `encodeStrips` y `decodeStrips` con el ejemplo de `design.md` (decisión 6), con `values`;
   `decodeStrips` rechaza una tira sin `values`, una con valores de otro efecto (los de la respiración
   en una tira con energía) y una con un periodo fuera de rango.
