@@ -1275,7 +1275,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El efecto activo se marca con `aria-current` y no con `aria-pressed`, que daría a entender que pulsarlo otra vez lo apaga.*
 - *En el navegador vio que la etiqueta oculta del grupo de tiras dejaba una línea vacía encima de la lista, que los tests no podían ver, y la corrigió.*
 - *En el README quitó lo que no había comprobado: que las tiras se eligen con las flechas (la demo tiene una sola) y que otro panel ve el mismo efecto (non-goal de la historia).*
-- *Comprobó a mano el calentamiento de energía al elegirla con la música sonando (decisión 4): no se aprecia, porque el análisis ya está en marcha (D79).*
+- *La comprobación a mano del calentamiento de energía (decisión 4) la dio por buena midiendo el brillo del visor, y la atribuyó al análisis (D79). Las dos cosas estaban mal: el calentamiento sale de la ganancia de cada banda de energía, que empieza de cero al elegirla, y se ve en los colores, no en el brillo. Lo vio la propia IA al verificar el change, y rehízo la comprobación (6.37).*
 
 ---
 
