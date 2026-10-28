@@ -888,6 +888,62 @@ describe('el sistema pide la revisión cuando pasan las comprobaciones del últi
   });
 });
 
+describe('un nodo pendiente que se reintenta tras un push nuevo', () => {
+  it('termina el aviso de comprobaciones, pero no pide la revisión del push anterior', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = PASSED;
+    notifier.failing = true;
+    await tick();
+
+    github.pullRequests = [pullRequest(74, { headSha: 'sha-74b' })];
+    notifier.failing = false;
+    await ticks(tick, 3);
+    expect(github.requests).toEqual([]);
+
+    github.checks['sha-74b'] = PASSED;
+    await ticks(tick, 2);
+
+    expect(github.requests).toEqual([{ number: 74, sha: 'sha-74b' }]);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'checksFinished'],
+    ]);
+  });
+
+  it('no reintenta la petición del push anterior que falló por la red', async () => {
+    const { github, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = PASSED;
+    github.requestFailure = new Error('fetch failed');
+    await tick();
+
+    github.pullRequests = [pullRequest(74, { headSha: 'sha-74b' })];
+    github.requestFailure = undefined;
+    await ticks(tick, 3);
+    expect(github.requests).toEqual([]);
+
+    github.checks['sha-74b'] = PASSED;
+    await ticks(tick, 2);
+
+    expect(github.requests).toEqual([{ number: 74, sha: 'sha-74b' }]);
+  });
+
+  it('con el mismo push, reintenta la petición que falló por la red', async () => {
+    const { github, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = PASSED;
+    github.requestFailure = new Error('fetch failed');
+    await tick();
+
+    github.requestFailure = undefined;
+    await tick();
+
+    expect(github.requests).toEqual([{ number: 74, sha: 'sha-74' }]);
+  });
+});
+
 describe('el sistema no pide dos veces la revisión del mismo push', () => {
   it('tras un reinicio, con su petición del último push en GitHub, no la vuelve a pedir', async () => {
     const { github, notifier, tick, restart } = setup([pullRequest(74)]);

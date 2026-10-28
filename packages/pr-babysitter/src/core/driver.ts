@@ -162,6 +162,29 @@ export function createDriver({
   }
 
   /**
+   * Reintenta el nodo que falló en el hilo de la PR, con la foto que tenía. Si entretanto ha llegado
+   * un push, la petición de revisión de esa foto ya no vale: `@codex review` revisaría el push
+   * nuevo, quizá con sus comprobaciones sin terminar. Entonces termina el aviso pendiente, pero se
+   * salta `pedirRevision` como si hubiera corrido, y el hilo sigue a la espera del revisor, que con
+   * la foto siguiente verá el push nuevo (change pr-review-request, decisión 6).
+   */
+  async function retryPending(pullRequest: OpenPullRequest) {
+    const config = threadConfig(pullRequest.number);
+    const state = await graph.getState(config);
+    if (lastSnapshot(state.values).headSha === pullRequest.headSha) {
+      await graph.invoke(null, config);
+      return;
+    }
+    if (!state.next.includes(REVIEW_REQUEST_NODE)) {
+      await graph.invoke(null, { ...config, interruptBefore: [REVIEW_REQUEST_NODE] });
+    }
+    if ((await graph.getState(config)).next.includes(REVIEW_REQUEST_NODE)) {
+      await graph.updateState(config, {}, REVIEW_REQUEST_NODE);
+      await graph.invoke(null, config);
+    }
+  }
+
+  /**
    * Termina la parada de la PR, si le falta: lo que estaba en curso (un aviso pendiente del hilo),
    * después encola «Detenida» y olvida el hilo, salvo si terminó con el estado final, que se
    * conserva para comparar su SHA al reanudar. Si el aviso pendiente falla, lanza, y la parada se
@@ -257,7 +280,7 @@ export function createDriver({
       await graph.invoke(new Command({ resume: await snapshotOf(pullRequest) }), config);
     } else if (state.next.length > 0) {
       // Un nodo que falló (un aviso que el canal no aceptó) sigue pendiente en el checkpoint.
-      await graph.invoke(null, config);
+      await retryPending(pullRequest);
     } else if (lastSnapshot(state.values).headSha !== pullRequest.headSha) {
       // Terminó con el estado final de otro push: una ejecución nueva en el mismo hilo.
       await graph.invoke({ snapshot: await snapshotOf(pullRequest) }, config);
