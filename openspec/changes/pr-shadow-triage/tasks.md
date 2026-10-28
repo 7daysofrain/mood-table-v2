@@ -63,7 +63,7 @@
   `adapters/findings.ts` y `adapters/decision-model.ts`, las lecturas nuevas de `adapters/github.ts`
   y, si funciona con Ollama, `@langchain/typesafe` en el catálogo de pnpm.
   Verificar: los tests de 1.5 en verde, y los que ya había de los adaptadores.
-- [ ] 1.7 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
+- [x] 1.7 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
   `specs/pr-triage` que toca esta sección, con puertos falsos:
   - una PR con hallazgos del revisor o una comprobación fallida pasa por `triar` antes del aviso
     final, y deja en el estado del hilo la clase, la probabilidad y el porqué de cada hallazgo, y el

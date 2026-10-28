@@ -3,8 +3,15 @@ import { describe, expect, it } from 'vitest';
 
 import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
 import type { Notice } from './notice.ts';
-import { GitHubRequestRejectedError, type Notifier, type ReviewRequests } from './ports.ts';
+import {
+  type Findings,
+  GitHubRequestRejectedError,
+  type Notifier,
+  type ReviewRequests,
+  type Triager,
+} from './ports.ts';
 import type { Check, PullRequestSnapshot, Review } from './pull-request.ts';
+import type { Finding, PullRequestContext } from './triage.ts';
 
 const MINUTE = 60_000;
 const HEAD = 'a1b2c3d';
@@ -64,11 +71,34 @@ function recordingRequests() {
   return { reviewRequests, recorded };
 }
 
-/** El grafo con un `Notifier`, sin fallos al pedir la revisión y con 30 min de tiempo de espera. */
-function trackingGraph(notifier: Notifier, reviewRequests = recordingRequests().reviewRequests) {
-  return createTrackingGraph({ notifier, reviewRequests }, new MemorySaver(), {
+/** El título y la descripción de la PR, para el triaje. */
+const CONTEXT: PullRequestContext = { title: 'Avisar de cada PR lista para revisar', description: '' };
+
+/** Lo que el triaje necesita de fuera; por defecto, un push sin hallazgos. */
+interface TriagePorts {
+  findings: Findings;
+  triager: Triager;
+}
+
+const noFindings: TriagePorts = {
+  findings: { read: () => Promise.resolve({ context: CONTEXT, findings: [] }) },
+  triager: { triage: () => Promise.reject(new Error('no hay hallazgos que triar')) },
+};
+
+/**
+ * El grafo con un `Notifier`, sin fallos al pedir la revisión, con 30 min de tiempo de espera, el
+ * umbral de 0,80 y un tope de 0,05 $ por PR a 0,24 $ el millón de tokens.
+ */
+function trackingGraph(
+  notifier: Notifier,
+  reviewRequests = recordingRequests().reviewRequests,
+  { findings, triager }: TriagePorts = noFindings,
+  log: (line: string) => void = () => undefined,
+) {
+  return createTrackingGraph({ notifier, reviewRequests, findings, triager }, new MemorySaver(), {
     timeoutMs: 30 * MINUTE,
-    log: () => undefined,
+    log,
+    triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 } },
   });
 }
 
@@ -527,5 +557,283 @@ describe('si falla una comprobación, el sistema avisa del estado final sin espe
       'tracking',
     ]);
     expect((await graph.getState(config)).next).toEqual(['esperarComprobaciones']);
+  });
+});
+
+/** Un comentario del revisor con su contexto. */
+const codexP2: Finding = {
+  source: 'reviewer',
+  reviewer: 'Codex',
+  badge: 'P2',
+  severity: 'normal',
+  file: 'packages/pr-babysitter/src/core/tracking.ts',
+  line: 109,
+  title: 'Route failed checks directly to the final notification',
+  text: 'When all checks finish with at least one failure…',
+  diffHunk: '@@ -100,6 +100,12 @@',
+};
+
+/** La comprobación `e2e` que falla, con el final de su log. */
+const e2eFailing: Finding = { source: 'check', name: 'e2e', log: 'Error: 1 test failed' };
+
+/**
+ * Un triaje que se puede seguir: los hallazgos que da GitHub, las probabilidades que da el modelo
+ * (0,93 para todos, si no se dice), y el orden de lo que pasa, con los avisos.
+ */
+function recordingTriage(
+  found: Finding[],
+  answer: (findings: Finding[]) => Promise<{ probabilities: number[]; inputTokens: number }> = (
+    findings,
+  ) => Promise.resolve({ probabilities: findings.map(() => 0.93), inputTokens: 12_000 }),
+) {
+  const events: string[] = [];
+  const reads: { number: number; sha: string; failedChecks: string[] }[] = [];
+  const asked: { context: PullRequestContext; findings: Finding[] }[] = [];
+  const github = { failure: undefined as Error | undefined };
+  const ports: TriagePorts = {
+    findings: {
+      read(number, sha, failedChecks) {
+        if (github.failure) return Promise.reject(github.failure);
+        events.push('leer hallazgos');
+        reads.push({ number, sha, failedChecks });
+        return Promise.resolve({ context: CONTEXT, findings: found });
+      },
+    },
+    triager: {
+      triage(context, findings) {
+        events.push('preguntar al modelo');
+        asked.push({ context, findings });
+        return answer(findings);
+      },
+    },
+  };
+  const notifier: Notifier = {
+    notify(notice) {
+      events.push(notice.type === 'final' ? 'aviso final' : notice.type);
+      return Promise.resolve();
+    },
+  };
+  return { ports, notifier, events, reads, asked, github };
+}
+
+/** Sigue el hilo con un triaje que se puede seguir; `spentUsd` es el gasto de la PR al empezar. */
+async function followTriage(
+  triage: ReturnType<typeof recordingTriage>,
+  snapshots: PullRequestSnapshot[],
+  spentUsd?: number,
+) {
+  const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
+  const [first, ...rest] = snapshots;
+  await graph.invoke({ snapshot: first!, spentUsd }, threadConfig(74));
+  for (const next of rest) {
+    await graph.invoke(new Command({ resume: next }), threadConfig(74));
+  }
+  return graph.getState(threadConfig(74));
+}
+
+/** El push con una comprobación que falla. */
+const failing = [snapshot(0), snapshot(5, { checks: FAILED })];
+/** El push con las comprobaciones pasadas y hallazgos del revisor. */
+const withFindings = [
+  snapshot(0),
+  snapshot(5, { checks: PASSED }),
+  snapshot(9, { checks: PASSED, review: reviewed(HEAD, true) }),
+];
+
+describe('el sistema tría los hallazgos del último push cuando la PR necesita intervención', () => {
+  it('con hallazgos del revisor, los tría antes del aviso final', async () => {
+    const triage = recordingTriage([codexP2]);
+
+    const state = await followTriage(triage, withFindings);
+
+    expect(triage.events).toEqual([
+      'tracking',
+      'checksFinished',
+      'leer hallazgos',
+      'preguntar al modelo',
+      'aviso final',
+    ]);
+    expect(triage.reads).toEqual([{ number: 74, sha: HEAD, failedChecks: [] }]);
+    expect(state.next).toEqual([]);
+  });
+
+  it('con una comprobación que falla, lee los hallazgos con ella y los tría antes del aviso final', async () => {
+    const triage = recordingTriage([e2eFailing]);
+
+    await followTriage(triage, failing);
+
+    expect(triage.events).toEqual(['tracking', 'leer hallazgos', 'preguntar al modelo', 'aviso final']);
+    expect(triage.reads).toEqual([{ number: 74, sha: HEAD, failedChecks: ['e2e'] }]);
+  });
+
+  it('al modelo llegan la PR y los hallazgos que da GitHub, y nada más', async () => {
+    const triage = recordingTriage([codexP2, e2eFailing]);
+
+    await followTriage(triage, failing);
+
+    expect(triage.asked).toEqual([{ context: CONTEXT, findings: [codexP2, e2eFailing] }]);
+  });
+
+  it('lista para integrar, va directa al aviso final', async () => {
+    const triage = recordingTriage([codexP2]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: PASSED }),
+      snapshot(9, { checks: PASSED, review: reviewed() }),
+    ]);
+
+    expect(triage.events).toEqual(['tracking', 'checksFinished', 'aviso final']);
+  });
+
+  it('si solo es porque algo no termina a tiempo, va directa al aviso final', async () => {
+    const triage = recordingTriage([codexP2]);
+
+    await followTriage(triage, [snapshot(0), snapshot(29), snapshot(30)]);
+
+    expect(triage.events).toEqual(['tracking', 'aviso final']);
+  });
+});
+
+describe('cada hallazgo sale real, no aplica o exige criterio según la probabilidad del modelo', () => {
+  it('deja en el estado del hilo la clase, la probabilidad y el porqué de cada hallazgo, y el gasto', async () => {
+    const triage = recordingTriage([codexP2, e2eFailing], () =>
+      Promise.resolve({ probabilities: [0.93, 0.07], inputTokens: 12_000 }),
+    );
+
+    const state = await followTriage(triage, failing);
+
+    expect(state.values).toMatchObject({
+      triage: {
+        sha: HEAD,
+        findings: [
+          { finding: codexP2, verdict: { class: 'valid', reason: 'probability', probability: 0.93 } },
+          {
+            finding: e2eFailing,
+            verdict: { class: 'notApplicable', reason: 'probability', probability: 0.07 },
+          },
+        ],
+        inputTokens: 12_000,
+      },
+    });
+    const values = state.values as { spentUsd: number; triage: { costUsd: number } };
+    expect(values.triage.costUsd).toBeCloseTo(0.00288, 10);
+    expect(values.spentUsd).toBeCloseTo(0.00288, 10);
+  });
+
+  it('el coste se suma al gasto que ya llevaba la PR', async () => {
+    const triage = recordingTriage([e2eFailing]);
+
+    const state = await followTriage(triage, failing, 0.01);
+
+    expect((state.values as { spentUsd: number }).spentUsd).toBeCloseTo(0.01288, 10);
+  });
+});
+
+describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () => {
+  it('no llega al modelo, y el resto sí', async () => {
+    const noLog: Finding = { source: 'check', name: 'e2e', log: null };
+    const triage = recordingTriage([codexP2, noLog]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ findings }) => findings)).toEqual([[codexP2]]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: codexP2, verdict: { class: 'valid' } },
+          { finding: noLog, verdict: { class: 'needsJudgment', reason: 'noContext' } },
+        ],
+      },
+    });
+  });
+});
+
+describe('el triaje no pasa del tope de gasto de la PR', () => {
+  it('con el gasto cerca del tope, solo llegan al modelo los que caben', async () => {
+    const longLog: Finding = { source: 'check', name: 'e2e', log: 'x'.repeat(3000) };
+    const triage = recordingTriage([codexP2, longLog]);
+
+    // Quedan 0,0001 $: unos 400 tokens, sitio para el comentario pero no para el log.
+    const state = await followTriage(triage, failing, 0.0499);
+
+    expect(triage.asked.map(({ findings }) => findings)).toEqual([[codexP2]]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: codexP2, verdict: { class: 'valid' } },
+          { finding: longLog, verdict: { class: 'needsJudgment', reason: 'overBudget' } },
+        ],
+      },
+    });
+  });
+
+  it('con el tope gastado, no pregunta al modelo', async () => {
+    const triage = recordingTriage([codexP2]);
+
+    const state = await followTriage(triage, failing, 0.05);
+
+    expect(triage.asked).toEqual([]);
+    expect(state.values).toMatchObject({
+      triage: { findings: [{ verdict: { class: 'needsJudgment', reason: 'overBudget' } }] },
+    });
+  });
+});
+
+describe('el triaje no actúa sobre la PR', () => {
+  it('si el modelo no responde, los hallazgos exigen criterio y el aviso final es el mismo', async () => {
+    const triage = recordingTriage([codexP2, e2eFailing], () =>
+      Promise.reject(new Error('El modelo no responde')),
+    );
+    const lines: string[] = [];
+    const graph = trackingGraph(
+      triage.notifier,
+      recordingRequests().reviewRequests,
+      triage.ports,
+      (line) => lines.push(line),
+    );
+    const notices: Notice[] = [];
+    const notify = triage.notifier.notify.bind(triage.notifier);
+    triage.notifier.notify = (notice) => {
+      notices.push(notice);
+      return notify(notice);
+    };
+    await graph.invoke({ snapshot: snapshot(0) }, threadConfig(74));
+    await graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), threadConfig(74));
+    const state = await graph.getState(threadConfig(74));
+
+    expect(summary(notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksFailed', checks: ['e2e'] }],
+    });
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
+          { verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
+        ],
+      },
+    });
+    expect(lines).toEqual([expect.stringContaining('El modelo no responde') as string]);
+    expect(state.next).toEqual([]);
+  });
+
+  it('si GitHub falla al leer los hallazgos, el nodo queda pendiente y se reintenta', async () => {
+    const triage = recordingTriage([e2eFailing]);
+    triage.github.failure = new Error('fetch failed');
+    const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
+    const config = threadConfig(74);
+    await graph.invoke({ snapshot: snapshot(0) }, config);
+
+    await expect(
+      graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), config),
+    ).rejects.toThrow('fetch failed');
+    expect((await graph.getState(config)).next).toEqual(['triar']);
+    expect(triage.events).toEqual(['tracking']);
+
+    triage.github.failure = undefined;
+    await graph.invoke(null, config);
+
+    expect(triage.events).toEqual(['tracking', 'leer hallazgos', 'preguntar al modelo', 'aviso final']);
   });
 });
