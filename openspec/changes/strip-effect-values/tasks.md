@@ -29,8 +29,13 @@
 - [ ] 1.4 `StripStateSchema` como unión discriminada por `effect`, generada del catálogo, en
   `packages/shared/src/viewer-protocol.ts`. La sección del mensaje `6` en
   `docs/instructions/viewer-protocol.md`, con `values` en el ejemplo y que también se envía en cada
-  cambio de valores.
-  Verificar: los tests de 1.3 pasan y el documento describe exactamente lo que hace el código.
+  cambio de valores. Y sus usos, para que el motor y el panel no se rompan hasta `MOO-106`: el
+  panel descarta un mensaje `6` sin valores. `stripsMessage` (`packages/engine/src/engine.ts`) pone
+  en cada tira los valores por defecto de su efecto activo, que son los que pinta el motor mientras
+  no exista `setValues`. Las tiras de los tests del motor y del panel, y la respuesta del cambio de
+  efecto en `commands.test.ts`, llevan `values`.
+  Verificar: los tests de 1.3 pasan, el documento describe exactamente lo que hace el código, y
+  `pnpm typecheck`, `pnpm test` y `pnpm test:e2e` en verde.
 - [ ] 1.5 Los esquemas de la ruta de valores en `packages/shared/src/commands.ts`, exportados: el
   cuerpo (`SetValuesBodySchema`, la unión de los esquemas de parámetros del catálogo) y la respuesta
   (la tira), con tests de `Value.Check` que aceptan el ejemplo de `design.md` (decisión 4) y rechazan
