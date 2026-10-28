@@ -130,6 +130,16 @@ describe('las tiras que se anuncian a los paneles', () => {
     });
   });
 
+  it('llevan los valores con que pinta cada ranura, no los de por defecto', () => {
+    const control = createControl({ strips: twoStrips.strips, hasAudioSource: true });
+    control.setValues('demo', { color: '#2040FF', period: 7 });
+
+    expect(stripsMessage(twoStrips, control).strips[0]?.values).toEqual({
+      color: '#2040FF',
+      period: 7,
+    });
+  });
+
   it('no llevan el resto de la tira, aunque el fichero gane campos', () => {
     // Lo que H3 y H4 añadan a la tira (orden de color, puerto…) no sale al panel sin decidirlo.
     const withMore = { ...demoStrip, colorOrder: 'GRB' } as StripConfig;

@@ -1405,6 +1405,19 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *`registry.test.ts` del motor comparaba el catálogo entero. Ahora compara solo id y `usesAudio`, y `MOO-106` lo rehace con el esquema.*
 - *`viewer-protocol.md` no cuenta cómo se comportará el mensaje durante el arrastre: es la fuente del formato, y eso llega con `MOO-107`.*
 
+#### 6.42 Cambiar los valores de una tira por la API y avisar a los paneles (`MOO-106`)
+
+**Prompt 1** (con la #94 de `MOO-105` integrada, y la pregunta de si corregir las descripciones de Linear):
+
+> si y continua porque está mergeado
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA corrigió en Linear los enlaces de las tres tareas a su sección del change y la Q2 de `MOO-95`, que seguía diciendo que faltaba el rango del periodo. Después implementó la sección `MOO-106` en TDD, con un commit por paso, en una rama desde `main`: la respiración guarda un desfase y reancla su fase cuando cambia el periodo (con el periodo fijo, los frames dorados no cambian); `setValues` en el búfer de control, que valida con el esquema del efecto activo y sustituye los valores de la ranura sin rehacerla; y la ruta `PUT /api/strips/{stripId}/values` con su OpenAPI. Lo comprobó con `pnpm dev`: un `curl` puso la cabina en azul en el visor, y un periodo de 25 s dio el `400`. Escribió D84-D89 en la ficha y la nota en D77, D78, D81 y D82.*
+
+*Ajustes:*
+- *El cuerpo de la ruta es la unión de los esquemas de todos los efectos, y si lo validaba Fastify, el `400` diría el mensaje del cambio de efecto y no sabría cuál es el efecto activo. La IA usó `attachValidation`: el esquema queda para el OpenAPI y la validación la hace el búfer, como pedía la decisión 4.*
+- *Los errores de TypeBox salen en inglés. Para el motivo del `400`, la IA tradujo al castellano los casos posibles (falta un valor, sobra uno, fuera de rango, formato) sin tocar el locale de TypeBox, que es global y cambiaría también los mensajes del fichero de configuración.*
+- *Al poner la ruta nueva en el README §4, vio que el ejemplo de respuesta del cambio de efecto no llevaba los valores desde `MOO-105`, y lo corrigió.*
+
 ---
 
 ### 7. Pull Requests

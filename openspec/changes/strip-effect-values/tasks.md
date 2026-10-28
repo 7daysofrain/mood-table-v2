@@ -47,17 +47,17 @@
 
 ## 2. MOO-106 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests de la respiración en
+- [x] 2.1 **(test en rojo)** Tests de la respiración en
   `packages/engine/src/core/effects/breathing.test.ts`: con el periodo pasando de 4 a 6 s a media
   subida, el brillo del frame siguiente no salta (diferencia de un pulso, como sin el cambio); con el
   periodo pasando de 4 a 8 s en el segundo 1, el frame del segundo 9 es igual al del segundo 1
   (`specs/effects`, decisión 7).
   Verificar: los tests nuevos fallan; los frames dorados siguen en verde.
-- [ ] 2.2 El desfase en la memoria de la respiración (`packages/engine/src/core/effects/breathing.ts`),
+- [x] 2.2 El desfase en la memoria de la respiración (`packages/engine/src/core/effects/breathing.ts`),
   y el registro del motor toma el esquema de parámetros del catálogo de `shared` en vez de repetirlo
   (con un test en `registry.test.ts` que comprueba que es el mismo).
   Verificar: los tests de 2.1 pasan y los frames dorados no cambian.
-- [ ] 2.3 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`:
+- [x] 2.3 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`:
   `setValues` da `changed` y la ranura pinta con los valores nuevos desde el pulso siguiente, sin
   reiniciar la memoria; los mismos valores dan `unchanged` y no avisan; una tira que no existe da
   `unknown-strip`; un periodo fuera de rango, un campo de más o los valores de otro efecto dan
@@ -65,12 +65,12 @@
   cambiar el valor de una tira no cambia los frames de otra; `setEffect` sigue empezando con los
   valores por defecto (decisión 8).
   Verificar: los tests nuevos fallan porque `setValues` no existe.
-- [ ] 2.4 `setValues` en el puerto `Commands` y en el búfer (`packages/engine/src/core/control.ts`):
+- [x] 2.4 `setValues` en el puerto `Commands` y en el búfer (`packages/engine/src/core/control.ts`):
   los valores de cada ranura como una referencia que se sustituye fuera del bucle; la foto de las
   tiras (`stripsMessage` en `engine.ts`) lleva los valores de cada ranura.
   Verificar: los tests de 2.3 pasan, los del bucle siguen en verde y `pnpm lint` no da errores de
   fronteras.
-- [ ] 2.5 **(test en rojo)** Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con
+- [x] 2.5 **(test en rojo)** Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con
   `inject` y un búfer real: `PUT /api/strips/{stripId}/values` responde `200` con la tira y sus
   valores; `400` con `{ message }` para un periodo fuera de rango, un campo de más y los valores de la
   respiración en una tira con energía; `404` con la tira en el mensaje; la respuesta `200` del cambio
@@ -78,11 +78,11 @@
   cambio de valores; `/api/openapi.json` describe la ruta nueva con su cuerpo, el rango del periodo y
   las respuestas `200`, `400` y `404` (`specs/instrument-control`, decisiones 4 y 6).
   Verificar: los tests nuevos fallan porque la ruta no existe.
-- [ ] 2.6 La ruta en `packages/engine/src/adapters/server.ts`, con los esquemas de `shared` y los
+- [x] 2.6 La ruta en `packages/engine/src/adapters/server.ts`, con los esquemas de `shared` y los
   errores con `{ message }`, y `docs/openapi.yaml` regenerado con `pnpm openapi`.
   Verificar: los tests de 2.5 y el de `openapi.test.ts` pasan, y con `pnpm dev` un
   `curl -X PUT …/api/strips/<id>/values` cambia la tira en el visor.
-- [ ] 2.7 Documentación: D84-D89 en `docs/idea-mood-table.md` §10, según `design.md`, con D81 y D82
+- [x] 2.7 Documentación: D84-D89 en `docs/idea-mood-table.md` §10, según `design.md`, con D81 y D82
   matizadas y D78 ampliada (apuntando a las nuevas, sin borrar ni renumerar). README §2.2 (*Búfer de
   control*, adaptador *API HTTP*) y §4 (la ruta nueva con un ejemplo de petición y respuesta).
   `prompts.md`.

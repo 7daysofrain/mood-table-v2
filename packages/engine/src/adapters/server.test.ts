@@ -543,7 +543,7 @@ const demo: StripConfig = {
   effect: 'energy',
 };
 
-/** Los valores por defecto de cada efecto: los únicos con que pinta el motor hasta `MOO-106`. */
+/** Los valores por defecto de cada efecto, con los que empieza cada tira. */
 const DEFAULT_VALUES = { breathing: { color: '#FFA957', period: 4 }, energy: {} } as const;
 
 /** Las tiras de `control` como las recibe el servidor: sus mandos, su foto y su aviso. */
@@ -552,8 +552,8 @@ function panelStripsOf(strips: StripConfig[], control: ControlBuffer): PanelStri
     ...control,
     snapshot: () => ({
       strips: strips.map(({ id, name, ledCount, output }, index) => {
-        const { effect } = control.slot(index);
-        return { id, name, ledCount, output, effect, values: DEFAULT_VALUES[effect] } as StripState;
+        const { effect, values } = control.slot(index);
+        return { id, name, ledCount, output, effect, values } as StripState;
       }),
     }),
   };
@@ -661,6 +661,80 @@ describe('la API: cambiar el efecto de una tira', () => {
   });
 });
 
+/** `PUT /api/strips/{stripId}/values` con `body` tal cual, como texto JSON. */
+function putValues(app: EngineApp['app'], stripId: string, body: string) {
+  return app.inject({
+    method: 'PUT',
+    url: `/api/strips/${stripId}/values`,
+    headers: { 'content-type': 'application/json' },
+    payload: body,
+  });
+}
+
+describe('la API: cambiar los valores de una tira', () => {
+  const breathingDemo: StripConfig = { ...demo, effect: 'breathing' };
+
+  it('responde 200 con la tira, su efecto y sus valores nuevos, y la tira cambia', async () => {
+    const { app, control } = await apiWith(breathingDemo, false);
+
+    const response = await putValues(app, 'demo', '{"color":"#2040FF","period":7}');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ...breathingDemo, values: { color: '#2040FF', period: 7 } });
+    expect(control.slot(0).values).toEqual({ color: '#2040FF', period: 7 });
+  });
+
+  it.each([
+    [
+      'un periodo fuera de rango',
+      breathingDemo,
+      '{"color":"#FFA957","period":25}',
+      'la tira «demo», efecto `breathing`: `period` debe ser <= 20',
+    ],
+    [
+      'un campo de más',
+      breathingDemo,
+      '{"color":"#FFA957","period":7,"speed":2}',
+      'la tira «demo», efecto `breathing`: no declara `speed`',
+    ],
+    [
+      'los valores de la respiración en una tira con energía',
+      demo,
+      '{"color":"#FFA957","period":7}',
+      'la tira «demo», efecto `energy`: no declara `color`, `period`',
+    ],
+  ])('con %s, responde 400 con { message } y la tira no cambia', async (_name, strip, body, message) => {
+    const { app, control } = await apiWith(strip, true);
+    const before = control.slot(0).values;
+
+    const response = await putValues(app, 'demo', body);
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({ message });
+    expect(control.slot(0).values).toBe(before);
+  });
+
+  it('con un cuerpo que no es JSON, responde 400 con { message }', async () => {
+    const { app } = await apiWith(breathingDemo, false);
+
+    const response = await putValues(app, 'demo', '{"period":');
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      message: 'el cuerpo debe ser un objeto JSON con todos los valores del efecto activo',
+    });
+  });
+
+  it('con una tira que no existe, responde 404 con un mensaje que la nombra', async () => {
+    const { app } = await apiWith(breathingDemo, false);
+
+    const response = await putValues(app, 'luces', '{"color":"#FFA957","period":7}');
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ message: 'la tira «luces» no existe' });
+  });
+});
+
 describe('el OpenAPI de la API', () => {
   it('en /api/openapi.json describe la ruta con su cuerpo y sus respuestas 200, 400, 404 y 409', async () => {
     const { app } = await apiWith(demo, true);
@@ -683,7 +757,22 @@ describe('el OpenAPI de la API', () => {
       paths: object;
     }>();
 
-    expect(Object.keys(document.paths)).toEqual(['/api/strips/{stripId}/effect']);
+    expect(Object.keys(document.paths)).toEqual([
+      '/api/strips/{stripId}/effect',
+      '/api/strips/{stripId}/values',
+    ]);
+  });
+
+  it('describe la ruta de los valores con su cuerpo, el rango del periodo y sus respuestas', async () => {
+    const { app } = await apiWith(demo, true);
+
+    const document = (await app.inject({ method: 'GET', url: '/api/openapi.json' })).json<{
+      paths: Record<string, Record<string, { requestBody?: unknown; responses: object }>>;
+    }>();
+    const route = document.paths['/api/strips/{stripId}/values']?.put;
+
+    expect(JSON.stringify(route?.requestBody)).toContain('"period":{"type":"number","minimum":1,"maximum":20');
+    expect(Object.keys(route?.responses ?? {}).sort()).toEqual(['200', '400', '404']);
   });
 });
 
@@ -762,6 +851,22 @@ describe('las tiras que recibe cada panel', () => {
         'energy',
         'breathing',
       ]);
+    }
+  });
+
+  it('un cambio de valores llega a todos los paneles conectados, con los valores nuevos', async () => {
+    const { url, control } = await startWithStrips();
+    const first = await connectAll(url);
+    const other = await connectAll(url);
+    await until(() => first.strips.length === 1 && other.strips.length === 1);
+    control.setEffect('barra', 'breathing');
+    await until(() => first.strips.length === 2 && other.strips.length === 2);
+
+    control.setValues('barra', { color: '#2040FF', period: 7 });
+    await until(() => first.strips.length === 3 && other.strips.length === 3);
+
+    for (const received of [first, other]) {
+      expect(received.strips[2]?.strips[1]?.values).toEqual({ color: '#2040FF', period: 7 });
     }
   });
 

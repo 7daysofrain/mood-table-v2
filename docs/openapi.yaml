@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Mood Table · API del motor
-  description: "Los mandos del instrumento. El estado (las tiras, su efecto
-    activo, los frames) llega por el WebSocket del visor:
+  description: "Los mandos del instrumento. El estado (las tiras, su efecto activo
+    y sus valores, los frames) llega por el WebSocket del visor:
     docs/instructions/viewer-protocol.md."
   version: 1.0.0
 components:
@@ -173,6 +173,174 @@ paths:
             application/json:
               schema:
                 description: El efecto necesita fuente de audio y no hay
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    minLength: 1
+                additionalProperties: false
+  /api/strips/{stripId}/values:
+    put:
+      summary: Cambia los valores de una tira
+      tags:
+        - tiras
+      description: Todos los valores del efecto activo de la tira, que la pinta con
+        ellos desde el pulso siguiente, sin reiniciar el efecto. Todos los
+        paneles reciben las tiras por el WebSocket del visor. Unos valores
+        iguales a los que tiene no cambian nada.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - type: object
+                  required:
+                    - color
+                    - period
+                  properties:
+                    color:
+                      type: string
+                      pattern: ^#[0-9A-Fa-f]{6}$
+                      default: "#FFA957"
+                      x-control: color
+                    period:
+                      type: number
+                      minimum: 1
+                      maximum: 20
+                      default: 4
+                      x-scale: log
+                  additionalProperties: false
+                - type: object
+                  properties: {}
+                  additionalProperties: false
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: stripId
+          required: true
+          description: El `id` de la tira
+      responses:
+        "200":
+          description: La tira, con su efecto activo y sus valores nuevos
+          content:
+            application/json:
+              schema:
+                description: La tira, con su efecto activo y sus valores nuevos
+                anyOf:
+                  - type: object
+                    required:
+                      - id
+                      - name
+                      - ledCount
+                      - output
+                      - effect
+                      - values
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      ledCount:
+                        type: integer
+                        minimum: 1
+                      output:
+                        anyOf:
+                          - type: object
+                            required:
+                              - type
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - virtual
+                            additionalProperties: false
+                      effect:
+                        type: string
+                        enum:
+                          - breathing
+                      values:
+                        type: object
+                        required:
+                          - color
+                          - period
+                        properties:
+                          color:
+                            type: string
+                            pattern: ^#[0-9A-Fa-f]{6}$
+                            default: "#FFA957"
+                            x-control: color
+                          period:
+                            type: number
+                            minimum: 1
+                            maximum: 20
+                            default: 4
+                            x-scale: log
+                        additionalProperties: false
+                    additionalProperties: false
+                  - type: object
+                    required:
+                      - id
+                      - name
+                      - ledCount
+                      - output
+                      - effect
+                      - values
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      ledCount:
+                        type: integer
+                        minimum: 1
+                      output:
+                        anyOf:
+                          - type: object
+                            required:
+                              - type
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - virtual
+                            additionalProperties: false
+                      effect:
+                        type: string
+                        enum:
+                          - energy
+                      values:
+                        type: object
+                        properties: {}
+                        additionalProperties: false
+                    additionalProperties: false
+        "400":
+          description: Los valores no cumplen el esquema del efecto activo
+          content:
+            application/json:
+              schema:
+                description: Los valores no cumplen el esquema del efecto activo
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    minLength: 1
+                additionalProperties: false
+        "404":
+          description: La tira no existe
+          content:
+            application/json:
+              schema:
+                description: La tira no existe
                 type: object
                 required:
                   - message

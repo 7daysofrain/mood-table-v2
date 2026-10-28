@@ -124,4 +124,107 @@ describe('el búfer de control', () => {
 
     expect(control.slot(1).effect).toBe('breathing');
   });
+
+  describe('cambiar los valores de una tira', () => {
+    const BLUE = { color: '#2040FF', period: 7 };
+    const ctx = (time: number) => ({ time, dt: 1 / 60, audio: null });
+
+    it('da changed, y la ranura pinta con los valores nuevos desde el pulso siguiente', () => {
+      const { control } = twoStrips();
+
+      expect(control.setValues('b', BLUE)).toBe('changed');
+
+      expect(control.slot(1).values).toEqual(BLUE);
+      const out = new Uint8Array(12);
+      control.slot(1).render(ctx(1), out);
+      const reference = new Uint8Array(12);
+      breathing.render(ctx(1), BLUE, breathing.createMemory(strip('b', 'breathing')), reference);
+      expect(out).toEqual(reference);
+    });
+
+    it('no reinicia la memoria del efecto: la respiración sigue su fase con el periodo nuevo', () => {
+      const { control } = twoStrips();
+      const out = new Uint8Array(12);
+      control.slot(1).render(ctx(1), out);
+
+      control.setValues('b', { color: '#FFA957', period: 6 });
+      control.slot(1).render(ctx(1 + 1 / 60), out);
+
+      // La misma respiración pintada sin cortes, con una sola memoria.
+      const memory = breathing.createMemory(strip('b', 'breathing'));
+      const reference = new Uint8Array(12);
+      breathing.render(ctx(1), defaultParams(breathing), memory, reference);
+      breathing.render(ctx(1 + 1 / 60), { color: '#FFA957', period: 6 }, memory, reference);
+      expect(out).toEqual(reference);
+    });
+
+    it('los mismos valores, aunque lleguen en otro orden, dan unchanged y no avisan', () => {
+      const { control, notices } = twoStrips();
+      control.setValues('b', BLUE);
+      notices.length = 0;
+      const before = control.slot(1).values;
+
+      expect(control.setValues('b', { period: 7, color: '#2040FF' })).toBe('unchanged');
+      expect(control.slot(1).values).toBe(before);
+      expect(notices).toEqual([]);
+    });
+
+    it('una tira que no existe da unknown-strip y no avisa', () => {
+      const { control, notices } = twoStrips();
+
+      expect(control.setValues('luces', BLUE)).toBe('unknown-strip');
+      expect(notices).toEqual([]);
+    });
+
+    it.each([
+      ['un periodo fuera de rango', 'b', { color: '#FFA957', period: 25 }, '`period` debe ser <= 20'],
+      ['un campo de más', 'b', { ...BLUE, speed: 2 }, 'no declara `speed`'],
+      ['un valor que falta', 'b', { color: '#2040FF' }, 'falta `period`'],
+      ['un color que no es #RRGGBB', 'b', { color: 'azul', period: 7 }, '`color` no tiene el formato'],
+      ['los valores de otro efecto', 'a', BLUE, 'no declara `color`, `period`'],
+      ['algo que no es un objeto', 'b', 7, 'los valores deben ser un objeto'],
+    ])('%s da invalid con su motivo y no toca la tira', (_name, id, values, reason) => {
+      const { control, notices } = twoStrips();
+      const index = id === 'a' ? 0 : 1;
+      const slot = control.slot(index);
+      const before = slot.values;
+
+      const result = control.setValues(id, values);
+
+      expect(result).toEqual({ invalid: expect.stringContaining(reason) as string });
+      expect(control.slot(index)).toBe(slot);
+      expect(slot.values).toBe(before);
+      expect(notices).toEqual([]);
+    });
+
+    it('quien se suscribe recibe un aviso por cada cambio de valores', () => {
+      const { control, notices } = twoStrips();
+
+      control.setValues('b', BLUE);
+      control.setValues('b', { ...BLUE, period: 8 });
+
+      expect(notices).toEqual([0, 1]);
+    });
+
+    it('cambiar los valores de una tira no toca la ranura de las demás', () => {
+      const { control } = twoStrips();
+      const other = control.slot(0);
+      const values = other.values;
+
+      control.setValues('b', BLUE);
+
+      expect(control.slot(0)).toBe(other);
+      expect(other.values).toBe(values);
+    });
+
+    it('cambiar de efecto sigue empezando con los valores por defecto', () => {
+      const { control } = twoStrips();
+      control.setValues('b', BLUE);
+
+      control.setEffect('b', 'energy');
+      control.setEffect('b', 'breathing');
+
+      expect(control.slot(1).values).toEqual(defaultParams(breathing));
+    });
+  });
 });
