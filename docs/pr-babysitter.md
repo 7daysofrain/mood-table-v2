@@ -137,6 +137,8 @@ cuenta en `prompts.md` y el resto sigue después.
 
 - Integrar sin el mantenedor en tipos de PR concretos (p. ej. las de archivar un change), cuando
   los datos lo justifiquen.
+- Un revisor propio en local (p. ej. con Ollama), que quitaría la dependencia de BA7. Choca con §5.3
+  y §6.2, y se valoraría tras BH2, con su medición.
 
 ### 5.3 Fuera por decisión
 
@@ -159,7 +161,7 @@ cuenta en `prompts.md` y el resto sigue después.
 | BA4 | Hay suficientes PR cerradas con hallazgos y respuestas para medir el triaje *(asumido: se cuentan al especificar BH2)*. |
 | BA5 | Hay un presupuesto mensual para los modelos *(asumido: la cifra se fija en la spec)*. |
 | BA6 | El sistema está en marcha cuando hay PR abiertas *(asumido)*. |
-| BA7 | El revisor atiende a la petición de revisión del sistema: en Codex, un comentario `@codex review` escrito con el token del sistema *(asumido: comprobarlo; si no se cumple, BH5 no se puede hacer)*. |
+| BA7 | El revisor atiende a la petición de revisión del sistema: en Codex, un comentario `@codex review`. **Solo se cumple si lo escribe una cuenta vinculada a Codex** (comprobado el 27-oct en la #77): el de una GitHub App lo rechaza y pide «create a Codex account». Por eso el sistema lo escribe con el token del mantenedor. |
 
 ### 6.2 Restricciones
 

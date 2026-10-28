@@ -21,7 +21,7 @@
   y luego a `completed` con ese SHA) y su respuesta no trata la firma como instrucciones. Si la trata,
   probar la firma antes de la mención o solo la marca, y fijar el texto ganador en la decisión 1 con
   un commit de `design.md`. La PR de sparring, cerrada sin integrar y sin rama.
-- [ ] 1.2 `docs/pr-babysitter.md`:
+- [x] 1.2 `docs/pr-babysitter.md`:
   - §6.1, BA7: se cumple solo para cuentas vinculadas a Codex; una GitHub App no puede (comprobado
     el 27-oct en la #77);
   - §5.2, Visión: un revisor propio en local (p. ej. con Ollama), que quitaría la dependencia de BA7;
