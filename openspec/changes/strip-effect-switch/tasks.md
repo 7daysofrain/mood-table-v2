@@ -119,7 +119,7 @@
   envía el último, y no se envía si coincide con el último enviado; un error de red o una respuesta de
   error no bloquea el siguiente (decisión 7).
   Verificar: los tests nuevos fallan porque el módulo no existe.
-- [ ] 3.4 El envío de cambios en `packages/panel/src/engine/effect-requests.ts`, y `/api` en el proxy de
+- [x] 3.4 El envío de cambios en `packages/panel/src/engine/effect-requests.ts`, y `/api` en el proxy de
   `packages/panel/vite.config.ts`.
   Verificar: los tests de 3.3 pasan.
 - [ ] 3.5 **(test en rojo)** Tests de las zonas (`packages/panel/src/strips/` y `effects/`, y
