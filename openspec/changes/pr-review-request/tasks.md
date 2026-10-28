@@ -125,7 +125,7 @@
 - [x] 2.5 Documentación: README §2.2 (*PR Babysitter*, el grafo), la salida directa al estado final
   cuando falla una comprobación; `prompts.md` §6, lo que añada esta tarea a la entrada de la historia.
   Verificar: `pnpm lint` en verde.
-- [ ] 2.6 **Prueba a mano** (sin commit): una PR de sparring del mantenedor con una comprobación que
+- [x] 2.6 **Prueba a mano** (sin commit): una PR de sparring del mantenedor con una comprobación que
   falla → en Linear, solo el aviso de estado final con qué falla, y en la PR, ninguna petición de
   revisión del sistema.
   Verificar: enlace al aviso de Linear en la descripción de la PR; la PR de sparring, cerrada sin
