@@ -30,7 +30,7 @@
   Verificar: el diff del commit son solo esos dos puntos.
 - [x] 1.3 `.gitignore`: `.local/`, para las credenciales locales del mantenedor.
   Verificar: `git check-ignore -v .local/x` señala `.gitignore`.
-- [ ] 1.4 **(test en rojo)** Las reglas (`design.md` decisiones 3 y 5) en `core/tracking.test.ts`:
+- [x] 1.4 **(test en rojo)** Las reglas (`design.md` decisiones 3 y 5) en `core/tracking.test.ts`:
   - con todas las comprobaciones pasadas, `afterChecksWait` fija `reviewSince` a la hora de la foto;
     con alguna fallida, no lo fija;
   - la regla de si hay que pedir la revisión: sí con todas pasadas, el revisor sin bloque del último

@@ -6,6 +6,7 @@ import {
   afterReviewWait,
   checksFinished,
   finalState,
+  needsReviewRequest,
   reviewFinished,
   type TrackedPush,
 } from './tracking.ts';
@@ -31,6 +32,7 @@ function snapshot(overrides: Partial<PullRequestSnapshot> = {}): PullRequestSnap
     labels: [],
     checks: [passed('lint'), passed('e2e')],
     review: { reviewedSha: HEAD, completed: true, hasFindings: false },
+    reviewRequested: false,
     observedAt: 10 * MINUTE,
     ...overrides,
   };
@@ -129,8 +131,17 @@ describe('al reanudar la espera de las comprobaciones', () => {
     expect(afterChecksWait(push, now, TIMEOUT)).toEqual({ push, next: 'waiting' });
   });
 
-  it('pasa a avisar cuando han terminado', () => {
-    expect(afterChecksWait(push, snapshot(), TIMEOUT)).toEqual({ push, next: 'checksFinished' });
+  it('pasa a avisar cuando han terminado, y la revisión cuenta desde esta foto si pasan todas', () => {
+    expect(afterChecksWait(push, snapshot(), TIMEOUT)).toEqual({
+      push: { ...push, reviewSince: 10 * MINUTE },
+      next: 'checksFinished',
+    });
+  });
+
+  it('si alguna falla, la revisión no empieza a contar', () => {
+    const now = snapshot({ checks: [passed('lint'), failed('e2e')] });
+
+    expect(afterChecksWait(push, now, TIMEOUT)).toEqual({ push, next: 'checksFinished' });
   });
 
   it('se agota el tiempo a los 30 min desde la primera foto con ese SHA', () => {
@@ -146,6 +157,44 @@ describe('al reanudar la espera de las comprobaciones', () => {
       push: { sha: 'nuevo', seenAt: 40 * MINUTE },
       next: 'waiting',
     });
+  });
+});
+
+describe('si hay que pedir la revisión', () => {
+  const running = { reviewedSha: HEAD, completed: false, hasFindings: false };
+
+  it('sí, con todas las comprobaciones pasadas y el revisor sin el último push', () => {
+    expect(needsReviewRequest(snapshot({ review: null }))).toBe(true);
+  });
+
+  it('sí, si el revisor solo ha revisado un push anterior', () => {
+    const review = { reviewedSha: 'push-anterior', completed: true, hasFindings: false };
+
+    expect(needsReviewRequest(snapshot({ review }))).toBe(true);
+  });
+
+  it('no, si alguna comprobación falla', () => {
+    const now = snapshot({ checks: [passed('lint'), failed('e2e')], review: null });
+
+    expect(needsReviewRequest(now)).toBe(false);
+  });
+
+  it('no, mientras alguna comprobación no haya terminado', () => {
+    const now = snapshot({ checks: [passed('lint'), pending('e2e')], review: null });
+
+    expect(needsReviewRequest(now)).toBe(false);
+  });
+
+  it('no, si el revisor está revisando el último push', () => {
+    expect(needsReviewRequest(snapshot({ review: running }))).toBe(false);
+  });
+
+  it('no, si el revisor ya ha revisado el último push', () => {
+    expect(needsReviewRequest(snapshot())).toBe(false);
+  });
+
+  it('no, si el sistema ya la ha pedido para el último push', () => {
+    expect(needsReviewRequest(snapshot({ review: null, reviewRequested: true }))).toBe(false);
   });
 });
 
@@ -198,5 +247,29 @@ describe('al reanudar la espera del revisor', () => {
     const newPush = { sha: 'nuevo', seenAt: 12 * MINUTE };
 
     expect(afterReviewWait(newPush, now, TIMEOUT)).toEqual({ push: newPush, next: 'waiting' });
+  });
+});
+
+describe('el tiempo de espera de la revisión', () => {
+  /** Las comprobaciones tardaron 20 min en pasar: la revisión cuenta desde ahí. */
+  const checked: TrackedPush = { sha: HEAD, seenAt: 0, reviewSince: 20 * MINUTE };
+  const unreviewed = { reviewedSha: HEAD, completed: false, hasFindings: false };
+
+  it('no se agota a los 30 min del push si la revisión empezó a contar después', () => {
+    const now = snapshot({ review: unreviewed, observedAt: 40 * MINUTE });
+
+    expect(afterReviewWait(checked, now, TIMEOUT)).toEqual({ push: checked, next: 'waiting' });
+  });
+
+  it('una revisión que termina 20 min después de pasar las comprobaciones llega a tiempo', () => {
+    const now = snapshot({ observedAt: 40 * MINUTE });
+
+    expect(afterReviewWait(checked, now, TIMEOUT)).toEqual({ push: checked, next: 'finished' });
+  });
+
+  it('se agota a los 30 min desde que pasan las comprobaciones', () => {
+    const now = snapshot({ review: unreviewed, observedAt: 50 * MINUTE });
+
+    expect(afterReviewWait(checked, now, TIMEOUT)).toEqual({ push: checked, next: 'timedOut' });
   });
 });
