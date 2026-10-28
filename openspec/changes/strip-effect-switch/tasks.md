@@ -43,7 +43,7 @@
 
 ## 2. MOO-102 · engine
 
-- [ ] 2.1 `@fastify/swagger` y `@fastify/type-provider-typebox` (6.x) en el catálogo de
+- [x] 2.1 `@fastify/swagger` y `@fastify/type-provider-typebox` (6.x) en el catálogo de
   `pnpm-workspace.yaml` y en `packages/engine/package.json` con `"catalog:"`, en las versiones
   publicadas hace más de la antigüedad mínima de pnpm.
   Verificar: `pnpm install` y `pnpm typecheck` en verde.
