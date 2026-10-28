@@ -82,7 +82,7 @@
   errores con `{ message }`, y `docs/openapi.yaml` regenerado con `pnpm openapi`.
   Verificar: los tests de 2.5 y el de `openapi.test.ts` pasan, y con `pnpm dev` un
   `curl -X PUT …/api/strips/<id>/values` cambia la tira en el visor.
-- [ ] 2.7 Documentación: D84-D89 en `docs/idea-mood-table.md` §10, según `design.md`, con D81 y D82
+- [x] 2.7 Documentación: D84-D89 en `docs/idea-mood-table.md` §10, según `design.md`, con D81 y D82
   matizadas y D78 ampliada (apuntando a las nuevas, sin borrar ni renumerar). README §2.2 (*Búfer de
   control*, adaptador *API HTTP*) y §4 (la ruta nueva con un ejemplo de petición y respuesta).
   `prompts.md`.
