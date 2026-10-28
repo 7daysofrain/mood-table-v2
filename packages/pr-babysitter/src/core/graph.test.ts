@@ -448,10 +448,7 @@ describe('si GitHub no acepta la petición de revisión', () => {
     const { reviewRequests, recorded } = recordingRequests();
     recorded.failure = new GitHubRequestRejectedError('Resource not accessible');
     const log: string[] = [];
-    const graph = createTrackingGraph({ notifier, reviewRequests }, new MemorySaver(), {
-      timeoutMs: 30 * MINUTE,
-      log: (line) => log.push(line),
-    });
+    const graph = trackingGraph(notifier, reviewRequests, noFindings, (line) => log.push(line));
     const config = threadConfig(74);
 
     await graph.invoke({ snapshot: snapshot(0) }, config);

@@ -73,7 +73,7 @@
   - con el gasto acumulado cerca del tope, solo los que caben llegan al `Triager`;
   - si el `Triager` falla, los hallazgos salen *exige criterio* y el aviso final llega con el mismo
     estado y motivo; si falla GitHub al leer los hallazgos, el nodo queda pendiente y se reintenta.
-- [ ] 1.8 El nodo `triar` y su arista en `core/graph.ts`, los puertos en el grafo y el montaje en
+- [x] 1.8 El nodo `triar` y su arista en `core/graph.ts`, los puertos en el grafo y el montaje en
   `src/main.ts` y uno falso en `src/studio.ts`.
   Verificar: los tests de 1.7 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde; el grafo se abre en LangGraph Studio con el nodo nuevo.
