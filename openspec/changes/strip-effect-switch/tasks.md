@@ -58,7 +58,7 @@
   tiras, el registro y si hay fuente, la ranura de cada tira (memoria y parámetros por defecto creados
   en `setEffect`), el efecto activo de cada tira y la suscripción.
   Verificar: los tests de 2.2 pasan y `pnpm lint` no da errores de fronteras.
-- [ ] 2.4 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts` (y
+- [x] 2.4 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts` (y
   `energy-golpes.test.ts` para el fichero de golpes): un cambio entra entero en el pulso siguiente;
   los frames de la otra tira salen idénticos a los de una ejecución sin el cambio; elegir el efecto
   activo deja los frames idénticos; con fuente y todas las tiras con respiración, una tira que pasa a

@@ -4,16 +4,39 @@ import { describe, expect, it } from 'vitest';
 
 import type { AudioFeatures } from './audio/analysis.ts';
 import type { AudioSource } from './audio/audio-source.ts';
+import { createControl } from './control.ts';
 import { breathing } from './effects/breathing.ts';
 import { defaultParams, type Effect } from './effects/effect.ts';
 import { energy } from './effects/energy.ts';
+import type { AnyEffect } from './effects/registry.ts';
 import {
   createFrameLoop,
+  type FrameLoopOptions,
   type LevelOutput,
   type LightOutput,
+  type LoopStrip,
   type PositionOutput,
   type Tick,
 } from './frame-loop.ts';
+
+interface LoopOptions extends FrameLoopOptions {
+  /** Los efectos del búfer de control. Por defecto, el registro del motor. */
+  effects?: readonly AnyEffect[];
+}
+
+/**
+ * El bucle con su búfer de control, creado con las mismas tiras, como lo monta la raíz de
+ * composición. Devuelve también el búfer, para cambiar el efecto de una tira entre pulsos.
+ */
+function createLoop(strips: readonly LoopStrip[], fps: number, options: LoopOptions = {}) {
+  const { effects, ...loopOptions } = options;
+  const control = createControl({
+    strips: strips.map((each) => each.config),
+    ...(effects ? { effects } : {}),
+    hasAudioSource: loopOptions.audioSource !== undefined,
+  });
+  return { ...createFrameLoop(strips, control, fps, loopOptions), control };
+}
 
 function strip(id: string, ledCount: number): StripConfig {
   return { id, name: id, output: { type: 'virtual' }, ledCount, effect: 'breathing' };
@@ -63,7 +86,7 @@ function solidStrip(id: string, ledCount: number): StripConfig {
 describe('el bucle de frames', () => {
   it('a 60 fps, en un segundo de reloj da 60 frames numerados de forma consecutiva', () => {
     const { output, frames } = recorder();
-    const loop = createFrameLoop([{ config: strip('demo', 60), outputs: [output] }], 60);
+    const loop = createLoop([{ config: strip('demo', 60), outputs: [output] }], 60);
 
     for (let pulse = 0; pulse < 60; pulse++) loop.tick(5000 + pulse * FRAME_MS);
 
@@ -72,7 +95,7 @@ describe('el bucle de frames', () => {
 
   it('pinta cada tira con la respiración, en el instante de su pulso', () => {
     const { output, frames } = recorder();
-    const loop = createFrameLoop([{ config: strip('demo', 60), outputs: [output] }], 60);
+    const loop = createLoop([{ config: strip('demo', 60), outputs: [output] }], 60);
 
     loop.tick(0);
     loop.tick(120 * FRAME_MS);
@@ -85,7 +108,7 @@ describe('el bucle de frames', () => {
   it('con dos tiras, cada una da un frame con sus LEDs y los dos llevan el mismo seq', () => {
     const first = recorder();
     const second = recorder();
-    const loop = createFrameLoop(
+    const loop = createLoop(
       [
         { config: strip('larga', 60), outputs: [first.output] },
         { config: strip('corta', 30), outputs: [second.output] },
@@ -103,7 +126,7 @@ describe('el bucle de frames', () => {
 
   it('si un pulso llega cuatro pulsos tarde, salta al seq del instante actual', () => {
     const { output, frames } = recorder();
-    const loop = createFrameLoop([{ config: strip('demo', 60), outputs: [output] }], 60);
+    const loop = createLoop([{ config: strip('demo', 60), outputs: [output] }], 60);
 
     for (let pulse = 0; pulse <= 10; pulse++) loop.tick(pulse * FRAME_MS);
     loop.tick(14 * FRAME_MS);
@@ -114,7 +137,7 @@ describe('el bucle de frames', () => {
 
   it('no calcula dos veces el mismo pulso si el temporizador se adelanta', () => {
     const { output, frames } = recorder();
-    const loop = createFrameLoop([{ config: strip('demo', 60), outputs: [output] }], 60);
+    const loop = createLoop([{ config: strip('demo', 60), outputs: [output] }], 60);
 
     loop.tick(0);
     loop.tick(FRAME_MS / 3);
@@ -126,7 +149,7 @@ describe('el bucle de frames', () => {
     const viewer = recorder();
     const serial = recorder();
     const other = recorder();
-    const loop = createFrameLoop(
+    const loop = createLoop(
       [
         { config: strip('mesa', 60), outputs: [viewer.output, serial.output] },
         { config: strip('otra', 10), outputs: [other.output] },
@@ -144,7 +167,7 @@ describe('el bucle de frames', () => {
   it('anima cada tira con el efecto que declara', () => {
     const breathes = recorder();
     const fixed = recorder();
-    const loop = createFrameLoop(
+    const loop = createLoop(
       [
         { config: strip('respira', 60), outputs: [breathes.output] },
         { config: solidStrip('fija', 2), outputs: [fixed.output] },
@@ -160,12 +183,63 @@ describe('el bucle de frames', () => {
     expect(fixed.frames[1]?.colors).toEqual(Uint8Array.from([10, 20, 30, 10, 20, 30]));
   });
 
-  it('con un efecto que no está en el registro, no se crea y dice cuál es', () => {
-    expect(() =>
-      createFrameLoop([{ config: solidStrip('fija', 2), outputs: [] }], 60, {
-        effects: [breathing],
-      }),
-    ).toThrow('la tira «fija» declara el efecto «solid», que el motor no tiene');
+});
+
+describe('el bucle con el búfer de control', () => {
+  it('un cambio de efecto entra entero en el pulso siguiente', () => {
+    const changing = recorder();
+    const loop = createLoop([{ config: strip('a', 2), outputs: [changing.output] }], 60, {
+      effects: [breathing, solid],
+    });
+
+    loop.tick(0);
+    loop.tick(FRAME_MS);
+    loop.control.setEffect('a', solid.id as EffectId);
+    loop.tick(2 * FRAME_MS);
+
+    expect(changing.frames[1]?.colors).toEqual(breathingAt(1 / 60, 2));
+    expect(changing.frames[2]?.colors).toEqual(Uint8Array.from([10, 20, 30, 10, 20, 30]));
+  });
+
+  it('cambiar el efecto de una tira no toca los frames de las demás', () => {
+    /** Los frames de B, una tira con energía, con o sin cambiar A a mitad de la ejecución. */
+    const framesOfB = (change: boolean) => {
+      const other = recorder();
+      const loop = createLoop(
+        [
+          { config: strip('a', 4), outputs: [] },
+          { config: { ...strip('b', 4), effect: 'energy' }, outputs: [other.output] },
+        ],
+        60,
+        { effects: [breathing, energy, solid], audioSource: toneSource().source },
+      );
+      for (let pulse = 0; pulse < 60; pulse++) {
+        if (change && pulse === 30) loop.control.setEffect('a', solid.id as EffectId);
+        loop.tick(pulse * FRAME_MS);
+      }
+      return other.frames;
+    };
+
+    expect(framesOfB(true)).toEqual(framesOfB(false));
+  });
+
+  it('elegir el efecto activo deja los frames como si no se hubiera elegido', () => {
+    /** Los frames de una tira con energía, eligiendo energía otra vez a mitad o sin hacerlo. */
+    const frames = (choose: boolean) => {
+      const reactive = recorder();
+      const loop = createLoop(
+        [{ config: { ...strip('a', 4), effect: 'energy' }, outputs: [reactive.output] }],
+        60,
+        { effects: [energy], audioSource: toneSource().source },
+      );
+      for (let pulse = 0; pulse < 60; pulse++) {
+        if (choose && pulse === 30) loop.control.setEffect('a', 'energy');
+        loop.tick(pulse * FRAME_MS);
+      }
+      return reactive.frames;
+    };
+
+    expect(frames(true)).toEqual(frames(false));
   });
 });
 
@@ -215,11 +289,11 @@ function levelRecorder() {
 }
 
 describe('el bucle con fuente de audio', () => {
-  it('con solo la respiración, mide el nivel en cada pulso pero no calcula las bandas', () => {
+  it('con solo efectos de ambiente, mide el nivel y calcula las bandas en cada pulso', () => {
     const ambient = audioSpy('ambiente', false);
     const { source, reads } = toneSource();
     const level = levelRecorder();
-    const loop = createFrameLoop([{ config: spyStrip('a', ambient.effect), outputs: [] }], 60, {
+    const loop = createLoop([{ config: spyStrip('a', ambient.effect), outputs: [] }], 60, {
       effects: [ambient.effect],
       audioSource: source,
       levelOutputs: [level.output],
@@ -233,7 +307,9 @@ describe('el bucle con fuente de audio', () => {
       expect.closeTo(Math.SQRT1_2, 2),
       expect.closeTo(Math.SQRT1_2, 2),
     ]);
-    expect(ambient.seen).toEqual([null, null, null]);
+    // Así una tira puede pasar a un efecto reactivo en cualquier momento (decisión 4 del change
+    // strip-effect-switch).
+    expect(ambient.seen.map((audio) => audio?.bands.length)).toEqual([24, 24, 24]);
   });
 
   it('con una tira reactiva, calcula las bandas una vez por pulso y las da a todas las tiras', () => {
@@ -241,7 +317,7 @@ describe('el bucle con fuente de audio', () => {
     const second = audioSpy('otro-reactivo', true);
     const ambient = audioSpy('ambiente', false);
     const { source, reads } = toneSource();
-    const loop = createFrameLoop(
+    const loop = createLoop(
       [
         { config: spyStrip('a', first.effect), outputs: [] },
         { config: spyStrip('b', second.effect), outputs: [] },
@@ -265,7 +341,7 @@ describe('el bucle con fuente de audio', () => {
   it('el nivel llega a sus salidas con el seq de su pulso, también si se saltan pulsos', () => {
     const { source } = toneSource();
     const level = levelRecorder();
-    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+    const loop = createLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
       audioSource: source,
       levelOutputs: [level.output],
     });
@@ -280,7 +356,7 @@ describe('el bucle con fuente de audio', () => {
   it('sin fuente de audio, ni nivel ni bandas, aunque la tira sea reactiva', () => {
     const reactive = audioSpy('reactivo', true);
     const level = levelRecorder();
-    const loop = createFrameLoop([{ config: spyStrip('a', reactive.effect), outputs: [] }], 60, {
+    const loop = createLoop([{ config: spyStrip('a', reactive.effect), outputs: [] }], 60, {
       effects: [reactive.effect],
       levelOutputs: [level.output],
     });
@@ -317,7 +393,7 @@ function positionRecorder() {
 describe('el bucle con una fuente que sabe su posición', () => {
   it('entrega en cada pulso la posición del fichero con el seq del pulso', () => {
     const position = positionRecorder();
-    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+    const loop = createLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
       audioSource: sourceWithPosition(),
       positionOutputs: [position.output],
     });
@@ -335,7 +411,7 @@ describe('el bucle con una fuente que sabe su posición', () => {
 
   it('la posición vuelve a casi 0 cuando el bucle pasa del final del fichero', () => {
     const position = positionRecorder();
-    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+    const loop = createLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
       audioSource: sourceWithPosition(),
       positionOutputs: [position.output],
     });
@@ -354,7 +430,7 @@ describe('el bucle con una fuente que sabe su posición', () => {
   it('con una fuente que no sabe su posición, no entrega nada', () => {
     const { source } = toneSource();
     const position = positionRecorder();
-    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+    const loop = createLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
       audioSource: source,
       positionOutputs: [position.output],
     });
@@ -367,7 +443,7 @@ describe('el bucle con una fuente que sabe su posición', () => {
 
   it('sin fuente de audio, no entrega nada', () => {
     const position = positionRecorder();
-    const loop = createFrameLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
+    const loop = createLoop([{ config: strip('demo', 1), outputs: [] }], 60, {
       positionOutputs: [position.output],
     });
 
@@ -401,7 +477,7 @@ function noiseSource(dbfs: number, silenceThreshold?: number): AudioSource {
 /** Los frames de una tira de 60 LEDs con *energía* durante dos segundos. */
 function energyFrames(source: AudioSource): Uint8Array[] {
   const { output, frames } = recorder();
-  const loop = createFrameLoop(
+  const loop = createLoop(
     [{ config: { ...strip('energia', 60), effect: 'energy' }, outputs: [output] }],
     60,
     { effects: [energy], audioSource: source },
