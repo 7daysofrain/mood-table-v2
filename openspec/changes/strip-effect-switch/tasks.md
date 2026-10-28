@@ -17,7 +17,7 @@
   un JSON roto y uno que no cumple el esquema (sin `effect`, un efecto que no está en el catálogo, un
   campo que el esquema no declara, `ledCount` no entero).
   Verificar: los tests nuevos fallan porque el tipo `6` no existe; el resto sigue en verde.
-- [ ] 1.2 El tipo `6` en `packages/shared/src/viewer-protocol.ts` (`STRIPS_MESSAGE_TYPE`,
+- [x] 1.2 El tipo `6` en `packages/shared/src/viewer-protocol.ts` (`STRIPS_MESSAGE_TYPE`,
   `StripsMessageSchema` con `StripStateSchema` para cada tira, `encodeStrips` y `decodeStrips`, que
   valida con el esquema), exportado en `index.ts`. Su sección en `docs/instructions/viewer-protocol.md`,
   con su ejemplo, que es el primer mensaje JSON del protocolo, cuándo se envía (al conectarse y a todos

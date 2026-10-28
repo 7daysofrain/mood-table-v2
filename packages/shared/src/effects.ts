@@ -17,6 +17,14 @@ export const EFFECT_CATALOG = [
 
 export type EffectId = (typeof EFFECT_CATALOG)[number]['id'];
 
+/**
+ * El id de un efecto del catálogo, para el fichero, el protocolo del visor y la API. La unión se
+ * genera del catálogo, y `Unsafe` le da su tipo, que el `map` pierde; el esquema es el mismo.
+ */
+export const EffectIdSchema = Type.Unsafe<EffectId>(
+  Type.Union(EFFECT_CATALOG.map((effect) => Type.Literal(effect.id))),
+);
+
 /** Blanco cálido: el de una bombilla incandescente (unos 2700 K). */
 const WARM_WHITE = '#FFA957';
 
