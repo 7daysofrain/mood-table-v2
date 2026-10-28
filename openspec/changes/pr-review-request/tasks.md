@@ -28,7 +28,7 @@
     choca con §5.3 y §6.2 y se valoraría tras BH2, con su medición.
 
   Verificar: el diff del commit son solo esos dos puntos.
-- [ ] 1.3 `.gitignore`: `.local/`, para las credenciales locales del mantenedor.
+- [x] 1.3 `.gitignore`: `.local/`, para las credenciales locales del mantenedor.
   Verificar: `git check-ignore -v .local/x` señala `.gitignore`.
 - [ ] 1.4 **(test en rojo)** Las reglas (`design.md` decisiones 3 y 5) en `core/tracking.test.ts`:
   - con todas las comprobaciones pasadas, `afterChecksWait` fija `reviewSince` a la hora de la foto;

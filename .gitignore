@@ -21,3 +21,6 @@ e2e/test-results/
 
 # Secretos del PR Babysitter (packages/pr-babysitter/.env.example)
 .env
+
+# Credenciales locales del mantenedor (p. ej. de las pruebas a mano del PR Babysitter)
+.local/
