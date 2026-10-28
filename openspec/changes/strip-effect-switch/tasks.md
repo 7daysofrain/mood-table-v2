@@ -136,7 +136,7 @@
   la selección por `id` en `App.tsx` y el hueco de cada zona en `PanelLayout.tsx`.
   Verificar: los tests de 3.5 pasan, los de `PanelLayout` y `panel-layout` siguen en verde, y con
   `pnpm dev` se cambia el efecto de la tira de la demo desde el panel.
-- [ ] 3.7 E2E del caso feliz en `e2e/effects.spec.ts`, con un motor propio (fichero de golpes y una
+- [x] 3.7 E2E del caso feliz en `e2e/effects.spec.ts`, con un motor propio (fichero de golpes y una
   tira con energía): la zona Tiras muestra la tira con su nombre, LEDs y salida, seleccionada; energía
   está marcado; al pulsar respiración, el visor pinta la tira de un solo color en menos de 100 ms desde
   el `pointerdown` y respiración queda marcado; al recargar el panel, respiración sigue marcado
