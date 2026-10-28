@@ -95,7 +95,7 @@ Fuera también, decidido al explorar el change:
 - **API**: `PUT /api/strips/{stripId}/effect` y `GET /api/openapi.json`. Es la primera ruta de la API
   HTTP.
 - **Dependencias nuevas** (en el catálogo de pnpm): `@fastify/swagger` y
-  `@fastify/type-provider-typebox` 5.x, que admite `typebox` 1.x (comprobado el 28-oct).
+  `@fastify/type-provider-typebox` 6.x, que admite `typebox` 1.x (comprobado el 28-oct).
 - **Documentación**:
   - `docs/PRD.md`, en el commit de este change: Q3 resuelta (corte seco, decisión del DJ), E3 pasa a
     «sin que la luz se pare» y la pregunta nueva Q8 (qué ve el DJ si el cambio no llega al motor).
