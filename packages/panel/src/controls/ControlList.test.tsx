@@ -47,4 +47,20 @@ describe('la lista de controles', () => {
     const [, sent] = queue.send.mock.calls.at(-1) as [string, { period: number }];
     expect(sent.period).toBeGreaterThan(4);
   });
+
+  it('en la parte baja de la escala, cada paso del teclado avanza el periodo', () => {
+    const queue = idleQueue();
+    const atOne: StripState = { ...CABINA, values: { color: '#FFA957', period: 1 } };
+    const { rerender } = render(<ControlList strip={atOne} requests={queue} />);
+    const period = () => screen.getByRole('slider', { name: 'Periodo (s)' });
+
+    fireEvent.keyDown(period(), { key: 'ArrowRight' });
+    const [, first] = queue.send.mock.calls.at(-1) as [string, { color: string; period: number }];
+    expect(first.period).toBeGreaterThan(1);
+
+    rerender(<ControlList strip={{ ...CABINA, values: first }} requests={queue} />);
+    fireEvent.keyDown(period(), { key: 'ArrowRight' });
+    const [, second] = queue.send.mock.calls.at(-1) as [string, { period: number }];
+    expect(second.period).toBeGreaterThan(first.period);
+  });
 });

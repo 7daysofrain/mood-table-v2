@@ -103,11 +103,13 @@ function ColorField({ control, value, onChange, onRelease }: Readonly<FieldProps
 
 /**
  * Un número con rango. El slider trabaja en el recorrido (de 0 a 1) y `scale` lo pasa al valor, así
- * que la escala logarítmica solo vive aquí: lo que sale hacia el motor es siempre el valor.
+ * que la escala logarítmica solo vive aquí: lo que sale hacia el motor es siempre el valor. Sin
+ * redondear: en la parte baja de una escala logarítmica, un paso del recorrido cambia el valor en
+ * menos de una centésima, y redondeado volvería a la misma posición y el slider no avanzaría.
  */
 function SliderField({ control, value, onChange, onRelease }: Readonly<FieldProps<SliderControl, number>>) {
   const id = useId();
-  const toValue = (position: number) => Math.round(valueAt(control, position) * 100) / 100;
+  const toValue = (position: number) => valueAt(control, position);
   return (
     <div>
       <FieldHeader id={id} name={control.name} value={formatValue(value)} />
