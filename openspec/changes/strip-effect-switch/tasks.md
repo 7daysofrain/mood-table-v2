@@ -77,7 +77,7 @@
   `/api/openapi.json` describe la ruta con su cuerpo y las respuestas `200`, `400`, `404` y `409`
   (`specs/instrument-control`, decisión 6).
   Verificar: los tests nuevos fallan porque la ruta no existe.
-- [ ] 2.7 La ruta y el OpenAPI en `packages/engine/src/adapters/server.ts`: `buildServer` (plugins,
+- [x] 2.7 La ruta y el OpenAPI en `packages/engine/src/adapters/server.ts`: `buildServer` (plugins,
   type provider, swagger, la ruta con los esquemas de `shared` y los errores con `{ message }`) y
   `startServer`, que lo usa y escucha; el servidor recibe `Commands`.
   Verificar: los tests de 2.6 pasan y los del servidor que ya había siguen en verde.
