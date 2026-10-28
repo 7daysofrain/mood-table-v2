@@ -21,6 +21,8 @@ export default defineConfig({
       exclude: [
         // Raíces de composición: montan piezas, sin lógica propia (design.md §5).
         'packages/engine/src/main.ts',
+        // Entrada de `pnpm openapi`: escribe el fichero; la lógica está en `openapi.ts`.
+        'packages/engine/src/write-openapi.ts',
         'packages/panel/src/main.tsx',
         'packages/pr-babysitter/src/main.ts',
         // Grafo para LangGraph Studio: monta el núcleo con un aviso al log (MOO-87).

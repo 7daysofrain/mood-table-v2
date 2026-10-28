@@ -95,7 +95,7 @@
   código, en YAML, es igual a `docs/openapi.yaml`; si no, el mensaje dice que se ejecute
   `pnpm openapi`.
   Verificar: el test falla porque el fichero no existe.
-- [ ] 2.11 `pnpm openapi` (en la raíz y en `@moodtable/engine`) monta la app con `buildServer`, sin
+- [x] 2.11 `pnpm openapi` (en la raíz y en `@moodtable/engine`) monta la app con `buildServer`, sin
   escuchar, y escribe `docs/openapi.yaml`; se genera y se commitea.
   Verificar: el test de 2.10 pasa, y al cambiar a mano un esquema de la ruta vuelve a fallar.
 - [ ] 2.12 Documentación: D77-D82 en `docs/idea-mood-table.md` §10, según `design.md`, con el inciso

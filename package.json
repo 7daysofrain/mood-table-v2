@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit && pnpm -r typecheck",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "pnpm --filter @moodtable/e2e test:e2e"
+    "test:e2e": "pnpm --filter @moodtable/e2e test:e2e",
+    "openapi": "pnpm --filter @moodtable/engine openapi"
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
