@@ -90,7 +90,7 @@
 
 ## 3. MOO-107 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests del envío en `packages/panel/src/engine/`, con un `fetch` falso:
+- [x] 3.1 **(test en rojo)** Tests del envío en `packages/panel/src/engine/`, con un `fetch` falso:
   los valores van por `PUT /api/strips/{stripId}/values` con todos los valores; con uno en camino,
   solo se envía el último; un error de red o de respuesta no bloquea el siguiente; la cola dice si
   una tira tiene envíos en camino o pendientes y avisa cuando se vacía. Los tests del cambio de efecto
