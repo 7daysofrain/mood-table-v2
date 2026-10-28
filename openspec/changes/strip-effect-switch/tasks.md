@@ -27,7 +27,7 @@
   `packages/shared/src/effects.test.ts`: `breathing` no necesita fuente y `energy` sí, y la respuesta
   sale de `usesAudio` del catálogo para todos sus efectos (decisión 5).
   Verificar: los tests nuevos fallan porque la función no existe.
-- [ ] 1.4 La función en `packages/shared/src/effects.ts`, exportada, y `parseConfig` la usa en lugar
+- [x] 1.4 La función en `packages/shared/src/effects.ts`, exportada, y `parseConfig` la usa en lugar
   de su propia comprobación.
   Verificar: los tests de 1.3 pasan y los de `config.test.ts` (tira reactiva sin fuente) siguen en
   verde sin cambiarlos.

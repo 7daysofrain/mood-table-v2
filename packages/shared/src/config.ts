@@ -6,7 +6,7 @@
 import Type, { type Static } from 'typebox';
 import Value from 'typebox/value';
 
-import { EFFECT_CATALOG, EffectIdSchema } from './effects.ts';
+import { EffectIdSchema, needsAudioSource } from './effects.ts';
 import { findJsonError } from './json-error.ts';
 import { MAX_STRIPS } from './viewer-protocol.ts';
 
@@ -128,7 +128,7 @@ export function parseConfig(text: string): ConfigResult {
   // esconde con la tira apagada (decisión 6 del change virtual-strip-audio-file).
   const deaf = config.audioSource
     ? undefined
-    : config.strips.find((strip) => EFFECT_CATALOG.some((e) => e.id === strip.effect && e.usesAudio));
+    : config.strips.find((strip) => needsAudioSource(strip.effect));
   if (deaf) {
     return fail(
       `la tira «${deaf.id}», efecto \`${deaf.effect}\`: necesita una fuente de audio (\`audioSource\`)`,

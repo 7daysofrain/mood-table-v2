@@ -25,6 +25,15 @@ export const EffectIdSchema = Type.Unsafe<EffectId>(
   Type.Union(EFFECT_CATALOG.map((effect) => Type.Literal(effect.id))),
 );
 
+/**
+ * Si el efecto solo funciona con fuente de audio: los reactivos. Es la única regla, y la usan el
+ * fichero al arrancar, el motor al cambiar el efecto de una tira y el panel, que desactiva los que no
+ * se pueden elegir (decisión 5 del change strip-effect-switch).
+ */
+export function needsAudioSource(effect: EffectId): boolean {
+  return EFFECT_CATALOG.some((each) => each.id === effect && each.usesAudio);
+}
+
 /** Blanco cálido: el de una bombilla incandescente (unos 2700 K). */
 const WARM_WHITE = '#FFA957';
 
