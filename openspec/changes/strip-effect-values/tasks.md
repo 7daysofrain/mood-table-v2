@@ -53,7 +53,7 @@
   periodo pasando de 4 a 8 s en el segundo 1, el frame del segundo 9 es igual al del segundo 1
   (`specs/effects`, decisión 7).
   Verificar: los tests nuevos fallan; los frames dorados siguen en verde.
-- [ ] 2.2 El desfase en la memoria de la respiración (`packages/engine/src/core/effects/breathing.ts`),
+- [x] 2.2 El desfase en la memoria de la respiración (`packages/engine/src/core/effects/breathing.ts`),
   y el registro del motor toma el esquema de parámetros del catálogo de `shared` en vez de repetirlo
   (con un test en `registry.test.ts` que comprueba que es el mismo).
   Verificar: los tests de 2.1 pasan y los frames dorados no cambian.
