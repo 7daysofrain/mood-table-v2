@@ -2,6 +2,7 @@ import type { StripState } from '@moodtable/shared';
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { QueueListener } from '../engine/strip-requests.ts';
 import { useDraftValues, type ValueRequests } from './use-draft-values.ts';
 
 /** La cabina respirando con `period`, como la cuenta el motor. */
@@ -19,22 +20,22 @@ function cabina(period: number): StripState {
 /** Una cola de valores falsa: cada envío deja la tira ocupada hasta que el test lo termina. */
 function fakeQueue() {
   const busy = new Set<string>();
-  const listeners = new Set<() => void>();
+  const listeners = new Set<QueueListener>();
   const queue = {
     send: vi.fn((stripId: string) => {
       busy.add(stripId);
     }),
     busy: (stripId: string) => busy.has(stripId),
-    subscribe: (listener: () => void) => {
+    subscribe: (listener: QueueListener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
   } satisfies ValueRequests;
-  /** El último envío de la tira vuelve (aplicado o no): la cola se queda vacía y avisa. */
-  const finish = (stripId: string) => {
+  /** El último envío de la tira vuelve, aplicado o no: la cola se queda vacía y avisa. */
+  const finish = (stripId: string, applied: boolean) => {
     act(() => {
       busy.delete(stripId);
-      for (const listener of listeners) listener();
+      for (const listener of listeners) listener(stripId, applied);
     });
   };
   return { queue, finish };
@@ -90,7 +91,7 @@ describe('los valores que muestra un control', () => {
     expect(draft.period()).toBe(5);
   });
 
-  it('al soltar, sigue con su valor hasta que la cola se vacía, y entonces muestra el del motor', () => {
+  it('al soltar, sigue con su valor hasta que la cola se vacía y llega el eco', () => {
     const draft = draftOf(cabina(2));
     draft.change('period', 6);
     draft.release();
@@ -98,9 +99,22 @@ describe('los valores que muestra un control', () => {
     draft.echo(cabina(4));
     expect(draft.period()).toBe(6);
 
-    draft.finish('cabina');
+    draft.finish('cabina', true);
     draft.echo(cabina(6));
     expect(draft.period()).toBe(6);
+  });
+
+  it('si la respuesta del motor llega antes que su eco, sigue con su valor hasta el eco', () => {
+    const draft = draftOf(cabina(2));
+    draft.change('period', 6);
+    draft.release();
+
+    draft.finish('cabina', true);
+    expect(draft.period()).toBe(6);
+
+    draft.echo(cabina(6));
+    draft.echo(cabina(3));
+    expect(draft.period()).toBe(3);
   });
 
   it('si el motor no aplica el valor, al vaciarse la cola vuelve al que pinta', () => {
@@ -108,7 +122,7 @@ describe('los valores que muestra un control', () => {
     draft.change('period', 8);
     draft.release();
 
-    draft.finish('cabina');
+    draft.finish('cabina', false);
 
     expect(draft.period()).toBe(4);
   });
@@ -117,7 +131,38 @@ describe('los valores que muestra un control', () => {
     const draft = draftOf(cabina(4));
     draft.change('period', 6);
 
-    draft.finish('cabina');
+    draft.finish('cabina', false);
+
+    expect(draft.period()).toBe(6);
+  });
+
+  it('al soltar con la cola ya vacía, espera el eco si el motor aplicó el valor', () => {
+    const draft = draftOf(cabina(4));
+    draft.change('period', 6);
+    draft.finish('cabina', true);
+    draft.release();
+
+    expect(draft.period()).toBe(6);
+    draft.echo(cabina(5));
+    expect(draft.period()).toBe(5);
+  });
+
+  it('al soltar con la cola ya vacía, vuelve al motor si no aplicó el valor', () => {
+    const draft = draftOf(cabina(4));
+    draft.change('period', 6);
+    draft.finish('cabina', false);
+    draft.release();
+
+    expect(draft.period()).toBe(4);
+  });
+
+  it('que se vacíe la cola de otra tira no cambia nada', () => {
+    const draft = draftOf(cabina(4));
+    draft.change('period', 6);
+    draft.finish('cabina', true);
+    draft.release();
+
+    draft.finish('barra', false);
 
     expect(draft.period()).toBe(6);
   });

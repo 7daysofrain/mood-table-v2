@@ -251,7 +251,7 @@ describe('el envío de los cambios de valores', () => {
     expect(requests.busy('barra')).toBe(false);
   });
 
-  it('avisa cuando una tira se queda sin envíos, también si el último falla', async () => {
+  it('avisa cuando una tira se queda sin envíos, y si el motor aplicó el último', async () => {
     const { fetch, sent } = fakeFetch();
     const requests = valueRequests(fetch);
     const listener = vi.fn();
@@ -263,11 +263,16 @@ describe('el envío de los cambios de valores', () => {
     expect(listener).not.toHaveBeenCalled();
 
     await at(sent, 1).finish('network-error');
-    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenLastCalledWith('barra', false);
+
+    requests.send('barra', BLUE);
+    await at(sent, 2).finish({ ok: true });
+    expect(listener).toHaveBeenLastCalledWith('barra', true);
+    expect(listener).toHaveBeenCalledTimes(2);
 
     unsubscribe();
     requests.send('barra', BLUE);
-    await at(sent, 2).finish({ ok: true });
-    expect(listener).toHaveBeenCalledTimes(1);
+    await at(sent, 3).finish({ ok: true });
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 });

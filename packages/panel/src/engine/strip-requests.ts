@@ -24,6 +24,9 @@ function canonical(body: unknown): string {
   return JSON.stringify(body, fields);
 }
 
+/** Se queda sin envíos la tira `stripId`; `applied` dice si el motor aplicó el último. */
+export type QueueListener = (stripId: string, applied: boolean) => void;
+
 /** Una tira con una petición en camino. */
 interface InFlight<T> {
   /** El último cambio hecho mientras tanto. */
@@ -36,7 +39,7 @@ export class StripRequests<T> {
   private readonly fetch: FetchLike;
   /** Las tiras con una petición en camino. */
   private readonly inFlight = new Map<string, InFlight<T>>();
-  private readonly listeners = new Set<() => void>();
+  private readonly listeners = new Set<QueueListener>();
 
   /**
    * `resource` es el final de la ruta (`/api/strips/{stripId}/<resource>`) y `bodyOf`, el cuerpo de
@@ -68,7 +71,7 @@ export class StripRequests<T> {
   }
 
   /** Avisa a `listener` cada vez que una tira se queda sin envíos. Devuelve cómo dejar de oír. */
-  subscribe(listener: () => void): () => void {
+  subscribe(listener: QueueListener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
@@ -93,7 +96,7 @@ export class StripRequests<T> {
           this.put(stripId, pending);
           return;
         }
-        for (const listener of this.listeners) listener();
+        for (const listener of this.listeners) listener(stripId, applied);
       });
   }
 }
