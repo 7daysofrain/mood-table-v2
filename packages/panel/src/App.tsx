@@ -88,6 +88,9 @@ export function App({
   const sourceLost = useSyncExternalStore(subscribe, () => connection.sourceLost);
   const strips = useSyncExternalStore(subscribe, () => connection.strips);
   const selected = strips?.find((strip) => strip.id === selectedId) ?? strips?.[0];
+  // La que se selecciona sola (la primera al abrir, o al faltar la elegida) también se guarda: si no,
+  // con las tiras en otro orden al volver, quedaría seleccionada otra. Sin tiras no se toca.
+  if (selected && selected.id !== selectedId) setSelectedId(selected.id);
 
   return (
     <PanelLayout

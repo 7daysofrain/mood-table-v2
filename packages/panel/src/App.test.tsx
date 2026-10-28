@@ -393,6 +393,19 @@ describe('las zonas Tiras y Efectos', () => {
     expect(strip('Cabina')).toBeChecked();
   });
 
+  it('la tira seleccionada al abrir, sin pulsarla, sigue seleccionada aunque vuelvan en otro orden', () => {
+    const panel = panelWithStrips();
+    panel.disconnect();
+
+    act(() => {
+      panel.setStatus('connected');
+      panel.setStrips([CABINA, BARRA]);
+    });
+
+    expect(strip('Barra')).toBeChecked();
+    expect(effect('Energía')).toHaveAttribute('aria-current', 'true');
+  });
+
   it('tras reiniciar el motor, marca el efecto que pinta el motor, no el que tenía antes', () => {
     const panel = panelWithStrips();
     act(() => {
