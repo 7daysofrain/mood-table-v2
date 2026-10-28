@@ -8,6 +8,7 @@ import {
   type GitHubReader,
   type Notifier,
   type ReviewReader,
+  type ReviewRequests,
 } from './ports.ts';
 import type { Check, OpenPullRequest, Review } from './pull-request.ts';
 
@@ -39,6 +40,10 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     checks: {} as Record<string, Check[]>,
     /** La revisión de cada PR. */
     reviews: {} as Record<number, Review>,
+    /** Las peticiones de revisión del sistema, en orden, que quedan en GitHub aunque se reinicie. */
+    requests: [] as { number: number; sha: string }[],
+    /** Las veces que se ha leído si el sistema ya ha pedido la revisión de un push. */
+    requestedReads: [] as { number: number; sha: string }[],
     failure: undefined as Error | undefined,
     /** Si falla solo la lectura de las comprobaciones. */
     checksFailure: undefined as Error | undefined,
@@ -60,7 +65,17 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     },
   };
   const reviewer: ReviewReader = { review: (number) => read(github.reviews[number] ?? null) };
-  return { github, reader, reviewer };
+  const reviewRequests: ReviewRequests = {
+    requested(number, sha) {
+      github.requestedReads.push({ number, sha });
+      return read(github.requests.some((r) => r.number === number && r.sha === sha));
+    },
+    request(number, sha) {
+      github.requests.push({ number, sha });
+      return Promise.resolve();
+    },
+  };
+  return { github, reader, reviewer, reviewRequests };
 }
 
 /** Notifier falso: guarda los avisos que publica, o falla mientras `failing` esté a true. */
@@ -77,24 +92,31 @@ function fakeNotifier() {
 }
 
 function setup(pullRequests: OpenPullRequest[] = []) {
-  const { github, reader, reviewer } = fakeGitHub(pullRequests);
+  const { github, reader, reviewer, reviewRequests } = fakeGitHub(pullRequests);
   const { notifier, port } = fakeNotifier();
   const log: string[] = [];
-  const driver = createDriver({
-    github: reader,
-    reviewer,
-    notifier: port,
-    checkpointer: new MemorySaver(),
-    policy: { maintainer: MAINTAINER, baseBranch: 'main' },
-    timeoutMs: 30 * MINUTE,
-    log: (line) => log.push(line),
-  });
+  const newDriver = () =>
+    createDriver({
+      github: reader,
+      reviewer,
+      reviewRequests,
+      notifier: port,
+      checkpointer: new MemorySaver(),
+      policy: { maintainer: MAINTAINER, baseBranch: 'main' },
+      timeoutMs: 30 * MINUTE,
+      log: (line) => log.push(line),
+    });
+  let driver = newDriver();
   let now = 0;
   const tick = async () => {
     await driver.tick(now);
     now += MINUTE;
   };
-  return { github, notifier, log, tick };
+  /** Un driver nuevo sobre el mismo GitHub, sin nada en memoria: como tras un reinicio. */
+  const restart = () => {
+    driver = newDriver();
+  };
+  return { github, notifier, log, tick, restart };
 }
 
 /**
@@ -780,5 +802,66 @@ describe('una PR detenida que se cierra', () => {
     github.pullRequests = [pullRequest(74)];
     await tick();
     expect(summary(notifier.notices).at(-1)).toEqual([74, 'tracking']);
+  });
+});
+
+describe('el sistema pide la revisión cuando pasan las comprobaciones del último push', () => {
+  it('lee en cada foto si el sistema ya ha pedido la revisión del último push', async () => {
+    const { github, tick } = setup([pullRequest(74)]);
+
+    await tick();
+
+    expect(github.requestedReads).toEqual([{ number: 74, sha: 'sha-74' }]);
+  });
+
+  it('la pide una vez cuando pasan', async () => {
+    const { github, tick } = setup([pullRequest(74)]);
+    await tick();
+
+    github.checks['sha-74'] = PASSED;
+    await ticks(tick, 3);
+
+    expect(github.requests).toEqual([{ number: 74, sha: 'sha-74' }]);
+  });
+
+  it('un borrador que pasa a lista para revisar con las comprobaciones en verde la pide', async () => {
+    const { github, tick } = setup([pullRequest(74, { draft: true })]);
+    github.checks['sha-74'] = PASSED;
+    await tick();
+    expect(github.requests).toEqual([]);
+
+    github.pullRequests = [pullRequest(74)];
+    await tick();
+
+    expect(github.requests).toEqual([{ number: 74, sha: 'sha-74' }]);
+  });
+
+  it('una PR detenida no la pide', async () => {
+    const { github, tick } = setup([stoppedPullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+
+    await ticks(tick, 3);
+
+    expect(github.requests).toEqual([]);
+  });
+});
+
+describe('el sistema no pide dos veces la revisión del mismo push', () => {
+  it('tras un reinicio, con su petición del último push en GitHub, no la vuelve a pedir', async () => {
+    const { github, notifier, tick, restart } = setup([pullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+    await ticks(tick, 2);
+    expect(github.requests).toHaveLength(1);
+
+    restart();
+    await ticks(tick, 2);
+
+    expect(github.requests).toEqual([{ number: 74, sha: 'sha-74' }]);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+      [74, 'tracking'],
+      [74, 'checksFinished'],
+    ]);
   });
 });

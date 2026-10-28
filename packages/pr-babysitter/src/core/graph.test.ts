@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
 import type { Notice } from './notice.ts';
-import type { Notifier } from './ports.ts';
+import { GitHubRequestRejectedError, type Notifier, type ReviewRequests } from './ports.ts';
 import type { Check, PullRequestSnapshot, Review } from './pull-request.ts';
 
 const MINUTE = 60_000;
@@ -47,6 +47,28 @@ function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}) 
   } satisfies PullRequestSnapshot;
 }
 
+/** Las peticiones de revisión que hace el grafo, o el error con que falla mientras se le dé. */
+function recordingRequests() {
+  const recorded = { requests: [] as { number: number; sha: string }[], failure: undefined as Error | undefined };
+  const reviewRequests: ReviewRequests = {
+    requested: () => Promise.resolve(false),
+    request(number, sha) {
+      if (recorded.failure) return Promise.reject(recorded.failure);
+      recorded.requests.push({ number, sha });
+      return Promise.resolve();
+    },
+  };
+  return { reviewRequests, recorded };
+}
+
+/** El grafo con un `Notifier` dado, sin fallos al pedir la revisión y con el tiempo de espera de 30 min. */
+function trackingGraph(notifier: Notifier, reviewRequests = recordingRequests().reviewRequests) {
+  return createTrackingGraph({ notifier, reviewRequests }, new MemorySaver(), {
+    timeoutMs: 30 * MINUTE,
+    log: () => undefined,
+  });
+}
+
 function recordingNotifier() {
   const notices: Notice[] = [];
   const notifier: Notifier = {
@@ -61,14 +83,15 @@ function recordingNotifier() {
 /** Un hilo que arranca con la primera foto y se reanuda con cada una de las demás, en orden. */
 async function follow(...snapshots: PullRequestSnapshot[]) {
   const { notifier, notices } = recordingNotifier();
-  const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: 30 * MINUTE });
+  const { reviewRequests, recorded } = recordingRequests();
+  const graph = trackingGraph(notifier, reviewRequests);
   const [first, ...rest] = snapshots;
   await graph.invoke({ snapshot: first! }, threadConfig(74));
   for (const next of rest) {
     await graph.invoke(new Command({ resume: next }), threadConfig(74));
   }
   const state = await graph.getState(threadConfig(74));
-  return { notices, state };
+  return { notices, requests: recorded.requests, state };
 }
 
 /** Los avisos en corto: su tipo y, el del estado final, con el estado. */
@@ -103,7 +126,7 @@ describe('el hilo de una PR', () => {
 
   it('cada PR tiene su propio hilo', async () => {
     const { notifier, notices } = recordingNotifier();
-    const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: 30 * MINUTE });
+    const graph = trackingGraph(notifier);
 
     await graph.invoke({ snapshot: snapshot(0) }, threadConfig(74));
     await graph.invoke({ snapshot: snapshot(0, { number: 75 }) }, threadConfig(75));
@@ -278,7 +301,7 @@ describe('un push nuevo', () => {
 describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', () => {
   it('no avisa y se queda esperando las comprobaciones', async () => {
     const { notifier, notices } = recordingNotifier();
-    const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: 30 * MINUTE });
+    const graph = trackingGraph(notifier);
 
     await graph.invoke({ snapshot: snapshot(0), silent: true }, threadConfig(74));
 
@@ -289,7 +312,7 @@ describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', (
 
   it('en un hilo terminado, sigue el push de su foto y el tiempo cuenta desde ella', async () => {
     const { notifier, notices } = recordingNotifier();
-    const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: 30 * MINUTE });
+    const graph = trackingGraph(notifier);
     const config = threadConfig(74);
     await graph.invoke({ snapshot: snapshot(0) }, config);
     await graph.invoke(new Command({ resume: snapshot(29) }), config);
@@ -311,7 +334,7 @@ describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', (
 
   it('la ejecución siguiente que empieza con aviso vuelve a avisar', async () => {
     const { notifier, notices } = recordingNotifier();
-    const graph = createTrackingGraph(notifier, new MemorySaver(), { timeoutMs: 30 * MINUTE });
+    const graph = trackingGraph(notifier);
     const config = threadConfig(74);
     await graph.invoke({ snapshot: snapshot(0), silent: true }, config);
     await graph.invoke(new Command({ resume: snapshot(30) }), config);
@@ -325,5 +348,121 @@ describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', (
       },
       'tracking',
     ]);
+  });
+});
+
+describe('el sistema pide la revisión cuando pasan las comprobaciones del último push', () => {
+  it('avisa de que han terminado, la pide una sola vez para ese push y espera al revisor', async () => {
+    const { notices, requests, state } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: PASSED }),
+      snapshot(6, { checks: PASSED }),
+      snapshot(7, { checks: PASSED, review: running() }),
+    );
+
+    expect(summary(notices)).toEqual(['tracking', 'checksFinished']);
+    expect(requests).toEqual([{ number: 74, sha: HEAD }]);
+    expect(state.next).toEqual(['esperarRevisor']);
+  });
+
+  it('no la pide mientras alguna comprobación no ha terminado', async () => {
+    const { requests } = await follow(snapshot(0), snapshot(5));
+
+    expect(requests).toEqual([]);
+  });
+
+  it('no la pide si alguna comprobación falla', async () => {
+    const { requests } = await follow(snapshot(0), snapshot(5, { checks: FAILED }));
+
+    expect(requests).toEqual([]);
+  });
+
+  it('tras un push nuevo, la pide para ese push cuando pasan sus comprobaciones', async () => {
+    const { requests } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: PASSED }),
+      snapshot(8, { headSha: 'nuevo' }),
+      snapshot(14, { headSha: 'nuevo', checks: PASSED }),
+    );
+
+    expect(requests).toEqual([
+      { number: 74, sha: HEAD },
+      { number: 74, sha: 'nuevo' },
+    ]);
+  });
+});
+
+describe('el sistema no pide dos veces la revisión del mismo push', () => {
+  it('si el revisor ya está revisando el último push, espera sin pedirla', async () => {
+    const { requests, state } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: PASSED, review: running() }),
+    );
+
+    expect(requests).toEqual([]);
+    expect(state.next).toEqual(['esperarRevisor']);
+  });
+
+  it('si el revisor ya ha revisado el último push, no la pide', async () => {
+    const { requests } = await follow(snapshot(0), snapshot(5, { checks: PASSED, review: reviewed() }));
+
+    expect(requests).toEqual([]);
+  });
+
+  it('si el sistema ya la había pedido para el último push, espera sin pedirla', async () => {
+    const { requests, state } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: PASSED, reviewRequested: true }),
+    );
+
+    expect(requests).toEqual([]);
+    expect(state.next).toEqual(['esperarRevisor']);
+  });
+});
+
+describe('si GitHub no acepta la petición de revisión', () => {
+  it('si la rechaza, lo deja en el log y espera; a los 30 min avisa de que la revisión no ha terminado', async () => {
+    const { notifier, notices } = recordingNotifier();
+    const { reviewRequests, recorded } = recordingRequests();
+    recorded.failure = new GitHubRequestRejectedError('Resource not accessible by personal access token');
+    const log: string[] = [];
+    const graph = createTrackingGraph({ notifier, reviewRequests }, new MemorySaver(), {
+      timeoutMs: 30 * MINUTE,
+      log: (line) => log.push(line),
+    });
+    const config = threadConfig(74);
+
+    await graph.invoke({ snapshot: snapshot(0) }, config);
+    await graph.invoke(new Command({ resume: snapshot(5, { checks: PASSED }) }), config);
+    expect((await graph.getState(config)).next).toEqual(['esperarRevisor']);
+    expect(log).toEqual([expect.stringContaining('#74')]);
+    await graph.invoke(new Command({ resume: snapshot(34, { checks: PASSED }) }), config);
+    await graph.invoke(new Command({ resume: snapshot(35, { checks: PASSED }) }), config);
+
+    expect(summary(notices)).toEqual([
+      'tracking',
+      'checksFinished',
+      { status: 'needsIntervention', reasons: [{ kind: 'reviewUnfinished' }] },
+    ]);
+  });
+
+  it('si falla por la red, el nodo queda pendiente y se reintenta', async () => {
+    const { notifier } = recordingNotifier();
+    const { reviewRequests, recorded } = recordingRequests();
+    recorded.failure = new Error('fetch failed');
+    const graph = trackingGraph(notifier, reviewRequests);
+    const config = threadConfig(74);
+    await graph.invoke({ snapshot: snapshot(0) }, config);
+
+    await expect(
+      graph.invoke(new Command({ resume: snapshot(5, { checks: PASSED }) }), config),
+    ).rejects.toThrow('fetch failed');
+    expect((await graph.getState(config)).next).toEqual(['pedirRevision']);
+
+    recorded.failure = undefined;
+    await graph.invoke(null, config);
+
+    expect(recorded.requests).toEqual([{ number: 74, sha: HEAD }]);
+    expect((await graph.getState(config)).next).toEqual(['esperarRevisor']);
   });
 });

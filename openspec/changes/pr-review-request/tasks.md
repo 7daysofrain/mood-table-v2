@@ -57,7 +57,7 @@
   `createComment` en `adapters/github.ts` y el adaptador de la petición en
   `adapters/codex-review.ts`.
   Verificar: los tests de 1.6 en verde, y los que ya había de los dos adaptadores.
-- [ ] 1.8 **(test en rojo)** El grafo y el driver, un `describe` por requisito de `specs/pr-tracking`
+- [x] 1.8 **(test en rojo)** El grafo y el driver, un `describe` por requisito de `specs/pr-tracking`
   que toca esta sección:
   - `core/graph.test.ts`: con las comprobaciones pasadas, avisa de que han terminado, pide la
     revisión una vez y espera al revisor; con el bloque del revisor en el último push o
