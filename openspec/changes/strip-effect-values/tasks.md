@@ -70,7 +70,7 @@
   tiras (`stripsMessage` en `engine.ts`) lleva los valores de cada ranura.
   Verificar: los tests de 2.3 pasan, los del bucle siguen en verde y `pnpm lint` no da errores de
   fronteras.
-- [ ] 2.5 **(test en rojo)** Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con
+- [x] 2.5 **(test en rojo)** Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con
   `inject` y un búfer real: `PUT /api/strips/{stripId}/values` responde `200` con la tira y sus
   valores; `400` con `{ message }` para un periodo fuera de rango, un campo de más y los valores de la
   respiración en una tira con energía; `404` con la tira en el mensaje; la respuesta `200` del cambio
