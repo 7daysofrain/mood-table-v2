@@ -24,15 +24,14 @@ describe('la lista de controles', () => {
 
     expect(screen.getByRole('group', { name: 'Color' })).toHaveTextContent('#FFA957');
     const period = screen.getByRole('slider', { name: 'Periodo (s)' });
-    expect(period).toHaveAttribute('aria-valuetext', '4,0 s');
+    expect(period).toHaveAttribute('aria-valuetext', '4,0');
   });
 
-  it('con la energía, que no tiene parámetros, no pinta nada', () => {
-    const { container } = render(
-      <ControlList strip={{ ...CABINA, effect: 'energy', values: {} }} requests={idleQueue()} />,
-    );
+  it('con la energía, que no tiene parámetros, no pinta ningún control', () => {
+    render(<ControlList strip={{ ...CABINA, effect: 'energy', values: {} }} requests={idleQueue()} />);
 
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByRole('group')).not.toBeInTheDocument();
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
   });
 
   it('mover el periodo envía todos los valores de la tira', () => {

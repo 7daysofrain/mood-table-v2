@@ -115,7 +115,7 @@
   si el motor no aplica el valor, vuelve al que pinta; sin conexión, solo el título
   (`specs/instrument-control`, decisión 2).
   Verificar: los tests nuevos fallan porque la zona está vacía.
-- [ ] 3.6 La zona Controles con el `Slider` y el `ColorPicker` de Mantine, la unión en `App.tsx` y su
+- [x] 3.6 La zona Controles con el `Slider` y el `ColorPicker` de Mantine, la unión en `App.tsx` y su
   hueco en `PanelLayout.tsx`.
   Verificar: los tests de 3.5 pasan, los de `PanelLayout` y `panel-layout` siguen en verde, y con
   `pnpm dev` se mueve el periodo de la tira de la demo desde el panel.

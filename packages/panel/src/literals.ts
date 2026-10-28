@@ -36,6 +36,14 @@ export const STRIP_LIST_LABEL = 'Tiras declaradas';
 /** El nombre accesible de la lista de efectos. */
 export const EFFECT_LIST_LABEL = 'Efectos de la tira seleccionada';
 
+/** Los nombres accesibles de las partes del selector de color. */
+export const CONTROL_LABELS = { saturation: 'Saturación y brillo', hue: 'Tono' } as const;
+
+/** El valor de un slider, con un decimal y coma: «4,0». La unidad va en el nombre del parámetro. */
+export function formatValue(value: number): string {
+  return value.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
 /** «1 LED», «60 LEDs». */
 export function ledCountLabel(ledCount: number): string {
   return ledCount === 1 ? '1 LED' : `${ledCount} LEDs`;

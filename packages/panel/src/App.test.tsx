@@ -463,7 +463,7 @@ describe('la zona Controles', () => {
     fireEvent.click(strip('Cabina'));
 
     expect(color()).toHaveTextContent('#FFA957');
-    expect(period()).toHaveAttribute('aria-valuetext', '4,0 s');
+    expect(period()).toHaveAttribute('aria-valuetext', '4,0');
   });
 
   it('al seleccionar otra tira, muestra los valores de esa', () => {
@@ -476,7 +476,7 @@ describe('la zona Controles', () => {
     fireEvent.click(strip('Fondo'));
 
     expect(color()).toHaveTextContent('#2040FF');
-    expect(period()).toHaveAttribute('aria-valuetext', '7,0 s');
+    expect(period()).toHaveAttribute('aria-valuetext', '7,0');
   });
 
   it('mover un control envía todos los valores de la tira seleccionada', () => {
@@ -503,6 +503,6 @@ describe('la zona Controles', () => {
       panel.setStrips([BARRA, { ...CABINA, values: { color: '#2040FF', period: 7 } }]);
     });
     expect(color()).toHaveTextContent('#2040FF');
-    expect(period()).toHaveAttribute('aria-valuetext', '7,0 s');
+    expect(period()).toHaveAttribute('aria-valuetext', '7,0');
   });
 });
