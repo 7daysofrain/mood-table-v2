@@ -1178,6 +1178,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *SonarQube marcó un `await` dentro de un bucle, en la cola de avisos. El orden era intencionado; la IA lo reescribió como una función recursiva en lugar de pedir al humano que aceptara la incidencia.*
 - *El humano pidió esperar a que Codex no tuviera más hallazgos antes de reconstruir el contenedor con el arreglo.*
 
+#### 6.32 Ver en LangSmith las ejecuciones del grafo del PR Babysitter (`MOO-92`)
+
+**Prompt 1:**
+
+> /opsx:explore MOO-92
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La chore dejaba abiertas varias decisiones, y la exploración las planteó de una en una, con recomendación. Leyendo el código de LangGraph.js, la IA vio que bastaban variables de entorno: `langsmith` ya viene con `@langchain/core`, y LangGraph copia el `thread_id` (el número de la PR) a la metadata, así que cada PR saldría como un hilo. También avisó de un riesgo que el ticket no tenía: el driver genera una traza por PR y por minuto mientras espera, cerca del cupo gratuito. El humano decidió adelantar las trazas antes de BH2, con la D76, y aceptar que la foto de cada PR, toda pública en GitHub, salga a LangSmith.*
+
+**Prompt 2** (tras la comparación de LangSmith y Langfuse):
+
+> vamos con LangSmith por ahora para ir rapido pero mete un spike en linear para estudiar migrar a LangFuse mas adelante cuando ya no tengamos al presion de la entrega
+
+*La IA recomendó LangSmith porque Langfuse obliga a tocar el núcleo para agrupar por PR y, alojado en casa, son seis servicios más. El humano lo aceptó por rapidez, sin cerrar la puerta: la IA creó el spike `MOO-100`. Con el cupo comprobado (5.000 trazas al mes y corte sin coste mientras no haya tarjeta), el humano eligió tenerlas siempre encendidas en el contenedor de casa, en lugar de muestrear o encenderlas solo al depurar.*
+
+**Prompt 3** (cuando la IA propuso esperar a las trazas pendientes al parar el contenedor):
+
+> No, aceptar pérdida
+
+*La IA recomendaba unas líneas en `main.ts` para no perder las últimas trazas en cada `docker compose down`. El humano prefirió que la chore no tocara código: perderlas solo afecta a la depuración, y los avisos ya están en Linear. Con las cinco decisiones, la IA reescribió el plan de `MOO-92` y, a petición del humano, la implementó en una sesión aparte, en su propio worktree: `.env.example`, README §2.4 y §2.5 y la D76.*
+
+*Ajustes:*
+- *La IA confirmó con Context7 los nombres de las variables y añadió, como comentario en `.env.example`, `LANGSMITH_ENDPOINT` para las cuentas de la región UE, que el plan no tenía.*
+- *El README decía que Studio no envía trazas a LangSmith. Con las trazas en el `.env`, la IA comprobó en el código del CLI que `langgraphjs dev` solo lee el fichero que nombra `langgraph.json`, y este no nombra ninguno: la frase sigue siendo cierta, y el README ya dice por qué.*
+- *Antes de escribir la D76, comprobó que la última decisión en `main` era la D75.*
+
 ---
 
 ### 7. Pull Requests
