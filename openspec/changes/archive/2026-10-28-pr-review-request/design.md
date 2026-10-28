@@ -241,6 +241,26 @@ Una regla pura en `core/tracking.ts`, sobre la foto, decide si hace falta pedirl
   archiva antes (`MOO-74` bloquea `MOO-81`). Si el orden cambia, el `openspec archive` de este change
   se revisa a mano.
 
+## Las pruebas a mano, vistas en LangSmith
+
+Tras integrar las dos PR (28-oct), las trazas del contenedor (proyecto `pr-babysitter` en LangSmith,
+un hilo por PR) confirman por dónde pasó el grafo en las pruebas de 1.12 y 2.6, que se habían
+comprobado desde fuera (GitHub y los avisos de Linear):
+
+- **#92, falla `lint` (2.6):** de `esperarComprobaciones` pasa directo a `avisarEstadoFinal`, sin
+  `avisarComprobaciones` ni `pedirRevision`. La foto trae `lint` fallida, `reviewRequested` falso y la
+  revisión automática de ese push ya terminada sin hallazgos, y el motivo solo nombra `lint`.
+- **#90, reinicio (1.12):** `pedirRevision` se ejecuta una vez, con la revisión aún en el push
+  anterior. Tras el reinicio, el hilo vuelve a empezar desde `__start__`, porque no hay estado guardado
+  propio (D66), y repite «La sigo» y el aviso de comprobaciones terminadas, como acepta BE7. Su foto
+  trae a la vez `reviewRequested` cierto y la revisión de ese push en marcha: no se pidió otra vez por
+  las dos señales juntas, así que la marca sola la comprueba la lectura con el adaptador real.
+- **#88, el sistema sobre su propia PR:** `pedirRevision` una vez en `68ea335` y otra en `38f0872`, y
+  en la vuelta siguiente la foto ya trae `reviewRequested` cierto. En `5ccb86c`, la revisión
+  automática al marcarla lista se adelantó y no la pidió.
+- **#91:** igual que `5ccb86c`. Se integró antes de la vuelta del estado final, así que no hubo aviso
+  final.
+
 ## Migration Plan
 
 1. **Antes de las pruebas a mano**, el mantenedor da al PAT *Issues* y *Pull requests* en escritura
