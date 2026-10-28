@@ -47,7 +47,7 @@
 
 ## 2. MOO-106 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests de la respiración en
+- [x] 2.1 **(test en rojo)** Tests de la respiración en
   `packages/engine/src/core/effects/breathing.test.ts`: con el periodo pasando de 4 a 6 s a media
   subida, el brillo del frame siguiente no salta (diferencia de un pulso, como sin el cambio); con el
   periodo pasando de 4 a 8 s en el segundo 1, el frame del segundo 9 es igual al del segundo 1

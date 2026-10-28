@@ -80,6 +80,43 @@ describe('la respiración', () => {
     expect(frameAt(4)).toEqual(frameAt(0));
   });
 
+  describe('al cambiar el periodo en marcha', () => {
+    const PULSE = 1 / 60;
+    const color = '#FFA957';
+
+    /** La respiración pintando con una sola memoria, frame a frame, como en el bucle. */
+    function running() {
+      const out = new Uint8Array(3);
+      const memory = breathing.createMemory(strip);
+      return (time: number, period: number) => {
+        breathing.render({ time, dt: PULSE, audio: null }, { color, period }, memory, out);
+        return out.slice();
+      };
+    }
+
+    it('a media subida, el brillo del frame siguiente no salta: cambia lo que en un pulso', () => {
+      // Con 4 s, el segundo 1 es la mitad de la subida: el brillo cambia allí más deprisa.
+      const withChange = running();
+      const without = running();
+      const before = brightness(withChange(1, 4));
+      without(1, 4);
+
+      const jump = Math.abs(brightness(withChange(1 + PULSE, 6)) - before);
+      const step = Math.abs(brightness(without(1 + PULSE, 4)) - before);
+
+      expect(jump).toBeLessThanOrEqual(step);
+    });
+
+    it('sigue con el ritmo nuevo: de 4 a 8 s en el segundo 1, el frame del segundo 9 es el del 1', () => {
+      const paint = running();
+      paint(0.5, 4);
+      const atOne = paint(1, 4);
+      paint(1, 8);
+
+      expect(paint(9, 8)).toEqual(atOne);
+    });
+  });
+
   it('da los frames de referencia con una tira de 60 LEDs en 0, 1, 2 y 3 s', async () => {
     const golden = Object.fromEntries(
       [0, 1, 2, 3].map((time) => [`${time} s`, colorsOf(frameAt(time)).join(' ')]),
