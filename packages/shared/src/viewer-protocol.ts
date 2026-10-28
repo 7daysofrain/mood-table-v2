@@ -4,10 +4,10 @@
  * este mismo código. El formato, byte a byte, está en `docs/instructions/viewer-protocol.md`, que es
  * la fuente de verdad: si cambia uno, cambia el otro.
  */
-import Type, { type Static } from 'typebox';
+import Type, { type Static, type TObject } from 'typebox';
 import Value from 'typebox/value';
 
-import { EffectIdSchema } from './effects.ts';
+import { EFFECT_CATALOG, type EffectId, type EffectValues } from './effects.ts';
 
 /** Tipo del mensaje de un frame: el primer byte. Por la misma conexión viajan otros tipos. */
 export const FRAME_MESSAGE_TYPE = 1;
@@ -208,19 +208,33 @@ export const STRIPS_MESSAGE_TYPE = 6;
 const CLOSED = { additionalProperties: false } as const;
 
 /**
- * Una tira como la ve el panel: lo que muestra y su efecto activo. No reutiliza `StripConfigSchema`:
- * lo que H3 y H4 añadan al fichero no sale al panel sin decidirlo. Por eso la salida tiene su propio
+ * Lo que muestra el panel de una tira, sea cual sea su efecto. No reutiliza `StripConfigSchema`: lo
+ * que H3 y H4 añadan al fichero no sale al panel sin decidirlo. Por eso la salida tiene su propio
  * esquema, aunque hoy coincida con la del fichero: el puerto de una salida Adalight llega con H3.
  */
-export const StripStateSchema = Type.Object(
-  {
-    id: Type.String({ minLength: 1 }),
-    name: Type.String({ minLength: 1 }),
-    ledCount: Type.Integer({ minimum: 1 }),
-    output: Type.Union([Type.Object({ type: Type.Literal('virtual') }, CLOSED)]),
-    effect: EffectIdSchema,
-  },
-  CLOSED,
+const STRIP_FIELDS = {
+  id: Type.String({ minLength: 1 }),
+  name: Type.String({ minLength: 1 }),
+  ledCount: Type.Integer({ minimum: 1 }),
+  output: Type.Union([Type.Object({ type: Type.Literal('virtual') }, CLOSED)]),
+};
+
+/** Una tira como la ve el panel: lo que muestra, su efecto activo y los valores con que lo pinta. */
+export type StripState = {
+  [E in EffectId]: Static<TObject<typeof STRIP_FIELDS>> & { effect: E; values: EffectValues<E> };
+}[EffectId];
+
+/**
+ * El esquema de `StripState`: una unión discriminada por `effect`, generada del catálogo, en la que
+ * los valores de cada tira cumplen el esquema de su efecto (decisión 6 del change
+ * strip-effect-values). `Unsafe` le da su tipo, que el `map` pierde; el esquema es el mismo.
+ */
+export const StripStateSchema = Type.Unsafe<StripState>(
+  Type.Union(
+    EFFECT_CATALOG.map(({ id, paramsSchema }) =>
+      Type.Object({ ...STRIP_FIELDS, effect: Type.Literal(id), values: paramsSchema }, CLOSED),
+    ),
+  ),
 );
 
 /** Todas las tiras, en el orden del fichero: la posición es el índice de la tira en los frames. */
@@ -228,8 +242,6 @@ export const StripsMessageSchema = Type.Object(
   { strips: Type.Array(StripStateSchema, { maxItems: MAX_STRIPS }) },
   CLOSED,
 );
-
-export type StripState = Static<typeof StripStateSchema>;
 
 export type StripsMessage = Static<typeof StripsMessageSchema>;
 

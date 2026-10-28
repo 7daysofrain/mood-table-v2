@@ -5,8 +5,8 @@ import { EFFECTS } from './registry.ts';
 
 describe('el registro de efectos del motor', () => {
   it('tiene los mismos efectos que el catálogo de shared, con el mismo usesAudio', () => {
-    const registered = EFFECTS.map(({ id, usesAudio }) => ({ id, usesAudio }));
+    const fields = ({ id, usesAudio }: { id: string; usesAudio: boolean }) => ({ id, usesAudio });
 
-    expect(registered).toEqual(EFFECT_CATALOG);
+    expect(EFFECTS.map(fields)).toEqual(EFFECT_CATALOG.map(fields));
   });
 });

@@ -9,13 +9,15 @@
 > de fuente y de nivel: change `virtual-strip-audio-file`, `design.md` decisión 5 (`MOO-20`). El de
 > posición del fichero: change `panel-audio-playback`, `design.md` decisión 2 (`MOO-56`). El de estado
 > de la fuente: change `soundcard-reconnect`, `design.md` decisión 3 (`MOO-63`). El de las tiras:
-> change `strip-effect-switch`, `design.md` decisión 3 (`MOO-101`).
+> change `strip-effect-switch`, `design.md` decisión 3 (`MOO-101`). Sus valores: change
+> `strip-effect-values`, `design.md` decisión 6 (`MOO-105`).
 
 ## Conexión
 
 - **Una sola conexión WebSocket por navegador**, en la ruta `/ws` del motor (la misma dirección que
   sirve el panel). Por ella viajan los frames de todas las tiras, la fuente de audio, su nivel, la
-  posición del fichero de audio, el estado de la tarjeta de sonido y las tiras con su efecto activo.
+  posición del fichero de audio, el estado de la tarjeta de sonido y las tiras con su efecto activo
+  y sus valores.
 - Los mensajes van en **binario**. El primer byte dice de qué tipo es el mensaje.
 - Solo van del motor al panel: el panel no envía nada por esta conexión. Lo que el panel pide hacer
   (cambiar el efecto de una tira) va por la API HTTP (decisión 2 del change `strip-effect-switch`).
@@ -131,17 +133,18 @@ Ejemplo: la tarjeta de sonido, perdida:
 
 ## Mensaje de las tiras (tipo `6`)
 
-Las tiras declaradas, con el efecto que el motor pinta en cada una. Lo recibe cada panel al
-conectarse, después del mensaje de fuente (y del de estado de la fuente, si lo hay), y todos los
-paneles conectados cada vez que cambia el efecto de una tira, venga el cambio de donde venga.
+Las tiras declaradas, con el efecto que el motor pinta en cada una y sus valores. Lo recibe cada
+panel al conectarse, después del mensaje de fuente (y del de estado de la fuente, si lo hay), y todos
+los paneles conectados cada vez que cambia el efecto o los valores de una tira, venga el cambio de
+donde venga.
 
 | Byte | Tamaño | Campo | Valor |
 |---|---|---|---|
 | 0 | 1 | Tipo de mensaje | `6` (tiras) |
 | 1… | resto | Tiras | Un objeto JSON en UTF-8 con la lista `strips` |
 
-Es el **primer mensaje JSON** del protocolo: un texto de longitud variable por tira, en un mensaje poco
-frecuente y de unos cientos de bytes. Cada tira lleva solo estos campos, y ninguno más:
+Es el **primer mensaje JSON** del protocolo: un texto de longitud variable por tira, en un mensaje de
+unos 150-200 bytes por tira. Cada tira lleva solo estos campos, y ninguno más:
 
 | Campo | Valor |
 |---|---|
@@ -150,17 +153,19 @@ frecuente y de unos cientos de bytes. Cada tira lleva solo estos campos, y ningu
 | `ledCount` | Su nº de LEDs, entero, al menos 1 |
 | `output` | Su salida: hoy solo `{ "type": "virtual" }` |
 | `effect` | El id del efecto activo, uno del catálogo: `breathing` o `energy` |
+| `values` | Los valores con que el motor pinta ese efecto: un objeto que cumple el esquema de parámetros del efecto, con todos sus campos y ninguno más. La *respiración*, `{ "color": "#RRGGBB", "period": <de 1 a 20> }`; la *energía*, `{}` |
 
-Ejemplo: una tira virtual de 60 LEDs con *energía*:
+Ejemplo: una tira virtual de 60 LEDs con la *respiración*, en blanco cálido cada 4 s:
 
 ```
-06  {"strips":[{"id":"demo","name":"Tira de prueba","ledCount":60,"output":{"type":"virtual"},"effect":"energy"}]}
+06  {"strips":[{"id":"demo","name":"Tira de prueba","ledCount":60,"output":{"type":"virtual"},"effect":"breathing","values":{"color":"#FFA957","period":4}}]}
 ```
 
 - **Siempre la foto completa**, en el orden del fichero: la posición de cada tira en la lista es su
   índice en los frames (tipo `1`). Recibirla dos veces da igual, y al reconectarse el panel recibe la
   misma que el motor está pintando.
-- El efecto es el que pinta el motor, no el del fichero: el del fichero es solo el de arranque.
+- El efecto es el que pinta el motor, no el del fichero: el del fichero es solo el de arranque. Los
+  valores, también: los que pinta el motor, no los de por defecto del efecto.
 - No lleva el resto del fichero: lo que se añada a una tira (orden de color, límites de potencia,
   puerto) no sale al panel sin decidirlo, como la ruta del fichero de audio en el tipo `2`.
 
@@ -178,4 +183,4 @@ Lo ignora, también si es de un tipo que todavía no conoce. Se rechaza:
 - un mensaje de estado de la fuente que no mide 2 bytes o cuyo estado no es `0` ni `1`;
 - un mensaje de las tiras que no es UTF-8 válido, que no es JSON o que no cumple su esquema
   (`StripsMessageSchema`): le falta un campo, tiene uno que no está en la tabla, el efecto no está en el
-  catálogo o el nº de LEDs no es un entero de 1 o más.
+  catálogo, los valores no cumplen el esquema de su efecto o el nº de LEDs no es un entero de 1 o más.

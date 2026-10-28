@@ -177,7 +177,7 @@ function apiPlugin(strips: PanelStrips | undefined) {
           params: Type.Object({ stripId: Type.String({ description: 'El `id` de la tira' }) }),
           body: SetEffectBodySchema,
           response: {
-            200: { description: 'La tira, con su efecto activo', ...SetEffectResponseSchema },
+            200: { description: 'La tira, con su efecto activo y sus valores', ...SetEffectResponseSchema },
             400: { description: 'El cuerpo no es válido o el efecto no existe', ...ApiErrorSchema },
             404: { description: 'La tira no existe', ...ApiErrorSchema },
             409: { description: 'El efecto necesita fuente de audio y no hay', ...ApiErrorSchema },

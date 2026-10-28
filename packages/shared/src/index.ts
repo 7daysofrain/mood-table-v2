@@ -11,6 +11,9 @@ export {
   type SetEffectBody,
   SetEffectBodySchema,
   SetEffectResponseSchema,
+  type SetValuesBody,
+  SetValuesBodySchema,
+  SetValuesResponseSchema,
 } from './commands.ts';
 
 export {
@@ -31,6 +34,7 @@ export {
   EnergyParamsSchema,
   type BreathingParams,
   type EffectId,
+  type EffectValues,
   type EnergyParams,
   needsAudioSource,
 } from './effects.ts';

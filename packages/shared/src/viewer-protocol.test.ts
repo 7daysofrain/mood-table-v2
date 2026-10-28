@@ -239,7 +239,7 @@ describe('el mensaje del estado de la fuente', () => {
 });
 
 describe('el mensaje de las tiras', () => {
-  /** El ejemplo de la decisión 3 del change strip-effect-switch (y de viewer-protocol.md). */
+  /** El ejemplo de la decisión 6 del change strip-effect-values (y de viewer-protocol.md). */
   const example: StripsMessage = {
     strips: [
       {
@@ -247,7 +247,8 @@ describe('el mensaje de las tiras', () => {
         name: 'Tira de prueba',
         ledCount: 60,
         output: { type: 'virtual' },
-        effect: 'energy',
+        effect: 'breathing',
+        values: { color: '#FFA957', period: 4 },
       },
     ],
   };
@@ -274,7 +275,7 @@ describe('el mensaje de las tiras', () => {
     expect(message[0]).toBe(6);
     expect(new TextDecoder().decode(message.subarray(1))).toBe(
       '{"strips":[{"id":"demo","name":"Tira de prueba","ledCount":60,' +
-        '"output":{"type":"virtual"},"effect":"energy"}]}',
+        '"output":{"type":"virtual"},"effect":"breathing","values":{"color":"#FFA957","period":4}}]}',
     );
   });
 
@@ -285,8 +286,8 @@ describe('el mensaje de las tiras', () => {
   it('con nombres con acentos, también', () => {
     const message: StripsMessage = {
       strips: [
-        { ...demo!, id: 'barra', name: 'Barra de la cabina', effect: 'breathing' },
-        { ...demo!, id: 'frontal', name: 'Frontal · señal', ledCount: 144 },
+        { ...demo!, id: 'barra', name: 'Barra de la cabina' },
+        { ...demo!, id: 'frontal', name: 'Frontal · señal', ledCount: 144, effect: 'energy', values: {} },
       ],
     };
 
@@ -310,6 +311,12 @@ describe('el mensaje de las tiras', () => {
     ['con un efecto que no está en el catálogo', stripsMessageOf(withStrip({ ...demo, effect: 'strobe' }))],
     ['con un campo que el esquema no declara', stripsMessageOf(withStrip({ ...demo, port: '/dev/ttyACM0' }))],
     ['con un nº de LEDs que no es entero', stripsMessageOf(withStrip({ ...demo, ledCount: 60.5 }))],
+    ['con una tira sin valores', stripsMessageOf(withStrip({ ...demo, values: undefined }))],
+    ['con los valores de otro efecto', stripsMessageOf(withStrip({ ...demo, effect: 'energy' }))],
+    [
+      'con un periodo fuera de rango',
+      stripsMessageOf(withStrip({ ...demo, values: { color: '#FFA957', period: 25 } })),
+    ],
   ])('%s, se rechaza', (_name, message) => {
     expect(decodeStrips(message)).toBeUndefined();
   });

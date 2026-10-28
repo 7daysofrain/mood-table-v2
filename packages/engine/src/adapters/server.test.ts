@@ -17,6 +17,7 @@ import {
   type SourceStatus,
   type StripConfig,
   type StripsMessage,
+  type StripState,
 } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -542,18 +543,18 @@ const demo: StripConfig = {
   effect: 'energy',
 };
 
+/** Los valores por defecto de cada efecto: los únicos con que pinta el motor hasta `MOO-106`. */
+const DEFAULT_VALUES = { breathing: { color: '#FFA957', period: 4 }, energy: {} } as const;
+
 /** Las tiras de `control` como las recibe el servidor: sus mandos, su foto y su aviso. */
 function panelStripsOf(strips: StripConfig[], control: ControlBuffer): PanelStrips {
   return {
     ...control,
     snapshot: () => ({
-      strips: strips.map(({ id, name, ledCount, output }, index) => ({
-        id,
-        name,
-        ledCount,
-        output,
-        effect: control.slot(index).effect,
-      })),
+      strips: strips.map(({ id, name, ledCount, output }, index) => {
+        const { effect } = control.slot(index);
+        return { id, name, ledCount, output, effect, values: DEFAULT_VALUES[effect] } as StripState;
+      }),
     }),
   };
 }
@@ -577,13 +578,17 @@ function putEffect(app: EngineApp['app'], stripId: string, body: string) {
 }
 
 describe('la API: cambiar el efecto de una tira', () => {
-  it('responde 200 con la tira y su efecto nuevo, y la tira cambia', async () => {
+  it('responde 200 con la tira, su efecto nuevo y sus valores, y la tira cambia', async () => {
     const { app, control } = await apiWith(demo, true);
 
     const response = await putEffect(app, 'demo', '{"effect":"breathing"}');
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ ...demo, effect: 'breathing' });
+    expect(response.json()).toEqual({
+      ...demo,
+      effect: 'breathing',
+      values: DEFAULT_VALUES.breathing,
+    });
     expect(control.slot(0).effect).toBe('breathing');
   });
 
@@ -593,7 +598,7 @@ describe('la API: cambiar el efecto de una tira', () => {
     const response = await putEffect(app, 'demo', '{"effect":"energy"}');
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual(demo);
+    expect(response.json()).toEqual({ ...demo, values: {} });
   });
 
   it('con una tira que no existe, responde 404 con un mensaje que la nombra', async () => {
@@ -686,7 +691,7 @@ describe('las tiras que recibe cada panel', () => {
   const second: StripConfig = { ...demo, id: 'barra', name: 'Barra', ledCount: 30 };
 
   /** El motor escuchando, con las tiras «demo» (energía) y «barra» (energía) en un búfer real. */
-  /** Lo que el mensaje cuenta de `strip`, sin su efecto. */
+  /** Lo que el mensaje cuenta de `strip`, sin su efecto ni sus valores. */
   function stateOf({ id, name, ledCount, output }: StripConfig) {
     return { id, name, ledCount, output };
   }
@@ -729,7 +734,7 @@ describe('las tiras que recibe cada panel', () => {
     expect(received.types).toEqual([2, 5, 6]);
   });
 
-  it('el mensaje lleva solo el id, el nombre, los LEDs, la salida y el efecto de cada tira', async () => {
+  it('el mensaje lleva solo el id, el nombre, los LEDs, la salida, el efecto y los valores de cada tira', async () => {
     const { url } = await startWithStrips();
 
     const received = await connectAll(url);
@@ -737,8 +742,8 @@ describe('las tiras que recibe cada panel', () => {
 
     expect(received.strips[0]).toEqual({
       strips: [
-        { ...stateOf(demo), effect: 'energy' },
-        { ...stateOf(second), effect: 'energy' },
+        { ...stateOf(demo), effect: 'energy', values: {} },
+        { ...stateOf(second), effect: 'energy', values: {} },
       ],
     });
   });
