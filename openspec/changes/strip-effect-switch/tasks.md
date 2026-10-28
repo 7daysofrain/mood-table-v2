@@ -98,7 +98,7 @@
 - [x] 2.11 `pnpm openapi` (en la raíz y en `@moodtable/engine`) monta la app con `buildServer`, sin
   escuchar, y escribe `docs/openapi.yaml`; se genera y se commitea.
   Verificar: el test de 2.10 pasa, y al cambiar a mano un esquema de la ruta vuelve a fallar.
-- [ ] 2.12 Documentación: D77-D82 en `docs/idea-mood-table.md` §10, según `design.md`, con el inciso
+- [x] 2.12 Documentación: D77-D82 en `docs/idea-mood-table.md` §10, según `design.md`, con el inciso
   de D28 sobre omitir el análisis tachado y apuntando a D79. README §2.1 (diagrama y *El motor funciona
   sin audio*), §2.2 (*Análisis de audio*, *Búfer de control*, adaptadores *API HTTP* y *Visor*) y §4
   (la ruta con un ejemplo de petición y respuesta, enlaces a `docs/openapi.yaml` y al protocolo del

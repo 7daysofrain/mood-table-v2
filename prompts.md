@@ -1241,6 +1241,27 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El `tasks.md` pedía que la respuesta de la ruta usara el esquema de la tira del mensaje, y ese esquema necesitaba la salida de la tira, que está en `config.ts`. Importarla creaba un ciclo (`config.ts` ya importa `MAX_STRIPS` del protocolo). La IA le dio al mensaje su propio esquema de salida, que es también lo que pide la decisión 3: lo que H3 añada a la salida del fichero (el puerto) no sale al panel sin decidirlo. `EffectIdSchema` pasó a `effects.ts`, junto al catálogo del que sale.*
 - *Quitó de `viewer-protocol.md` un enlace a `docs/openapi.yaml`: el fichero llega con `MOO-102` y en esta PR estaría roto.*
 
+**Prompt 2** (con la PR #83 en revisión):
+
+> ha fallado, echa un vistazo
+
+*Fallaba `sonar-issues`: una incidencia nueva de SonarQube (S7763) en `commands.ts`, donde el esquema de la respuesta era una constante que solo copiaba el de la tira. La IA la comprobó contra el código, la arregló con `export … from` sin cambiar el comportamiento y, como la revisión automática de Codex no salta con los pushes, se la pidió con un comentario para el último commit.*
+
+#### 6.35 Cambiar el efecto de una tira por la API y avisar a los paneles (`MOO-102`)
+
+**Prompt 1** (con la PR de `MOO-101` integrada):
+
+> mergeado, sigue
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA implementó la sección `MOO-102` del change con un commit por paso, en TDD: el búfer de control en el núcleo, el bucle que lee de él la ranura de cada tira y analiza el audio siempre que hay fuente, la ruta `PUT /api/strips/{stripId}/effect` con su OpenAPI, el mensaje `6` a todos los paneles y `docs/openapi.yaml` con su test. Consultó en Context7 cómo se montan `@fastify/swagger` y el *type provider* de TypeBox, y lo probó con `pnpm dev`: un `curl` cambia la tira en el visor, y el ejemplo del README §4 da la respuesta documentada.*
+
+*Ajustes:*
+- *Antes de instalar nada, la IA vio en npm que el change se equivocaba de versión: el *type provider* 5.x pide el TypeBox anterior a la 1.x, y la que admite `typebox` 1.x es la 6.x. Lo corrigió en el change con un commit propio, antes del paso de las dependencias.*
+- *Fastify valida con AJV y `removeAdditional`, que quitaría en silencio un campo de más del cuerpo que el esquema de `shared` rechaza. La ruta valida con TypeBox, en un plugin propio, con su propia forma de responder los `400`.*
+- *El paso en rojo del bucle hizo fallar todos sus tests, no solo los nuevos, porque cambiaba la firma de `createFrameLoop`. El `tasks.md` esperaba los frames dorados en verde; lo que cuenta es que el fichero dorado no se tocó y volvió a pasar sin regenerarlo. Lo dice el commit.*
+- *Comprobó a mano que el test del OpenAPI falla al cambiar un esquema de la ruta y dice cómo regenerarlo.*
+- *Al separar `buildServer` de `startServer`, si el motor no puede escuchar, ahora cierra la app antes de dar el error.*
+
 ---
 
 ### 7. Pull Requests
