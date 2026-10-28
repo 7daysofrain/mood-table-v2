@@ -1203,6 +1203,44 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El README decía que Studio no envía trazas a LangSmith. Con las trazas en el `.env`, la IA comprobó en el código del CLI que `langgraphjs dev` solo lee el fichero que nombra `langgraph.json`, y este no nombra ninguno: la frase sigue siendo cierta, y el README ya dice por qué.*
 - *Antes de escribir la D76, comprobó que la última decisión en `main` era la D75.*
 
+#### 6.33 Cambiar el efecto de una tira: exploración y change (`MOO-94`)
+
+**Prompt 1** (en `/opsx:explore MOO-94`, cuando la IA proponía la ruta HTTP del cambio de efecto):
+
+> Aqui tengo una duda, no tendria sentido trasladar este API al websocket? Asi tenemos una via unica de comunicacion. Ahora mismo tenemos WS para el stream y API Rest para el control. No me parece que tenga mucho sentido partir el API en 2
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La exploración fue punto por punto, con una recomendación por punto. La IA no dio la razón al humano: el reparto no son dos APIs, sino dos direcciones. Un mando necesita respuesta (se aplicó, la tira no existe, no hay fuente), y por el WebSocket habría que reinventarla; además, el README §4 de la entrega pide OpenAPI. Pero vio que la intuición señalaba una incoherencia real: el panel leería la fuente por el WebSocket y las tiras por un `GET`. Propuso leer todo el estado por el WebSocket (un mensaje nuevo, el tipo `6`) y mandar solo por HTTP. El humano lo aceptó con un argumento propio: un cambio que no venga de la API también se vería en el panel. De ahí salió que el aviso lo dé el búfer de control y no la ruta (D77, D78).*
+
+**Prompt 2** (sobre qué ve el DJ mientras el cambio viaja al motor):
+
+> vamos a ver, aqui buscamos que se comporte como un instrumento. Que vaya rapido es clave porque el DJ puede querer sincronizar "a mano" un efecto con un golpe de musica, asi que distraer lo minimo posible, no colocar ningun spiner ni nada del estilo
+
+*La IA ya proponía no poner indicadores, pero el enfoque del humano añadió dos cosas que no había pensado: disparar el cambio al pulsar (`pointerdown`), porque el `click` llega entre 50 y 150 ms tarde, y ponerle un número. Usó el de E1 (≤ 100 ms), el único con fuente, y avisó de que es el umbral de una interfaz, no el de un músico (20-30 ms), con el presupuesto de la cadena: el visor entra con margen, y lo que pesa es Adalight, que es de H3. Al mirarlo encontró un problema que nadie había pedido: el navegador puede enviar dos `PUT` en paralelo y el motor recibirlos en otro orden. Por eso el panel tiene como mucho uno en camino y guarda la última elección (D82).*
+
+**Prompt 3** (cuando la IA propuso dónde viven los nombres de los efectos):
+
+> Me gusta que tenga i18n pero ahora no es prioridad, separemos los literales en la medida de lo posible para hacer esto mas adelante, pero que no sea un stopper. De todas maneras el interface deberia de ir en ingles
+
+*La IA separó las dos cosas. Los literales, a un módulo sin librería de i18n. El inglés lo paró: el panel entero está en castellano y las specs, los E2E y el README dependen de sus textos, así que cambiarlo en esta historia dejaría el panel mezclado o metería dos tareas en una PR. Pidió el porqué para el D# («alcance»), y el humano decidió dejarlo fuera de la entrega: la IA creó `MOO-104`, con prioridad *Low*. Con las nueve decisiones, `/opsx:propose MOO-94` escribió el change `strip-effect-switch`, con D77-D82 y una sección por tarea: `MOO-101` (shared), `MOO-102` (engine) y `MOO-103` (panel).*
+
+*Ajustes:*
+- *Analizar el audio siempre que hay fuente contradecía D28 («se omite si ninguna tira lo usa») y el README. La IA lo señaló antes de proponer: la D79 matiza D28 sin borrarla.*
+- *El change dejó escrito un límite conocido en lugar de esconderlo: al elegir energía en marcha, la tira tarda hasta 2 s en ajustarse.*
+- *Al actualizar la rama de la historia con `main`, la IA vio que la D76 ya existía y corrigió la línea del diseño que la daba por reservada.*
+- *Al rellenar en Linear los enlaces al change, vio que `MOO-102` aún prometía «listar» tiras por la API, y la corrigió cuando el humano se lo pidió.*
+
+#### 6.34 El contrato de tiras y efectos en `shared` (`MOO-101`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-94
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA implementó la sección `MOO-101` del change con un commit por paso, en TDD: el mensaje de las tiras (tipo `6`, el primero del protocolo con JSON detrás del byte de tipo, validado con su esquema al decodificar), una sola regla de qué efectos necesitan fuente de audio, que ya usa el fichero de configuración, y los esquemas de la ruta del cambio de efecto. Sacó los prompts literales de la exploración de la transcripción de esa sesión.*
+
+*Ajustes:*
+- *El `tasks.md` pedía que la respuesta de la ruta usara el esquema de la tira del mensaje, y ese esquema necesitaba la salida de la tira, que está en `config.ts`. Importarla creaba un ciclo (`config.ts` ya importa `MAX_STRIPS` del protocolo). La IA le dio al mensaje su propio esquema de salida, que es también lo que pide la decisión 3: lo que H3 añada a la salida del fichero (el puerto) no sale al panel sin decidirlo. `EffectIdSchema` pasó a `effects.ts`, junto al catálogo del que sale.*
+- *Quitó de `viewer-protocol.md` un enlace a `docs/openapi.yaml`: el fichero llega con `MOO-102` y en esta PR estaría roto.*
+
 ---
 
 ### 7. Pull Requests

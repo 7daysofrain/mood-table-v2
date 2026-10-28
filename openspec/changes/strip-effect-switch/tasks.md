@@ -37,7 +37,7 @@
   `Value.Check` que aceptan el ejemplo de `design.md` (decisión 6) y rechazan un efecto que no existe y
   un cuerpo con campos de más.
   Verificar: `pnpm test` y `pnpm typecheck` en verde.
-- [ ] 1.6 `prompts.md`: la entrada de la exploración y la propuesta del change (las decisiones de
+- [x] 1.6 `prompts.md`: la entrada de la exploración y la propuesta del change (las decisiones de
   `design.md` y cómo se llegó a ellas) y la de esta tarea.
   Verificar: sigue el formato de `docs/instructions/course.md` §5.
 
