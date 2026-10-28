@@ -125,7 +125,7 @@
   valor; al recargar el panel, los controles muestran esos valores (`specs/instrument-control`,
   criterios de `MOO-95`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 3.8 README §1.3 (la zona Controles, y el ejemplo del recorrido pasa de la sensibilidad al
+- [x] 3.8 README §1.3 (la zona Controles, y el ejemplo del recorrido pasa de la sensibilidad al
   periodo) y `prompts.md`. Comprobación a mano con la demo: arrastrar el periodo a media respiración
   no da un salto de brillo, anotado en la PR.
   Verificar: lo que describe el README coincide con lo que muestra el panel.
