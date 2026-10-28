@@ -43,7 +43,7 @@
   y `reviewRequested` en la foto (`core/pull-request.ts`), con las fotos que construyen a mano los
   tests y `src/studio.ts` en `reviewRequested: false`.
   Verificar: los tests de 1.4 en verde; `pnpm typecheck` en verde.
-- [ ] 1.6 **(test en rojo)** Los adaptadores (`design.md` decisiones 2, 3 y 6):
+- [x] 1.6 **(test en rojo)** Los adaptadores (`design.md` decisiones 2, 3 y 6):
   - `test/fixtures/github/comments-77.json`: los comentarios de la #77 (la petición de la App, la
     respuesta de Codex, la del mantenedor y su revisión), más uno con la marca escrito por otra
     cuenta y otro del mantenedor con la marca de otro SHA;

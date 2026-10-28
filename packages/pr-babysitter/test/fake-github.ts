@@ -9,8 +9,11 @@ export async function fixture(name: string): Promise<string> {
 }
 
 export interface Call {
+  method: string;
   url: string;
   authorization: string | null;
+  /** El cuerpo de la petición, vacío en las lecturas. */
+  body: string;
 }
 
 /**
@@ -21,7 +24,12 @@ export function fakeFetch(respond: () => Response | Promise<Response>) {
   const calls: Call[] = [];
   const fetch = async (input: string | URL | Request, init?: RequestInit) => {
     const request = new Request(input, init);
-    calls.push({ url: request.url, authorization: request.headers.get('authorization') });
+    calls.push({
+      method: request.method,
+      url: request.url,
+      authorization: request.headers.get('authorization'),
+      body: await request.text(),
+    });
     const response = await respond();
     Object.defineProperty(response, 'url', { value: request.url });
     return response;

@@ -9,6 +9,10 @@
  * - #67: primero un comentario de Codex sin bloque (el repo no tenía entorno) y, tras pedirla, el
  *   bloque en marcha. Sus tres primeros comentarios son la PR antes de pedir la revisión.
  * - #69: el bloque y, después, otro comentario de Codex sin bloque (el *receipt*).
+ * - #77 (grabado el 28-oct): la petición de una GitHub App, que Codex rechaza, y la del mantenedor,
+ *   sin marca, que revisa. Lleva al final dos comentarios **derivados a mano**: la petición del
+ *   sistema con la marca del último push, copiada por otra cuenta, y una del mantenedor con la marca
+ *   de otro SHA.
  * Los casos que no se han dado (un JSON que no se entiende, un bloque falso de otra cuenta) se
  * derivan de estos, a mano, en cada test.
  */
@@ -16,10 +20,11 @@ import { describe, expect, it } from 'vitest';
 
 import { fakeFetch, fixture, json } from '../../test/fake-github.ts';
 import { finalState } from '../core/tracking.ts';
-import { createCodexReviewReader } from './codex-review.ts';
+import { createCodexReviewReader, createCodexReviewRequests } from './codex-review.ts';
 import { createGitHubReader } from './github.ts';
 
 const REVIEWER = 'chatgpt-codex-connector[bot]';
+const MAINTAINER = '7daysofrain';
 
 interface RecordedComment {
   user: { login: string; type: string };
@@ -200,5 +205,111 @@ describe('solo el revisor decide el estado final', () => {
       status: 'needsIntervention',
       reasons: [{ kind: 'reviewFindings' }],
     });
+  });
+});
+
+describe('la petición de revisión', () => {
+  /** El último push de la #77, y el SHA de la marca del mantenedor derivada a mano. */
+  const HEAD_77 = 'c71a45080d5fea0ce2479b0e5b525f9e1cb85361';
+  const OTHER_77 = '3f9e2b7c41d8a6e05b1c9d2f7a4e8b6c0d5f1a23';
+
+  /** Las peticiones sobre unos comentarios leídos por el adaptador de GitHub. */
+  async function requestsOn(recorded: RecordedComment[]) {
+    const { fetch } = fakeFetch(() => json(JSON.stringify(recorded)));
+    const github = createGitHubReader({
+      owner: '7daysofrain',
+      repo: 'mood-table-v2',
+      baseBranch: 'main',
+      token: () => 'ghp_x',
+      fetch,
+    });
+    const written: { pullRequestNumber: number; body: string }[] = [];
+    const requests = createCodexReviewRequests({
+      maintainer: MAINTAINER,
+      listComments: (number) => github.listComments(number),
+      createComment: (pullRequestNumber, body) => {
+        written.push({ pullRequestNumber, body });
+        return Promise.resolve();
+      },
+    });
+    return { requests, written };
+  }
+
+  it('pide la revisión con un comentario que empieza por @codex review', async () => {
+    const { requests, written } = await requestsOn([]);
+
+    await requests.request(77, HEAD_77);
+
+    expect(written).toHaveLength(1);
+    expect(written[0]!.pullRequestNumber).toBe(77);
+    expect(written[0]!.body).toMatch(/^@codex review\n/);
+  });
+
+  it('dice que la pide el PR Babysitter, con el SHA corto, y lleva la marca con el completo', async () => {
+    const { requests, written } = await requestsOn([]);
+
+    await requests.request(77, HEAD_77);
+
+    expect(written[0]!.body).toBe(
+      '@codex review\n\n' +
+        'Lo pide el PR Babysitter: las comprobaciones de `c71a450` han pasado.\n' +
+        `<!-- pr-babysitter:review-request {"sha":"${HEAD_77}"} -->`,
+    );
+  });
+
+  it('reconoce su propia petición, escrita por el mantenedor', async () => {
+    const first = await requestsOn([]);
+    await first.requests.request(77, HEAD_77);
+    const own = { user: { login: MAINTAINER, type: 'User' }, updated_at: '', body: first.written[0]!.body };
+
+    const { requests } = await requestsOn([own]);
+
+    await expect(requests.requested(77, HEAD_77)).resolves.toBe(true);
+  });
+
+  it('cuenta la marca del mantenedor con ese SHA (#77)', async () => {
+    const { requests } = await requestsOn(await comments(77));
+
+    await expect(requests.requested(77, OTHER_77)).resolves.toBe(true);
+  });
+
+  it('no cuenta la marca de otra cuenta, ni un @codex review sin marca (#77)', async () => {
+    const { requests } = await requestsOn(await comments(77));
+
+    await expect(requests.requested(77, HEAD_77)).resolves.toBe(false);
+  });
+
+  it('no cuenta una marca con un JSON que no se entiende', async () => {
+    const broken = {
+      user: { login: MAINTAINER, type: 'User' },
+      updated_at: '',
+      body: `<!-- pr-babysitter:review-request {"sha":"${HEAD_77}" -->`,
+    };
+    const { requests } = await requestsOn([broken]);
+
+    await expect(requests.requested(77, HEAD_77)).resolves.toBe(false);
+  });
+
+  it('lee los comentarios de la PR', async () => {
+    const recorded = await comments(77);
+    const { fetch, calls } = fakeFetch(() => json(JSON.stringify(recorded)));
+    const github = createGitHubReader({
+      owner: '7daysofrain',
+      repo: 'mood-table-v2',
+      baseBranch: 'main',
+      token: () => 'ghp_x',
+      fetch,
+    });
+    const requests = createCodexReviewRequests({
+      maintainer: MAINTAINER,
+      listComments: (number) => github.listComments(number),
+      createComment: () => Promise.resolve(),
+    });
+
+    await requests.requested(77, HEAD_77);
+
+    expect(new URL(calls[0]!.url).pathname).toBe(
+      '/repos/7daysofrain/mood-table-v2/issues/77/comments',
+    );
   });
 });
