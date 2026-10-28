@@ -49,7 +49,10 @@ function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}) 
 
 /** Las peticiones de revisión que hace el grafo, o el error con que falla mientras se le dé. */
 function recordingRequests() {
-  const recorded = { requests: [] as { number: number; sha: string }[], failure: undefined as Error | undefined };
+  const recorded = {
+    requests: [] as { number: number; sha: string }[],
+    failure: undefined as Error | undefined,
+  };
   const reviewRequests: ReviewRequests = {
     requested: () => Promise.resolve(false),
     request(number, sha) {
@@ -61,7 +64,7 @@ function recordingRequests() {
   return { reviewRequests, recorded };
 }
 
-/** El grafo con un `Notifier` dado, sin fallos al pedir la revisión y con el tiempo de espera de 30 min. */
+/** El grafo con un `Notifier`, sin fallos al pedir la revisión y con 30 min de tiempo de espera. */
 function trackingGraph(notifier: Notifier, reviewRequests = recordingRequests().reviewRequests) {
   return createTrackingGraph({ notifier, reviewRequests }, new MemorySaver(), {
     timeoutMs: 30 * MINUTE,
@@ -404,7 +407,10 @@ describe('el sistema no pide dos veces la revisión del mismo push', () => {
   });
 
   it('si el revisor ya ha revisado el último push, no la pide', async () => {
-    const { requests } = await follow(snapshot(0), snapshot(5, { checks: PASSED, review: reviewed() }));
+    const { requests } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: PASSED, review: reviewed() }),
+    );
 
     expect(requests).toEqual([]);
   });
@@ -424,7 +430,7 @@ describe('si GitHub no acepta la petición de revisión', () => {
   it('si la rechaza, lo deja en el log y espera; a los 30 min avisa de que la revisión no ha terminado', async () => {
     const { notifier, notices } = recordingNotifier();
     const { reviewRequests, recorded } = recordingRequests();
-    recorded.failure = new GitHubRequestRejectedError('Resource not accessible by personal access token');
+    recorded.failure = new GitHubRequestRejectedError('Resource not accessible');
     const log: string[] = [];
     const graph = createTrackingGraph({ notifier, reviewRequests }, new MemorySaver(), {
       timeoutMs: 30 * MINUTE,

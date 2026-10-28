@@ -202,8 +202,9 @@ async function read<T>(request: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Hace una escritura. Como una lectura, un 401 es el token rechazado; otro 4xx que no sea el límite
- * de la API es una petición rechazada, que no se arregla sola (change pr-review-request, decisión 6).
+ * Hace una escritura. Como una lectura, un 401 es el token rechazado; otro 4xx que no sea el
+ * límite de la API es una petición rechazada, que no se arregla sola (change pr-review-request,
+ * decisión 6).
  */
 async function write<T>(request: () => Promise<T>): Promise<T> {
   try {
@@ -216,7 +217,7 @@ async function write<T>(request: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Un 4xx que no es el token ni el límite de la API, que GitHub da con 429 o con 403 y cabeceras. */
+/** Un 4xx que no es el token ni el límite de la API (GitHub lo da con 429, o con 403 y cabeceras). */
 function isRejection({ status, response }: RequestError): boolean {
   if (status < 400 || status >= 500 || status === 401 || status === 429) return false;
   const headers = response?.headers ?? {};

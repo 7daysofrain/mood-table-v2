@@ -29,6 +29,7 @@ import {
   type GitHubReader,
   type Notifier,
   type ReviewReader,
+  type ReviewRequests,
 } from './ports.ts';
 import {
   isStopped,
@@ -41,11 +42,16 @@ import {
 export interface DriverOptions {
   github: GitHubReader;
   reviewer: ReviewReader;
+  /** Las peticiones de revisión del sistema: si ya la ha pedido, para la foto, y pedirla. */
+  reviewRequests: ReviewRequests;
   notifier: Notifier;
   /** Donde guarda cada hilo su estado. `MemorySaver` hasta BE7 (D73). */
   checkpointer: BaseCheckpointSaver;
   policy: TrackingPolicy;
-  /** Cuánto se espera, desde que se ve un push, a comprobaciones y revisión (decisión 8). */
+  /**
+   * Cuánto se espera a las comprobaciones, desde que se ve un push, y a la revisión, desde que
+   * pasan (change pr-review-request, decisión 5).
+   */
   timeoutMs: number;
   /** Una línea por fallo, para el log de errores. */
   log: (line: string) => void;
@@ -59,13 +65,14 @@ export interface Driver {
 export function createDriver({
   github,
   reviewer,
+  reviewRequests,
   notifier,
   checkpointer,
   policy,
   timeoutMs,
   log,
 }: DriverOptions): Driver {
-  const graph = createTrackingGraph(notifier, checkpointer, { timeoutMs });
+  const graph = createTrackingGraph({ notifier, reviewRequests }, checkpointer, { timeoutMs, log });
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
   /**
@@ -276,11 +283,12 @@ export function createDriver({
         let required: Promise<string[]> | undefined;
         const snapshotOf = async (pullRequest: OpenPullRequest): Promise<PullRequestSnapshot> => {
           required ??= github.requiredChecks();
-          const [checks, review] = await Promise.all([
+          const [checks, review, reviewRequested] = await Promise.all([
             required.then((names) => github.checks(pullRequest.headSha, names)),
             reviewer.review(pullRequest.number),
+            reviewRequests.requested(pullRequest.number, pullRequest.headSha),
           ]);
-          return { ...pullRequest, checks, review, reviewRequested: false, observedAt: now };
+          return { ...pullRequest, checks, review, reviewRequested, observedAt: now };
         };
 
         // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.

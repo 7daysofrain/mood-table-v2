@@ -40,7 +40,7 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     checks: {} as Record<string, Check[]>,
     /** La revisión de cada PR. */
     reviews: {} as Record<number, Review>,
-    /** Las peticiones de revisión del sistema, en orden, que quedan en GitHub aunque se reinicie. */
+    /** Las peticiones de revisión del sistema, en orden: quedan en GitHub aunque se reinicie. */
     requests: [] as { number: number; sha: string }[],
     /** Las veces que se ha leído si el sistema ya ha pedido la revisión de un push. */
     requestedReads: [] as { number: number; sha: string }[],
@@ -830,8 +830,9 @@ describe('el sistema pide la revisión cuando pasan las comprobaciones del últi
     await tick();
     expect(github.requests).toEqual([]);
 
+    // Como el aviso de comprobaciones terminadas, con la foto de la vuelta siguiente al arrancar.
     github.pullRequests = [pullRequest(74)];
-    await tick();
+    await ticks(tick, 2);
 
     expect(github.requests).toEqual([{ number: 74, sha: 'sha-74' }]);
   });

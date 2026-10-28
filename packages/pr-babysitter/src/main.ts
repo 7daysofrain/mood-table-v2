@@ -9,7 +9,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import { MemorySaver } from '@langchain/langgraph';
 
-import { createCodexReviewReader } from './adapters/codex-review.ts';
+import { createCodexReviewReader, createCodexReviewRequests } from './adapters/codex-review.ts';
 import { loadConfig } from './adapters/config.ts';
 import { createGitHubReader } from './adapters/github.ts';
 import { createLinearNotifier } from './adapters/linear.ts';
@@ -39,6 +39,11 @@ const driver = createDriver({
   reviewer: createCodexReviewReader({
     reviewer: config.githubReviewer,
     listComments: (number) => github.listComments(number),
+  }),
+  reviewRequests: createCodexReviewRequests({
+    maintainer: config.githubMaintainer,
+    listComments: (number) => github.listComments(number),
+    createComment: (number, body) => github.createComment(number, body),
   }),
   notifier: createLinearNotifier({
     clientId: config.linearClientId,

@@ -68,7 +68,7 @@
     comprobaciones en verde pide la revisión; un driver nuevo (un reinicio) con la marca del último
     push en GitHub no la vuelve a pedir; una PR detenida no la pide (si `pr-stop` ya está en
     `main`).
-- [ ] 1.9 El nodo `pedirRevision` y su arista en `core/graph.ts`, `reviewRequests` en el driver y en
+- [x] 1.9 El nodo `pedirRevision` y su arista en `core/graph.ts`, `reviewRequests` en el driver y en
   `snapshotOf`, el montaje en `src/main.ts` y uno de mentira en `src/studio.ts`.
   Verificar: los tests de 1.8 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde; el grafo se abre en LangGraph Studio con el nodo nuevo.

@@ -9,10 +9,10 @@
  * - #67: primero un comentario de Codex sin bloque (el repo no tenía entorno) y, tras pedirla, el
  *   bloque en marcha. Sus tres primeros comentarios son la PR antes de pedir la revisión.
  * - #69: el bloque y, después, otro comentario de Codex sin bloque (el *receipt*).
- * - #77 (grabado el 28-oct): la petición de una GitHub App, que Codex rechaza, y la del mantenedor,
- *   sin marca, que revisa. Lleva al final dos comentarios **derivados a mano**: la petición del
- *   sistema con la marca del último push, copiada por otra cuenta, y una del mantenedor con la marca
- *   de otro SHA.
+ * - #77 (grabado el 28-oct): la petición de una GitHub App, que Codex rechaza, y la del
+ *   mantenedor, sin marca, que revisa. Lleva al final dos comentarios **derivados a mano**: la
+ *   petición del sistema con la marca del último push, copiada por otra cuenta, y una del
+ *   mantenedor con la marca de otro SHA.
  * Los casos que no se han dado (un JSON que no se entiende, un bloque falso de otra cuenta) se
  * derivan de estos, a mano, en cada test.
  */
