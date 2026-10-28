@@ -330,7 +330,7 @@ describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', (
     expect(summary(notices)).toEqual([
       {
         status: 'needsIntervention',
-        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }, { kind: 'reviewUnfinished' }],
+        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }],
       },
     ]);
   });
@@ -347,7 +347,7 @@ describe('una ejecución que empieza sin el aviso de seguimiento (reanudada)', (
     expect(summary(notices)).toEqual([
       {
         status: 'needsIntervention',
-        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }, { kind: 'reviewUnfinished' }],
+        reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }],
       },
       'tracking',
     ]);

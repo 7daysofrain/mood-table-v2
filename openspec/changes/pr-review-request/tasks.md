@@ -109,7 +109,7 @@
     qué falla, y además «el revisor tiene hallazgos» si el revisor ya terminó el último push con
     hallazgos; con una sin terminar a tiempo, solo qué no ha terminado;
   - con `reviewSince`, como hoy.
-- [ ] 2.2 Las reglas en `core/tracking.ts`: el paso de comprobaciones fallidas y el estado final con
+- [x] 2.2 Las reglas en `core/tracking.ts`: el paso de comprobaciones fallidas y el estado final con
   el push que se sigue.
   Verificar: los tests de 2.1 en verde, y los que ya había de `tracking.ts`, adaptados al paso nuevo.
 - [ ] 2.3 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de

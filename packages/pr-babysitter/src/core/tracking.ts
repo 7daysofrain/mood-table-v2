@@ -31,8 +31,11 @@ export type FinalState =
   | { status: 'readyToMerge' }
   | { status: 'needsIntervention'; reasons: InterventionReason[] };
 
-/** Qué toca al reanudar la espera de las comprobaciones. */
-export type ChecksStep = 'waiting' | 'checksFinished' | 'timedOut';
+/**
+ * Qué toca al reanudar la espera de las comprobaciones: si pasan todas, avisar y esperar al
+ * revisor; si alguna falla, el estado final sin esperarlo (change pr-review-request, decisión 4).
+ */
+export type ChecksStep = 'waiting' | 'checksFinished' | 'checksFailed' | 'timedOut';
 
 /** Qué toca al reanudar la espera del revisor. */
 export type ReviewStep = 'waiting' | 'finished' | 'timedOut' | 'newPush';
@@ -64,10 +67,13 @@ export function reviewFinished({ review, headSha }: PullRequestSnapshot): boolea
 }
 
 /**
- * El estado final con la última foto. Al terminar todo, los motivos son las comprobaciones que
- * fallan y los hallazgos del revisor; con el tiempo agotado, también lo que no ha terminado.
+ * El estado final con la última foto y el push que se sigue. Al terminar todo, los motivos son las
+ * comprobaciones que fallan y los hallazgos del revisor; con el tiempo agotado, también lo que no
+ * ha terminado. Que la revisión no ha terminado solo se dice si se esperaba, es decir, si las
+ * comprobaciones pasaron (`reviewSince`); si no, solo cuenta la que ya terminó el último push
+ * (change pr-review-request, decisión 4).
  */
-export function finalState(snapshot: PullRequestSnapshot): FinalState {
+export function finalState(snapshot: PullRequestSnapshot, push: TrackedPush): FinalState {
   const named = (status: string) =>
     snapshot.checks.filter((check) => check.status === status).map((check) => check.name);
   const failed = named('failed');
@@ -75,8 +81,11 @@ export function finalState(snapshot: PullRequestSnapshot): FinalState {
   const reasons: InterventionReason[] = [];
   if (failed.length > 0) reasons.push({ kind: 'checksFailed', checks: failed });
   if (unfinished.length > 0) reasons.push({ kind: 'checksUnfinished', checks: unfinished });
-  if (!reviewFinished(snapshot)) reasons.push({ kind: 'reviewUnfinished' });
-  else if (snapshot.review?.hasFindings) reasons.push({ kind: 'reviewFindings' });
+  if (reviewFinished(snapshot)) {
+    if (snapshot.review?.hasFindings) reasons.push({ kind: 'reviewFindings' });
+  } else if (push.reviewSince !== undefined) {
+    reasons.push({ kind: 'reviewUnfinished' });
+  }
   if (reasons.length === 0) return { status: 'readyToMerge' };
   return { status: 'needsIntervention', reasons };
 }
@@ -94,7 +103,8 @@ function timedOut(since: number, snapshot: PullRequestSnapshot, timeoutMs: numbe
 
 /**
  * Al reanudar la espera de las comprobaciones con una foto: un push nuevo reinicia el tiempo y se
- * sigue con la foto que lo trae. Si han pasado todas, la espera de la revisión empieza a contar.
+ * sigue con la foto que lo trae. Si han pasado todas, la espera de la revisión empieza a contar;
+ * si alguna falla, no se espera la revisión.
  */
 export function afterChecksWait(
   current: TrackedPush,
@@ -103,11 +113,8 @@ export function afterChecksWait(
 ): { push: TrackedPush; next: ChecksStep } {
   const push = pushOf(current, snapshot);
   if (checksFinished(snapshot)) {
-    const passed = checksPassed(snapshot);
-    return {
-      push: passed ? { ...push, reviewSince: snapshot.observedAt } : push,
-      next: 'checksFinished',
-    };
+    if (!checksPassed(snapshot)) return { push, next: 'checksFailed' };
+    return { push: { ...push, reviewSince: snapshot.observedAt }, next: 'checksFinished' };
   }
   if (timedOut(push.seenAt, snapshot, timeoutMs)) return { push, next: 'timedOut' };
   return { push, next: 'waiting' };
