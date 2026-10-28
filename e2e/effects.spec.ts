@@ -97,7 +97,22 @@ test('el DJ cambia el efecto de la tira desde el panel', async ({ page }) => {
     await effect(page, 'Respiración').click();
     await expect(effect(page, 'Respiración')).toHaveAttribute('aria-current', 'true');
     await expect(effect(page, 'Energía')).not.toHaveAttribute('aria-current');
-    const { pressedAt, frames } = await page.evaluate(() => window.moodTableTimeline);
+    // El motor avisa del efecto nuevo al recibir el cambio, y el frame llega en el pulso siguiente:
+    // se espera a tenerlo antes de leer los tiempos. El que cuenta es el de su llegada, no este.
+    const timeline = () => page.evaluate(() => window.moodTableTimeline);
+    await expect
+      .poll(
+        async () => {
+          const { pressedAt: pressed, frames: arrived } = await timeline();
+          return (
+            pressed !== undefined &&
+            arrived.some(([arrivedAt, breathing]) => arrivedAt >= pressed && breathing)
+          );
+        },
+        { message: 'la tira pinta la respiración' },
+      )
+      .toBe(true);
+    const { pressedAt, frames } = await timeline();
     if (pressedAt === undefined) throw new Error('No se anotó la pulsación');
     expect(
       frames.some(([arrivedAt, breathing]) => arrivedAt < pressedAt && breathing),
