@@ -1275,7 +1275,28 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El efecto activo se marca con `aria-current` y no con `aria-pressed`, que daría a entender que pulsarlo otra vez lo apaga.*
 - *En el navegador vio que la etiqueta oculta del grupo de tiras dejaba una línea vacía encima de la lista, que los tests no podían ver, y la corrigió.*
 - *En el README quitó lo que no había comprobado: que las tiras se eligen con las flechas (la demo tiene una sola) y que otro panel ve el mismo efecto (non-goal de la historia).*
-- *Comprobó a mano el calentamiento de energía al elegirla con la música sonando (decisión 4): no se aprecia, porque el análisis ya está en marcha (D79).*
+- *La comprobación a mano del calentamiento de energía (decisión 4) la dio por buena midiendo el brillo del visor, y la atribuyó al análisis (D79). Las dos cosas estaban mal: el calentamiento sale de la ganancia de cada banda de energía, que empieza de cero al elegirla, y se ve en los colores, no en el brillo. Lo vio la propia IA al verificar el change, y rehízo la comprobación (6.37).*
+
+#### 6.37 Verificar y archivar el change de `MOO-94`
+
+**Prompt 1** (con la PR de `MOO-103` integrada):
+
+> mergeado, vamos a verify
+
+**Prompt 2** (tras el informe de `/opsx:verify`, sin problemas críticos y con dos advertencias):
+
+> Sí, hazlo
+
+**Prompt 3** (al saber que el calentamiento de energía puede durar más de los 2 s de la spec):
+
+> Déjalo y archiva
+
+*Claude Code (`claude-opus-5-5`, 28-oct). `/opsx:verify` cotejó las 26 tareas, los 15 requisitos y sus escenarios con el código y los tests de `main`, y encontró dos advertencias. La primera la descubrió la propia IA al leer la spec de `effects` y el código de energía: su comprobación a mano del calentamiento en `MOO-103` había medido el brillo del visor, que no lo muestra, y lo había atribuido al análisis (D79). La segunda: D82 no decía que el `PUT` en camino es uno por tira. Al rehacer la comprobación, comparando la tira con otra en energía estable y con la misma música, vio que el calentamiento sí se nota: el primer segundo enciende de más los tres colores, y con música continua algún color sigue así hasta 3-6 s, más de los 2 s que dice la spec. Lo planteó antes de archivar, con la recomendación de matizar el requisito; el usuario decidió dejarlo como está.*
+
+*Ajustes:*
+- *D82 dice ahora «como mucho uno por tira», sin renumerarla, y 6.36 ya no da por buena la comprobación del brillo.*
+- *El primer commit de la sincronización se llevó también el movimiento del change, que `git mv` ya había dejado en el índice; lo separó en sus dos commits antes de subir.*
+- *Antes de archivar comprobó en Linear que las tres tareas hijas de `MOO-94` estaban en Done.*
 
 ---
 
