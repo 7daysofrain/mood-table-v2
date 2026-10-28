@@ -83,7 +83,7 @@
   clave obligatoria.
   Verificar: los tests de la configuración en verde, con una clave que falta y un umbral fuera de
   rango.
-- [ ] 1.10 Documentación:
+- [x] 1.10 Documentación:
   - README §2.2 (*PR Babysitter*): el nodo `triar`, los puertos `Findings` y `Triager` y sus
     adaptadores, y que ya hay un modelo (de decisión, no un LLM);
   - README §2.4 (*PR Babysitter*): la cuenta de Ollama y las variables nuevas;

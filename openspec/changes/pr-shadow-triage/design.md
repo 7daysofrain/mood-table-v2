@@ -81,7 +81,7 @@ flowchart TD
 - **Alternativa descartada:** triar cada tanda según llega (las comprobaciones primero y el revisor
   después). Obliga a guardar lo ya triado, editar el comentario y fusionar tandas, para un caso que
   `MOO-91` casi elimina.
-- **Debería ser parte de D91** (decisión 4).
+- **Es parte de D91** (decisión 4).
 
 ### 2. El nodo `triar` lee los hallazgos a través de un puerto
 
@@ -141,7 +141,7 @@ flowchart TD
   - *Nimble*: en Ollama solo está el de 9B, flojo con el código (CRUXEval 0,647) y el peor calibrado
     (ECE 0,123). Su v4 Max (27B) es de los mejores, pero no está en Ollama.
   - *pplx-decider*: solo en local.
-- **Debería ser D90** en `docs/idea-mood-table.md` §10 (o el siguiente libre).
+- **Es D90** en `docs/idea-mood-table.md` §10.
 
 ### 4. Real, no aplica o exige criterio: una pregunta y reglas en código
 
@@ -174,7 +174,7 @@ Una función pura de `core/triage.ts` decide la clase de cada hallazgo, en este 
 - **En el glosario de PB**, *no aplica* pasa a incluir los nits que no merecen un commit, y *exige
   criterio*, a decir que sale del umbral y de las reglas. Se mantienen las tres palabras: ya están en
   Linear, en PB y en `workflow.md` §4.4.
-- **Debería ser D91**, con la decisión 1 y la 7: el triaje en modo sombra y su resumen.
+- **Es D91**, con la decisión 1 y la 7: el triaje en modo sombra y su resumen.
 
 ### 5. Una petición por push: el contenido en `state` y la calibración en `criteria`
 
