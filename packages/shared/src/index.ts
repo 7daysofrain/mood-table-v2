@@ -6,6 +6,14 @@
 export const SHARED_PACKAGE_NAME = '@moodtable/shared';
 
 export {
+  type ApiError,
+  ApiErrorSchema,
+  type SetEffectBody,
+  SetEffectBodySchema,
+  SetEffectResponseSchema,
+} from './commands.ts';
+
+export {
   AudioSourceConfigSchema,
   ConfigFileSchema,
   parseConfig,
@@ -19,10 +27,12 @@ export {
 export {
   BreathingParamsSchema,
   EFFECT_CATALOG,
+  EffectIdSchema,
   EnergyParamsSchema,
   type BreathingParams,
   type EffectId,
   type EnergyParams,
+  needsAudioSource,
 } from './effects.ts';
 
 export {
@@ -31,11 +41,13 @@ export {
   decodePosition,
   decodeSource,
   decodeSourceStatus,
+  decodeStrips,
   encodeFrame,
   encodeLevel,
   encodePosition,
   encodeSource,
   encodeSourceStatus,
+  encodeStrips,
   FRAME_HEADER_BYTES,
   FRAME_MESSAGE_TYPE,
   type FrameMessage,
@@ -48,4 +60,9 @@ export {
   type SourceMessage,
   SOURCE_STATUS_MESSAGE_TYPE,
   type SourceStatus,
+  type StripState,
+  StripStateSchema,
+  STRIPS_MESSAGE_TYPE,
+  type StripsMessage,
+  StripsMessageSchema,
 } from './viewer-protocol.ts';

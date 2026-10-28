@@ -6,7 +6,7 @@
 import Type, { type Static } from 'typebox';
 import Value from 'typebox/value';
 
-import { EFFECT_CATALOG, type EffectId } from './effects.ts';
+import { EffectIdSchema, needsAudioSource } from './effects.ts';
 import { findJsonError } from './json-error.ts';
 import { MAX_STRIPS } from './viewer-protocol.ts';
 
@@ -19,20 +19,13 @@ const CLOSED = { additionalProperties: false } as const;
 /** Salida de una tira, discriminada por `type`. En H1 solo existe `virtual`, sin más campos. */
 const OutputSchema = Type.Union([Type.Object({ type: Type.Literal('virtual') }, CLOSED)]);
 
-/**
- * El efecto con el que arranca la tira: uno de los ids del catálogo (decisión 10). La unión se genera
- * del catálogo, y `Unsafe` le da su tipo, que el `map` pierde; el esquema es el mismo.
- */
-const EffectIdSchema = Type.Unsafe<EffectId>(
-  Type.Union(EFFECT_CATALOG.map((effect) => Type.Literal(effect.id))),
-);
-
 export const StripConfigSchema = Type.Object(
   {
     id: Type.String({ minLength: 1 }),
     name: Type.String({ minLength: 1 }),
     output: OutputSchema,
     ledCount: Type.Integer({ minimum: 1 }),
+    // El efecto con el que arranca la tira: uno de los ids del catálogo (decisión 10).
     effect: EffectIdSchema,
   },
   CLOSED,
@@ -135,7 +128,7 @@ export function parseConfig(text: string): ConfigResult {
   // esconde con la tira apagada (decisión 6 del change virtual-strip-audio-file).
   const deaf = config.audioSource
     ? undefined
-    : config.strips.find((strip) => EFFECT_CATALOG.some((e) => e.id === strip.effect && e.usesAudio));
+    : config.strips.find((strip) => needsAudioSource(strip.effect));
   if (deaf) {
     return fail(
       `la tira «${deaf.id}», efecto \`${deaf.effect}\`: necesita una fuente de audio (\`audioSource\`)`,

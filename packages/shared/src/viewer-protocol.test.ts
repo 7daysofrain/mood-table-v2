@@ -6,12 +6,15 @@ import {
   decodePosition,
   decodeSource,
   decodeSourceStatus,
+  decodeStrips,
   encodeFrame,
   encodeLevel,
   encodePosition,
   encodeSource,
   encodeSourceStatus,
+  encodeStrips,
   type SourceStatus,
+  type StripsMessage,
 } from './viewer-protocol.ts';
 
 /** Los colores de una tira de `ledCount` LEDs, distintos en cada byte. */
@@ -232,5 +235,82 @@ describe('el mensaje del estado de la fuente', () => {
 
     expect(decodeSource(message)).toBeUndefined();
     expect(decodeFrame(message)).toBeUndefined();
+  });
+});
+
+describe('el mensaje de las tiras', () => {
+  /** El ejemplo de la decisión 3 del change strip-effect-switch (y de viewer-protocol.md). */
+  const example: StripsMessage = {
+    strips: [
+      {
+        id: 'demo',
+        name: 'Tira de prueba',
+        ledCount: 60,
+        output: { type: 'virtual' },
+        effect: 'energy',
+      },
+    ],
+  };
+
+  /** Un mensaje del tipo 6 con `json` tal cual, para probar lo que el esquema rechaza. */
+  function stripsMessageOf(json: string): Uint8Array {
+    const text = new TextEncoder().encode(json);
+    const message = new Uint8Array(1 + text.length);
+    message[0] = 6;
+    message.set(text, 1);
+    return message;
+  }
+
+  /** El ejemplo con la primera tira cambiada por `strip`. */
+  function withStrip(strip: Record<string, unknown>): string {
+    return JSON.stringify({ strips: [strip] });
+  }
+
+  const [demo] = example.strips;
+
+  it('es el byte 6 seguido del JSON en UTF-8 del ejemplo', () => {
+    const message = encodeStrips(example);
+
+    expect(message[0]).toBe(6);
+    expect(new TextDecoder().decode(message.subarray(1))).toBe(
+      '{"strips":[{"id":"demo","name":"Tira de prueba","ledCount":60,' +
+        '"output":{"type":"virtual"},"effect":"energy"}]}',
+    );
+  });
+
+  it('se decodifica igual que se codificó', () => {
+    expect(decodeStrips(encodeStrips(example))).toEqual(example);
+  });
+
+  it('con nombres con acentos, también', () => {
+    const message: StripsMessage = {
+      strips: [
+        { ...demo!, id: 'barra', name: 'Barra de la cabina', effect: 'breathing' },
+        { ...demo!, id: 'frontal', name: 'Frontal · señal', ledCount: 144 },
+      ],
+    };
+
+    expect(decodeStrips(encodeStrips(message))).toEqual(message);
+  });
+
+  it('no lo decodifican como fuente ni frame', () => {
+    const message = encodeStrips(example);
+
+    expect(decodeSource(message)).toBeUndefined();
+    expect(decodeFrame(message)).toBeUndefined();
+  });
+
+  it.each([
+    ['de otro tipo', Uint8Array.of(2, ...new TextEncoder().encode('{"strips":[]}'))],
+    ['vacío', new Uint8Array(0)],
+    ['con un JSON roto', stripsMessageOf('{"strips":[')],
+    ['con un texto que no es UTF-8 válido', Uint8Array.of(6, 0xff, 0xfe)],
+    ['sin la lista de tiras', stripsMessageOf('{}')],
+    ['con una tira sin efecto', stripsMessageOf(withStrip({ ...demo, effect: undefined }))],
+    ['con un efecto que no está en el catálogo', stripsMessageOf(withStrip({ ...demo, effect: 'strobe' }))],
+    ['con un campo que el esquema no declara', stripsMessageOf(withStrip({ ...demo, port: '/dev/ttyACM0' }))],
+    ['con un nº de LEDs que no es entero', stripsMessageOf(withStrip({ ...demo, ledCount: 60.5 }))],
+  ])('%s, se rechaza', (_name, message) => {
+    expect(decodeStrips(message)).toBeUndefined();
   });
 });

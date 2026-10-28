@@ -4,6 +4,10 @@
  * este mismo código. El formato, byte a byte, está en `docs/instructions/viewer-protocol.md`, que es
  * la fuente de verdad: si cambia uno, cambia el otro.
  */
+import Type, { type Static } from 'typebox';
+import Value from 'typebox/value';
+
+import { EffectIdSchema } from './effects.ts';
 
 /** Tipo del mensaje de un frame: el primer byte. Por la misma conexión viajan otros tipos. */
 export const FRAME_MESSAGE_TYPE = 1;
@@ -195,4 +199,60 @@ export function encodeSourceStatus(status: SourceStatus): Uint8Array {
 export function decodeSourceStatus(message: Uint8Array): SourceStatus | undefined {
   if (message.length !== 2 || message[0] !== SOURCE_STATUS_MESSAGE_TYPE) return undefined;
   return SOURCE_STATUS[message[1] ?? -1];
+}
+
+/** Tipo del mensaje de las tiras (decisión 3 del change strip-effect-switch). */
+export const STRIPS_MESSAGE_TYPE = 6;
+
+/** El panel no recibe campos que el esquema no declare, como no los admite el fichero. */
+const CLOSED = { additionalProperties: false } as const;
+
+/**
+ * Una tira como la ve el panel: lo que muestra y su efecto activo. No reutiliza `StripConfigSchema`:
+ * lo que H3 y H4 añadan al fichero no sale al panel sin decidirlo. Por eso la salida tiene su propio
+ * esquema, aunque hoy coincida con la del fichero: el puerto de una salida Adalight llega con H3.
+ */
+export const StripStateSchema = Type.Object(
+  {
+    id: Type.String({ minLength: 1 }),
+    name: Type.String({ minLength: 1 }),
+    ledCount: Type.Integer({ minimum: 1 }),
+    output: Type.Union([Type.Object({ type: Type.Literal('virtual') }, CLOSED)]),
+    effect: EffectIdSchema,
+  },
+  CLOSED,
+);
+
+/** Todas las tiras, en el orden del fichero: la posición es el índice de la tira en los frames. */
+export const StripsMessageSchema = Type.Object(
+  { strips: Type.Array(StripStateSchema, { maxItems: MAX_STRIPS }) },
+  CLOSED,
+);
+
+export type StripState = Static<typeof StripStateSchema>;
+
+export type StripsMessage = Static<typeof StripsMessageSchema>;
+
+/**
+ * El mensaje de las tiras: el byte de tipo y el JSON en UTF-8. Lo recibe cada panel al conectarse y
+ * todos cada vez que cambia el efecto de una tira. Es nuevo en cada llamada.
+ */
+export function encodeStrips(message: StripsMessage): Uint8Array {
+  const json = new TextEncoder().encode(JSON.stringify(message));
+  const encoded = new Uint8Array(1 + json.length);
+  encoded[0] = STRIPS_MESSAGE_TYPE;
+  encoded.set(json, 1);
+  return encoded;
+}
+
+/** Las tiras que lleva `message`, o `undefined` si no es un mensaje de tiras que cumpla su esquema. */
+export function decodeStrips(message: Uint8Array): StripsMessage | undefined {
+  if (message[0] !== STRIPS_MESSAGE_TYPE) return undefined;
+  let data: unknown;
+  try {
+    data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(message.subarray(1)));
+  } catch {
+    return undefined;
+  }
+  return Value.Check(StripsMessageSchema, data) ? data : undefined;
 }

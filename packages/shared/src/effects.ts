@@ -17,6 +17,23 @@ export const EFFECT_CATALOG = [
 
 export type EffectId = (typeof EFFECT_CATALOG)[number]['id'];
 
+/**
+ * El id de un efecto del catálogo, para el fichero, el protocolo del visor y la API. La unión se
+ * genera del catálogo, y `Unsafe` le da su tipo, que el `map` pierde; el esquema es el mismo.
+ */
+export const EffectIdSchema = Type.Unsafe<EffectId>(
+  Type.Union(EFFECT_CATALOG.map((effect) => Type.Literal(effect.id))),
+);
+
+/**
+ * Si el efecto solo funciona con fuente de audio: los reactivos. Es la única regla, y la usan el
+ * fichero al arrancar, el motor al cambiar el efecto de una tira y el panel, que desactiva los que no
+ * se pueden elegir (decisión 5 del change strip-effect-switch).
+ */
+export function needsAudioSource(effect: EffectId): boolean {
+  return EFFECT_CATALOG.some((each) => each.id === effect && each.usesAudio);
+}
+
 /** Blanco cálido: el de una bombilla incandescente (unos 2700 K). */
 const WARM_WHITE = '#FFA957';
 
