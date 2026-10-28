@@ -1418,6 +1418,20 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Los errores de TypeBox salen en inglés. Para el motivo del `400`, la IA tradujo al castellano los casos posibles (falta un valor, sobra uno, fuera de rango, formato) sin tocar el locale de TypeBox, que es global y cambiaría también los mensajes del fichero de configuración.*
 - *Al poner la ruta nueva en el README §4, vio que el ejemplo de respuesta del cambio de efecto no llevaba los valores desde `MOO-105`, y lo corrigió.*
 
+#### 6.43 La zona Controles desde el esquema (`MOO-107`)
+
+**Prompt 1** (con la #95 de `MOO-106` integrada):
+
+> mergeado
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA implementó la sección `MOO-107` en TDD, con un commit por paso, en una rama desde `main`. Generalizó la cola del cambio de efecto en una por tira para efectos y valores, que además dice si una tira tiene envíos y avisa cuando se vacía. Escribió la traducción del esquema de cada parámetro a su control, con los nombres en `literals.ts`, y la zona Controles con el `Slider` y el `ColorPicker` de Mantine. Añadió un E2E que mide la respuesta de cada movimiento y pasó tres veces seguidas. Lo probó con `pnpm dev`: arrastrar el periodo lo lleva a 17,9 s, sigue así al recargar y, de 4 a 1,6 s, el brillo no cambia entre dos frames más de lo que cambia respirando a ese ritmo.*
+
+*Ajustes:*
+- *El arrastre del `Slider` de Mantine depende de `requestAnimationFrame` y del tamaño del elemento, que jsdom no da. La IA sacó la lógica de la decisión 2 (el control sigue al dedo hasta que, tras soltar, la cola se vacía) a un hook que se prueba sin Mantine, y probó el componente con el teclado.*
+- *El slider trabaja en el recorrido (de 0 a 1) y `scale` lo pasa a segundos: la escala logarítmica solo vive en el control, y lo que sale hacia el motor son siempre segundos.*
+- *El valor del slider se muestra sin unidad («4,0»): el control no conoce el efecto, y la unidad ya va en el nombre del parámetro.*
+- *Para medir «menos de 100 ms desde cada movimiento», el E2E cuenta desde el movimiento hasta el primer frame tras el eco de un `PUT` que salió después de él, así que incluye lo que el cambio espera en la cola.*
+
 ---
 
 ### 7. Pull Requests

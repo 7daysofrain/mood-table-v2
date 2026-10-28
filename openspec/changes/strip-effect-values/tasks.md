@@ -90,24 +90,24 @@
 
 ## 3. MOO-107 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests del envío en `packages/panel/src/engine/`, con un `fetch` falso:
+- [x] 3.1 **(test en rojo)** Tests del envío en `packages/panel/src/engine/`, con un `fetch` falso:
   los valores van por `PUT /api/strips/{stripId}/values` con todos los valores; con uno en camino,
   solo se envía el último; un error de red o de respuesta no bloquea el siguiente; la cola dice si
   una tira tiene envíos en camino o pendientes y avisa cuando se vacía. Los tests del cambio de efecto
   siguen pasando con la cola generalizada (decisión 3).
   Verificar: los tests nuevos fallan porque la cola de valores no existe.
-- [ ] 3.2 La cola por tira generalizada (ruta y cuerpo como parámetros) a partir de
+- [x] 3.2 La cola por tira generalizada (ruta y cuerpo como parámetros) a partir de
   `effect-requests.ts`, con una instancia para efectos y otra para valores.
   Verificar: los tests de 3.1 y los de `effect-requests` pasan.
-- [ ] 3.3 **(test en rojo)** Tests de la traducción de esquema a control (función pura): el color da
+- [x] 3.3 **(test en rojo)** Tests de la traducción de esquema a control (función pura): el color da
   un selector de color; el periodo, un slider de 1 a 20 s en escala logarítmica, con el centro del
   recorrido en unos 4,5 s; cada parámetro de cada efecto del catálogo tiene control y nombre
   (decisiones 1, 5 y 9).
   Verificar: los tests nuevos fallan porque la función no existe.
-- [ ] 3.4 La función de traducción y los nombres de los parámetros en `literals.ts`, con un tipo que
+- [x] 3.4 La función de traducción y los nombres de los parámetros en `literals.ts`, con un tipo que
   obliga a tener el de cada parámetro de cada efecto.
   Verificar: los tests de 3.3 pasan y `pnpm typecheck` falla si se quita un nombre.
-- [ ] 3.5 **(test en rojo)** Tests de la zona Controles (componente y `App.test.tsx`), con la conexión
+- [x] 3.5 **(test en rojo)** Tests de la zona Controles (componente y `App.test.tsx`), con la conexión
   y la cola falsas: con la respiración muestra el color y el periodo que dice la conexión; con la
   energía, solo el título; al seleccionar otra tira muestra sus valores; mover un control envía todos
   los valores de la tira; mientras se arrastra, el control sigue al dedo aunque llegue un eco
@@ -115,17 +115,17 @@
   si el motor no aplica el valor, vuelve al que pinta; sin conexión, solo el título
   (`specs/instrument-control`, decisión 2).
   Verificar: los tests nuevos fallan porque la zona está vacía.
-- [ ] 3.6 La zona Controles con el `Slider` y el `ColorPicker` de Mantine, la unión en `App.tsx` y su
+- [x] 3.6 La zona Controles con el `Slider` y el `ColorPicker` de Mantine, la unión en `App.tsx` y su
   hueco en `PanelLayout.tsx`.
   Verificar: los tests de 3.5 pasan, los de `PanelLayout` y `panel-layout` siguen en verde, y con
   `pnpm dev` se mueve el periodo de la tira de la demo desde el panel.
-- [ ] 3.7 E2E del caso feliz en `e2e/controls.spec.ts`, con un motor propio y una tira con la
+- [x] 3.7 E2E del caso feliz en `e2e/controls.spec.ts`, con un motor propio y una tira con la
   respiración: la zona Controles muestra el color y el periodo; al arrastrar el periodo y el color, el
   visor pinta el cambio en menos de 100 ms desde cada movimiento; al soltar, la tira se queda con el
   valor; al recargar el panel, los controles muestran esos valores (`specs/instrument-control`,
   criterios de `MOO-95`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 3.8 README §1.3 (la zona Controles, y el ejemplo del recorrido pasa de la sensibilidad al
+- [x] 3.8 README §1.3 (la zona Controles, y el ejemplo del recorrido pasa de la sensibilidad al
   periodo) y `prompts.md`. Comprobación a mano con la demo: arrastrar el periodo a media respiración
   no da un salto de brillo, anotado en la PR.
   Verificar: lo que describe el README coincide con lo que muestra el panel.

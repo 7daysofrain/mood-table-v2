@@ -1,7 +1,7 @@
 import type { EffectId } from '@moodtable/shared';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { EffectRequests, type FetchLike } from './effect-requests.ts';
+import { effectRequests, type FetchLike, valueRequests } from './strip-requests.ts';
 
 interface Sent {
   url: string;
@@ -47,7 +47,7 @@ describe('el envío de los cambios de efecto', () => {
   it('un cambio envía PUT /api/strips/{stripId}/effect con el efecto en JSON, al momento', () => {
     const { fetch, sent } = fakeFetch();
 
-    new EffectRequests(fetch).send('barra', 'breathing');
+    effectRequests(fetch).send('barra', 'breathing');
 
     expect(sent).toHaveLength(1);
     expect(at(sent, 0)).toMatchObject({
@@ -61,14 +61,14 @@ describe('el envío de los cambios de efecto', () => {
   it('el id de la tira va escapado en la ruta', () => {
     const { fetch, sent } = fakeFetch();
 
-    new EffectRequests(fetch).send('barra/cabina', 'breathing');
+    effectRequests(fetch).send('barra/cabina', 'breathing');
 
     expect(at(sent, 0).url).toBe('/api/strips/barra%2Fcabina/effect');
   });
 
   it('con uno en camino, los siguientes esperan y al terminar solo se envía el último', async () => {
     const { fetch, sent } = fakeFetch();
-    const requests = new EffectRequests(fetch);
+    const requests = effectRequests(fetch);
 
     requests.send('barra', 'breathing');
     requests.send('barra', 'energy');
@@ -83,7 +83,7 @@ describe('el envío de los cambios de efecto', () => {
 
   it('no envía el pendiente si coincide con el último enviado', async () => {
     const { fetch, sent } = fakeFetch();
-    const requests = new EffectRequests(fetch);
+    const requests = effectRequests(fetch);
 
     requests.send('barra', 'energy');
     requests.send('barra', 'breathing');
@@ -95,7 +95,7 @@ describe('el envío de los cambios de efecto', () => {
 
   it('sin ninguno en camino, envía aunque coincida con el anterior', async () => {
     const { fetch, sent } = fakeFetch();
-    const requests = new EffectRequests(fetch);
+    const requests = effectRequests(fetch);
     requests.send('barra', 'energy');
     await at(sent, 0).finish({ ok: true });
 
@@ -106,7 +106,7 @@ describe('el envío de los cambios de efecto', () => {
 
   it('cada tira tiene su propio envío: un cambio de otra tira no espera ni se pierde', async () => {
     const { fetch, sent } = fakeFetch();
-    const requests = new EffectRequests(fetch);
+    const requests = effectRequests(fetch);
 
     requests.send('barra', 'breathing');
     requests.send('cabina', 'energy');
@@ -128,7 +128,7 @@ describe('el envío de los cambios de efecto', () => {
 
   it('una respuesta de error no bloquea el siguiente', async () => {
     const { fetch, sent } = fakeFetch();
-    const requests = new EffectRequests(fetch);
+    const requests = effectRequests(fetch);
     requests.send('barra', 'energy');
     requests.send('barra', 'breathing');
 
@@ -142,7 +142,7 @@ describe('el envío de los cambios de efecto', () => {
 
   it('un error de red no bloquea el siguiente y no se escapa como error sin capturar', async () => {
     const { fetch, sent } = fakeFetch();
-    const requests = new EffectRequests(fetch);
+    const requests = effectRequests(fetch);
     requests.send('barra', 'energy');
 
     await at(sent, 0).finish('network-error');
@@ -153,7 +153,7 @@ describe('el envío de los cambios de efecto', () => {
 
   it('si el que estaba en camino falla, el pendiente se envía aunque sea el mismo efecto', async () => {
     const { fetch, sent } = fakeFetch();
-    const requests = new EffectRequests(fetch);
+    const requests = effectRequests(fetch);
     requests.send('barra', 'energy');
     requests.send('barra', 'energy');
 
@@ -170,11 +170,109 @@ describe('el envío de los cambios de efecto', () => {
       return new Promise(() => undefined);
     };
     try {
-      new EffectRequests().send('barra', 'breathing');
+      effectRequests().send('barra', 'breathing');
     } finally {
       globalThis.fetch = original;
     }
 
     expect(urls).toEqual(['/api/strips/barra/effect']);
+  });
+});
+
+describe('el envío de los cambios de valores', () => {
+  const BLUE = { color: '#2040FF', period: 7 };
+
+  it('un cambio envía PUT /api/strips/{stripId}/values con todos los valores en JSON', () => {
+    const { fetch, sent } = fakeFetch();
+
+    valueRequests(fetch).send('barra', BLUE);
+
+    expect(sent).toHaveLength(1);
+    expect(at(sent, 0)).toMatchObject({
+      url: '/api/strips/barra/values',
+      method: 'PUT',
+      contentType: 'application/json',
+      body: BLUE,
+    });
+  });
+
+  it('con uno en camino, al terminar solo se envía el último', async () => {
+    const { fetch, sent } = fakeFetch();
+    const requests = valueRequests(fetch);
+
+    requests.send('barra', { ...BLUE, period: 5 });
+    requests.send('barra', { ...BLUE, period: 6 });
+    requests.send('barra', { ...BLUE, period: 7 });
+    await at(sent, 0).finish({ ok: true });
+
+    expect(sent.map(({ body }) => body)).toEqual([
+      { ...BLUE, period: 5 },
+      { ...BLUE, period: 7 },
+    ]);
+  });
+
+  it('no envía el pendiente si son los mismos valores que el último enviado', async () => {
+    const { fetch, sent } = fakeFetch();
+    const requests = valueRequests(fetch);
+
+    requests.send('barra', BLUE);
+    requests.send('barra', { period: 7, color: '#2040FF' });
+    await at(sent, 0).finish({ ok: true });
+
+    expect(sent).toHaveLength(1);
+  });
+
+  it('un error de red o de respuesta no bloquea el siguiente', async () => {
+    const { fetch, sent } = fakeFetch();
+    const requests = valueRequests(fetch);
+    requests.send('barra', BLUE);
+    await at(sent, 0).finish('network-error');
+    requests.send('barra', { ...BLUE, period: 8 });
+    await at(sent, 1).finish({ ok: false });
+    requests.send('barra', { ...BLUE, period: 9 });
+
+    expect(sent).toHaveLength(3);
+  });
+
+  it('dice si una tira tiene envíos en camino o pendientes', async () => {
+    const { fetch, sent } = fakeFetch();
+    const requests = valueRequests(fetch);
+    expect(requests.busy('barra')).toBe(false);
+
+    requests.send('barra', BLUE);
+    requests.send('barra', { ...BLUE, period: 8 });
+    expect(requests.busy('barra')).toBe(true);
+    expect(requests.busy('cabina')).toBe(false);
+
+    await at(sent, 0).finish({ ok: true });
+    expect(requests.busy('barra')).toBe(true);
+
+    await at(sent, 1).finish({ ok: true });
+    expect(requests.busy('barra')).toBe(false);
+  });
+
+  it('avisa cuando una tira se queda sin envíos, y si el motor aplicó el último', async () => {
+    const { fetch, sent } = fakeFetch();
+    const requests = valueRequests(fetch);
+    const listener = vi.fn();
+    const unsubscribe = requests.subscribe(listener);
+
+    requests.send('barra', BLUE);
+    requests.send('barra', { ...BLUE, period: 8 });
+    await at(sent, 0).finish({ ok: true });
+    expect(listener).not.toHaveBeenCalled();
+
+    await at(sent, 1).finish('network-error');
+    expect(listener).toHaveBeenLastCalledWith('barra', false);
+
+    requests.send('barra', BLUE);
+    await at(sent, 2).finish({ ok: true });
+    expect(listener).toHaveBeenLastCalledWith('barra', true);
+    expect(listener).toHaveBeenCalledTimes(2);
+
+    unsubscribe();
+    requests.send('barra', BLUE);
+    await at(sent, 3).finish({ ok: true });
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 });
