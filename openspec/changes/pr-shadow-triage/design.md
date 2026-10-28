@@ -34,8 +34,8 @@
   `chatgpt-codex-connector[bot]`, con una insignia de severidad (`P1`, `P2`…), un título en negrita, la
   explicación, el fichero y el trozo del diff que comentan (`diff_hunk`).
 - **El token** es el PAT del mantenedor, con *Issues* y *Pull requests* en escritura y sin *Contents*
-  (D83). El repo es público, así que los *check runs* se leen sin el permiso *Checks* (D71); si el log
-  de un *job* también, está **sin comprobar** (paso 1.1).
+  (D83). El repo es público, así que los *check runs* se leen sin el permiso *Checks* (D71), y el log
+  de un *job* sin *Actions: read* (paso 1.1, 28-oct).
 - **Trazas:** cada ejecución del grafo llega a LangSmith, un hilo por PR (D76).
 
 ## Goals / Non-Goals
@@ -89,9 +89,15 @@ flowchart TD
   (`adapters/findings.ts`) los construye con dos lecturas de GitHub, solo en las PR que llegan aquí:
   - **del revisor:** los comentarios de revisión en línea de su cuenta sobre ese SHA, con la severidad
     sacada de la insignia (P1 es *alta*; otro revisor la traduce en su adaptador, BA3), el título, el
-    texto sin la insignia, el fichero, la línea y el `diff_hunk`;
+    texto sin la insignia, el fichero, la línea y el `diff_hunk`. Si el comentario se ha quedado
+    desfasado por un push posterior, GitHub da `line: null`, y vale `original_line` (paso 1.1: tres de
+    los seis de Codex en la #85 y la #88);
   - **de las comprobaciones que fallan:** el final del log del paso que falla, hasta un tamaño máximo
-    *(asumido: 16 KiB)*. Si GitHub no da el log, el hallazgo va sin contexto (decisión 4).
+    *(asumido: 16 KiB)*. Si GitHub no da el log, el hallazgo va sin contexto (decisión 4). GitHub da el
+    log del *job* entero (`GET /actions/jobs/{id}/logs`), y su final es la limpieza del *job*, no el
+    error (paso 1.1, con el de `sonar-issues` de la #96). El paso que falla va desde el último
+    `##[group]Run` antes del primer `##[error]` hasta ese `##[error]`, y se manda sin la marca de
+    tiempo de cada línea, que no aporta y cuesta tokens.
 - **Solo esas dos fuentes:** un comentario de otra cuenta nunca se convierte en hallazgo ni llega al
   modelo (spec `pr-triage`, BE6). Las respuestas en los hilos del revisor tampoco.
 - **Matiza D73** («el grafo no consulta GitHub»): las decisiones siguen saliendo de la foto, pero el
@@ -108,7 +114,8 @@ flowchart TD
   /v1/systemone` (el de TypeSafe Jev): cambiar de modelo o de proveedor es configuración.
 - **Clef** (Cloudflare, 27B, Apache 2.0), en la nube de Ollama con **pago por uso** (0 $/mes, sin
   suscripción, 0,24 $ por millón de tokens de entrada y la salida gratis), llamado directamente a
-  `https://ollama.com/v1/systemone` con `OLLAMA_API_KEY`. Con el modelo fijado por su id.
+  `https://ollama.com/v1/systemone` con la clave de la cuenta de Ollama. Con el modelo fijado por su
+  id, `clef:27b`.
 - **Por qué Clef** (índice comunitario, con los pesos originales y sin benchmark de revisión de código,
   así que orienta y no prueba): es el mejor calibrado de los candidatos (ECE 0,040, frente a 0,080 de
   Jev), y la calibración es justo lo que sostiene el umbral; entiende código como el mejor (CRUXEval
@@ -116,7 +123,9 @@ flowchart TD
   así que en el Mac de 32 GB del mantenedor hay una salida si la nube falla, con los mismos umbrales.
 - **Plan B, Jev 1.14** (`api.typesafe.ai`, 0,042 $/M): si `@langchain/typesafe` no funciona contra
   Ollama. Es el cliente oficial de LangChain para el protocolo; si tampoco encaja con Ollama, el
-  adaptador hace un `fetch` con zod, como el de GitHub. Se decide en el paso 1.1.
+  adaptador hace un `fetch` con zod, como el de GitHub. **No hace falta** (paso 1.1, 28-oct):
+  `@langchain/typesafe` 0.0.2 funciona contra Ollama con `baseUrl: https://ollama.com` (añade él
+  `/v1/systemone`), devuelve `usage.inputTokens` y `model: clef:27b`, y contesta en menos de 1 s.
 - **El puerto `Triager`** recibe el contexto común y los hallazgos y devuelve, por cada uno, la
   probabilidad de que haya que arreglarlo y los tokens de entrada que ha cobrado. No sabe de modelos ni
   de umbrales. El adaptador (`adapters/decision-model.ts`) arma la petición (decisión 5) y la manda.
@@ -217,6 +226,10 @@ questions:
   cada hallazgo por su tamaño, de forma conservadora *(asumido: 1 token cada 3 bytes)*, y mete en la
   petición, por orden, los que caben en lo que queda del tope. Los demás salen *exige criterio* (regla
   2), sin llamar.
+- **El `state` se cobra una vez por petición, no una por pregunta** (paso 1.1, 28-oct, con dos
+  hallazgos de la #88 y su descripción): 3.449 tokens con una pregunta y 3.636 con dos, unos 190 por
+  pregunta más. La estimación de 1 token cada 3 bytes dio 3.773 para ese `state`: conservadora, como
+  se quería. El push costó unos 0,0009 $.
 - **Después de llamar:** el coste real sale de `usage.input_tokens` por el precio
   (`DECISION_MODEL_INPUT_PRICE_PER_MTOK`, hoy 0,24). Se suma al gasto de la PR, en el estado del hilo,
   y va en la salida del nodo `triar`, que LangSmith guarda en la traza (BE8). LangSmith no conoce el
@@ -224,7 +237,10 @@ questions:
 - **El gasto acumulado se pierde al reiniciar** hasta BE7 (`MOO-85`), como el resto del estado: como
   mucho, una PR puede gastar otro tope tras un reinicio.
 - **El presupuesto mensual (BA5)** no va en el código: créditos prepagados en la cuenta de Ollama con
-  el cobro automático apagado, si la cuenta lo permite (*Migration Plan*).
+  el cobro automático apagado (*Migration Plan*). La cuenta lo permite: el mantenedor cargó 5 $ el
+  28-oct, sin recarga automática. Dan para unos 5.000 pushes al coste medido, o 100 PR que lleguen al
+  tope. Si se acaban, el modelo da error, los hallazgos salen *exige criterio* (regla 3) y el aviso
+  final llega igual (decisión 8).
 
 ### 7. El resumen: un comentario firmado por push, con una marca
 
@@ -297,13 +313,8 @@ secretos en los logs. Va a README §2.5, junto a lo que ya sale hacia LangSmith 
 - **[El veredicto de un mismo hallazgo cambia entre pushes]** (variación entre llamadas) → En modo
   sombra es información: se pregunta en cada push y `MOO-76` lo mide. Guardar el veredicto es una
   pregunta para la spec de BH3.
-- **[`@langchain/typesafe` no funciona contra Ollama]** → El paso 1.1 lo comprueba; si no, `fetch` con
-  zod, o Jev (plan B).
-- **[El log de un *job* necesita *Actions: read*]** → El paso 1.1 lo comprueba. Si hace falta, se
-  añade ese permiso de solo lectura al PAT; si no se quiere, la comprobación sale sin contexto.
-- **[Ollama cobra el `state` una vez por pregunta]** (su documentación lo insinúa) → La estimación del
-  tope lo da por hecho hasta que el paso 1.1 lo aclare con `usage`; aun así, el coste esperado sigue
-  muy por debajo del tope.
+- **[`@langchain/typesafe` es alfa (0.0.2)]** → Funciona contra Ollama (paso 1.1). Se fija la versión
+  exacta en el catálogo, y el puerto deja cambiarlo por un `fetch` con zod sin tocar el núcleo.
 - **[La exclusión de la descripción no funciona]** → Es calibración: `MOO-76` añade casos con la
   descripción «contaminada» y la compara con solo el título.
 - **[El texto de un hallazgo dirige al modelo]** (Codex o un log) → Solo seguimos PR del mantenedor y
@@ -313,7 +324,9 @@ secretos en los logs. Va a README §2.5, junto a lo que ya sale hacia LangSmith 
 ## Migration Plan
 
 1. **Antes del paso 1.1**, el mantenedor crea la cuenta de Ollama con pago por uso y una clave de API,
-   y comprueba si puede cargar créditos y apagar el cobro automático (BA5). La guarda en `.local/`.
+   y comprueba si puede cargar créditos y apagar el cobro automático (BA5). La guarda en el `.env` del
+   PR Babysitter como `DECISION_MODEL_API_KEY`: es donde la lee el contenedor, y los secretos no se
+   escriben en ningún otro sitio.
 2. **Desplegar:** las variables nuevas en el `.env` del contenedor (las de la decisión 3, el umbral y
    el tope, con sus valores por defecto en `.env.example`), reconstruir la imagen y `docker compose up
    -d` (README §2.4).
@@ -321,6 +334,8 @@ secretos en los logs. Va a README §2.5, junto a lo que ya sale hacia LangSmith 
 
 ## Open Questions
 
-Las del paso 1.1 (cliente contra Ollama, log con el PAT, `state` cobrado una vez o por pregunta) no
-cambian la spec ni las tareas: cambian el adaptador o un permiso, y el resultado se anota en esta
-decisión con un commit.
+Las tres del paso 1.1 quedaron resueltas el 28-oct, sin cambiar la spec ni las tareas:
+
+- **El cliente contra Ollama:** funciona (decisión 3).
+- **El log con el PAT:** se lee sin *Actions: read*. Hay que cortar el paso que falla (decisión 2).
+- **El `state`:** se cobra una vez por petición (decisión 6).

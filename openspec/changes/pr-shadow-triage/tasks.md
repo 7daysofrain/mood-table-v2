@@ -14,7 +14,7 @@
 
 ## 1. MOO-108 · infra
 
-- [ ] 1.1 **Prueba a mano** (sin commit) del proveedor y de las lecturas (`design.md`, *Open
+- [x] 1.1 **Prueba a mano** (sin commit) del proveedor y de las lecturas (`design.md`, *Open
   Questions*), con un script de usar y tirar fuera del repo y hallazgos reales de la #85 y la #88:
   - una petición a Clef en `https://ollama.com/v1/systemone` con la forma de la decisión 5 (dos
     hallazgos, un `noul` por cada uno) con `@langchain/typesafe` y `baseUrl`; si falla, con `fetch`;
