@@ -1,6 +1,6 @@
 import { Badge, Button, Stack, Text } from '@mantine/core';
 import { EFFECT_CATALOG, type EffectId, needsAudioSource } from '@moodtable/shared';
-import { type MouseEvent, useId } from 'react';
+import { type MouseEvent, type PointerEvent, useId } from 'react';
 
 import { EFFECT_KIND, EFFECT_LIST_LABEL, EFFECT_NAMES, NEEDS_AUDIO_SOURCE } from '../literals.ts';
 
@@ -48,8 +48,12 @@ function EffectButton({ effect, reactive, active, disabled, onChoose }: Readonly
   const choose = () => {
     if (!disabled) onChoose(effect);
   };
-  // El ratón y el dedo eligen en `pointerdown`; su clic, que llega al soltar, ya no cuenta. Enter y
-  // Espacio solo generan el clic, sin puntero (`detail` 0): ese sí elige.
+  // El ratón y el dedo eligen en `pointerdown`, solo con el botón principal (`button` 0, también el
+  // del dedo): el derecho abre el menú contextual y no debe cambiar la luz. Su clic, que llega al
+  // soltar, ya no cuenta. Enter y Espacio solo generan el clic, sin puntero (`detail` 0): ese sí elige.
+  const chooseFromPointer = (event: PointerEvent) => {
+    if (event.button === 0) choose();
+  };
   const chooseFromKeyboard = (event: MouseEvent) => {
     if (event.detail === 0) choose();
   };
@@ -63,7 +67,7 @@ function EffectButton({ effect, reactive, active, disabled, onChoose }: Readonly
         aria-current={active ? 'true' : undefined}
         aria-describedby={disabled ? reasonId : undefined}
         disabled={disabled}
-        onPointerDown={choose}
+        onPointerDown={chooseFromPointer}
         onClick={chooseFromKeyboard}
         rightSection={
           <Badge variant="light" color={reactive ? 'orange' : 'teal'}>

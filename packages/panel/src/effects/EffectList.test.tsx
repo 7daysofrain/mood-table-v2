@@ -34,6 +34,18 @@ describe('la lista de efectos', () => {
     expect(onChoose).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    ['central', 1],
+    ['derecho', 2],
+  ])('el botón %s del ratón no elige el efecto', (_name, button) => {
+    const onChoose = vi.fn();
+    render(<EffectList active="energy" hasAudioSource onChoose={onChoose} />);
+
+    fireEvent.pointerDown(screen.getByRole('button', BREATHING), { button });
+
+    expect(onChoose).not.toHaveBeenCalled();
+  });
+
   it('con el teclado, Enter o Espacio lo eligen una sola vez', () => {
     const onChoose = vi.fn();
     render(<EffectList active="energy" hasAudioSource onChoose={onChoose} />);
