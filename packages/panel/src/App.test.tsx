@@ -1,4 +1,4 @@
-import type { SourceMessage } from '@moodtable/shared';
+import type { SourceMessage, StripState } from '@moodtable/shared';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +18,7 @@ function fakeConnection() {
     source: undefined as SourceMessage | undefined,
     level: undefined as number | undefined,
     sourceLost: false as boolean,
+    strips: undefined as readonly StripState[] | undefined,
     start: vi.fn(),
     stop: vi.fn(),
     subscribe: (listener: () => void) => {

@@ -111,7 +111,7 @@
   guarda las tiras que llegan por el tipo `6` y avisa al cambiar; un mensaje `6` que no cumple el
   esquema no cambia nada; las olvida al perder la conexión (decisión 8).
   Verificar: los tests nuevos fallan porque la conexión no decodifica el tipo `6`.
-- [ ] 3.2 Las tiras en `packages/panel/src/engine/connection.ts` y en `PanelConnection`.
+- [x] 3.2 Las tiras en `packages/panel/src/engine/connection.ts` y en `PanelConnection`.
   Verificar: los tests de 3.1 pasan.
 - [ ] 3.3 **(test en rojo)** Tests del envío de cambios en
   `packages/panel/src/engine/effect-requests.test.ts`, con un `fetch` falso: un cambio envía

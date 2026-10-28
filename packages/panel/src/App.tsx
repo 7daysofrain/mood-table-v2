@@ -16,6 +16,7 @@ export type PanelConnection = Pick<
   | 'source'
   | 'sourceLost'
   | 'level'
+  | 'strips'
   | 'subscribe'
   | 'subscribePositions'
   | 'start'
