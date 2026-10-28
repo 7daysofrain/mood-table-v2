@@ -1,10 +1,11 @@
 import { Group } from '@mantine/core';
+import type { EffectId } from '@moodtable/shared';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 import { AudioControl } from './audio/AudioControl.tsx';
 import { AudioPlayer } from './audio/player.ts';
 import { EngineConnection, viewerUrl } from './engine/connection.ts';
-import { EffectRequests } from './engine/effect-requests.ts';
+import { effectRequests, type StripRequests } from './engine/strip-requests.ts';
 import { EffectList } from './effects/EffectList.tsx';
 import { AudioSourceIndicator } from './layout/AudioSourceIndicator.tsx';
 import { PanelLayout } from './layout/PanelLayout.tsx';
@@ -27,7 +28,7 @@ export type PanelConnection = Pick<
 >;
 
 /** Lo que el panel usa del envío de los cambios de efecto. */
-export type PanelEffectRequests = Pick<EffectRequests, 'send'>;
+export type PanelEffectRequests = Pick<StripRequests<EffectId>, 'send'>;
 
 /** Lo que el panel usa del reproductor del fichero de audio. */
 export type PanelPlayer = Pick<
@@ -55,7 +56,7 @@ export function App({
     () => provided ?? new EngineConnection(viewerUrl(window.location)),
   );
   const [player] = useState<PanelPlayer>(() => providedPlayer ?? new AudioPlayer(connection));
-  const [requests] = useState<PanelEffectRequests>(() => providedRequests ?? new EffectRequests());
+  const [requests] = useState<PanelEffectRequests>(() => providedRequests ?? effectRequests());
   // La tira seleccionada se guarda por su `id`, también sin conexión: al volver, si sigue declarada,
   // vuelve a estar seleccionada, y si no, la primera (decisión 8).
   const [selectedId, setSelectedId] = useState<string>();

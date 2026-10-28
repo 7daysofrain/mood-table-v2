@@ -96,7 +96,7 @@
   una tira tiene envíos en camino o pendientes y avisa cuando se vacía. Los tests del cambio de efecto
   siguen pasando con la cola generalizada (decisión 3).
   Verificar: los tests nuevos fallan porque la cola de valores no existe.
-- [ ] 3.2 La cola por tira generalizada (ruta y cuerpo como parámetros) a partir de
+- [x] 3.2 La cola por tira generalizada (ruta y cuerpo como parámetros) a partir de
   `effect-requests.ts`, con una instancia para efectos y otra para valores.
   Verificar: los tests de 3.1 y los de `effect-requests` pasan.
 - [ ] 3.3 **(test en rojo)** Tests de la traducción de esquema a control (función pura): el color da
