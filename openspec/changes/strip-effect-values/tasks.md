@@ -104,7 +104,7 @@
   recorrido en unos 4,5 s; cada parámetro de cada efecto del catálogo tiene control y nombre
   (decisiones 1, 5 y 9).
   Verificar: los tests nuevos fallan porque la función no existe.
-- [ ] 3.4 La función de traducción y los nombres de los parámetros en `literals.ts`, con un tipo que
+- [x] 3.4 La función de traducción y los nombres de los parámetros en `literals.ts`, con un tipo que
   obliga a tener el de cada parámetro de cada efecto.
   Verificar: los tests de 3.3 pasan y `pnpm typecheck` falla si se quita un nombre.
 - [ ] 3.5 **(test en rojo)** Tests de la zona Controles (componente y `App.test.tsx`), con la conexión
