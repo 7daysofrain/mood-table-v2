@@ -14,7 +14,7 @@
  */
 import { TypeSafeClassifier } from '@langchain/typesafe';
 
-import type { Triager } from '../core/ports.ts';
+import { type Triager, TriageFailedError } from '../core/ports.ts';
 import { estimatedTokens, type Finding, findingKeys } from '../core/triage.ts';
 
 export interface DecisionModelOptions {
@@ -60,32 +60,38 @@ export function createDecisionModel({
       const description = { title: context.title, body: context.description };
       const probabilities = new Map<string, number>();
       let inputTokens = 0;
-      for (const batch of batches(keyed, estimatedTokens(description))) {
-        const classifier = new TypeSafeClassifier({
-          model,
-          apiKey,
-          baseUrl,
-          maxRetries,
-          ...(fetch ? { fetch } : {}),
-          questions: Object.fromEntries(
-            batch.map(({ key, finding }) => [
-              key,
-              { type: 'noul', instructions: instructions(finding), criteria: CRITERIA },
-            ]),
-          ),
-        });
-        const state = {
-          pr_author_description: description,
-          ...Object.fromEntries(batch.map(({ key, finding }) => [key, wire(finding)])),
-        };
-        const result = await classifier.invoke(state);
-        // Sin `usage`, el coste se estima: mejor de más que de menos (BE8).
-        inputTokens += result.usage?.inputTokens ?? estimatedTokens(state);
-        for (const { key } of batch) {
-          const answer = result.answers[key];
-          if (answer?.type !== 'noul') throw new Error(`El modelo no ha respondido sobre ${key}`);
-          probabilities.set(key, answer.noul);
+      try {
+        // Una petición tras otra: si falla una, no se paga ninguna más.
+        for (const batch of batches(keyed, estimatedTokens(description))) {
+          const classifier = new TypeSafeClassifier({
+            model,
+            apiKey,
+            baseUrl,
+            maxRetries,
+            ...(fetch ? { fetch } : {}),
+            questions: Object.fromEntries(
+              batch.map(({ key, finding }) => [
+                key,
+                { type: 'noul', instructions: instructions(finding), criteria: CRITERIA },
+              ]),
+            ),
+          });
+          const state = {
+            pr_author_description: description,
+            ...Object.fromEntries(batch.map(({ key, finding }) => [key, wire(finding)])),
+          };
+          const result = await classifier.invoke(state);
+          // Sin `usage`, el coste se estima: mejor de más que de menos (BE8).
+          inputTokens += result.usage?.inputTokens ?? estimatedTokens(state);
+          for (const { key } of batch) {
+            const answer = result.answers[key];
+            if (answer?.type !== 'noul') throw new Error(`El modelo no ha respondido sobre ${key}`);
+            probabilities.set(key, answer.noul);
+          }
         }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new TriageFailedError(message, inputTokens, { cause: error });
       }
       return { probabilities: keys.map((key) => probabilities.get(key) ?? 0), inputTokens };
     },

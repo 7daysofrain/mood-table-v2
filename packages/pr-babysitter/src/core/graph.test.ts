@@ -9,6 +9,7 @@ import {
   type Notifier,
   type ReviewRequests,
   type Triager,
+  TriageFailedError,
 } from './ports.ts';
 import type { Check, PullRequestSnapshot, Review } from './pull-request.ts';
 import type { Finding, PullRequestContext } from './triage.ts';
@@ -813,6 +814,27 @@ describe('el triaje no actúa sobre la PR', () => {
     });
     expect(lines).toEqual([expect.stringContaining('El modelo no responde') as string]);
     expect(state.next).toEqual([]);
+  });
+
+  it('si el modelo falla después de cobrar parte del triaje, eso suma al gasto de la PR', async () => {
+    const triage = recordingTriage([codexP2, e2eFailing], () =>
+      Promise.reject(new TriageFailedError('Falla la segunda petición', 12_000)),
+    );
+
+    const state = await followTriage(triage, failing, 0.01);
+
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
+          { verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
+        ],
+        inputTokens: 12_000,
+      },
+    });
+    const values = state.values as { spentUsd: number; triage: { costUsd: number } };
+    expect(values.triage.costUsd).toBeCloseTo(0.00288, 10);
+    expect(values.spentUsd).toBeCloseTo(0.01288, 10);
   });
 
   it('si GitHub falla al leer los hallazgos, el nodo queda pendiente y se reintenta', async () => {

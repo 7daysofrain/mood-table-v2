@@ -278,7 +278,7 @@ questions:
 | GitHub al leer los hallazgos: red, 5xx, límite de la API | El nodo `triar` lanza y se reintenta en la vuelta siguiente | El aviso final, una vuelta más tarde |
 | GitHub rechaza el token (401) | Como siempre: aviso al issue buzón | El aviso del token |
 | El log de una comprobación no se puede leer | Ese hallazgo sale sin contexto (regla 1) | «Exige criterio: no he podido leer el log» |
-| El modelo no responde o da error, tras los reintentos del cliente | Los hallazgos que iban a él salen *exige criterio* (regla 3), lo deja en el log y sigue | El resumen con ese motivo, y el aviso final |
+| El modelo no responde o da error, tras los reintentos del cliente | Los hallazgos que iban a él salen *exige criterio* (regla 3), lo deja en el log y sigue. Si el triaje iba en varias peticiones y falla una posterior, lo que ya ha cobrado suma al gasto de la PR (`TriageFailedError`) | El resumen con ese motivo, y el aviso final |
 | GitHub rechaza el resumen (4xx que no es el token ni el límite) | Lo deja en el log y sigue al aviso final | El aviso final, sin resumen |
 | Red o 5xx al publicar | El nodo lanza y se reintenta, sin volver a triar | El resumen y el aviso, una vuelta más tarde |
 

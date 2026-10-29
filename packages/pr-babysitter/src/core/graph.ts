@@ -40,6 +40,7 @@ import {
   type Notifier,
   type ReviewRequests,
   type Triager,
+  TriageFailedError,
 } from './ports.ts';
 import { type PullRequestSnapshot, pullRequestSnapshotSchema } from './pull-request.ts';
 import {
@@ -275,6 +276,8 @@ export function createTrackingGraph(
           answers.set(finding, { kind: 'answered', probability: result.probabilities[i] ?? 0 });
         });
       } catch (error) {
+        // Lo que ya ha cobrado antes de fallar también es gasto de la PR.
+        if (error instanceof TriageFailedError) inputTokens = error.inputTokens;
         log(
           `El modelo de decisión no ha respondido en la PR #${snapshot.number}; ` +
             `sus hallazgos exigen criterio: ${error instanceof Error ? error.message : String(error)}`,

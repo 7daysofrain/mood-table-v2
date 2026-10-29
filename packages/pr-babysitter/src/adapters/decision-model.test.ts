@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { type Call, fakeFetch, json } from '../../test/fake-github.ts';
 import type { Finding, PullRequestContext } from '../core/triage.ts';
+import { TriageFailedError } from '../core/ports.ts';
 import { createDecisionModel } from './decision-model.ts';
 
 async function recorded(name: string): Promise<string> {
@@ -153,10 +154,13 @@ describe('la respuesta', () => {
     await expect(triager.triage(context, [p1, p2, check('e2e', 'Error')])).rejects.toThrow();
   });
 
-  it('si el proveedor da un error, lanza', async () => {
+  it('si el proveedor da un error, lanza sin tokens cobrados', async () => {
     const { triager } = model(() => json('{"error":"insufficient credits"}', 500));
 
-    await expect(triager.triage(context, [p1])).rejects.toThrow();
+    const failure = triager.triage(context, [p1]);
+
+    await expect(failure).rejects.toBeInstanceOf(TriageFailedError);
+    await expect(failure).rejects.toMatchObject({ inputTokens: 0 });
   });
 });
 
@@ -176,6 +180,20 @@ describe('si la petición no cabe', () => {
       });
     }
     expect(result).toEqual({ probabilities: findings.map(() => 0.5), inputTokens: 200 });
+  });
+
+  it('si falla una petición después de otra, lanza con los tokens que ya ha cobrado', async () => {
+    let calls = 0;
+    const { triager } = model((call) => {
+      calls += 1;
+      return calls === 1 ? answerAll(call) : json('{"error":"insufficient credits"}', 500);
+    });
+    const findings = Array.from({ length: 33 }, (_, i) => check(`check-${i}`, 'Error'));
+
+    const failure = triager.triage(context, findings);
+
+    await expect(failure).rejects.toBeInstanceOf(TriageFailedError);
+    await expect(failure).rejects.toMatchObject({ inputTokens: 100 });
   });
 
   it('si no cabe en el contexto del modelo, se parte por hallazgos', async () => {

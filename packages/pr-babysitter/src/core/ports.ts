@@ -71,7 +71,8 @@ export interface Findings {
 /**
  * El modelo de decisión (change pr-shadow-triage, decisión 3): para cada hallazgo, en su orden, la
  * probabilidad de que haya que arreglarlo en esta PR antes de integrarla, y los tokens de entrada
- * que ha cobrado. No sabe de umbrales ni de reglas. Si el modelo no responde, lanza.
+ * que ha cobrado. No sabe de umbrales ni de reglas. Si el modelo no responde, lanza
+ * `TriageFailedError`.
  */
 export interface Triager {
   triage(
@@ -92,4 +93,21 @@ export class GitHubUnauthorizedError extends Error {
  */
 export class GitHubRequestRejectedError extends Error {
   override readonly name = 'GitHubRequestRejectedError';
+}
+
+/**
+ * El modelo de decisión no ha respondido a todo el triaje. Lleva los tokens de entrada que ya ha
+ * cobrado: si el triaje va en varias peticiones y falla una posterior, las anteriores se han pagado
+ * y suman al gasto de la PR (change pr-shadow-triage, decisión 6).
+ */
+export class TriageFailedError extends Error {
+  override readonly name = 'TriageFailedError';
+
+  constructor(
+    message: string,
+    readonly inputTokens: number,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+  }
 }
