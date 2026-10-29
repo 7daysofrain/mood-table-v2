@@ -127,3 +127,34 @@ function parseRequestMark(text: string): string | null {
   const parsed = requestMarkSchema.safeParse(json);
   return parsed.success ? parsed.data.sha : null;
 }
+
+/** La primera línea de un hallazgo de Codex: la insignia y el título, en negrita. */
+const FINDING_HEADING = /^\*\*<sub><sub>!\[(P\d) Badge\]\([^)]*\)<\/sub><\/sub>(.*)\*\*$/;
+
+/**
+ * Un hallazgo de Codex, de un comentario de revisión en línea (change pr-shadow-triage, decisión 2):
+ * la primera línea lleva en negrita la insignia de severidad y el título; el resto es la
+ * explicación, con una coletilla para reaccionar y una marca oculta, que no son del hallazgo. P0 y
+ * P1 son severidad alta. Sin insignia, la primera línea es el título y la severidad es normal.
+ */
+export function parseCodexFinding(body: string): {
+  badge: string | null;
+  severity: 'high' | 'normal';
+  title: string;
+  text: string;
+} {
+  const [first = '', ...rest] = body.split('\n');
+  const heading = FINDING_HEADING.exec(first.trim());
+  const badge = heading?.[1] ?? null;
+  const title = heading?.[2] ?? first.replaceAll('**', '');
+  const text = rest
+    .join('\n')
+    .replaceAll(/<!--.*?-->/gs, '')
+    .replace(/^Useful\? React with .*$/m, '');
+  return {
+    badge,
+    severity: badge === 'P0' || badge === 'P1' ? 'high' : 'normal',
+    title: title.trim(),
+    text: text.trim(),
+  };
+}

@@ -104,6 +104,10 @@ function setup(pullRequests: OpenPullRequest[] = []) {
       reviewer,
       reviewRequests,
       notifier: port,
+      // Sin hallazgos que triar: el triaje se prueba en el grafo.
+      findings: { read: () => Promise.resolve({ context: { title: '', description: '' }, findings: [] }) },
+      triager: { triage: () => Promise.reject(new Error('no hay hallazgos que triar')) },
+      triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 } },
       checkpointer: new MemorySaver(),
       policy: { maintainer: MAINTAINER, baseBranch: 'main' },
       timeoutMs: 30 * MINUTE,

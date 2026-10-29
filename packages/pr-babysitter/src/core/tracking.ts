@@ -90,6 +90,18 @@ export function finalState(snapshot: PullRequestSnapshot, push: TrackedPush): Fi
   return { status: 'needsIntervention', reasons };
 }
 
+/**
+ * Si hay que triar antes de avisar del estado final (change pr-shadow-triage, decisión 1): necesita
+ * intervención porque falla una comprobación o el revisor tiene hallazgos. Lo que no termina a
+ * tiempo no deja hallazgos que triar.
+ */
+export function needsTriage(state: FinalState): boolean {
+  return (
+    state.status === 'needsIntervention' &&
+    state.reasons.some(({ kind }) => kind === 'checksFailed' || kind === 'reviewFindings')
+  );
+}
+
 /** El push de la foto: el que se seguía o, si el SHA ha cambiado, uno nuevo desde esta foto. */
 export function pushOf(current: TrackedPush, snapshot: PullRequestSnapshot): TrackedPush {
   return current.sha === snapshot.headSha

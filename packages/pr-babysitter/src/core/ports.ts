@@ -5,6 +5,7 @@
  */
 import type { Notice } from './notice.ts';
 import type { Check, OpenPullRequest, Review } from './pull-request.ts';
+import type { Finding, PullRequestContext } from './triage.ts';
 
 /**
  * Publica un aviso para el mantenedor. Solo envía: la respuesta se diseña en BH4. Si el canal no lo
@@ -51,6 +52,35 @@ export interface ReviewRequests {
   request(pullRequestNumber: number, sha: string): Promise<void>;
 }
 
+/**
+ * Los hallazgos de un push (change pr-shadow-triage, decisión 2): los comentarios del revisor hechos
+ * sobre ese push y las comprobaciones que fallan, cada uno con su contexto, y el título y la
+ * descripción de la PR. Solo los del revisor: un comentario de otra cuenta nunca es un hallazgo
+ * (BE6).
+ *
+ * Lanza como `GitHubReader`. Un contexto que GitHub no da no es un fallo: el hallazgo va sin él.
+ */
+export interface Findings {
+  read(
+    pullRequestNumber: number,
+    sha: string,
+    failedChecks: string[],
+  ): Promise<{ context: PullRequestContext; findings: Finding[] }>;
+}
+
+/**
+ * El modelo de decisión (change pr-shadow-triage, decisión 3): para cada hallazgo, en su orden, la
+ * probabilidad de que haya que arreglarlo en esta PR antes de integrarla, y los tokens de entrada
+ * que ha cobrado. No sabe de umbrales ni de reglas. Si el modelo no responde, lanza
+ * `TriageFailedError`.
+ */
+export interface Triager {
+  triage(
+    context: PullRequestContext,
+    findings: Finding[],
+  ): Promise<{ probabilities: number[]; inputTokens: number }>;
+}
+
 /** GitHub rechaza el token (401): hay que avisar, porque no se arregla solo (decisión 3). */
 export class GitHubUnauthorizedError extends Error {
   override readonly name = 'GitHubUnauthorizedError';
@@ -63,4 +93,21 @@ export class GitHubUnauthorizedError extends Error {
  */
 export class GitHubRequestRejectedError extends Error {
   override readonly name = 'GitHubRequestRejectedError';
+}
+
+/**
+ * El modelo de decisión no ha respondido a todo el triaje. Lleva los tokens de entrada que ya ha
+ * cobrado: si el triaje va en varias peticiones y falla una posterior, las anteriores se han pagado
+ * y suman al gasto de la PR (change pr-shadow-triage, decisión 6).
+ */
+export class TriageFailedError extends Error {
+  override readonly name = 'TriageFailedError';
+
+  constructor(
+    message: string,
+    readonly inputTokens: number,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+  }
 }
