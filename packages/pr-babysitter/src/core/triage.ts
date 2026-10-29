@@ -146,7 +146,8 @@ function slug(text: string): string {
     .normalize('NFKD')
     .toLowerCase()
     .replaceAll(/[^a-z0-9]+/g, '_')
-    .replaceAll(/^_+|_+$/g, '');
+    // Ya no hay dos `_` seguidos: basta con quitar uno por cada punta.
+    .replaceAll(/^_|_$/g, '');
 }
 
 function identity(finding: Finding): string {
@@ -166,7 +167,9 @@ export function findingKeys(findings: Finding[]): string[] {
   return findings.map((finding) => {
     const base = identity(finding).slice(0, MAX_KEY_LENGTH);
     let key = base;
-    for (let n = 2; used.has(key); n++) {
+    let n = 1;
+    while (used.has(key)) {
+      n += 1;
       const suffix = `_${n}`;
       key = base.slice(0, MAX_KEY_LENGTH - suffix.length) + suffix;
     }

@@ -129,7 +129,7 @@ function parseRequestMark(text: string): string | null {
 }
 
 /** La primera línea de un hallazgo de Codex: la insignia y el título, en negrita. */
-const FINDING_HEADING = /^\*\*<sub><sub>!\[(P\d) Badge\]\([^)]*\)<\/sub><\/sub>\s*(.*?)\*\*$/;
+const FINDING_HEADING = /^\*\*<sub><sub>!\[(P\d) Badge\]\([^)]*\)<\/sub><\/sub>(.*)\*\*$/;
 
 /**
  * Un hallazgo de Codex, de un comentario de revisión en línea (change pr-shadow-triage, decisión 2):
