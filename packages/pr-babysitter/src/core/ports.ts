@@ -53,6 +53,20 @@ export interface ReviewRequests {
 }
 
 /**
+ * El resumen del triaje en la PR (change pr-shadow-triage, decisión 7), uno por push. El texto lo
+ * arma el núcleo (`triage-summary.ts`) con una marca del SHA; el adaptador lo publica y la busca.
+ *
+ * Lanza como `ReviewRequests`: `GitHubRequestRejectedError` si GitHub rechaza el comentario, y
+ * cualquier otro error si falla y se puede reintentar.
+ */
+export interface TriageSummaries {
+  /** Si el sistema ya ha publicado, con su token, el resumen de ese push. */
+  published(pullRequestNumber: number, sha: string): Promise<boolean>;
+  /** Publica el resumen de ese push. */
+  publish(pullRequestNumber: number, sha: string, text: string): Promise<void>;
+}
+
+/**
  * Los hallazgos de un push (change pr-shadow-triage, decisión 2): los comentarios del revisor hechos
  * sobre ese push y las comprobaciones que fallan, cada uno con su contexto, y el título y la
  * descripción de la PR. Solo los del revisor: un comentario de otra cuenta nunca es un hallazgo

@@ -117,7 +117,7 @@
 - [x] 2.3 **(test en rojo)** El adaptador del resumen en `adapters/triage-summary.test.ts`: publica
   con `createComment`; `published` es cierto solo con la marca de ese SHA en un comentario del
   mantenedor; un 403 o un 422 lanzan el error de petición rechazada, y un 5xx, un error cualquiera.
-- [ ] 2.4 El puerto `TriageSummaries` en `core/ports.ts` y su adaptador en
+- [x] 2.4 El puerto `TriageSummaries` en `core/ports.ts` y su adaptador en
   `adapters/triage-summary.ts`.
   Verificar: los tests de 2.3 en verde.
 - [ ] 2.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
