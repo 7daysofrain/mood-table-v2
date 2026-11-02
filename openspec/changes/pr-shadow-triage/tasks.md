@@ -133,7 +133,7 @@
   `TriageSummaries`; README §2.5, que el token comenta para pedir la revisión y para el resumen;
   `prompts.md` §6, lo que añada esta tarea a la entrada de la historia.
   Verificar: `pnpm lint` en verde.
-- [ ] 2.8 **Prueba a mano** (sin commit), con el sistema en marcha: una PR de prueba del mantenedor
+- [x] 2.8 **Prueba a mano** (sin commit), con el sistema en marcha: una PR de prueba del mantenedor
   con un hallazgo de Codex y una comprobación que falla.
   Verificar: aparece un resumen firmado con el push y una fila por hallazgo, y después el aviso final
   de Linear; tras un push nuevo con hallazgos, un segundo resumen y el primero intacto. En LangSmith, el hilo pasa por
