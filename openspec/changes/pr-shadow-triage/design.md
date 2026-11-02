@@ -274,6 +274,10 @@ questions:
   evita, de paso, un segundo resumen. Garantizarlo y no volver a triar es de `MOO-85` (BE7), un
   non-goal de la historia.
 - **Como la petición de revisión:** sale a nombre del mantenedor y se identifica por su texto (D83).
+- **Sin hallazgos no hay resumen** (al implementar `MOO-109`, 2-nov): si la PR necesita intervención
+  pero el push no tiene hallazgos que triar (p. ej. los comentarios del revisor no se han podido
+  asociar al push), no se publica nada. Un resumen vacío no le cuenta nada al mantenedor, y la traza
+  ya lo muestra.
 
 ### 8. Si algo falla, el aviso final llega igual
 

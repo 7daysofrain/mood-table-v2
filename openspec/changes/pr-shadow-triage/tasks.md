@@ -129,7 +129,7 @@
   `src/studio.ts`.
   Verificar: los tests de 2.5 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 2.7 Documentación: README §2.2 (*PR Babysitter*), el nodo `publicarResumen` y el puerto
+- [x] 2.7 Documentación: README §2.2 (*PR Babysitter*), el nodo `publicarResumen` y el puerto
   `TriageSummaries`; README §2.5, que el token comenta para pedir la revisión y para el resumen;
   `prompts.md` §6, lo que añada esta tarea a la entrada de la historia.
   Verificar: `pnpm lint` en verde.
