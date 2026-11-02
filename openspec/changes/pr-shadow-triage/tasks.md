@@ -108,7 +108,7 @@
 
 ## 2. MOO-109 · infra
 
-- [ ] 2.1 **(test en rojo)** El texto del resumen (`design.md` decisión 7) en
+- [x] 2.1 **(test en rojo)** El texto del resumen (`design.md` decisión 7) en
   `core/triage-summary.test.ts`: la firma y el push con su SHA corto; una fila por hallazgo con su
   identidad, la clase en español (real, no aplica, exige criterio) y el porqué de cada regla; la
   marca oculta con el SHA completo.
