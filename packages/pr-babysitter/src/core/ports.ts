@@ -103,11 +103,10 @@ export class GitHubRequestRejectedError extends Error {
 export class TriageFailedError extends Error {
   override readonly name = 'TriageFailedError';
 
-  constructor(
-    message: string,
-    readonly inputTokens: number,
-    options?: ErrorOptions,
-  ) {
+  readonly inputTokens: number;
+
+  constructor(message: string, inputTokens: number, options?: ErrorOptions) {
     super(message, options);
+    this.inputTokens = inputTokens;
   }
 }
