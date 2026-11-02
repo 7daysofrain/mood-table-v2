@@ -120,7 +120,7 @@
 - [x] 2.4 El puerto `TriageSummaries` en `core/ports.ts` y su adaptador en
   `adapters/triage-summary.ts`.
   Verificar: los tests de 2.3 en verde.
-- [ ] 2.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
+- [x] 2.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
   `specs/pr-triage` y `specs/pr-tracking` que toca esta sección: tras `triar`, `publicarResumen`
   publica una vez y sigue al aviso final; con el resumen de ese SHA ya publicado, no lo repite; si
   GitHub lo rechaza, lo deja en el log y el aviso final llega igual; si falla por la red, el nodo queda
