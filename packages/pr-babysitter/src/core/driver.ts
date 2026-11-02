@@ -38,6 +38,7 @@ import {
   type ReviewReader,
   type ReviewRequests,
   type Triager,
+  type TriageSummaries,
 } from './ports.ts';
 import {
   isStopped,
@@ -56,6 +57,8 @@ export interface DriverOptions {
   /** Los hallazgos de un push y el modelo que los tría (change pr-shadow-triage). */
   findings: Findings;
   triager: Triager;
+  /** Donde publica el resumen del triaje de cada push (change pr-shadow-triage, decisión 7). */
+  summaries: TriageSummaries;
   /** El umbral de real y el tope de gasto de cada PR (change pr-shadow-triage, decisiones 4 y 6). */
   triage: TrackingOptions['triage'];
   /** Donde guarda cada hilo su estado. `MemorySaver` hasta BE7 (D73). */
@@ -82,6 +85,7 @@ export function createDriver({
   notifier,
   findings,
   triager,
+  summaries,
   triage,
   checkpointer,
   policy,
@@ -89,7 +93,7 @@ export function createDriver({
   log,
 }: DriverOptions): Driver {
   const graph = createTrackingGraph(
-    { notifier, reviewRequests, findings, triager },
+    { notifier, reviewRequests, findings, triager, summaries },
     checkpointer,
     { timeoutMs, log, triage },
   );

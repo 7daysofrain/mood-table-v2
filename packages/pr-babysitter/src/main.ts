@@ -19,6 +19,7 @@ import { createDecisionModel } from './adapters/decision-model.ts';
 import { createFindings } from './adapters/findings.ts';
 import { createGitHubReader } from './adapters/github.ts';
 import { createLinearNotifier } from './adapters/linear.ts';
+import { createTriageSummaries } from './adapters/triage-summary.ts';
 import { createDriver, runDriver } from './core/driver.ts';
 
 const OWNER = '7daysofrain';
@@ -66,6 +67,11 @@ const driver = createDriver({
     baseUrl: config.decisionModelBaseUrl,
     model: config.decisionModel,
     apiKey: config.decisionModelApiKey,
+  }),
+  summaries: createTriageSummaries({
+    maintainer: config.githubMaintainer,
+    listComments: (number) => github.listComments(number),
+    createComment: (number, body) => github.createComment(number, body),
   }),
   triage: {
     threshold: config.triageThreshold,

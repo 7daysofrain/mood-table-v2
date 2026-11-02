@@ -125,7 +125,7 @@
   publica una vez y sigue al aviso final; con el resumen de ese SHA ya publicado, no lo repite; si
   GitHub lo rechaza, lo deja en el log y el aviso final llega igual; si falla por la red, el nodo queda
   pendiente y se reintenta sin volver a llamar al `Triager`; un push nuevo publica su propio resumen.
-- [ ] 2.6 El nodo `publicarResumen` y su arista en `core/graph.ts`, y el montaje en `src/main.ts` y
+- [x] 2.6 El nodo `publicarResumen` y su arista en `core/graph.ts`, y el montaje en `src/main.ts` y
   `src/studio.ts`.
   Verificar: los tests de 2.5 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.

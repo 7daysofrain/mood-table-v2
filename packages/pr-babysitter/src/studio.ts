@@ -9,7 +9,13 @@
 import { MemorySaver } from '@langchain/langgraph';
 
 import { createTrackingGraph } from './core/graph.ts';
-import type { Findings, Notifier, ReviewRequests, Triager } from './core/ports.ts';
+import type {
+  Findings,
+  Notifier,
+  ReviewRequests,
+  Triager,
+  TriageSummaries,
+} from './core/ports.ts';
 
 /** El tiempo de espera por defecto del contenedor (`TRACKING_TIMEOUT_MINUTES`). */
 const TIMEOUT_MS = 30 * 60_000;
@@ -69,10 +75,19 @@ const triager: Triager = {
   },
 };
 
+/** En lugar de comentar en la PR, escribe el resumen en la consola. */
+const summaries: TriageSummaries = {
+  published: () => Promise.resolve(false),
+  publish(pullRequestNumber, sha, text) {
+    console.log(`Resumen del triaje: PR #${pullRequestNumber}, push ${sha}\n${text}`);
+    return Promise.resolve();
+  },
+};
+
 // El servidor de Studio cambia el checkpointer del grafo por el suyo en cada ejecución; este solo
 // cumple la firma de `createTrackingGraph`.
 export const graph = createTrackingGraph(
-  { notifier, reviewRequests, findings, triager },
+  { notifier, reviewRequests, findings, triager, summaries },
   new MemorySaver(),
   {
     timeoutMs: TIMEOUT_MS,
