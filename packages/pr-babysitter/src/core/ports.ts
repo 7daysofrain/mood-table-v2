@@ -75,6 +75,12 @@ export interface Findings {
  * `TriageFailedError`.
  */
 export interface Triager {
+  /**
+   * Los tokens de entrada que costaría triar esos hallazgos, estimados antes de llamar y por lo
+   * alto: las peticiones enteras, con las preguntas y sus criterios, y la PR en cada una (decisión
+   * 6). Solo el adaptador sabe cómo son.
+   */
+  estimate(context: PullRequestContext, findings: Finding[]): number;
   triage(
     context: PullRequestContext,
     findings: Finding[],

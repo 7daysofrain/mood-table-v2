@@ -97,35 +97,24 @@ export interface TriageBudget {
   inputPricePerMTok: number;
 }
 
-/** Bytes por token al estimar: conservador, porque los tokens reales son algo menos (paso 1.1). */
-const BYTES_PER_TOKEN = 3;
-
-/** Los tokens que costará mandar un valor al modelo, estimados por su tamaño en JSON. */
-export function estimatedTokens(value: unknown): number {
-  return Math.ceil(new TextEncoder().encode(JSON.stringify(value)).length / BYTES_PER_TOKEN);
-}
-
 /**
  * Qué hallazgos caben en lo que queda del tope de la PR (decisión 6). La salida es gratis, así que
- * el coste es solo de entrada, y se estima antes de llamar: el contexto de la PR una vez por
- * petición y cada hallazgo por su tamaño. Entran por orden los que caben; los demás se quedan
- * fuera (regla 2).
+ * el coste es solo de entrada, y lo estima antes de llamar el modelo de decisión (`estimate`), que
+ * sabe cómo son sus peticiones. Entran por orden los que caben junto con los que ya han entrado; los
+ * demás se quedan fuera (regla 2).
  */
 export function withinBudget(
-  context: PullRequestContext,
   findings: Finding[],
   spentUsd: number,
   budget: TriageBudget,
+  estimate: (findings: Finding[]) => number,
 ): { asked: Finding[]; overBudget: Finding[] } {
   const affordable = ((budget.capUsd - spentUsd) * 1_000_000) / budget.inputPricePerMTok;
-  let tokens = estimatedTokens(context);
   const asked: Finding[] = [];
   const overBudget: Finding[] = [];
   for (const finding of findings) {
-    const withIt = tokens + estimatedTokens(finding);
-    if (withIt <= affordable) {
+    if (estimate([...asked, finding]) <= affordable) {
       asked.push(finding);
-      tokens = withIt;
     } else {
       overBudget.push(finding);
     }

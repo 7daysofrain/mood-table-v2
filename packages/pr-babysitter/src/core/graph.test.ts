@@ -83,8 +83,16 @@ interface TriagePorts {
 
 const noFindings: TriagePorts = {
   findings: { read: () => Promise.resolve({ context: CONTEXT, findings: [] }) },
-  triager: { triage: () => Promise.reject(new Error('no hay hallazgos que triar')) },
+  triager: {
+    estimate: () => 0,
+    triage: () => Promise.reject(new Error('no hay hallazgos que triar')),
+  },
 };
+
+/** La estimación del modelo falso: 1 token cada 3 bytes de la PR y los hallazgos en JSON. */
+function sizeInTokens(context: PullRequestContext, findings: Finding[]): number {
+  return Math.ceil(JSON.stringify({ context, findings }).length / 3);
+}
 
 /**
  * El grafo con un `Notifier`, sin fallos al pedir la revisión, con 30 min de tiempo de espera, el
@@ -587,6 +595,7 @@ function recordingTriage(
   const events: string[] = [];
   const reads: { number: number; sha: string; failedChecks: string[] }[] = [];
   const asked: { context: PullRequestContext; findings: Finding[] }[] = [];
+  const estimated: { context: PullRequestContext; findings: Finding[] }[] = [];
   const github = { failure: undefined as Error | undefined };
   const ports: TriagePorts = {
     findings: {
@@ -598,6 +607,10 @@ function recordingTriage(
       },
     },
     triager: {
+      estimate(context, findings) {
+        estimated.push({ context, findings });
+        return sizeInTokens(context, findings);
+      },
       triage(context, findings) {
         events.push('preguntar al modelo');
         asked.push({ context, findings });
@@ -611,7 +624,7 @@ function recordingTriage(
       return Promise.resolve();
     },
   };
-  return { ports, notifier, events, reads, asked, github };
+  return { ports, notifier, events, reads, asked, estimated, github };
 }
 
 /** Sigue el hilo con un triaje que se puede seguir; `spentUsd` es el gasto de la PR al empezar. */
@@ -755,6 +768,11 @@ describe('el triaje no pasa del tope de gasto de la PR', () => {
     // Quedan 0,0001 $: unos 400 tokens, sitio para el comentario pero no para el log.
     const state = await followTriage(triage, failing, 0.0499);
 
+    // El coste lo estima el modelo, con la PR y los que ya han entrado.
+    expect(triage.estimated).toEqual([
+      { context: CONTEXT, findings: [codexP2] },
+      { context: CONTEXT, findings: [codexP2, longLog] },
+    ]);
     expect(triage.asked.map(({ findings }) => findings)).toEqual([[codexP2]]);
     expect(state.values).toMatchObject({
       triage: {

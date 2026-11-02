@@ -208,3 +208,42 @@ describe('si la petición no cabe', () => {
     expect(result.probabilities).toEqual([0.5, 0.5, 0.5]);
   });
 });
+
+describe('la estimación del coste (design.md, decisión 6)', () => {
+  /** Los tokens de lo que se ha mandado: el `state` y las preguntas de cada petición. */
+  const sentTokens = (calls: Call[]) =>
+    calls.reduce((tokens, call) => {
+      const { state, questions } = sent(call);
+      const bytes = new TextEncoder().encode(JSON.stringify({ state, questions })).length;
+      return tokens + Math.ceil(bytes / 3);
+    }, 0);
+
+  it('cuenta la petición entera: cada pregunta con sus criterios, no solo el state', async () => {
+    const { triager, calls } = model(answerAll);
+
+    const estimate = triager.estimate(context, [p1, p2]);
+    await triager.triage(context, [p1, p2]);
+
+    expect(calls).toHaveLength(1);
+    expect(estimate).toBe(sentTokens(calls));
+  });
+
+  it('con la petición partida, cuenta la PR en cada una', async () => {
+    const { triager, calls } = model(answerAll);
+    const findings = Array.from({ length: 33 }, (_, i) => check(`check-${i}`, 'Error'));
+
+    const estimate = triager.estimate(context, findings);
+    await triager.triage(context, findings);
+
+    expect(calls).toHaveLength(2);
+    expect(estimate).toBe(sentTokens(calls));
+  });
+
+  it('no llama al modelo', () => {
+    const { triager, calls } = model(answerAll);
+
+    triager.estimate(context, [p1]);
+
+    expect(calls).toEqual([]);
+  });
+});

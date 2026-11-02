@@ -261,10 +261,10 @@ export function createTrackingGraph(
     const spentBefore = state.spentUsd ?? 0;
     const answers = new Map<Finding, TriageAnswer>();
     const { asked, overBudget } = withinBudget(
-      read.context,
       read.findings.filter(hasContext),
       spentBefore,
       triage.budget,
+      (some) => triager.estimate(read.context, some),
     );
     for (const finding of overBudget) answers.set(finding, { kind: 'overBudget' });
     let inputTokens = 0;

@@ -15,7 +15,7 @@
 import { TypeSafeClassifier } from '@langchain/typesafe';
 
 import { type Triager, TriageFailedError } from '../core/ports.ts';
-import { estimatedTokens, type Finding, findingKeys } from '../core/triage.ts';
+import { type Finding, findingKeys, type PullRequestContext } from '../core/triage.ts';
 
 export interface DecisionModelOptions {
   /** Sin `/v1/systemone`, que añade el cliente: `https://ollama.com`. */
@@ -54,35 +54,33 @@ export function createDecisionModel({
   fetch,
 }: DecisionModelOptions): Triager {
   return {
+    estimate(context, findings) {
+      const description = describe(context);
+      return batches(keyed(findings), estimatedTokens(description)).reduce(
+        (tokens, batch) => tokens + estimatedTokens(request(description, batch)),
+        0,
+      );
+    },
+
     async triage(context, findings) {
-      const keys = findingKeys(findings);
-      const keyed = findings.map((finding, i) => ({ key: keys[i] ?? '', finding }));
-      const description = { title: context.title, body: context.description };
+      const description = describe(context);
       const probabilities = new Map<string, number>();
       let inputTokens = 0;
       try {
         // Una petición tras otra: si falla una, no se paga ninguna más.
-        for (const batch of batches(keyed, estimatedTokens(description))) {
+        for (const batch of batches(keyed(findings), estimatedTokens(description))) {
+          const { state, questions } = request(description, batch);
           const classifier = new TypeSafeClassifier({
             model,
             apiKey,
             baseUrl,
             maxRetries,
             ...(fetch ? { fetch } : {}),
-            questions: Object.fromEntries(
-              batch.map(({ key, finding }) => [
-                key,
-                { type: 'noul', instructions: instructions(finding), criteria: CRITERIA },
-              ]),
-            ),
+            questions,
           });
-          const state = {
-            pr_author_description: description,
-            ...Object.fromEntries(batch.map(({ key, finding }) => [key, wire(finding)])),
-          };
           const result = await classifier.invoke(state);
           // Sin `usage`, el coste se estima: mejor de más que de menos (BE8).
-          inputTokens += result.usage?.inputTokens ?? estimatedTokens(state);
+          inputTokens += result.usage?.inputTokens ?? estimatedTokens({ state, questions });
           for (const { key } of batch) {
             const answer = result.answers[key];
             if (answer?.type !== 'noul') throw new Error(`El modelo no ha respondido sobre ${key}`);
@@ -93,8 +91,46 @@ export function createDecisionModel({
         const message = error instanceof Error ? error.message : String(error);
         throw new TriageFailedError(message, inputTokens, { cause: error });
       }
+      const keys = findingKeys(findings);
       return { probabilities: keys.map((key) => probabilities.get(key) ?? 0), inputTokens };
     },
+  };
+}
+
+/** Bytes por token al estimar: conservador, porque los tokens reales son algo menos (paso 1.1). */
+const BYTES_PER_TOKEN = 3;
+
+/** Los tokens que costará mandar un valor al modelo, estimados por su tamaño en JSON. */
+function estimatedTokens(value: unknown): number {
+  return Math.ceil(new TextEncoder().encode(JSON.stringify(value)).length / BYTES_PER_TOKEN);
+}
+
+/** La PR tal como la lee el modelo: el título y la descripción de su autor. */
+function describe(context: PullRequestContext) {
+  return { title: context.title, body: context.description };
+}
+
+function keyed(findings: Finding[]): Keyed[] {
+  const keys = findingKeys(findings);
+  return findings.map((finding, i) => ({ key: keys[i] ?? '', finding }));
+}
+
+/**
+ * Lo que va en una petición: el `state`, con la PR y cada hallazgo por su clave, y una pregunta por
+ * hallazgo. Es también lo que se estima antes de llamar.
+ */
+function request(description: ReturnType<typeof describe>, batch: Keyed[]) {
+  return {
+    state: {
+      pr_author_description: description,
+      ...Object.fromEntries(batch.map(({ key, finding }) => [key, wire(finding)])),
+    },
+    questions: Object.fromEntries(
+      batch.map(({ key, finding }) => [
+        key,
+        { type: 'noul' as const, instructions: instructions(finding), criteria: CRITERIA },
+      ]),
+    ),
   };
 }
 

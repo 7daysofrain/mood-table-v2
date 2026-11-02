@@ -63,6 +63,7 @@ const findings: Findings = {
 
 /** En lugar de preguntar al modelo, da 0,5 a cada hallazgo: todos exigen criterio. */
 const triager: Triager = {
+  estimate: () => 0,
   triage(_context, asked) {
     return Promise.resolve({ probabilities: asked.map(() => 0.5), inputTokens: 0 });
   },

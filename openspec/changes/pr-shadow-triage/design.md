@@ -129,8 +129,9 @@ flowchart TD
   `@langchain/typesafe` 0.0.2 funciona contra Ollama con `baseUrl: https://ollama.com` (añade él
   `/v1/systemone`), devuelve `usage.inputTokens` y `model: clef:27b`, y contesta en menos de 1 s.
 - **El puerto `Triager`** recibe el contexto común y los hallazgos y devuelve, por cada uno, la
-  probabilidad de que haya que arreglarlo y los tokens de entrada que ha cobrado. No sabe de modelos ni
-  de umbrales. El adaptador (`adapters/decision-model.ts`) arma la petición (decisión 5) y la manda.
+  probabilidad de que haya que arreglarlo y los tokens de entrada que ha cobrado. También estima, antes
+  de llamar, lo que costaría (decisión 6). No sabe de modelos ni de umbrales. El adaptador
+  (`adapters/decision-model.ts`) arma la petición (decisión 5) y la manda.
   Configuración: `DECISION_MODEL_BASE_URL`, `DECISION_MODEL`, `DECISION_MODEL_API_KEY` y el precio por
   millón de tokens de entrada (decisión 6).
 - **Alternativas descartadas** (al explorar, 28-oct):
@@ -224,10 +225,13 @@ questions:
 - **Tope por PR: 0,05 $**, configurable (`TRIAGE_BUDGET_USD`), unas 15 veces el coste esperado (unos
   12.000 tokens por push con 6 hallazgos, unos 0,003 $). No está para ahorrar, sino para frenar lo
   anómalo (un log enorme, una PR con muchos pushes). *(Asumido)*: `docs/umbrales-para-specs.md`.
-- **Antes de llamar:** con la salida gratis, el coste es solo de entrada. El núcleo estima los tokens de
-  cada hallazgo por su tamaño, de forma conservadora *(asumido: 1 token cada 3 bytes)*, y mete en la
-  petición, por orden, los que caben en lo que queda del tope. Los demás salen *exige criterio* (regla
-  2), sin llamar.
+- **Antes de llamar:** con la salida gratis, el coste es solo de entrada. El adaptador estima los
+  tokens de las peticiones enteras, de forma conservadora *(asumido: 1 token cada 3 bytes de su JSON)*:
+  el `state` y cada pregunta con sus instrucciones y criterios, y la PR en cada petición si el triaje se
+  parte. Lo estima él (`Triager.estimate`) porque solo él sabe cómo son. El núcleo mete, por orden, los
+  hallazgos que caben en lo que queda del tope junto con los que ya han entrado. Los demás salen *exige
+  criterio* (regla 2), sin llamar. Al principio estimaba el núcleo, con la PR una vez y cada hallazgo
+  por su tamaño, sin las preguntas: cerca del tope se podía pasar (Codex en la #101).
 - **El `state` se cobra una vez por petición, no una por pregunta** (paso 1.1, 28-oct, con dos
   hallazgos de la #88 y su descripción): 3.449 tokens con una pregunta y 3.636 con dos, unos 190 por
   pregunta más. La estimación de 1 token cada 3 bytes dio 3.773 para ese `state`: conservadora, como

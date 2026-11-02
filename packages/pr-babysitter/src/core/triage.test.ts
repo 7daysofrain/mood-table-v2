@@ -110,56 +110,53 @@ describe('la clase de un hallazgo (design.md, decisión 4)', () => {
 });
 
 describe('el reparto del tope de gasto (design.md, decisión 6)', () => {
-  /** 1 $ por millón de tokens: 1 token cuesta 0,000001 $, y 3 bytes son un token. */
+  /** 1 $ por millón de tokens: 1 token cuesta 0,000001 $, y el tope son 1.000 tokens. */
   const budget: TriageBudget = { capUsd: 0.001, inputPricePerMTok: 1 };
-  /** Un hallazgo de unos 300 tokens. */
-  const sized = (name: string) => checkFinding(name, 'x'.repeat(840));
-  const context = { title: 'Una PR', description: '' };
+  const lint = checkFinding('lint');
+  const e2e = checkFinding('e2e');
+  const test = checkFinding('test');
+  const typecheck = checkFinding('typecheck');
+  const small = checkFinding('small');
+  /** Lo que estimaría el modelo: 100 tokens por la PR, 300 por cada hallazgo y 10 por `small`. */
+  const estimates: Finding[][] = [];
+  const estimate = (some: Finding[]) => {
+    estimates.push(some);
+    return 100 + some.reduce((tokens, finding) => tokens + (finding === small ? 10 : 300), 0);
+  };
 
   it('con sitio para todos, se pregunta por todos', () => {
-    const findings = [sized('lint'), sized('e2e')];
-
-    expect(withinBudget(context, findings, 0, budget)).toEqual({
-      asked: findings,
+    expect(withinBudget([lint, e2e], 0, budget, estimate)).toEqual({
+      asked: [lint, e2e],
       overBudget: [],
     });
   });
 
   it('entran por orden los que caben en lo que queda del tope, y los demás se quedan fuera', () => {
-    const findings = [sized('lint'), sized('e2e'), sized('test'), sized('typecheck')];
-
-    expect(withinBudget(context, findings, 0.0005, budget)).toEqual({
-      asked: findings.slice(0, 1),
-      overBudget: findings.slice(1),
+    expect(withinBudget([lint, e2e, test, typecheck], 0.0005, budget, estimate)).toEqual({
+      asked: [lint],
+      overBudget: [e2e, test, typecheck],
     });
   });
 
   it('uno pequeño que cabe entra aunque otro anterior no quepa', () => {
-    const small = checkFinding('lint', 'x');
-    const findings = [sized('e2e'), small];
-
-    expect(withinBudget(context, findings, 0.0008, budget)).toEqual({
+    expect(withinBudget([e2e, small], 0.0008, budget, estimate)).toEqual({
       asked: [small],
-      overBudget: [findings[0]],
+      overBudget: [e2e],
     });
   });
 
-  it('el contexto común de la PR se cuenta una vez, y si no cabe, no entra ninguno', () => {
-    const findings = [sized('lint')];
-    const long = { title: 'Una PR', description: 'x'.repeat(3000) };
+  it('cada hallazgo se estima junto con los que ya han entrado, en una sola cuenta', () => {
+    estimates.length = 0;
 
-    expect(withinBudget(long, findings, 0, budget)).toEqual({
-      asked: [],
-      overBudget: findings,
-    });
+    withinBudget([lint, e2e, test], 0.0004, budget, estimate);
+
+    expect(estimates).toEqual([[lint], [lint, e2e], [lint, test]]);
   });
 
   it('con el tope ya gastado, no entra ninguno', () => {
-    const findings = [checkFinding('lint', 'x')];
-
-    expect(withinBudget(context, findings, 0.001, budget)).toEqual({
+    expect(withinBudget([small], 0.001, budget, estimate)).toEqual({
       asked: [],
-      overBudget: findings,
+      overBudget: [small],
     });
   });
 
