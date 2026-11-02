@@ -112,7 +112,7 @@
   `core/triage-summary.test.ts`: la firma y el push con su SHA corto; una fila por hallazgo con su
   identidad, la clase en español (real, no aplica, exige criterio) y el porqué de cada regla; la
   marca oculta con el SHA completo.
-- [ ] 2.2 El texto en `core/triage-summary.ts`.
+- [x] 2.2 El texto en `core/triage-summary.ts`.
   Verificar: los tests de 2.1 en verde.
 - [ ] 2.3 **(test en rojo)** El adaptador del resumen en `adapters/triage-summary.test.ts`: publica
   con `createComment`; `published` es cierto solo con la marca de ese SHA en un comentario del
