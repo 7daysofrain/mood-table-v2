@@ -1,7 +1,7 @@
 /**
  * Raíz de composición del PR Babysitter (change pr-tracking, decisión 5): el único módulo que
  * conoce a la vez el núcleo y los adaptadores. Lee la configuración del entorno, monta GitHub,
- * Linear y el driver, y da vueltas hasta que el contenedor lo pare. Si la configuración no vale,
+ * Linear, el modelo de decisión del triaje y el driver, y da vueltas hasta que el contenedor lo pare. Si la configuración no vale,
  * dice qué variable falla y termina con código 1. Sin persistencia: al reiniciar, el estado se
  * reconstruye desde GitHub (`MemorySaver` hasta BE7, D73).
  */
@@ -9,8 +9,14 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import { MemorySaver } from '@langchain/langgraph';
 
-import { createCodexReviewReader, createCodexReviewRequests } from './adapters/codex-review.ts';
+import {
+  createCodexReviewReader,
+  createCodexReviewRequests,
+  parseCodexFinding,
+} from './adapters/codex-review.ts';
 import { loadConfig } from './adapters/config.ts';
+import { createDecisionModel } from './adapters/decision-model.ts';
+import { createFindings } from './adapters/findings.ts';
 import { createGitHubReader } from './adapters/github.ts';
 import { createLinearNotifier } from './adapters/linear.ts';
 import { createDriver, runDriver } from './core/driver.ts';
@@ -52,6 +58,22 @@ const driver = createDriver({
     inboxIssueId: config.linearInboxIssueId,
     log,
   }),
+  findings: createFindings({
+    reviewer: { login: config.githubReviewer, name: 'Codex', parse: parseCodexFinding },
+    github,
+  }),
+  triager: createDecisionModel({
+    baseUrl: config.decisionModelBaseUrl,
+    model: config.decisionModel,
+    apiKey: config.decisionModelApiKey,
+  }),
+  triage: {
+    threshold: config.triageThreshold,
+    budget: {
+      capUsd: config.triageBudgetUsd,
+      inputPricePerMTok: config.decisionModelInputPricePerMTok,
+    },
+  },
   checkpointer: new MemorySaver(),
   policy: { maintainer: config.githubMaintainer, baseBranch: BASE_BRANCH },
   timeoutMs: config.trackingTimeoutMs,

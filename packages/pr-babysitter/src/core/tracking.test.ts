@@ -5,8 +5,11 @@ import {
   afterChecksWait,
   afterReviewWait,
   checksFinished,
+  type FinalState,
   finalState,
+  type InterventionReason,
   needsReviewRequest,
+  needsTriage,
   reviewFinished,
   type TrackedPush,
 } from './tracking.ts';
@@ -316,5 +319,42 @@ describe('el tiempo de espera de la revisión', () => {
     const now = snapshot({ review: unreviewed, observedAt: 50 * MINUTE });
 
     expect(afterReviewWait(checked, now, TIMEOUT)).toEqual({ push: checked, next: 'timedOut' });
+  });
+});
+
+describe('si hay que triar (change pr-shadow-triage, decisión 1)', () => {
+  const intervention = (...reasons: InterventionReason[]): FinalState => ({
+    status: 'needsIntervention',
+    reasons,
+  });
+
+  it('sí, si necesita intervención porque falla una comprobación', () => {
+    expect(needsTriage(intervention({ kind: 'checksFailed', checks: ['e2e'] }))).toBe(true);
+  });
+
+  it('sí, si necesita intervención porque el revisor tiene hallazgos', () => {
+    expect(needsTriage(intervention({ kind: 'reviewFindings' }))).toBe(true);
+  });
+
+  it('sí, si además algo no termina a tiempo', () => {
+    const state = intervention(
+      { kind: 'checksFailed', checks: ['lint'] },
+      { kind: 'checksUnfinished', checks: ['e2e'] },
+    );
+
+    expect(needsTriage(state)).toBe(true);
+  });
+
+  it('no, si está lista para integrar', () => {
+    expect(needsTriage({ status: 'readyToMerge' })).toBe(false);
+  });
+
+  it('no, si solo es porque algo no termina a tiempo', () => {
+    const state = intervention(
+      { kind: 'checksUnfinished', checks: ['e2e'] },
+      { kind: 'reviewUnfinished' },
+    );
+
+    expect(needsTriage(state)).toBe(false);
   });
 });

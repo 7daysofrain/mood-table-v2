@@ -21,6 +21,7 @@ import {
   lastSnapshot,
   REVIEW_REQUEST_NODE,
   threadConfig,
+  type TrackingOptions,
 } from './graph.ts';
 import {
   githubUnauthorizedNotice,
@@ -30,11 +31,13 @@ import {
   type SystemNotice,
 } from './notice.ts';
 import {
+  type Findings,
   GitHubUnauthorizedError,
   type GitHubReader,
   type Notifier,
   type ReviewReader,
   type ReviewRequests,
+  type Triager,
 } from './ports.ts';
 import {
   isStopped,
@@ -50,6 +53,11 @@ export interface DriverOptions {
   /** Las peticiones de revisión del sistema: si ya la ha pedido, para la foto, y pedirla. */
   reviewRequests: ReviewRequests;
   notifier: Notifier;
+  /** Los hallazgos de un push y el modelo que los tría (change pr-shadow-triage). */
+  findings: Findings;
+  triager: Triager;
+  /** El umbral de real y el tope de gasto de cada PR (change pr-shadow-triage, decisiones 4 y 6). */
+  triage: TrackingOptions['triage'];
   /** Donde guarda cada hilo su estado. `MemorySaver` hasta BE7 (D73). */
   checkpointer: BaseCheckpointSaver;
   policy: TrackingPolicy;
@@ -72,12 +80,19 @@ export function createDriver({
   reviewer,
   reviewRequests,
   notifier,
+  findings,
+  triager,
+  triage,
   checkpointer,
   policy,
   timeoutMs,
   log,
 }: DriverOptions): Driver {
-  const graph = createTrackingGraph({ notifier, reviewRequests }, checkpointer, { timeoutMs, log });
+  const graph = createTrackingGraph(
+    { notifier, reviewRequests, findings, triager },
+    checkpointer,
+    { timeoutMs, log, triage },
+  );
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
   /**

@@ -1461,6 +1461,44 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Sincronizó las specs a mano, para que el requisito nuevo de la respiración quede junto a ella y no al final de `effects`.*
 - *Hizo el commit de la sincronización solo con las specs, porque `git mv` ya había dejado el movimiento del change en el índice (6.37).*
 
+
+#### 6.45 Ver cómo triaría los hallazgos de cada PR: refinamiento, exploración, change y triaje (`MOO-75` y `MOO-108`)
+
+**Prompt 1** (en `/refine-story MOO-75`, al pedir el caso feliz):
+
+> Cuando llega una PR con hallazgos en el grafo debe haber un nodo que sea capaz de discernir si esos hallazgos  merecen la pena hacerse o no, filtrar los que si para pasar la lista al siguiente nodo del grafo
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA lo convirtió en el modo sombra de BH2: el sistema clasifica cada hallazgo en real, no aplica o exige criterio, sin actuar. El humano decidió que exige criterio es para cuando el sistema no lo tiene claro y que el triaje se publica en un comentario resumen en la PR, lo que resolvió BQ2. El subagente `poke-holes` añadió criterios: una comprobación que falla es un hallazgo más, el comentario de un tercero no dirige el triaje, y un tope de gasto por PR. En `/estimate-story`, el humano dio 8 («montar la pieza del LLM dentro de langraph, seleccionar el modelo adecuado y calibrarlo») y el estimador a ciegas, 5; se quedó en 8, con dos tareas, `MOO-108` y `MOO-109`.*
+
+**Prompt 2** (en `/opsx:explore`, cuando la IA propuso Claude Opus o Sonnet para triar):
+
+> Nop, me quiero ir a un modelo clasificador tipo Jev que está hecho para este tipo de decisiones ademas devuelve un schema conocido con un prorating
+
+*La IA rehízo el diseño en torno a un modelo de decisión detrás de un puerto `Triager`. El humano pidió dos investigaciones con subagentes: qué modelos de este tipo hay (índice de decisión comunitario, documentación de Ollama y de TypeSafe) y cómo los implementa y calibra quien los usa. Con ellas eligió Clef en la nube de Ollama, con Jev de plan B (D90).*
+
+*Ajustes del humano en la exploración:*
+- *Un P1 que se descartaría, un hallazgo sin contexto y el tope de gasto alcanzado acaban en exige criterio. La IA proponía un cuarto estado, «sin triar».*
+- *El porqué de cada clase es la probabilidad frente al umbral; calibrar es escribir las preguntas y los criterios y ajustar el umbral.*
+- *La pregunta pasó de «¿es un defecto real?» a si merece la pena arreglarlo, para que un nit no aplique.*
+- *Una petición por push primero, y una por hallazgo si los resultados no son buenos. El humano había puesto al revés `state` y `criteria`, y lo corrigió al ver la documentación.*
+- *Tope de 0,05 $ por PR y umbral de 0,80.*
+
+*La IA escribió el change `pr-shadow-triage`, que se ajustó y se commiteó.*
+
+**Prompt 3:**
+
+> /opsx:apply MOO-75
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA sacó la rama de `MOO-108` de la del change, la puso al día con `main` y se paró en el primer paso porque faltaba la clave de Ollama. El humano la puso en el `.env` del PR Babysitter, no en `.local/` como decía el diseño, porque es donde la lee el contenedor; cargó 5 $ de créditos sin recarga automática, lo que cubre BA5. La IA probó a mano, con hallazgos reales de la #85, la #88 y la #96: el cliente de LangChain funciona contra Ollama, el `state` se cobra una vez por petición (0,0009 $ el push) y el PAT lee el log de un* job *sin más permisos. Luego implementó la sección en TDD, con un commit por paso: las reglas puras del triaje, los adaptadores de hallazgos y del modelo, la configuración y el nodo `triar`.*
+
+*Hallazgos de la IA durante la implementación:*
+- *El final del log de un* job *es su limpieza, no el error: el adaptador corta el paso que falla.*
+- *GitHub mueve el `commit_id` de un comentario al push siguiente si la línea no cambia, y deja `line: null` si se queda desfasado. El adaptador usa `original_commit_id` y `original_line`.*
+- *Con coma flotante, 1 − 0,80 no llega a 0,20: el borde del no aplica se compara como 1 − p ≥ umbral. Lo sacó un test del borde.*
+- *Dos tests de los adaptadores no probaban nada: la URL falsa llevaba la* query *y la ruta no coincidía. Los corrigió en el paso siguiente y lo dijo en el commit.*
+- *Hizo la configuración antes que el montaje en `main.ts`, que la necesita, y dejó que el precio pueda ser 0, para Clef en local.*
+- *Un commit de la configuración entró con un test fallando, porque el comando de la comprobación no se paraba si fallaba. Lo arregló con un* amend *antes de subir nada.*
+
 ---
 
 ### 7. Pull Requests
