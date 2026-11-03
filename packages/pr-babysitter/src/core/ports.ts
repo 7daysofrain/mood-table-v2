@@ -5,6 +5,7 @@
  */
 import type { Notice } from './notice.ts';
 import type { Check, OpenPullRequest, Review } from './pull-request.ts';
+import type { Finding, PullRequestContext } from './triage.ts';
 
 /**
  * Publica un aviso para el mantenedor. Solo envía: la respuesta se diseña en BH4. Si el canal no lo
@@ -51,6 +52,55 @@ export interface ReviewRequests {
   request(pullRequestNumber: number, sha: string): Promise<void>;
 }
 
+/**
+ * El resumen del triaje en la PR (change pr-shadow-triage, decisión 7), uno por push. El texto lo
+ * arma el núcleo (`triage-summary.ts`) con una marca del SHA; el adaptador lo publica y la busca.
+ *
+ * Lanza como `ReviewRequests`: `GitHubRequestRejectedError` si GitHub rechaza el comentario, y
+ * cualquier otro error si falla y se puede reintentar.
+ */
+export interface TriageSummaries {
+  /** Si el sistema ya ha publicado, con su token, el resumen de ese push. */
+  published(pullRequestNumber: number, sha: string): Promise<boolean>;
+  /** Publica el resumen de ese push. */
+  publish(pullRequestNumber: number, sha: string, text: string): Promise<void>;
+}
+
+/**
+ * Los hallazgos de un push (change pr-shadow-triage, decisión 2): los comentarios del revisor hechos
+ * sobre ese push y las comprobaciones que fallan, cada uno con su contexto, y el título y la
+ * descripción de la PR. Solo los del revisor: un comentario de otra cuenta nunca es un hallazgo
+ * (BE6).
+ *
+ * Lanza como `GitHubReader`. Un contexto que GitHub no da no es un fallo: el hallazgo va sin él.
+ */
+export interface Findings {
+  read(
+    pullRequestNumber: number,
+    sha: string,
+    failedChecks: string[],
+  ): Promise<{ context: PullRequestContext; findings: Finding[] }>;
+}
+
+/**
+ * El modelo de decisión (change pr-shadow-triage, decisión 3): para cada hallazgo, en su orden, la
+ * probabilidad de que haya que arreglarlo en esta PR antes de integrarla, y los tokens de entrada
+ * que ha cobrado. No sabe de umbrales ni de reglas. Si el modelo no responde, lanza
+ * `TriageFailedError`.
+ */
+export interface Triager {
+  /**
+   * Los tokens de entrada que costaría triar esos hallazgos, estimados antes de llamar y por lo
+   * alto: las peticiones enteras, con las preguntas y sus criterios, y la PR en cada una (decisión
+   * 6). Solo el adaptador sabe cómo son.
+   */
+  estimate(context: PullRequestContext, findings: Finding[]): number;
+  triage(
+    context: PullRequestContext,
+    findings: Finding[],
+  ): Promise<{ probabilities: number[]; inputTokens: number }>;
+}
+
 /** GitHub rechaza el token (401): hay que avisar, porque no se arregla solo (decisión 3). */
 export class GitHubUnauthorizedError extends Error {
   override readonly name = 'GitHubUnauthorizedError';
@@ -63,4 +113,20 @@ export class GitHubUnauthorizedError extends Error {
  */
 export class GitHubRequestRejectedError extends Error {
   override readonly name = 'GitHubRequestRejectedError';
+}
+
+/**
+ * El modelo de decisión no ha respondido a todo el triaje. Lleva los tokens de entrada que ya ha
+ * cobrado: si el triaje va en varias peticiones y falla una posterior, las anteriores se han pagado
+ * y suman al gasto de la PR (change pr-shadow-triage, decisión 6).
+ */
+export class TriageFailedError extends Error {
+  override readonly name = 'TriageFailedError';
+
+  readonly inputTokens: number;
+
+  constructor(message: string, inputTokens: number, options?: ErrorOptions) {
+    super(message, options);
+    this.inputTokens = inputTokens;
+  }
 }

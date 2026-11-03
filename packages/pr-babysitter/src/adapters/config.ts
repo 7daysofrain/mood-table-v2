@@ -11,6 +11,7 @@ const positiveInteger = z.coerce
   .number('no es un número')
   .int('no es un número entero')
   .positive('tiene que ser mayor que 0');
+const positiveNumber = z.coerce.number('no es un número').positive('tiene que ser mayor que 0');
 
 const envSchema = z.object({
   GITHUB_TOKEN: required,
@@ -19,9 +20,24 @@ const envSchema = z.object({
   LINEAR_CLIENT_SECRET: required,
   LINEAR_MAINTAINER_PROFILE_URL: required.pipe(z.url('no es una URL')),
   LINEAR_INBOX_ISSUE_ID: required,
+  DECISION_MODEL_API_KEY: required,
   GITHUB_REVIEWER: z.string().trim().min(1).default('chatgpt-codex-connector[bot]'),
   POLL_INTERVAL_SECONDS: positiveInteger.default(60),
   TRACKING_TIMEOUT_MINUTES: positiveInteger.default(30),
+  DECISION_MODEL_BASE_URL: z.url('no es una URL').default('https://ollama.com'),
+  DECISION_MODEL: z.string().trim().min(1).default('clef:27b'),
+  // 0 vale: Clef en local no cobra.
+  DECISION_MODEL_INPUT_PRICE_PER_MTOK: z.coerce
+    .number('no es un número')
+    .min(0, 'no puede ser negativo')
+    .default(0.24),
+  // Por encima de 0,5: si no, los cortes de real y no aplica se cruzarían.
+  TRIAGE_THRESHOLD: z.coerce
+    .number('no es un número')
+    .gt(0.5, 'tiene que ser mayor que 0,5')
+    .max(1, 'no puede pasar de 1')
+    .default(0.8),
+  TRIAGE_BUDGET_USD: positiveNumber.default(0.05),
 });
 
 export interface Config {
@@ -51,6 +67,19 @@ export interface Config {
    * (decisión 8; change pr-review-request, decisión 5).
    */
   trackingTimeoutMs: number;
+  /**
+   * El modelo de decisión del triaje (change pr-shadow-triage, decisión 3): la URL del proveedor,
+   * sin `/v1/systemone`, el modelo fijado por su id y la clave de la cuenta.
+   */
+  decisionModelBaseUrl: string;
+  decisionModel: string;
+  decisionModelApiKey: string;
+  /** Lo que cobra el proveedor por millón de tokens de entrada; la salida es gratis (decisión 6). */
+  decisionModelInputPricePerMTok: number;
+  /** La probabilidad a partir de la que un hallazgo es real; su complemento, no aplica (decisión 4). */
+  triageThreshold: number;
+  /** El tope de gasto del triaje de cada PR, en dólares (decisión 6). */
+  triageBudgetUsd: number;
 }
 
 export type ConfigResult = { ok: true; config: Config } | { ok: false; error: string };
@@ -82,6 +111,12 @@ export function loadConfig(env: Record<string, string | undefined>): ConfigResul
       linearInboxIssueId: vars.LINEAR_INBOX_ISSUE_ID,
       pollIntervalMs: vars.POLL_INTERVAL_SECONDS * 1000,
       trackingTimeoutMs: vars.TRACKING_TIMEOUT_MINUTES * 60_000,
+      decisionModelBaseUrl: vars.DECISION_MODEL_BASE_URL,
+      decisionModel: vars.DECISION_MODEL,
+      decisionModelApiKey: vars.DECISION_MODEL_API_KEY,
+      decisionModelInputPricePerMTok: vars.DECISION_MODEL_INPUT_PRICE_PER_MTOK,
+      triageThreshold: vars.TRIAGE_THRESHOLD,
+      triageBudgetUsd: vars.TRIAGE_BUDGET_USD,
     },
   };
 }
