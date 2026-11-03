@@ -733,6 +733,17 @@ describe('la API: cambiar los valores de una tira', () => {
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({ message: 'la tira «luces» no existe' });
   });
+
+  it('al volver a la respiración, el cambio de efecto responde 200 con los valores que dejó', async () => {
+    const { app } = await apiWith(breathingDemo, true);
+    await putValues(app, 'demo', '{"color":"#2040FF","period":7}');
+    await putEffect(app, 'demo', '{"effect":"energy"}');
+
+    const response = await putEffect(app, 'demo', '{"effect":"breathing"}');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ...breathingDemo, values: { color: '#2040FF', period: 7 } });
+  });
 });
 
 describe('el OpenAPI de la API', () => {
@@ -868,6 +879,24 @@ describe('las tiras que recibe cada panel', () => {
     for (const received of [first, other]) {
       expect(received.strips[2]?.strips[1]?.values).toEqual({ color: '#2040FF', period: 7 });
     }
+  });
+
+  it('al volver a un efecto, llegan los valores con que la tira lo dejó', async () => {
+    const { url, control } = await startWithStrips();
+    control.setEffect('barra', 'breathing');
+    control.setValues('barra', { color: '#2040FF', period: 7 });
+    control.setEffect('barra', 'energy');
+    const received = await connectAll(url);
+    await until(() => received.strips.length === 1);
+
+    control.setEffect('barra', 'breathing');
+    await until(() => received.strips.length === 2);
+
+    expect(received.strips[1]?.strips[1]).toEqual({
+      ...stateOf(second),
+      effect: 'breathing',
+      values: { color: '#2040FF', period: 7 },
+    });
   });
 
   it('un panel que se conecta tras un cambio recibe el efecto que pinta el motor', async () => {

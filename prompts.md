@@ -1531,6 +1531,43 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Hallazgo de la IA:* `openspec validate --all --strict` *falla en 9 de las 12 specs con la CLI 1.15.0, sin un solo error: cuenta como fallo el aviso de requisito de más de 500 caracteres, que salta por las líneas de traza. Sin* `--strict` *pasan las 12, y la CI no valida las specs.*
 
+#### 6.46 Recuperar los valores de un efecto al volver a él: refinamiento, estimación, exploración y change (`MOO-96`)
+
+**Prompt 1** (en `/refine-story MOO-96`, el caso feliz del humano):
+
+> Quiero poder pulsar sobre los botones de efectos y al cambiar entre ellos y volver que se restauren al estado anterior. Si cambio de tira espero encontrar los valores asociados a esa tira y no a la anterior. Es decir, cuando cambio de efectos en una tira se mantienen los valores para esa tira y cada una actua de manera independiente
+
+*Claude Code (`claude-opus-5-5`, 28-oct). La IA lo tradujo a dos escenarios sin el paso de UI («pulsar sobre los botones» pasa a «el DJ cambia el efecto») y sin «estado» a secas, que el glosario del PRD no deja usar. Vio que la mitad de la segunda frase ya la cubría `MOO-95`: lo nuevo son los valores de los efectos no activos. El humano preguntó si los escenarios, que solo hablan de la respiración, valían para cualquier efecto; la IA propuso dejarlos concretos, porque hoy es el único efecto con parámetros, y añadir una línea general encima. El subagente `poke-holes` devolvió 6 candidatos: el humano se quedó con la primera vez que se elige un efecto en una tira (valores por defecto) y con recargar el panel entre ir y volver, el que obliga a que los valores los recuerde el motor y no el panel. El del reinicio lo mandó a H5.*
+
+**Prompt 2** (en `/estimate-story MOO-96`):
+
+> Yo creo que esto es gestion basica de estados. Un 2
+
+*El estimador, a ciegas, también sacó un 2: una tarea de motor que reutiliza lo de `MOO-94` y `MOO-95`. Apuntó un riesgo: si había que tocar el panel, pasaría a 3. La IA no puso «estados» en la línea de estimación de Linear, por el mismo motivo del glosario.*
+
+**Prompt 3** (en `/opsx:explore`, tras comparar guardar los valores aparte con cachear la ranura entera de cada efecto):
+
+> Opción A
+
+*La IA recomendó la A: un mapa de valores por tira y por efecto en el búfer de control, con la forma de `strip_effects` (README §3.2) para que H5 lo persista sin rediseñarlo, y la memoria del efecto nueva al volver, como dice el non-goal. Cachear la ranura (B) haría que el efecto siguiera por donde iba y la energía volvería con un salto. Como la ranura se crea entera antes de dejarla en su sitio, la duda del destello que había dejado el estimador desaparece. Con la A, el panel no cambia: solo un comentario desfasado, que se corrige en la PR de motor, y se quitó la etiqueta `panel` de la historia. Se aceptó un riesgo: un valor que va de camino al cambiar de efecto se rechaza. `/opsx:propose` escribió el change `strip-effect-recall`, con una sola sección (`MOO-110`) y, en el mismo commit que el PRD, la nota de E3 y del glosario que pedía la historia.*
+
+*Ajustes:*
+- *La nota del PRD no fue un commit de docs aparte, como proponía la IA al refinar: el humano decidió meterla con el change, como en `MOO-95`.*
+- *Ninguna decisión pasó a D#: son detalle del búfer de control, y la de producto ya está en los non-goals de la historia.*
+
+#### 6.47 Recordar los valores de cada efecto en cada tira (`MOO-110`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-96
+
+*Claude Code (`claude-opus-5-5`, 3-nov). La IA implementó la sección `MOO-110` en TDD, con un commit por paso, en la rama de la tarea, que ya llevaba el change y el PRD. Los tests del búfer usan un efecto de prueba con parámetros, porque hoy solo la respiración los tiene y hacen falta dos para ver que cada efecto de una tira guarda los suyos. El cambio cupo en `control.ts`: un mapa de valores por tira, que `setEffect` usa para crear la ranura y `setValues` actualiza; los tests de la API y del mensaje `6` pasaron sin tocar `server.ts`. El E2E nuevo cambia el color y el periodo, pasa a la energía, recarga el panel, vuelve a la respiración y comprueba los controles y el color de los frames del visor.*
+
+*Ajustes:*
+- *En el paso en rojo, el test de la primera vez que se elige un efecto ya pasaba: es lo que el motor hacía hasta ahora, y se quedó como guarda.*
+- *El E2E pone el periodo con la tecla Inicio (1 s): es un valor exacto, y con ese ritmo los frames bien encendidos llegan enseguida. Antes de cambiar de efecto espera a que el motor confirme los valores, para no probar sin querer el riesgo aceptado. El selector manda el color en minúsculas y la cabecera lo enseña en mayúsculas, así que la comparación no distingue entre ellas.*
+- *Para ver que el E2E detecta el fallo, la IA lo lanzó contra el `control.ts` de `main`: falló donde debía, con el periodo de vuelta en 4,0.*
+
 ---
 
 ### 7. Pull Requests

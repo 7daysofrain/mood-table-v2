@@ -55,8 +55,8 @@ export function useDraftValues(strip: StripState | undefined, requests: ValueReq
   );
 
   // Un valor local es de una tira con un efecto. Si el panel la deja de mostrar así (otra tira
-  // seleccionada, u otro efecto, que vuelve con sus valores por defecto), se descarta: el control
-  // pudo desaparecer a medio arrastre, sin soltarse nunca.
+  // seleccionada, u otro efecto, que llega con los valores que le da el motor), se descarta: el
+  // control pudo desaparecer a medio arrastre, sin soltarse nunca.
   const sameStrip = draft?.stripId === strip?.id && draft?.effect === strip?.effect;
   if (draft && !sameStrip) setDraft(undefined);
 

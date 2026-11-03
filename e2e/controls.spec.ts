@@ -1,12 +1,18 @@
+import { fileURLToPath } from 'node:url';
+
 import { type Locator, type Page, expect, test } from '@playwright/test';
 
 import { createTestEngine } from './engine.ts';
 
 /**
- * E2E de la historia `MOO-95`: el DJ mueve los controles de la respiración de una tira y la luz
- * responde mientras arrastra (specs/instrument-control). Lanza su propio motor, sin fuente de audio
- * y con la tira respirando.
+ * E2E de las historias `MOO-95`, el DJ mueve los controles de la respiración de una tira y la luz
+ * responde mientras arrastra, y `MOO-96`, al volver a la respiración la tira recupera sus valores
+ * (specs/instrument-control). Cada test lanza su propio motor con la tira respirando: el de `MOO-95`
+ * sin fuente de audio, y el de `MOO-96` con el fichero de golpes, para poder pasar a la energía.
  */
+
+/** El fichero de golpes: 4 s con un golpe de 50 ms en los segundos 1, 2 y 3 y silencio digital. */
+const GOLPES = fileURLToPath(new URL('../packages/engine/test/fixtures/golpes.wav', import.meta.url));
 
 /** E1 (control → luz) de `docs/umbrales-para-specs.md`. */
 const MAX_RESPONSE_MS = 100;
@@ -27,9 +33,18 @@ interface ControlsTimeline {
   frames: number[];
 }
 
+/** Lo que el script de la página anota para `MOO-96`. */
+interface RecallTimeline {
+  /** Los valores de la tira de cada mensaje `6`, en JSON. */
+  echoes: string[];
+  /** El color de cada frame de la tira con todos sus LEDs iguales y alguno por encima de 64. */
+  frames: [red: number, green: number, blue: number][];
+}
+
 declare global {
   interface Window {
     moodTableControls: ControlsTimeline;
+    moodTableRecall: RecallTimeline;
   }
 }
 
@@ -192,6 +207,117 @@ test('el DJ mueve los controles de la respiración y la luz responde mientras ar
     await page.reload();
     await expect(period).toHaveAttribute('aria-valuetext', periodText ?? '');
     await expect(color).toContainText(colorText ?? '');
+  } finally {
+    await engine.stop();
+  }
+});
+
+/**
+ * Antes de cargar el panel: anota los valores de la tira de cada mensaje `6` y el color de los
+ * frames de la tira 0 que pinta la respiración bien encendida: todos los LEDs iguales y alguno por
+ * encima de 64, para que el redondeo no esconda el color (`docs/instructions/viewer-protocol.md`).
+ * La energía con el fichero de golpes es un dibujo en espejo o negro, así que no entra.
+ */
+async function recordRecall(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const timeline: RecallTimeline = { echoes: [], frames: [] };
+    window.moodTableRecall = timeline;
+    const HEADER_BYTES = 6;
+    const NativeWebSocket = window.WebSocket;
+    window.WebSocket = class extends NativeWebSocket {
+      constructor(...args: ConstructorParameters<typeof WebSocket>) {
+        super(...args);
+        this.addEventListener('message', ({ data }: MessageEvent) => {
+          if (!(data instanceof ArrayBuffer)) return;
+          const bytes = new Uint8Array(data);
+          if (bytes[0] === 6) {
+            const { strips } = JSON.parse(new TextDecoder().decode(bytes.subarray(1))) as {
+              strips: { values: unknown }[];
+            };
+            timeline.echoes.push(JSON.stringify(strips[0]?.values));
+          }
+          if (bytes[0] !== 1 || bytes[5] !== 0) return;
+          const [red = 0, green = 0, blue = 0] = bytes.subarray(HEADER_BYTES, HEADER_BYTES + 3);
+          for (let index = HEADER_BYTES; index < bytes.length; index += 3) {
+            if (bytes[index] !== red || bytes[index + 1] !== green || bytes[index + 2] !== blue) return;
+          }
+          if (Math.max(red, green, blue) > 64) timeline.frames.push([red, green, blue]);
+        });
+      }
+    };
+  });
+}
+
+/**
+ * Si `frame` es la respiración con el color `hex`: cada canal es el del color por el mismo brillo,
+ * que se saca del canal más alto. Con el redondeo, cada canal puede desviarse un punto.
+ */
+function paints(hex: string, [red, green, blue]: [number, number, number]): boolean {
+  const color = [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16));
+  const brightest = Math.max(...color);
+  const level = Math.max(red, green, blue) / brightest;
+  return [red, green, blue].every((channel, index) => Math.abs(channel - (color[index] ?? 0) * level) <= 1.5);
+}
+
+function effect(page: Page, name: string) {
+  return zone(page, 'Efectos').getByRole('button', { name: new RegExp(`^${name}`) });
+}
+
+test('al volver a la respiración, la tira recupera el color y el periodo que dejó el DJ', async ({
+  page,
+}) => {
+  const engine = await createTestEngine({ audioFile: GOLPES, effect: 'breathing' });
+  await engine.start();
+  // El motor se para aunque falle una comprobación: si no, quedaría vivo con su puerto ocupado.
+  try {
+    await recordRecall(page);
+    await page.goto(engine.url);
+    const controls = zone(page, 'Controles');
+    const period = controls.getByRole('slider', { name: 'Periodo (s)' });
+    const color = controls.getByRole('group', { name: 'Color' });
+    await expect(color).toContainText('#FFA957');
+
+    // El DJ cambia el periodo, al mínimo, y el color.
+    await period.focus();
+    await page.keyboard.press('Home');
+    await expect(period).toHaveAttribute('aria-valuetext', '1,0');
+    await drag(page, controls.getByRole('slider', { name: 'Saturación y brillo' }), -80);
+    const colorText = (await color.textContent())?.match(/#[0-9A-F]{6}/)?.[0] ?? '';
+    expect(colorText).not.toBe('#FFA957');
+    expect(colorText).not.toBe('');
+    // Antes de cambiar de efecto, el motor ya tiene los valores: uno que va de camino al cambiar de
+    // efecto se pierde (decisión 3 del change strip-effect-recall), y no es lo que se prueba aquí.
+    // El selector manda el color en minúsculas, y la cabecera lo enseña en mayúsculas.
+    const expected = JSON.stringify({ color: colorText, period: 1 }).toUpperCase();
+    await expect
+      .poll(
+        async () => (await page.evaluate(() => window.moodTableRecall.echoes)).at(-1)?.toUpperCase(),
+        { message: 'el motor confirma el color y el periodo' },
+      )
+      .toBe(expected);
+
+    // Pasa la tira a la energía y vuelve a abrir el panel.
+    await effect(page, 'Energía').click();
+    await expect(effect(page, 'Energía')).toHaveAttribute('aria-current', 'true');
+    await expect(controls.getByRole('slider')).toHaveCount(0);
+    await page.reload();
+    await expect(effect(page, 'Energía')).toHaveAttribute('aria-current', 'true');
+
+    // Vuelve a la respiración: los controles muestran el color y el periodo que dejó...
+    await effect(page, 'Respiración').click();
+    await expect(effect(page, 'Respiración')).toHaveAttribute('aria-current', 'true');
+    await expect(period).toHaveAttribute('aria-valuetext', '1,0');
+    await expect(color).toContainText(colorText);
+
+    // ...y el visor pinta la tira con ese color, no con el blanco cálido por defecto.
+    await expect
+      .poll(async () => (await page.evaluate(() => window.moodTableRecall.frames)).length, {
+        message: 'la tira respira bien encendida',
+      })
+      .toBeGreaterThan(0);
+    const { frames } = await page.evaluate(() => window.moodTableRecall);
+    expect(frames.every((frame) => paints(colorText, frame))).toBe(true);
+    expect(frames.some((frame) => paints('#FFA957', frame))).toBe(false);
   } finally {
     await engine.stop();
   }
