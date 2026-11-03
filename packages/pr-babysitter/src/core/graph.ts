@@ -14,7 +14,8 @@
  * Antes del aviso final, si la PR necesita intervención con hallazgos, el nodo `triar` los tría en
  * modo sombra (change pr-shadow-triage, decisión 1): ya están todos los del push. Es el único nodo
  * que lee GitHub, y solo para esas PR (decisión 2, que matiza D73); el resultado se queda en el
- * estado del hilo, y en la traza, sin cambiar el aviso.
+ * estado del hilo, y en la traza, sin cambiar el aviso. Después, `publicarResumen` lo publica en
+ * la PR, un comentario por push (decisión 7).
  *
  * Qué toca después de cada espera lo deciden las reglas puras de `tracking.ts`; aquí solo se
  * traduce cada paso a su nodo. Las esperas devuelven un `Command`, porque a la vez guardan la foto
@@ -41,6 +42,7 @@ import {
   type ReviewRequests,
   type Triager,
   TriageFailedError,
+  type TriageSummaries,
 } from './ports.ts';
 import { type PullRequestSnapshot, pullRequestSnapshotSchema } from './pull-request.ts';
 import {
@@ -63,6 +65,7 @@ import {
   verdictSchema,
   withinBudget,
 } from './triage.ts';
+import { triageSummary } from './triage-summary.ts';
 
 const TrackingState = new StateSchema({
   /** La última foto de la PR que ha recibido el hilo. */
@@ -111,6 +114,7 @@ export interface TrackingPorts {
   reviewRequests: ReviewRequests;
   findings: Findings;
   triager: Triager;
+  summaries: TriageSummaries;
 }
 
 export interface TrackingOptions {
@@ -120,8 +124,8 @@ export interface TrackingOptions {
    */
   timeoutMs: number;
   /**
-   * Una línea por petición de revisión que GitHub rechaza, o por triaje sin respuesta del modelo,
-   * para el log de errores.
+   * Una línea por petición de revisión o resumen del triaje que GitHub rechaza, o por triaje sin
+   * respuesta del modelo, para el log de errores.
    */
   log: (line: string) => void;
   /** El umbral de real y el tope de gasto de cada PR (change pr-shadow-triage, decisiones 4 y 6). */
@@ -135,6 +139,8 @@ export interface TrackingOptions {
 export const REVIEW_REQUEST_NODE = 'pedirRevision';
 
 const TRIAGE_NODE = 'triar';
+
+const SUMMARY_NODE = 'publicarResumen';
 
 /** La última foto que guarda un hilo, validada: `getState` da sus valores sin tipo. */
 export function lastSnapshot(values: unknown): PullRequestSnapshot {
@@ -190,7 +196,7 @@ function waitFor(waitingFor: TrackingWait['waitingFor']) {
 }
 
 export function createTrackingGraph(
-  { notifier, reviewRequests, findings, triager }: TrackingPorts,
+  { notifier, reviewRequests, findings, triager, summaries }: TrackingPorts,
   checkpointer: BaseCheckpointSaver,
   { timeoutMs, log, triage }: TrackingOptions,
 ) {
@@ -300,6 +306,26 @@ export function createTrackingGraph(
     };
   };
 
+  // Publica en la PR el triaje del push (decisión 7), una vez: si ya está el de ese SHA (un
+  // reintento tras una respuesta que no llegó), no lo repite. Si GitHub lo rechaza, queda en el log
+  // y el aviso final sale igual (decisión 8); otro fallo deja el nodo pendiente, y el reintento no
+  // vuelve a triar. Sin hallazgos no hay nada que contar.
+  const publicarResumen: GraphNode<typeof TrackingState> = async ({ snapshot, triage: triaged }) => {
+    if (!triaged || triaged.findings.length === 0) return {};
+    if (await summaries.published(snapshot.number, triaged.sha)) return {};
+    try {
+      const text = triageSummary(triaged, triage.threshold);
+      await summaries.publish(snapshot.number, triaged.sha, text);
+    } catch (error) {
+      if (!(error instanceof GitHubRequestRejectedError)) throw error;
+      log(
+        `GitHub rechaza el resumen del triaje de la PR #${snapshot.number}; ` +
+          `se avisa igual: ${error.message}`,
+      );
+    }
+    return {};
+  };
+
   const avisarEstadoFinal: GraphNode<typeof TrackingState> = async (state) => {
     const { snapshot } = state;
     await notifier.notify(finalNotice(snapshot, finalState(snapshot, pushIn(state))));
@@ -318,6 +344,7 @@ export function createTrackingGraph(
       ends: [...Object.values(AFTER_REVIEW), TRIAGE_NODE],
     })
     .addNode(TRIAGE_NODE, triar)
+    .addNode(SUMMARY_NODE, publicarResumen)
     .addNode('avisarEstadoFinal', avisarEstadoFinal)
     .addConditionalEdges(
       START,
@@ -335,7 +362,8 @@ export function createTrackingGraph(
       [REVIEW_REQUEST_NODE, 'esperarRevisor'],
     )
     .addEdge(REVIEW_REQUEST_NODE, 'esperarRevisor')
-    .addEdge(TRIAGE_NODE, 'avisarEstadoFinal')
+    .addEdge(TRIAGE_NODE, SUMMARY_NODE)
+    .addEdge(SUMMARY_NODE, 'avisarEstadoFinal')
     .addEdge('avisarEstadoFinal', END)
     .compile({ checkpointer });
 }

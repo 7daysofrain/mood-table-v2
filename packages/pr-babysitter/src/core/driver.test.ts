@@ -110,6 +110,10 @@ function setup(pullRequests: OpenPullRequest[] = []) {
         estimate: () => 0,
         triage: () => Promise.reject(new Error('no hay hallazgos que triar')),
       },
+      summaries: {
+        published: () => Promise.resolve(false),
+        publish: () => Promise.reject(new Error('no hay resumen que publicar')),
+      },
       triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 } },
       checkpointer: new MemorySaver(),
       policy: { maintainer: MAINTAINER, baseBranch: 'main' },

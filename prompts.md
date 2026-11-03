@@ -1462,7 +1462,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Hizo el commit de la sincronización solo con las specs, porque `git mv` ya había dejado el movimiento del change en el índice (6.37).*
 
 
-#### 6.45 Ver cómo triaría los hallazgos de cada PR: refinamiento, exploración, change y triaje (`MOO-75` y `MOO-108`)
+#### 6.45 Ver cómo triaría los hallazgos de cada PR: refinamiento, exploración, change, triaje y resumen (`MOO-75`, `MOO-108` y `MOO-109`)
 
 **Prompt 1** (en `/refine-story MOO-75`, al pedir el caso feliz):
 
@@ -1498,6 +1498,24 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Dos tests de los adaptadores no probaban nada: la URL falsa llevaba la* query *y la ruta no coincidía. Los corrigió en el paso siguiente y lo dijo en el commit.*
 - *Hizo la configuración antes que el montaje en `main.ts`, que la necesita, y dejó que el precio pueda ser 0, para Clef en local.*
 - *Un commit de la configuración entró con un test fallando, porque el comando de la comprobación no se paraba si fallaba. Lo arregló con un* amend *antes de subir nada.*
+
+**Prompt 4** (en la revisión de la #101, cuando la IA propuso que el puerto `Triager` estimara el coste de las peticiones enteras):
+
+> Sí, así
+
+*Claude Code (`claude-opus-5-5`, 2-nov). Codex encontró dos P2. Primero, la estimación del tope contaba la PR una vez y cada hallazgo por su tamaño, pero no las preguntas con sus criterios ni la PR repetida en cada petición. Segundo, si fallaba una petición posterior, se perdía lo ya cobrado. SonarQube marcó tres incidencias más. La IA verificó cada hallazgo contra el código, arregló los reales y le preguntó al humano por el que cambiaba el diseño. El humano eligió que estime el adaptador, el único que sabe cómo son sus peticiones. Un `await` en bucle de SonarQube no aplicaba: las peticiones van una tras otra a propósito.*
+
+*Error de la IA:* `typecheck` *falló en CI con una propiedad de parámetro, que* `erasableSyntaxOnly` *no permite. En local no lo vio porque el comando ocultaba la salida y no miró el código de salida. Desde entonces mira el código de salida de cada comprobación.*
+
+**Prompt 5** (tras integrar la #101):
+
+> Sí, empieza
+
+*Claude Code (`claude-opus-5-5`, 2-nov). La IA sacó de `main` la rama de `MOO-109`, volvió a desplegar el contenedor de casa desde `main` e implementó la sección 2: el texto del resumen en el núcleo, el puerto `TriageSummaries` con su adaptador y el nodo `publicarResumen`.*
+
+*Hallazgos de la IA durante la implementación:*
+- *Sin hallazgos que triar, el diseño no decía si publicar. La IA eligió no publicar, porque un resumen vacío no cuenta nada, lo anotó en `design.md` y se lo dijo al humano.*
+- *El* build *de Docker se colgaba en el* sandbox *de Claude Code: el* helper *de credenciales de Docker Desktop no respondía. La imagen base es pública, así que construyó con una configuración de Docker sin* helper*.*
 
 ---
 

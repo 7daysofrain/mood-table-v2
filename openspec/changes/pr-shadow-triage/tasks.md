@@ -108,32 +108,32 @@
 
 ## 2. MOO-109 · infra
 
-- [ ] 2.1 **(test en rojo)** El texto del resumen (`design.md` decisión 7) en
+- [x] 2.1 **(test en rojo)** El texto del resumen (`design.md` decisión 7) en
   `core/triage-summary.test.ts`: la firma y el push con su SHA corto; una fila por hallazgo con su
   identidad, la clase en español (real, no aplica, exige criterio) y el porqué de cada regla; la
   marca oculta con el SHA completo.
-- [ ] 2.2 El texto en `core/triage-summary.ts`.
+- [x] 2.2 El texto en `core/triage-summary.ts`.
   Verificar: los tests de 2.1 en verde.
-- [ ] 2.3 **(test en rojo)** El adaptador del resumen en `adapters/triage-summary.test.ts`: publica
+- [x] 2.3 **(test en rojo)** El adaptador del resumen en `adapters/triage-summary.test.ts`: publica
   con `createComment`; `published` es cierto solo con la marca de ese SHA en un comentario del
   mantenedor; un 403 o un 422 lanzan el error de petición rechazada, y un 5xx, un error cualquiera.
-- [ ] 2.4 El puerto `TriageSummaries` en `core/ports.ts` y su adaptador en
+- [x] 2.4 El puerto `TriageSummaries` en `core/ports.ts` y su adaptador en
   `adapters/triage-summary.ts`.
   Verificar: los tests de 2.3 en verde.
-- [ ] 2.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
+- [x] 2.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
   `specs/pr-triage` y `specs/pr-tracking` que toca esta sección: tras `triar`, `publicarResumen`
   publica una vez y sigue al aviso final; con el resumen de ese SHA ya publicado, no lo repite; si
   GitHub lo rechaza, lo deja en el log y el aviso final llega igual; si falla por la red, el nodo queda
   pendiente y se reintenta sin volver a llamar al `Triager`; un push nuevo publica su propio resumen.
-- [ ] 2.6 El nodo `publicarResumen` y su arista en `core/graph.ts`, y el montaje en `src/main.ts` y
+- [x] 2.6 El nodo `publicarResumen` y su arista en `core/graph.ts`, y el montaje en `src/main.ts` y
   `src/studio.ts`.
   Verificar: los tests de 2.5 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 2.7 Documentación: README §2.2 (*PR Babysitter*), el nodo `publicarResumen` y el puerto
+- [x] 2.7 Documentación: README §2.2 (*PR Babysitter*), el nodo `publicarResumen` y el puerto
   `TriageSummaries`; README §2.5, que el token comenta para pedir la revisión y para el resumen;
   `prompts.md` §6, lo que añada esta tarea a la entrada de la historia.
   Verificar: `pnpm lint` en verde.
-- [ ] 2.8 **Prueba a mano** (sin commit), con el sistema en marcha: una PR de prueba del mantenedor
+- [x] 2.8 **Prueba a mano** (sin commit), con el sistema en marcha: una PR de prueba del mantenedor
   con un hallazgo de Codex y una comprobación que falla.
   Verificar: aparece un resumen firmado con el push y una fila por hallazgo, y después el aviso final
   de Linear; tras un push nuevo con hallazgos, un segundo resumen y el primero intacto. En LangSmith, el hilo pasa por
