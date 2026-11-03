@@ -1,8 +1,10 @@
 /**
  * Búfer de control (README §2.1, *Plano de control*; decisión 1 del change strip-effect-switch): la
- * frontera entre los mandos y el bucle. Guarda la ranura de efecto de cada tira; cualquier mando
- * escribe en él por el puerto `Commands`, y el bucle lee la ranura de cada tira al empezar cada
- * pulso. Lo crea la raíz de composición antes que el servidor y el bucle, que dependen de él.
+ * frontera entre los mandos y el bucle. Guarda la ranura de efecto de cada tira y los valores de
+ * cada efecto de cada tira, también de los no activos, para devolverlos al volver a él (change
+ * strip-effect-recall); cualquier mando escribe en él por el puerto `Commands`, y el bucle lee la
+ * ranura de cada tira al empezar cada pulso. Lo crea la raíz de composición antes que el servidor y
+ * el bucle, que dependen de él.
  *
  * Todo lo que crea objetos (la memoria y los valores del efecto) pasa en `setEffect` y en
  * `setValues`, fuera del bucle, que solo lee referencias: el cambio entra entero en el pulso
@@ -82,12 +84,13 @@ interface Slot extends EffectSlot {
   readonly paramsSchema: TSchema;
 }
 
-function createSlot<P, M>(strip: StripConfig, effect: Effect<P, M>): Slot {
+/** Una ranura con la memoria recién creada y `values`, que ya cumplen el esquema del efecto. */
+function createSlot<P, M>(strip: StripConfig, effect: Effect<P, M>, values: unknown): Slot {
   const memory = effect.createMemory(strip);
   const slot: Slot = {
     effect: effect.id as EffectId,
     paramsSchema: effect.paramsSchema,
-    values: defaultParams(effect),
+    values,
     render: (ctx, out) => {
       // Lee la referencia en cada pulso: unos valores nuevos entran enteros en el siguiente. Solo
       // llegan los que cumplen `paramsSchema`, que son los `P` del efecto.
@@ -143,17 +146,24 @@ export function createControl({
   effects = EFFECTS,
   hasAudioSource,
 }: ControlOptions): ControlBuffer {
+  // Los valores de cada efecto de cada tira, en el orden del fichero, también los de los efectos no
+  // activos: los mismos que `strip_effects` (README §3.2). Siempre tiene los del efecto activo.
+  const saved = strips.map(() => new Map<EffectId, unknown>());
+
   // El fichero ya valida el id contra el catálogo, y un test comprueba que el registro tiene los
   // mismos: un efecto que falta es un fallo del motor, no del que manda.
-  function slotFor(strip: StripConfig, id: EffectId): Slot {
+  function slotFor(index: number, strip: StripConfig, id: EffectId): Slot {
     const effect = effects.find((each) => each.id === id);
     if (!effect) {
       throw new Error(`la tira «${strip.id}» declara el efecto «${id}», que el motor no tiene`);
     }
-    return createSlot(strip, effect);
+    // Con los valores con que la tira dejó el efecto o, la primera vez, con los de por defecto.
+    const values = saved[index]?.get(id) ?? defaultParams(effect);
+    saved[index]?.set(id, values);
+    return createSlot(strip, effect, values);
   }
 
-  const slots = strips.map((strip) => slotFor(strip, strip.effect));
+  const slots = strips.map((strip, index) => slotFor(index, strip, strip.effect));
   const listeners = new Set<() => void>();
 
   return {
@@ -163,21 +173,25 @@ export function createControl({
       if (!strip) return 'unknown-strip';
       if (slots[index]?.effect === effect) return 'unchanged';
       if (!hasAudioSource && needsAudioSource(effect)) return 'needs-audio-source';
-      // Una ranura nueva cada vez: volver a un efecto lo devuelve con sus valores por defecto
-      // (MOO-96). Si llegan dos cambios antes del pulso, el bucle solo ve el último.
-      slots[index] = slotFor(strip, effect);
+      // Una ranura nueva cada vez, ya entera con los valores guardados antes de dejarla en su sitio:
+      // el primer frame los lleva, y el efecto empieza con la memoria nueva (decisiones 1 y 2 del
+      // change strip-effect-recall). Si llegan dos cambios antes del pulso, el bucle solo ve el último.
+      slots[index] = slotFor(index, strip, effect);
       for (const listener of listeners) listener();
       return 'changed';
     },
     setValues(stripId, values) {
-      const slot = slots[strips.findIndex((strip) => strip.id === stripId)];
+      const index = strips.findIndex((strip) => strip.id === stripId);
+      const slot = slots[index];
       if (!slot) return 'unknown-strip';
-      // Unos valores atrasados de otro efecto no cumplen el esquema del activo (decisión 3).
+      // Unos valores atrasados de otro efecto no cumplen el esquema del activo (decisión 3), y
+      // tampoco se guardan para ese otro (decisión 3 del change strip-effect-recall).
       const invalid = invalidReason(slot.paramsSchema, values);
       if (invalid !== undefined) return { invalid };
       if (Value.Equal(slot.values, values)) return 'unchanged';
       // Una copia: lo que haga después quien llama no cambia lo que pinta la tira.
       slot.values = Value.Clone(values);
+      saved[index]?.set(slot.effect, slot.values);
       for (const listener of listeners) listener();
       return 'changed';
     },

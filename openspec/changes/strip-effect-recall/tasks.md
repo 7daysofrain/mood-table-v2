@@ -21,7 +21,7 @@
   efecto sigue empezando con los valores por defecto* se sustituye por el de volver a un efecto
   (`specs/instrument-control`, decisiones 1 y 2).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 1.2 Los valores guardados por tira y por efecto en `packages/engine/src/core/control.ts`:
+- [x] 1.2 Los valores guardados por tira y por efecto en `packages/engine/src/core/control.ts`:
   `setEffect` crea la ranura con los guardados o con los de por defecto, y `setValues` los apunta.
   El comentario de `setEffect` y el de la cabecera, al día.
   Verificar: los tests de 1.1 pasan, los del bucle siguen en verde y `pnpm lint` no da errores de
