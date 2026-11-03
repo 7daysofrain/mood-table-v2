@@ -423,19 +423,20 @@ sistema la escrita con su token.
 - **WHEN** todas las comprobaciones de ese push terminan en verde
 - **THEN** el sistema pide al revisor que revise ese push
 
-### Requirement: El sistema solo escribe en GitHub para pedir la revisión
-Lo único que el sistema SHALL escribir en GitHub son sus peticiones de revisión: MUST NOT escribir otros
-comentarios, revisiones, commits ni merges. Su token de GitHub MUST NOT poder integrar una PR ni subir
-commits.
+### Requirement: El sistema solo escribe en GitHub sus peticiones de revisión y el resumen del triaje
+Lo único que el sistema SHALL escribir en GitHub son sus peticiones de revisión y el resumen del triaje
+de cada push: MUST NOT escribir otros comentarios, revisiones, commits ni merges. Su token de GitHub
+MUST NOT poder integrar una PR ni subir commits.
 
-> Traza: BE2 y D64 (el sistema no integra); `MOO-81`, *Contexto técnico* (el PAT pasa a tener
-> escritura en *Issues* y *Pull requests*, sin *Contents*). Sustituye a «El sistema no escribe en
-> GitHub»: change `pr-review-request`, `design.md` decisión 1, que matiza D71.
+> Traza: BE2 y D64 (el sistema no integra); `MOO-81`, *Contexto técnico* (el PAT tiene escritura en
+> *Issues* y *Pull requests*, sin *Contents*); `MOO-75`, caso feliz (*la PR tiene un comentario resumen
+> del sistema*). Sustituye a «El sistema solo escribe en GitHub para pedir la revisión»: change
+> `pr-shadow-triage`.
 
 #### Scenario: Una PR seguida hasta su estado final
 - **GIVEN** el sistema ha seguido una PR hasta avisar de su estado final
 - **WHEN** el mantenedor revisa la PR en GitHub
-- **THEN** lo único hecho con el token del sistema son sus peticiones de revisión, como mucho una por push
+- **THEN** lo único hecho con el token del sistema son sus peticiones de revisión y sus resúmenes de triaje, como mucho uno de cada por push
 
 #### Scenario: El token del sistema no puede integrar
 - **GIVEN** el token de GitHub del sistema
