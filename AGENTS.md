@@ -74,6 +74,8 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - **`docs/instructions/` = the what** (cross-cutting conventions and flow); **skills = the how**
   (protocol, templates, DoD).
 - **What only one skill uses lives in its folder** (`references/` or `assets/`), not in `docs/`.
+- **Third-party skills** live in `.agents/skills/`, symlinked from `.claude/skills/` and recorded in
+  `skills-lock.json`. Don't edit them by hand: add, update or remove them with `npx skills`.
 - **The story skills have evals** (`create-story`, `refine-story`, `estimate-story`: each in its
   `evals/`, shared fixtures in `.claude/evals/`). Before changing one of them or its subagent, run its
   evals against the current version (skill-creator's improve loop), so a regression shows up before
