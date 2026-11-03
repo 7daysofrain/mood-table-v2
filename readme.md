@@ -370,7 +370,7 @@ El **esquema** es lo que permite que el panel genere los controles sin conocer e
 Estima el consumo del frame a partir del valor de cada canal y del consumo máximo por LED declarado para esa tira. Si supera el límite configurado para su fuente de alimentación, escala el brillo de todo el frame en proporción. Protege fuentes y tiras, algo que en la v1 hacían por debajo piezas de terceros.
 
 **Búfer de control** — TypeScript.
-Guarda lo que el bucle necesita **de cada tira**: su efecto activo, con sus valores y su memoria ya creados (la *ranura* de la tira). Implementa el puerto `Commands`: un cambio de efecto (ya validado) crea la ranura nueva **fuera del bucle** y la deja en el sitio de la tira, y el bucle la recoge al inicio del pulso siguiente, entera. De varios cambios seguidos queda el último, y elegir el efecto activo no lo reinicia. Un cambio de valores (`setValues`) no rehace la ranura: el búfer los valida con el esquema del efecto activo y sustituye la referencia a los valores de la ranura por una copia, así que la memoria del efecto sigue y la respiración no salta de brillo. Devuelve qué ha pasado (cambiado, sin cambio, la tira no existe, necesita fuente de audio, valores que no cumplen el esquema, con el motivo) en lugar de lanzar, y avisa de cada cambio, venga del mando que venga, para que el servidor lo cuente a todos los paneles. Lo crea `main.ts` antes que el servidor y el bucle, que dependen de él (D77). Con H5, cada cambio avisará al puerto de persistencia, que guardará con un pequeño retardo (agrupa los cambios mientras se arrastra un slider en lugar de escribir en disco cien veces).
+Guarda lo que el bucle necesita **de cada tira**: su efecto activo, con sus valores y su memoria ya creados (la *ranura* de la tira). Guarda además **los valores de cada efecto de cada tira**, incluidos los de los efectos no activos, con la forma de `strip_effects` (§3.2). Implementa el puerto `Commands`: un cambio de efecto (ya validado) crea la ranura nueva **fuera del bucle**, con los valores con que la tira dejó ese efecto (los de por defecto la primera vez) y la memoria nueva, y la deja en el sitio de la tira; el bucle la recoge al inicio del pulso siguiente, entera, así que el primer frame ya lleva esos valores. De varios cambios seguidos queda el último, y elegir el efecto activo no lo reinicia. Un cambio de valores (`setValues`) no rehace la ranura: el búfer los valida con el esquema del efecto activo y sustituye la referencia a los valores de la ranura por una copia, que apunta también como los valores de ese efecto en esa tira, así que la memoria del efecto sigue y la respiración no salta de brillo. Devuelve qué ha pasado (cambiado, sin cambio, la tira no existe, necesita fuente de audio, valores que no cumplen el esquema, con el motivo) en lugar de lanzar, y avisa de cada cambio, venga del mando que venga, para que el servidor lo cuente a todos los paneles. Lo crea `main.ts` antes que el servidor y el bucle, que dependen de él (D77). Con H5, cada cambio avisará al puerto de persistencia, que guardará con un pequeño retardo (agrupa los cambios mientras se arrastra un slider en lugar de escribir en disco cien veces).
 
 #### Configuración de las tiras
 
@@ -822,7 +822,7 @@ La API HTTP recibe los **mandos** del instrumento. El **estado** (las tiras con 
 
 | Método | Ruta | Qué hace |
 |---|---|---|
-| `PUT` | `/api/strips/{stripId}/effect` | Cambia el efecto de una tira. La tira lo pinta desde el pulso siguiente, con un corte seco y sus valores por defecto, y todos los paneles reciben las tiras por el WebSocket. Elegir el efecto que ya tiene no lo reinicia |
+| `PUT` | `/api/strips/{stripId}/effect` | Cambia el efecto de una tira. La tira lo pinta desde el pulso siguiente, con un corte seco y los valores con que dejó ese efecto (los de por defecto la primera vez), y todos los paneles reciben las tiras por el WebSocket. Elegir el efecto que ya tiene no lo reinicia |
 | `PUT` | `/api/strips/{stripId}/values` | Cambia los valores de una tira: todos los del efecto activo. La tira pinta con ellos desde el pulso siguiente, sin reiniciar el efecto (la respiración no salta de brillo), y todos los paneles reciben las tiras por el WebSocket (D87) |
 
 Ejemplo de petición: pasar la tira `demo` a la respiración.
@@ -834,7 +834,7 @@ Content-Type: application/json
 { "effect": "breathing" }
 ```
 
-Respuesta `200`: la tira, con su efecto activo y sus valores, los de por defecto del efecto.
+Respuesta `200`: la tira, con su efecto activo y sus valores: los de por defecto la primera vez que la tira tiene ese efecto, y después los que tenía al salir de él.
 
 ```json
 {

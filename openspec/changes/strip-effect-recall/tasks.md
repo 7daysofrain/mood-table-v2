@@ -39,7 +39,7 @@
   vuelve a la respiración; los controles muestran ese color y ese periodo y el visor pinta la tira
   con ese color (`specs/instrument-control`, criterios de `MOO-96`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 1.6 Documentación: README §2.2 (*Búfer de control*: guarda los valores de cada efecto de cada
+- [x] 1.6 Documentación: README §2.2 (*Búfer de control*: guarda los valores de cada efecto de cada
   tira y la ranura nueva sale con ellos) y §4 (la respuesta del cambio de efecto lleva los valores
   con que la tira dejó ese efecto, o los de por defecto la primera vez). `prompts.md`: la entrada de
   la exploración y la propuesta del change, y la de esta tarea.
