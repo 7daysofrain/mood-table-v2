@@ -29,7 +29,7 @@ CI runs these same scripts, so a green run locally predicts a green PR.
 | `pnpm test` / `pnpm test:coverage` | Vitest across all packages; coverage goes to a single `coverage/lcov.info` |
 | `pnpm test:e2e` | Playwright E2E in Chromium against the panel build (not counted in coverage). First run `pnpm --filter @moodtable/e2e exec playwright install chromium` |
 | `pnpm exec openspec …` | The pinned OpenSpec CLI (1.14.0), not the global one |
-| `pnpm exec sm …` | The pinned [skill-map](https://github.com/crystian/skill-map) CLI: maps the AI harness and flags its issues (`sm scan`; bare `sm` opens its web UI) |
+| `pnpm skill-map` | Opens the map of the AI harness in [skill-map](https://github.com/crystian/skill-map)'s web UI, live as files change. Its pinned CLI, for scans and other verbs: `pnpm exec sm …` (`sm scan`, `sm check`) |
 
 Code conventions the tooling enforces or relies on:
 
