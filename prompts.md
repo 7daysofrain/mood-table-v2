@@ -1517,6 +1517,20 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Sin hallazgos que triar, el diseño no decía si publicar. La IA eligió no publicar, porque un resumen vacío no cuenta nada, lo anotó en `design.md` y se lo dijo al humano.*
 - *El* build *de Docker se colgaba en el* sandbox *de Claude Code: el* helper *de credenciales de Docker Desktop no respondía. La imagen base es pública, así que construyó con una configuración de Docker sin* helper*.*
 
+**Prompt 6** (cuando la IA propuso probar a mano el resumen con una PR de prueba):
+
+> Sí, adelante
+
+*Claude Code (`claude-opus-5-5`, 2-nov). La IA desplegó la rama en el contenedor de casa y abrió la #103 con el contenido de la #99, sin `Refs MOO-n` para que Linear no la enlazara. Cada push tuvo su resumen antes del aviso de Linear, y el del segundo push dejó intacto el primero. Las trazas de LangSmith muestran el camino `triar` → `publicarResumen` → `avisarEstadoFinal`. `SonarCloud Code Analysis` salió exige criterio sin preguntar al modelo, porque es una app externa sin log de Actions: un dato para la calibración de `MOO-76`. La IA cerró la #103, borró su rama y abrió la #104, que Codex y SonarQube pasaron sin hallazgos.*
+
+**Prompt 7** (con la #104 integrada):
+
+> Sí, archívalo
+
+*Claude Code (`claude-opus-5-5`, 3-nov). La IA volvió a desplegar el contenedor desde `main` y comprobó que las dos tareas de `MOO-75` estaban en Done; Linear había cerrado la historia sola. `/opsx:verify` cotejó las 19 tareas y los 9 requisitos con el código y los tests, sin problemas críticos ni advertencias. Sincronizó las specs: en `pr-tracking`, el requisito nuevo de escritura en GitHub ocupa el sitio del que sustituye, y `pr-triage` nace con 8 requisitos y 15 escenarios.*
+
+*Hallazgo de la IA:* `openspec validate --all --strict` *falla en 9 de las 12 specs con la CLI 1.15.0, sin un solo error: cuenta como fallo el aviso de requisito de más de 500 caracteres, que salta por las líneas de traza. Sin* `--strict` *pasan las 12, y la CI no valida las specs.*
+
 ---
 
 ### 7. Pull Requests
