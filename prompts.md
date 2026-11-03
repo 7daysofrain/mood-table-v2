@@ -1568,6 +1568,24 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El E2E pone el periodo con la tecla Inicio (1 s): es un valor exacto, y con ese ritmo los frames bien encendidos llegan enseguida. Antes de cambiar de efecto espera a que el motor confirme los valores, para no probar sin querer el riesgo aceptado. El selector manda el color en minúsculas y la cabecera lo enseña en mayúsculas, así que la comparación no distingue entre ellas.*
 - *Para ver que el E2E detecta el fallo, la IA lo lanzó contra el `control.ts` de `main`: falló donde debía, con el periodo de vuelta en 4,0.*
 
+#### 6.48 Los avisos del PR Babysitter en la #109, y verificar y archivar el change de `MOO-96`
+
+**Prompt 1** (con la #109 lista para revisar):
+
+> No veo mensajes del babysitter
+
+*Claude Code (`claude-opus-5-5`, 3-nov). Antes de tocar nada, la IA siguió el rastro de fuera hacia dentro. El contenedor estaba en marcha, con el log callado, porque solo escribe cuando algo falla. Las trazas de LangSmith mostraban tres ejecuciones del grafo para la #109, una por minuto: seguimiento → comprobaciones → estado final. Con las credenciales de solo lectura de la app de Linear (el MCP se había desconectado), encontró los tres avisos en la tarea `MOO-110`, que es donde los manda el sistema, y no en la PR ni en la historia. En GitHub no había nada, y era lo correcto: Codex ya había revisado el último commit al quitar el borrador, sin hallazgos, y sin hallazgos no hay triaje.*
+
+**Prompt 2** (con la #109 integrada):
+
+> mergeado
+
+*La IA comprobó en Linear que `MOO-110` y `MOO-96` estaban en Done, y sacó la rama del archivado desde `main`. `/opsx:verify` cotejó las 6 tareas, los 2 requisitos y sus 5 escenarios con el código y los tests, sin problemas críticos ni advertencias. Al sincronizar, los dos requisitos nuevos quedaron en `instrument-control` detrás de* Cada tira tiene sus valores*, que es de lo que tratan.*
+
+*Ajustes:*
+- *El `pull` de `main` chocó con el `.claude/launch.json` sin commitear que la IA había creado esa misma tarde: `main` ya traía uno más completo (#106). La IA apartó el suyo al scratchpad, sin borrarlo, y se quedó con el de `main`.*
+- *El requisito* Volver a un efecto recupera los valores con que lo dejó *da el aviso de más de 500 caracteres, por su línea de traza, igual que otros dos de la spec que ya estaban (6.45).*
+
 ---
 
 ### 7. Pull Requests
