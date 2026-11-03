@@ -26,7 +26,7 @@
   El comentario de `setEffect` y el de la cabecera, al día.
   Verificar: los tests de 1.1 pasan, los del bucle siguen en verde y `pnpm lint` no da errores de
   fronteras.
-- [ ] 1.3 Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con `inject` y un búfer
+- [x] 1.3 Tests de la ruta en `packages/engine/src/adapters/server.test.ts`, con `inject` y un búfer
   real: tras cambiar los valores de una tira, pasar a la energía y volver a la respiración, la
   respuesta `200` de `PUT /api/strips/{stripId}/effect` y el mensaje `6` llevan los valores
   recuperados.
