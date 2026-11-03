@@ -23,8 +23,6 @@ out/
 # you want them scanned.
 sm-process-jobs/
 sm-tutorial/
-openspec/
-docs/borradores/
 
 # OS / editor noise
 .DS_Store
@@ -34,3 +32,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Project
+openspec/
+docs/borradores/
+.claude/evals/workspace/
+.claude/worktrees/
+.agents/

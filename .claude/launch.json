@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "mood-table-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "source \"${NVM_DIR:-$HOME/.nvm}/nvm.sh\" && nvm use >/dev/null && pnpm dev"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "pr-babysitter-studio",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "source \"${NVM_DIR:-$HOME/.nvm}/nvm.sh\" && nvm use >/dev/null && pnpm --filter @moodtable/pr-babysitter studio --no-browser"
+      ],
+      "port": 2024
+    },
+    {
+      "name": "skill-map",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-lc",
+        "source \"${NVM_DIR:-$HOME/.nvm}/nvm.sh\" && nvm use >/dev/null && exec node_modules/.bin/sm serve --no-open"
+      ],
+      "port": 4242,
+      "autoPort": false
+    }
+  ]
+}

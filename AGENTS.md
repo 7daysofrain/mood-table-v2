@@ -29,6 +29,7 @@ CI runs these same scripts, so a green run locally predicts a green PR.
 | `pnpm test` / `pnpm test:coverage` | Vitest across all packages; coverage goes to a single `coverage/lcov.info` |
 | `pnpm test:e2e` | Playwright E2E in Chromium against the panel build (not counted in coverage). First run `pnpm --filter @moodtable/e2e exec playwright install chromium` |
 | `pnpm exec openspec …` | The pinned OpenSpec CLI (1.14.0), not the global one |
+| `pnpm skill-map` | Opens the map of the AI harness in [skill-map](https://github.com/crystian/skill-map)'s web UI, live as files change. Its pinned CLI, for scans and other verbs: `pnpm exec sm …` (`sm scan`, `sm check`) |
 
 Code conventions the tooling enforces or relies on:
 
@@ -74,6 +75,8 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - **`docs/instructions/` = the what** (cross-cutting conventions and flow); **skills = the how**
   (protocol, templates, DoD).
 - **What only one skill uses lives in its folder** (`references/` or `assets/`), not in `docs/`.
+- **Third-party skills** live in `.agents/skills/`, symlinked from `.claude/skills/` and recorded in
+  `skills-lock.json`. Don't edit them by hand: add, update or remove them with `npx skills`.
 - **The story skills have evals** (`create-story`, `refine-story`, `estimate-story`: each in its
   `evals/`, shared fixtures in `.claude/evals/`). Before changing one of them or its subagent, run its
   evals against the current version (skill-creator's improve loop), so a regression shows up before

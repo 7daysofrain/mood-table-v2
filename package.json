@@ -13,11 +13,13 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "pnpm --filter @moodtable/e2e test:e2e",
-    "openapi": "pnpm --filter @moodtable/engine openapi"
+    "openapi": "pnpm --filter @moodtable/engine openapi",
+    "skill-map": "sm"
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
     "@fission-ai/openspec": "1.15.0",
+    "@skill-map/cli": "1.12.7",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
