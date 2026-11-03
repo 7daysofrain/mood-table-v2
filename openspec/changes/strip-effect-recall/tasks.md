@@ -34,7 +34,7 @@
 - [x] 1.4 El comentario de `packages/panel/src/controls/use-draft-values.ts` que dice que el efecto
   vuelve con sus valores por defecto (decisión 4).
   Verificar: los tests del panel siguen en verde.
-- [ ] 1.5 E2E del caso feliz en `e2e/controls.spec.ts`, con el motor de prueba y una tira con la
+- [x] 1.5 E2E del caso feliz en `e2e/controls.spec.ts`, con el motor de prueba y una tira con la
   respiración: el DJ cambia el color y el periodo, pasa la tira a la energía, recarga el panel y
   vuelve a la respiración; los controles muestran ese color y ese periodo y el visor pinta la tira
   con ese color (`specs/instrument-control`, criterios de `MOO-96`).
