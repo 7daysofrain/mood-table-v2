@@ -31,7 +31,7 @@
   respuesta `200` de `PUT /api/strips/{stripId}/effect` y el mensaje `6` llevan los valores
   recuperados.
   Verificar: los tests pasan sin tocar `server.ts`.
-- [ ] 1.4 El comentario de `packages/panel/src/controls/use-draft-values.ts` que dice que el efecto
+- [x] 1.4 El comentario de `packages/panel/src/controls/use-draft-values.ts` que dice que el efecto
   vuelve con sus valores por defecto (decisión 4).
   Verificar: los tests del panel siguen en verde.
 - [ ] 1.5 E2E del caso feliz en `e2e/controls.spec.ts`, con el motor de prueba y una tira con la
