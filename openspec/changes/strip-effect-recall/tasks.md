@@ -9,7 +9,7 @@
 
 ## 1. MOO-110 · engine
 
-- [ ] 1.1 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`,
+- [x] 1.1 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`,
   con dos tiras y, además de los efectos del registro, un efecto de prueba con parámetros (para
   comprobar dos efectos con valores en la misma tira): volver a un efecto lo devuelve con los valores
   con que lo dejó; el primer `render` de la ranura nueva ya

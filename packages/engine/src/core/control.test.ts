@@ -1,9 +1,10 @@
 import type { EffectId, StripConfig } from '@moodtable/shared';
+import Type from 'typebox';
 import { describe, expect, it } from 'vitest';
 
-import { createControl } from './control.ts';
+import { type ControlBuffer, createControl } from './control.ts';
 import { breathing } from './effects/breathing.ts';
-import { defaultParams } from './effects/effect.ts';
+import { defaultParams, type Effect } from './effects/effect.ts';
 import { energy } from './effects/energy.ts';
 
 function strip(id: string, effect: EffectId): StripConfig {
@@ -20,6 +21,31 @@ function twoStrips(hasAudioSource = true) {
   const notices: number[] = [];
   control.watch(() => notices.push(notices.length));
   return { control, notices };
+}
+
+/**
+ * Un efecto de prueba con parámetros, que el catálogo no tiene: hoy solo la respiración los tiene, y
+ * hacen falta dos para ver que cada efecto de una tira guarda los suyos. Es de ambiente.
+ */
+const PULSE = 'pulse' as EffectId;
+const pulse: Effect<{ speed: number }, null> = {
+  id: PULSE,
+  usesAudio: false,
+  paramsSchema: Type.Object(
+    { speed: Type.Number({ minimum: 1, maximum: 10, default: 2 }) },
+    { additionalProperties: false },
+  ),
+  createMemory: () => null,
+  render: (_ctx, params, _memory, out) => out.fill(params.speed),
+};
+
+/** Dos tiras con la respiración, y el efecto de prueba además de los del registro. */
+function withPulse(hasAudioSource = true) {
+  return createControl({
+    strips: [strip('a', 'breathing'), strip('b', 'breathing')],
+    effects: [breathing, energy, pulse],
+    hasAudioSource,
+  });
 }
 
 /** Lo que pinta la respiración por defecto, recién creada, en el instante `time`. */
@@ -216,15 +242,124 @@ describe('el búfer de control', () => {
       expect(control.slot(0)).toBe(other);
       expect(other.values).toBe(values);
     });
+  });
 
-    it('cambiar de efecto sigue empezando con los valores por defecto', () => {
+  describe('volver a un efecto', () => {
+    const BLUE = { color: '#2040FF', period: 7 };
+    const RED = { color: '#FF2020', period: 3 };
+    const ctx = (time: number) => ({ time, dt: 1 / 60, audio: null });
+
+    /** Lo que pinta la respiración con `values` y una memoria recién creada, en el instante `time`. */
+    function freshBreathingAt(time: number, values: typeof BLUE): Uint8Array {
+      const out = new Uint8Array(12);
+      const memory = breathing.createMemory(strip('referencia', 'breathing'));
+      breathing.render(ctx(time), values, memory, out);
+      return out;
+    }
+
+    /** Ida y vuelta: la tira pasa a `other` y vuelve a la respiración. */
+    function roundTrip(control: ControlBuffer, id: string, other: EffectId = 'energy') {
+      control.setEffect(id, other);
+      return control.setEffect(id, 'breathing');
+    }
+
+    it('la devuelve con los valores con que la dejó', () => {
       const { control } = twoStrips();
       control.setValues('b', BLUE);
 
+      expect(roundTrip(control, 'b')).toBe('changed');
+
+      expect(control.slot(1).effect).toBe('breathing');
+      expect(control.slot(1).values).toEqual(BLUE);
+    });
+
+    it('el primer frame ya pinta con los valores recuperados, no con los de por defecto', () => {
+      const { control } = twoStrips();
+      control.setValues('b', BLUE);
+      roundTrip(control, 'b');
+
+      const out = new Uint8Array(12);
+      control.slot(1).render(ctx(1.5), out);
+
+      expect(out).toEqual(freshBreathingAt(1.5, BLUE));
+      expect(out).not.toEqual(breathingAt(1.5));
+    });
+
+    it('vuelven los valores, no la memoria: la respiración empieza como recién creada', () => {
+      const { control } = twoStrips();
+      // Un cambio de periodo a mitad de respiración deja un desfase en la memoria.
+      const out = new Uint8Array(12);
+      control.slot(1).render(ctx(1), out);
+      control.setValues('b', BLUE);
+      control.slot(1).render(ctx(1 + 1 / 60), out);
+      roundTrip(control, 'b');
+
+      control.slot(1).render(ctx(2), out);
+
+      expect(out).toEqual(freshBreathingAt(2, BLUE));
+    });
+
+    it('cada tira recupera los suyos', () => {
+      const control = withPulse();
+      control.setValues('a', BLUE);
+      control.setValues('b', RED);
+      control.setEffect('a', 'energy');
       control.setEffect('b', 'energy');
+
+      control.setEffect('b', 'breathing');
+      control.setEffect('a', 'breathing');
+
+      expect(control.slot(0).values).toEqual(BLUE);
+      expect(control.slot(1).values).toEqual(RED);
+    });
+
+    it('un efecto que nunca se ha elegido en una tira empieza con sus valores por defecto', () => {
+      const { control } = twoStrips();
+      control.setValues('b', BLUE);
+
+      control.setEffect('a', 'breathing');
+
+      expect(control.slot(0).values).toEqual(defaultParams(breathing));
+    });
+
+    it('dos efectos con valores en la misma tira guardan cada uno los suyos', () => {
+      const control = withPulse();
+      control.setValues('a', BLUE);
+      control.setEffect('a', PULSE);
+      control.setValues('a', { speed: 7 });
+
+      control.setEffect('a', 'breathing');
+      expect(control.slot(0).values).toEqual(BLUE);
+
+      control.setEffect('a', PULSE);
+      expect(control.slot(0).values).toEqual({ speed: 7 });
+    });
+
+    it('unos valores rechazados no cambian lo que se recupera', () => {
+      const { control } = twoStrips();
+      control.setValues('b', BLUE);
+      control.setValues('b', { ...BLUE, period: 25 });
+      control.setEffect('b', 'energy');
+      // Unos valores atrasados de la respiración, que llegan con la energía ya activa (decisión 3).
+      control.setValues('b', RED);
+
       control.setEffect('b', 'breathing');
 
-      expect(control.slot(1).values).toEqual(defaultParams(breathing));
+      expect(control.slot(1).values).toEqual(BLUE);
+    });
+
+    it.each([
+      ['unchanged', (control: ControlBuffer) => control.setEffect('b', 'breathing')],
+      ['unknown-strip', (control: ControlBuffer) => control.setEffect('luces', 'breathing')],
+      ['needs-audio-source', (control: ControlBuffer) => control.setEffect('b', 'energy')],
+    ] as const)('%s no toca lo guardado', (result, command) => {
+      const control = withPulse(false);
+      control.setValues('b', BLUE);
+
+      expect(command(control)).toBe(result);
+      expect(control.slot(1).values).toEqual(BLUE);
+      expect(roundTrip(control, 'b', PULSE)).toBe('changed');
+      expect(control.slot(1).values).toEqual(BLUE);
     });
   });
 });
