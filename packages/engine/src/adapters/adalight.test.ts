@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import type { LightOutput } from '../core/frame-loop.ts';
-import { adalightBuffer, AdalightOutput, encodeAdalight, type SerialLink } from './adalight.ts';
+import {
+  adalightBuffer,
+  AdalightOutput,
+  encodeAdalight,
+  openAdalight,
+  type SerialLink,
+} from './adalight.ts';
 
 /**
  * Un puerto serie en memoria: guarda lo que se le escribe y el test decide cuándo ha salido por el
@@ -206,5 +212,43 @@ describe('la salida Adalight', () => {
     expect(log).toEqual([
       'Tira «Mesa»: se ha perdido el puerto /dev/ttyUSB0 (Input/output error); deja de pintar',
     ]);
+  });
+});
+
+describe('abrir el puerto de una tira física', () => {
+  const options = { log: () => undefined, now: () => 0 };
+
+  it('si se abre, da la salida de la tira sobre él, a sus baudios', async () => {
+    const link = new FakeLink();
+    const opened: [string, number][] = [];
+
+    const result = await openAdalight(
+      table,
+      (port, baudRate) => {
+        opened.push([port, baudRate]);
+        return Promise.resolve(link);
+      },
+      options,
+    );
+    const output: LightOutput | undefined = result.ok ? result.output : undefined;
+    output?.write(frameOf(5), tick(5));
+
+    expect(opened).toEqual([['/dev/ttyUSB0', 115200]]);
+    expect(link.copies.map(seqOf)).toEqual([5]);
+  });
+
+  it('si no se abre, dice qué tira, qué puerto y el motivo del sistema', async () => {
+    const result = await openAdalight(
+      table,
+      () => Promise.reject(new Error('Error: No such file or directory, cannot open /dev/ttyUSB0')),
+      options,
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error:
+        'tira «Mesa» (/dev/ttyUSB0): no se puede abrir el puerto serie ' +
+        '(Error: No such file or directory, cannot open /dev/ttyUSB0)',
+    });
   });
 });

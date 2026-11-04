@@ -32,6 +32,9 @@ export interface SerialLink {
   watchLoss(listener: (reason: string) => void): void;
 }
 
+/** Abre el puerto serie a unos baudios; rechaza con el motivo del sistema si no puede. */
+export type OpenSerialLink = (port: string, baudRate: number) => Promise<SerialLink>;
+
 /** Lo que la salida necesita saber de su tira: para el búfer y para el log. */
 export interface AdalightStrip {
   name: string;
@@ -106,6 +109,27 @@ export class AdalightOutput implements LightOutput {
     this.options.log(
       `Tira «${this.strip.name}»: se ha perdido el puerto ${this.strip.port} (${reason}); deja de pintar`,
     );
+  }
+}
+
+/**
+ * Abre el puerto de una tira física y le pone su salida. Si no se abre (no existe, permiso denegado,
+ * lo tiene otro programa), el motor no arranca y dice qué tira, qué puerto y por qué (decisión 4):
+ * es un estado de paso hasta `MOO-112`.
+ */
+export async function openAdalight(
+  strip: AdalightStrip,
+  open: OpenSerialLink,
+  options: AdalightOptions,
+): Promise<{ ok: true; output: AdalightOutput } | { ok: false; error: string }> {
+  try {
+    const link = await open(strip.port, strip.baudRate);
+    return { ok: true, output: new AdalightOutput(strip, link, options) };
+  } catch (error) {
+    return {
+      ok: false,
+      error: `tira «${strip.name}» (${strip.port}): no se puede abrir el puerto serie (${(error as Error).message})`,
+    };
   }
 }
 
