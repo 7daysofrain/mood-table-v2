@@ -42,6 +42,21 @@ export interface EngineOptions {
   clock?: () => number;
 }
 
+/**
+ * Las salidas de cada tira (D43): el visor siempre, sea cual sea su salida; una tira física, también
+ * su salida Adalight (`physical`, por el id de la tira), que recibe los frames haya o no paneles
+ * (specs/frame-loop).
+ */
+export function stripOutputs(
+  viewer: (index: number) => LightOutput,
+  physical: ReadonlyMap<string, LightOutput>,
+): EngineOptions['createOutputs'] {
+  return (strip, index) => {
+    const adalight = physical.get(strip.id);
+    return adalight ? [viewer(index), adalight] : [viewer(index)];
+  };
+}
+
 export function startEngine({
   config,
   control,

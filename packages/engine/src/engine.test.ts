@@ -5,7 +5,13 @@ import { MemoryOutput } from './adapters/memory-output.ts';
 import { createControl } from './core/control.ts';
 import { breathing } from './core/effects/breathing.ts';
 import { defaultParams } from './core/effects/effect.ts';
-import { sourceMessage, startEngine, startupMessage, stripsMessage } from './engine.ts';
+import {
+  sourceMessage,
+  startEngine,
+  startupMessage,
+  stripOutputs,
+  stripsMessage,
+} from './engine.ts';
 
 const demoStrip = {
   id: 'demo',
@@ -69,6 +75,66 @@ describe('el motor en marcha', () => {
     engine.stop();
 
     expect(asked).toEqual(['0:demo', '1:segunda']);
+  });
+});
+
+describe('las salidas de cada tira', () => {
+  const table: StripConfig = {
+    ...demoStrip,
+    id: 'mesa',
+    output: { type: 'adalight', port: '/dev/ttyUSB0', baudRate: 115200 },
+  };
+
+  /** Arranca el motor con `strips` durante un segundo y devuelve lo que ha recibido cada salida. */
+  function runWith(
+    strips: StripConfig[],
+    physical: Map<string, MemoryOutput>,
+  ): { viewers: MemoryOutput[] } {
+    const viewers = strips.map(() => new MemoryOutput());
+    const engine = startEngine({
+      config: { ...config, strips },
+      control: createControl({ strips, hasAudioSource: false }),
+      createOutputs: stripOutputs((index) => viewers[index] ?? new MemoryOutput(), physical),
+      clock: Date.now,
+    });
+    vi.advanceTimersByTime(1000);
+    engine.stop();
+    return { viewers };
+  }
+
+  it('una tira física tiene el visor y su salida Adalight, que reciben el mismo frame', () => {
+    const adalight = new MemoryOutput();
+
+    const { viewers } = runWith([table], new Map([['mesa', adalight]]));
+
+    expect(adalight.frames).toHaveLength(61);
+    expect(adalight.frames).toEqual(viewers[0]?.frames);
+  });
+
+  it('una tira virtual solo tiene el visor', () => {
+    const outputs = stripOutputs(() => new MemoryOutput(), new Map([['mesa', new MemoryOutput()]]));
+
+    expect(outputs(demoStrip, 0)).toHaveLength(1);
+    expect(outputs(table, 1)).toHaveLength(2);
+  });
+
+  it('la salida Adalight recibe el frame de cada pulso aunque no haya ningún panel', () => {
+    // Sin paneles, el visor no envía nada: un visor que no hace nada con lo que recibe.
+    const adalight = new MemoryOutput();
+    const strips = [demoStrip, table];
+    const engine = startEngine({
+      config: { ...config, strips },
+      control: createControl({ strips, hasAudioSource: false }),
+      createOutputs: stripOutputs(() => ({ write: () => undefined }), new Map([['mesa', adalight]])),
+      clock: Date.now,
+    });
+
+    vi.advanceTimersByTime(1000);
+    engine.stop();
+
+    expect(adalight.frames.map((frame) => frame.seq)).toEqual(
+      Array.from({ length: 61 }, (_, seq) => seq),
+    );
   });
 });
 

@@ -1619,6 +1619,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La primera foto no dejaba leer los números de los pines. La IA no dio el cableado por bueno y pidió otra desde arriba, con dos sospechas concretas (masa en `AREF`, datos en el 7).*
 - *Quedan dos cosas sin explicar, apuntadas para `MOO-114`: por qué no se encendió en las dos primeras pruebas, y un error de E/S al escribir sin que el USB se desconectara, que es justo el caso de la decisión 5 del change.*
 
+#### 6.50 Pintar la tira física por el puerto serie Adalight (`MOO-114`)
+
+**Prompt 1** (cuando la IA preguntó si la prueba del Mac iba antes que la de la Pi):
+
+> Todo en la Pi
+
+*Claude Code (`claude-opus-5-5`, 4-nov). La IA implementó la sección `MOO-114` en TDD, con un commit por paso. Primero `serialport` 13, que en el Mac cargó su binario sin compilar nada. Después `adalight.ts`, la parte pura: la codificación, una salida que nunca encola (descarta mientras su envío no ha salido por el cable), la línea de log con la mediana y los fps tras 50 envíos, y la pérdida del puerto, que se dice una vez y no tira el motor. Con los tests en rojo, un enlace falso decide cuándo sale cada envío: a lo largo de 1.000 pulsos, cada frame escrito es el de su pulso. `adalight.hardware.ts` es lo único que importa `serialport`, y `main.ts` abre los puertos antes del servidor. La IA propuso hacer todas las pruebas en la Pi: el arranque, la instalación y la música solo se pueden probar allí, y el Arduino no tenía que moverse. Desplegó la rama, comprobó que la Pi carga el binario precompilado, declaró la tira de la mesa y arrancó el motor. El log dio 45 ms por frame y 20 fps, unos 62 ms hasta la luz, dentro de E1. Sin el mixer a mano, el caso feliz se probó con el WAV. Un segundo motor con el mismo puerto no arrancó («Cannot lock port»).*
+
+*Ajustes:*
+- *El enlace con el puerto ganó `close`, que el diseño ya mencionaba y el `tasks.md` no pedía: sin él, un puerto abierto mantendría vivo el proceso si después falla el servidor o el puerto de otra tira.*
+- *El change proponía D90-D92, pero `MOO-75` ya las había usado: pasaron a D92-D94 antes de escribirlas en la ficha.*
+- *El primer `sed` que renumeró las propuestas encadenó dos sustituciones y dejó la decisión 1 en D94; la IA lo vio al revisar el resultado y lo corrigió.*
+
+**Prompt 2** (tras desenchufar el Arduino con el motor en marcha):
+
+> pues he enchufado y desenchufado dos veces, la primera siguio pero ahora mismo esta parado
+
+*El log tenía una sola línea de pérdida, como pide la spec, y el motor seguía vivo. La IA no lo dio por bueno con eso: se conectó al WebSocket del visor desde la Pi y contó 119 frames por tira en 2 s, las tres con LEDs encendidos. Lo parado era el visor del navegador, y el humano lo confirmó al recargar: se había caído su conexión. La IA lo dejó fuera de la tarea, porque es del panel. Señaló además que el kernel solo registró una desconexión de las dos.*
+
+**Prompt 3** (tras ver que un script que abre el puerto sin bloquearlo no impide arrancar):
+
+> Ajustar la spec
+
+*La IA había sospechado que el bloqueo de `serialport` solo deja fuera a quien también bloquea, y lo comprobó en la mesa: con un script de Python que tenía el puerto abierto, el motor arrancó y pintó. Recomendó ajustar la spec y no detectarlo en el código (mirar `/proc/*/fd` es frágil y solo de Linux), y el humano lo aceptó. El escenario pasó a «El puerto lo tiene bloqueado otro programa», la decisión 4 explica el límite y `HARDWARE_SETUP.md` dice cómo comprobar con `fuser` que el puerto está libre. Con eso, la IA escribió la documentación: el adaptador en el README §2.2, la tira en `HARDWARE_SETUP.md`, D92-D94 y lo medido en Q1 y A2 del PRD, con el riesgo de E2: solo el envío ya pasa de 45 ms.*
+
 ---
 
 ### 7. Pull Requests

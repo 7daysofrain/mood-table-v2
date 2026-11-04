@@ -352,6 +352,61 @@ stat -c %y /dev/ttyUSB0; sleep 12; stat -c %y /dev/ttyUSB0
 
 Si las dos horas son distintas, se está escribiendo.
 
+### La tira en el motor
+
+La tira física se declara en `config/local.json` con salida `adalight` (campos en el README §3). La de
+la mesa:
+
+```json
+{
+  "id": "mesa",
+  "name": "Mesa",
+  "output": {
+    "type": "adalight",
+    "port": "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0",
+    "baudRate": 115200
+  },
+  "ledCount": 173,
+  "effect": "breathing"
+}
+```
+
+- **`baudRate` tiene que ser el `SerialSpeed` del sketch** (§4.1), y `ledCount`, su `Num_Leds`.
+  Adalight no confirma nada, así que el motor no puede comprobarlo: con otros baudios, la tira no
+  enciende o pinta basura, sin ningún mensaje.
+- **Al arrancar el motor, la tira tarda un segundo o dos en encenderse.** Al abrir el puerto, el Uno se
+  reinicia (la línea DTR), y mientras arranca el sketch los frames se pierden sin hacer daño. Al parar
+  el motor, el Uno se vuelve a reiniciar y la tira se queda como estaba o se apaga.
+- **La medida del log.** Tras los primeros 50 frames, el motor dice una vez cuánto tarda cada uno en
+  salir por el puerto y a cuántos frames por segundo va la tira. ✅ En la mesa (4-nov):
+
+  ```
+  Tira «Mesa»: 45 ms por frame, 20 fps (115200 baudios, 173 LEDs)
+  ```
+
+  Esos milisegundos más un pulso del motor (16,7 ms a 60 fps) es lo que tarda la tira física, como
+  mucho, en pintar lo que ya pinta el visor: tiene que quedar por debajo de 100 ms. Con más LEDs o
+  menos baudios sube, y los fps bajan a saltos (20, 15, 12…), porque cada frame ocupa un número
+  entero de pulsos.
+- **Si el motor no arranca** con «no se puede abrir el puerto serie», el motivo va al final: el puerto
+  no existe (el Arduino no está conectado o la ruta está mal escrita), el usuario no está en
+  `dialout`, o lo tiene **bloqueado** otro programa (`Cannot lock port`, por ejemplo otro motor). ✅
+  Comprobado en la mesa (4-nov).
+- **Un programa que abre el puerto sin bloquearlo no se detecta**: un `cat`, un script o un monitor
+  serie sencillo. El motor arranca, los dos escriben a la vez y la tira pinta una mezcla. ✅
+  Comprobado en la mesa (4-nov) con un script de Python. Antes de arrancar, mira que nadie tenga el
+  puerto:
+
+  ```bash
+  fuser /dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0
+  ```
+
+  Si no dice nada, está libre.
+- **Si se desenchufa el Arduino con el motor en marcha**, el motor sigue: el visor y las demás tiras
+  siguen pintando, y el log lo dice una vez (`… se ha perdido el puerto … deja de pintar`). Al volver
+  a enchufarlo, la tira no vuelve hasta reiniciar el motor: la reconexión llega con
+  [MOO-112](https://linear.app/7daysofrain/issue/MOO-112). ✅ Comprobado en la mesa (4-nov).
+
 ## 8. Audio: nivel de entrada
 
 El motor no toca el mezclador de la tarjeta (D59): se ajusta una vez, al montar la mesa, con el

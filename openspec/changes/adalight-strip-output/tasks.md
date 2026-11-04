@@ -42,20 +42,20 @@
 
 ## 2. MOO-114 · engine
 
-- [ ] 2.1 `serialport` 13 en el catálogo de `pnpm-workspace.yaml` y en `packages/engine`;
+- [x] 2.1 `serialport` 13 en el catálogo de `pnpm-workspace.yaml` y en `packages/engine`;
   `@serialport/bindings-cpp: false` en `allowBuilds` (decisión 1).
   Verificar: `pnpm install` termina sin compilar nada, y en el Mac
   `node -e "import('serialport').then(m => m.SerialPort.list()).then(console.log)"` desde
   `packages/engine` lista los puertos.
-- [ ] 2.2 **(test en rojo)** Tests de la codificación en `packages/engine/src/adapters/adalight.test.ts`:
+- [x] 2.2 **(test en rojo)** Tests de la codificación en `packages/engine/src/adapters/adalight.test.ts`:
   el frame de 173 LEDs de `specs/physical-strip` (525 bytes, `41 64 61 00 AC F9 FF 00 00…`); la
   cabecera de 1 LED (`00 00 55`) y la de 300 (`01 2B 7F`, con el byte alto en uso); los colores en el
   orden de la tira, sin reordenar.
   Verificar: los tests nuevos fallan porque `adalight.ts` no existe.
-- [ ] 2.3 La codificación en `packages/engine/src/adapters/adalight.ts`: un búfer por salida con la
+- [x] 2.3 La codificación en `packages/engine/src/adapters/adalight.ts`: un búfer por salida con la
   cabecera escrita al crearla, donde se copian los colores de cada frame.
   Verificar: los tests de 2.2 pasan.
-- [ ] 2.4 **(test en rojo)** Tests de la salida con un enlace falso que decide cuándo «sale» cada
+- [x] 2.4 **(test en rojo)** Tests de la salida con un enlace falso que decide cuándo «sale» cada
   frame (decisiones 2, 3 y 5):
   - escribe el frame del primer pulso; con el envío pendiente, descarta los siguientes; cuando el
     envío sale, escribe el del pulso siguiente;
@@ -68,32 +68,34 @@
     ahí descarta todos los frames sin lanzar nada.
 
   Verificar: los tests nuevos fallan porque la salida no existe.
-- [ ] 2.5 La salida Adalight (`LightOutput`) en `adalight.ts`, sobre el enlace.
+- [x] 2.5 La salida Adalight (`LightOutput`) en `adalight.ts`, sobre el enlace.
   Verificar: los tests de 2.4 pasan y la cobertura de `adalight.ts` no baja del umbral.
-- [ ] 2.6 `adalight.hardware.ts`: abre el puerto con `serialport` (`path`, `baudRate`, `lock: true`) y
+- [x] 2.6 `adalight.hardware.ts`: abre el puerto con `serialport` (`path`, `baudRate`, `lock: true`) y
   lo envuelve en el enlace (escribir y avisar tras el `drain()`, error y cierre). Si no abre, devuelve
   un mensaje con la tira, el puerto y el motivo del sistema (decisión 4).
   Verificar: `pnpm typecheck` en verde; queda fuera de la cobertura por su nombre.
-- [ ] 2.7 **(test en rojo)** Tests de `engine.ts` y `frame-loop`: una tira `adalight` tiene el visor y
+- [x] 2.7 **(test en rojo)** Tests de `engine.ts` y `frame-loop`: una tira `adalight` tiene el visor y
   su salida Adalight, que reciben el mismo frame; una tira `virtual` solo el visor; la salida Adalight
   recibe frames sin ningún panel conectado (`specs/frame-loop`).
   Verificar: los tests nuevos fallan porque `createOutputs` solo da el visor.
-- [ ] 2.8 `main.ts`: abre los puertos de las tiras físicas después de la fuente de audio y antes del
+- [x] 2.8 `main.ts`: abre los puertos de las tiras físicas después de la fuente de audio y antes del
   servidor; si alguno falla, el motor no arranca con su mensaje (y para la tarjeta de sonido si estaba
   abierta, como hoy con el servidor); da a cada tira física el visor y su salida Adalight. El
   comentario de cabecera, al día.
   Verificar: los tests de 2.7 pasan; en el Mac, con una tira declarada en un puerto que no existe,
   `pnpm dev` no arranca y nombra la tira, el puerto y el motivo.
-- [ ] 2.9 Prueba en el Mac con el Arduino de la mesa conectado por USB (decisión 1: se puede probar sin
+- [x] 2.9 Prueba en el Mac con el Arduino de la mesa conectado por USB (decisión 1: se puede probar sin
   la Pi), declarado en `config/local.json` con su `/dev/cu.usbserial-…`:
   - la tira física pinta la respiración a la vez que el visor, y responde al mover el periodo y el
     color;
   - el log dice los ms por frame y los fps, y ms + 16,7 ≤ 100 (decisión 3);
-  - con el monitor serie de otro programa abierto en ese puerto, el motor no arranca y lo dice;
+  - con el puerto abierto y bloqueado por otro programa, el motor no arranca y lo dice;
   - al desconectar el Arduino con el motor en marcha, el motor sigue y el log lo dice una vez.
 
   Verificar: lo comprobado, con la línea del log, queda en la descripción de la PR.
-- [ ] 2.10 Prueba en la Pi de la mesa (excepción al DoD de la historia; el usuario está en la mesa),
+  Hecho en la Pi y no en el Mac (4-nov): el usuario prefirió no mover el Arduino, y todo se
+  comprueba donde va a funcionar.
+- [x] 2.10 Prueba en la Pi de la mesa (excepción al DoD de la historia; el usuario está en la mesa),
   con `/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0` y 115.200 baudios:
   - `pnpm install` carga el precompilado de `serialport` (si no, decisión 1: `allowBuilds` a `true`);
   - el caso feliz de `MOO-111` con música desde el mixer y la *energía*: la tira física pinta lo mismo
@@ -103,13 +105,15 @@
   - la línea de ms y fps del log.
 
   Verificar: lo comprobado, con la línea del log, queda en la descripción de la PR.
-- [ ] 2.11 Documentación:
+  Con `config/audio/bouncer.wav` como fuente y no con el mixer, que el usuario no tenía a mano
+  (4-nov).
+- [x] 2.11 Documentación:
   - README §2.2 (adaptador *Adalight serie*: `serialport`, el descarte con `drain()`, la medida del
     log, la pérdida en plena sesión y los fps a saltos; el orden de color, con H4) y la raíz de
     composición;
   - `HARDWARE_SETUP.md`: cómo declarar la tira de la mesa en `config/local.json`, el segundo de tira
     apagada al arrancar (decisión 9) y cómo leer la línea de ms y fps del log;
-  - `docs/idea-mood-table.md` §10: D90 (decisión 1), D91 (decisiones 2 y 3) y D92 (decisión 6);
+  - `docs/idea-mood-table.md` §10: D92 (decisión 1), D93 (decisiones 2 y 3) y D94 (decisión 6);
   - `docs/PRD.md`: Q1 y A2 con lo medido en 2.10 (LEDs, baudios, ms por frame y fps), y en A2 el riesgo
     de E2 y las salidas (S2, placa con USB nativo);
   - `prompts.md`: la entrada de la tarea.

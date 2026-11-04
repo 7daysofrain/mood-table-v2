@@ -72,7 +72,7 @@ de `arecord`. Sin `tcdrain` desde Node, «ha salido» habría que **calcularlo**
 Context, que es justo lo que no sabemos si se cumple en la mesa. Además `stty -F` solo existe en Linux
 (en macOS es `-f`), y `serialport` deja probar con el Arduino conectado al portátil.
 
-→ **Proponer como D90** en `docs/idea-mood-table.md`: la primera dependencia nativa del motor, y por
+→ **Proponer como D92** en `docs/idea-mood-table.md`: la primera dependencia nativa del motor, y por
 qué.
 
 ### 2. Mientras un frame no ha salido por el cable, el siguiente se descarta
@@ -103,7 +103,7 @@ unos 22 fps en lugar de 20, pero el frame sale hasta 16,7 ms más viejo, los sal
 alternan 2 y 3 pulsos (un tembleque en un *scroll*) y necesita una copia y su estado. Descartar es lo
 que ya decía el README §2.2.
 
-→ **Proponer como D91** en `docs/idea-mood-table.md`, junto con la decisión 3.
+→ **Proponer como D93** en `docs/idea-mood-table.md`, junto con la decisión 3.
 
 ### 3. «A la vez» es ≤ 100 ms, y el log lo mide
 
@@ -136,8 +136,15 @@ sobre la cuenta.
 `main.ts` abre el puerto de cada tira física después de cargar la fuente de audio y antes del servidor,
 como la tarjeta de sonido: así el motor no arranca a medias. Si alguno falla, el motor no arranca y
 dice qué tira, qué puerto y el motivo que da el sistema (no existe, permiso denegado, ocupado). Con
-`lock: true`, que es el valor por defecto de `serialport`, un puerto que tiene abierto otro programa
-(un Hyperion de la v1, el monitor serie del IDE) da error y no se comparte.
+`lock: true`, que es el valor por defecto de `serialport`, un puerto que tiene bloqueado otro programa
+(otro motor) da error y no se comparte.
+
+El bloqueo (`TIOCEXCL`) solo deja fuera a quien también lo pide. **Un programa que abre el puerto sin
+bloquearlo** (un `cat`, un script, quizá algún monitor serie) no impide arrancar: los dos escriben a la
+vez y la tira pinta una mezcla. Se comprobó en la mesa al implementar `MOO-114`: con un segundo motor,
+«Cannot lock port»; con un script de Python que tenía el puerto abierto, el motor arrancó y pintó.
+Detectarlo pediría mirar qué procesos tienen abierto el fichero (`/proc/*/fd`): frágil, solo de Linux y
+más de lo que pide la historia. Se avisa en `HARDWARE_SETUP.md`.
 
 Es un estado de paso. El PRD (Q5) pide lo contrario: *si falta al arrancar, el motor arranca
 igualmente y lo espera*, y eso llega con `MOO-112`. Mientras tanto, el fallo ruidoso es mejor que el
@@ -179,7 +186,7 @@ Descartado: **cualquier entero positivo**, lo que decía el criterio de la histo
 pasar las erratas. El ejemplo del criterio pasa a ser «unos baudios que no son una velocidad
 estándar».
 
-→ **Proponer como D92** en `docs/idea-mood-table.md`.
+→ **Proponer como D94** en `docs/idea-mood-table.md`.
 
 ### 7. El panel recibe el puerto pero no los baudios, y muestra la ruta entera
 

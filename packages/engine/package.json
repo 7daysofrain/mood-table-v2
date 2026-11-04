@@ -17,6 +17,7 @@
     "@moodtable/shared": "workspace:*",
     "fastify": "catalog:",
     "fft.js": "catalog:",
+    "serialport": "catalog:",
     "typebox": "catalog:"
   },
   "devDependencies": {
