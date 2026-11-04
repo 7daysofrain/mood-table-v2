@@ -55,7 +55,7 @@
 - [x] 2.3 La codificación en `packages/engine/src/adapters/adalight.ts`: un búfer por salida con la
   cabecera escrita al crearla, donde se copian los colores de cada frame.
   Verificar: los tests de 2.2 pasan.
-- [ ] 2.4 **(test en rojo)** Tests de la salida con un enlace falso que decide cuándo «sale» cada
+- [x] 2.4 **(test en rojo)** Tests de la salida con un enlace falso que decide cuándo «sale» cada
   frame (decisiones 2, 3 y 5):
   - escribe el frame del primer pulso; con el envío pendiente, descarta los siguientes; cuando el
     envío sale, escribe el del pulso siguiente;
