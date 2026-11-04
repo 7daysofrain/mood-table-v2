@@ -100,7 +100,12 @@ export function stripsMessage(config: Config, control: ControlBuffer): StripsMes
       const { effect, values } = control.slot(index);
       // El tipo no ve que los valores son los de `effect`: el búfer solo acepta los que cumplen su
       // esquema.
-      return { id, name, ledCount, output, effect, values } as StripState;
+      return { id, name, ledCount, output: panelOutput(output), effect, values } as StripState;
     }),
   };
+}
+
+/** La salida como la ve el panel: de una Adalight, el puerto, que muestra, pero no los baudios. */
+function panelOutput(output: StripConfig['output']): StripState['output'] {
+  return output.type === 'adalight' ? { type: 'adalight', port: output.port } : { type: 'virtual' };
 }

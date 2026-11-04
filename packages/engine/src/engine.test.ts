@@ -140,6 +140,19 @@ describe('las tiras que se anuncian a los paneles', () => {
     });
   });
 
+  it('de una salida Adalight, llevan el tipo y el puerto serie, pero no los baudios', () => {
+    const table: StripConfig = {
+      ...demoStrip,
+      id: 'mesa',
+      output: { type: 'adalight', port: '/dev/ttyUSB0', baudRate: 115200 },
+    };
+    const control = createControl({ strips: [table], hasAudioSource: false });
+
+    const [strip] = stripsMessage({ ...config, strips: [table] }, control).strips;
+
+    expect(strip?.output).toEqual({ type: 'adalight', port: '/dev/ttyUSB0' });
+  });
+
   it('no llevan el resto de la tira, aunque el fichero gane campos', () => {
     // Lo que H3 y H4 añadan a la tira (orden de color, puerto…) no sale al panel sin decidirlo.
     const withMore = { ...demoStrip, colorOrder: 'GRB' } as StripConfig;

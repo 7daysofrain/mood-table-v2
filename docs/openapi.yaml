@@ -78,6 +78,19 @@ paths:
                                 enum:
                                   - virtual
                             additionalProperties: false
+                          - type: object
+                            required:
+                              - type
+                              - port
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - adalight
+                              port:
+                                type: string
+                                minLength: 1
+                            additionalProperties: false
                       effect:
                         type: string
                         enum:
@@ -129,6 +142,19 @@ paths:
                                 type: string
                                 enum:
                                   - virtual
+                            additionalProperties: false
+                          - type: object
+                            required:
+                              - type
+                              - port
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - adalight
+                              port:
+                                type: string
+                                minLength: 1
                             additionalProperties: false
                       effect:
                         type: string
@@ -260,6 +286,19 @@ paths:
                                 enum:
                                   - virtual
                             additionalProperties: false
+                          - type: object
+                            required:
+                              - type
+                              - port
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - adalight
+                              port:
+                                type: string
+                                minLength: 1
+                            additionalProperties: false
                       effect:
                         type: string
                         enum:
@@ -311,6 +350,19 @@ paths:
                                 type: string
                                 enum:
                                   - virtual
+                            additionalProperties: false
+                          - type: object
+                            required:
+                              - type
+                              - port
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - adalight
+                              port:
+                                type: string
+                                minLength: 1
                             additionalProperties: false
                       effect:
                         type: string

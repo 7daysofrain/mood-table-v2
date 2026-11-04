@@ -210,13 +210,17 @@ const CLOSED = { additionalProperties: false } as const;
 /**
  * Lo que muestra el panel de una tira, sea cual sea su efecto. No reutiliza `StripConfigSchema`: lo
  * que H3 y H4 añadan al fichero no sale al panel sin decidirlo. Por eso la salida tiene su propio
- * esquema, aunque hoy coincida con la del fichero: el puerto de una salida Adalight llega con H3.
+ * esquema: de una salida Adalight, el panel recibe el puerto, que muestra, pero no los baudios
+ * (decisión 7 del change adalight-strip-output).
  */
 const STRIP_FIELDS = {
   id: Type.String({ minLength: 1 }),
   name: Type.String({ minLength: 1 }),
   ledCount: Type.Integer({ minimum: 1 }),
-  output: Type.Union([Type.Object({ type: Type.Literal('virtual') }, CLOSED)]),
+  output: Type.Union([
+    Type.Object({ type: Type.Literal('virtual') }, CLOSED),
+    Type.Object({ type: Type.Literal('adalight'), port: Type.String({ minLength: 1 }) }, CLOSED),
+  ]),
 };
 
 /** Una tira como la ve el panel: lo que muestra, su efecto activo y los valores con que lo pinta. */

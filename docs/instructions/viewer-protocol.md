@@ -10,7 +10,8 @@
 > posición del fichero: change `panel-audio-playback`, `design.md` decisión 2 (`MOO-56`). El de estado
 > de la fuente: change `soundcard-reconnect`, `design.md` decisión 3 (`MOO-63`). El de las tiras:
 > change `strip-effect-switch`, `design.md` decisión 3 (`MOO-101`). Sus valores: change
-> `strip-effect-values`, `design.md` decisión 6 (`MOO-105`).
+> `strip-effect-values`, `design.md` decisión 6 (`MOO-105`). La salida Adalight con su puerto: change
+> `adalight-strip-output`, `design.md` decisión 7 (`MOO-113`).
 
 ## Conexión
 
@@ -151,7 +152,7 @@ unos 150-200 bytes por tira. Cada tira lleva solo estos campos, y ninguno más:
 | `id` | El de la tira en el fichero de configuración |
 | `name` | Su nombre, para mostrarlo |
 | `ledCount` | Su nº de LEDs, entero, al menos 1 |
-| `output` | Su salida: hoy solo `{ "type": "virtual" }` |
+| `output` | Su salida: `{ "type": "virtual" }` o, la tira física, `{ "type": "adalight", "port": "<ruta del puerto serie>" }`, con la ruta tal como la declara el fichero de configuración |
 | `effect` | El id del efecto activo, uno del catálogo: `breathing` o `energy` |
 | `values` | Los valores con que el motor pinta ese efecto: un objeto que cumple el esquema de parámetros del efecto, con todos sus campos y ninguno más. La *respiración*, `{ "color": "#RRGGBB", "period": <de 1 a 20> }`; la *energía*, `{}` |
 
@@ -161,13 +162,21 @@ Ejemplo: una tira virtual de 60 LEDs con la *respiración*, en blanco cálido ca
 06  {"strips":[{"id":"demo","name":"Tira de prueba","ledCount":60,"output":{"type":"virtual"},"effect":"breathing","values":{"color":"#FFA957","period":4}}]}
 ```
 
+Ejemplo: la tira física de la mesa, de 173 LEDs, con la *energía*:
+
+```
+06  {"strips":[{"id":"mesa","name":"Mesa","ledCount":173,"output":{"type":"adalight","port":"/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0"},"effect":"energy","values":{}}]}
+```
+
 - **Siempre la foto completa**, en el orden del fichero: la posición de cada tira en la lista es su
   índice en los frames (tipo `1`). Recibirla dos veces da igual, y al reconectarse el panel recibe la
   misma que el motor está pintando.
 - El efecto es el que pinta el motor, no el del fichero: el del fichero es solo el de arranque. Los
   valores, también: los que pinta el motor, no los de por defecto del efecto.
-- No lleva el resto del fichero: lo que se añada a una tira (orden de color, límites de potencia,
-  puerto) no sale al panel sin decidirlo, como la ruta del fichero de audio en el tipo `2`.
+- No lleva el resto del fichero: lo que se añada a una tira (orden de color, límites de potencia)
+  no sale al panel sin decidirlo, como la ruta del fichero de audio en el tipo `2`. De una salida
+  Adalight sale el puerto, que el panel muestra, pero **no los baudios** (`baudRate`): el panel no
+  los muestra.
 
 ## Qué hace el panel con un mensaje que no entiende
 

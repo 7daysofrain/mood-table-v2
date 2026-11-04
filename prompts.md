@@ -1586,6 +1586,39 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El `pull` de `main` chocó con el `.claude/launch.json` sin commitear que la IA había creado esa misma tarde: `main` ya traía uno más completo (#106). La IA apartó el suyo al scratchpad, sin borrarlo, y se quedó con el de `main`.*
 - *El requisito* Volver a un efecto recupera los valores con que lo dejó *da el aviso de más de 500 caracteres, por su línea de traza, igual que otros dos de la spec que ya estaban (6.45).*
 
+#### 6.49 La salida Adalight en el contrato compartido, y la tira de la mesa desde la Pi (`MOO-113`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-111
+
+*Claude Code (`claude-opus-5-5`, 3 y 4-nov). La IA vio que el change `adalight-strip-output` tiene tres tareas en orden, y que `MOO-114` necesita `MOO-113` ya integrada, así que implementó solo la sección `MOO-113`, con un commit por paso y en TDD. La rama de la tarea salió de `main` con el commit del change encima, como en las historias anteriores. El fichero de configuración admite la salida `adalight` con `port` y `baudRate` (una de 13 velocidades estándar), y el mensaje `6` lleva el puerto pero no los baudios. Para que el motor y el panel siguieran compilando, `stripsMessage` copia solo el tipo y el puerto, y `OUTPUT_NAMES` gana «Adalight».*
+
+*Ajustes:*
+- *El humano paró la sesión con los primeros tests escritos («Antes de empezar el coding, pausa») para comprobar antes el hardware (prompt 2).*
+- *Con dos tipos de salida, TypeBox mezclaba los errores de las dos variantes. La IA generalizó lo que ya hacía `audioSource`: los errores de cada salida son los de la variante que nombra su `type`.*
+- *El mensaje de unos baudios mal escritos salía con 8 de las 13 velocidades: TypeBox da como mucho 8 errores, y es un ajuste global que comparte con la validación de Fastify. En lugar de subirlo, la lista sale del esquema. Las listas largas se leen con comas y una «o» final.*
+- *El tipo de `baudRate` quedaba en `never`, porque el `map` pierde la tupla; se arregló con `Type.Unsafe`, como `StripStateSchema`. Lo destapó el test del motor, no el de `shared`.*
+- *Los tests de la tira Adalight en el mensaje `6` usan su JSON tal cual, para que el paso en rojo siguiera compilando.*
+- *Al copiar el commit del change, la IA le quitó la línea de atribución a IA, como pide la regla del humano.*
+- *La entrada de la exploración y la propuesta del change (29-oct) no está: su transcripción no está en este equipo, y el humano decidió dejarla fuera.*
+
+**Prompt 2:**
+
+> quiero que compruebes que las luces están conectadas correctamente a la PI y que las puedes usar
+
+*Desde la Pi, por SSH y sin instalar nada (Python estándar enviado por la entrada del `ssh`), la IA vio el Arduino en su ruta `by-id`, al usuario en `dialout` y el puerto libre. Después mandó un patrón Adalight: rojo, verde, azul y un punto blanco en el LED 1 y el 173. El Arduino saludó con `Ada` y aceptó todos los frames.*
+
+**Prompt 3:**
+
+> No he visto encenderse ni una luz
+
+*Con la Pi y el Arduino respondiendo, la IA situó el fallo entre el Arduino y la tira y dio un orden de revisión: corriente, regleta, extremo `Din` y medidas con el polímetro. Con una foto de la placa de cerca contó los huecos del conector: rosa en `GND`, azul en el `6`, bien. Tras reiniciar la Pi, el script se colgaba al configurar el puerto, que arranca con eco y XON/XOFF; la IA lo abrió sin bloquear y en modo crudo. Con eso la tira pintó 2 minutos de rojo, y después los colores en orden y las dos puntas: 173 LEDs.*
+
+*Ajustes:*
+- *La primera foto no dejaba leer los números de los pines. La IA no dio el cableado por bueno y pidió otra desde arriba, con dos sospechas concretas (masa en `AREF`, datos en el 7).*
+- *Quedan dos cosas sin explicar, apuntadas para `MOO-114`: por qué no se encendió en las dos primeras pruebas, y un error de E/S al escribir sin que el USB se desconectara, que es justo el caso de la decisión 5 del change.*
+
 ---
 
 ### 7. Pull Requests

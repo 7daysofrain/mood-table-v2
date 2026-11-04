@@ -294,6 +294,20 @@ describe('el mensaje de las tiras', () => {
     expect(decodeStrips(encodeStrips(message))).toEqual(message);
   });
 
+  it('con una tira Adalight, lleva el tipo de su salida y su puerto serie', () => {
+    const json = withStrip({
+      ...demo,
+      id: 'mesa',
+      name: 'Mesa',
+      ledCount: 173,
+      output: { type: 'adalight', port: '/dev/ttyUSB0' },
+    });
+    const decoded = decodeStrips(stripsMessageOf(json));
+
+    expect(decoded).toEqual(JSON.parse(json));
+    expect(decoded && new TextDecoder().decode(encodeStrips(decoded).subarray(1))).toBe(json);
+  });
+
   it('no lo decodifican como fuente ni frame', () => {
     const message = encodeStrips(example);
 
@@ -310,6 +324,16 @@ describe('el mensaje de las tiras', () => {
     ['con una tira sin efecto', stripsMessageOf(withStrip({ ...demo, effect: undefined }))],
     ['con un efecto que no está en el catálogo', stripsMessageOf(withStrip({ ...demo, effect: 'strobe' }))],
     ['con un campo que el esquema no declara', stripsMessageOf(withStrip({ ...demo, port: '/dev/ttyACM0' }))],
+    [
+      'con una salida Adalight sin puerto',
+      stripsMessageOf(withStrip({ ...demo, output: { type: 'adalight' } })),
+    ],
+    [
+      'con una salida Adalight con sus baudios',
+      stripsMessageOf(
+        withStrip({ ...demo, output: { type: 'adalight', port: '/dev/ttyUSB0', baudRate: 115200 } }),
+      ),
+    ],
     ['con un nº de LEDs que no es entero', stripsMessageOf(withStrip({ ...demo, ledCount: 60.5 }))],
     ['con una tira sin valores', stripsMessageOf(withStrip({ ...demo, values: undefined }))],
     ['con los valores de otro efecto', stripsMessageOf(withStrip({ ...demo, effect: 'energy' }))],

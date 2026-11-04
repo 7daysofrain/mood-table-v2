@@ -25,9 +25,10 @@ export const EFFECT_KIND = { reactive: 'Reactivo', ambient: 'De ambiente' } as c
 /** Por qué un efecto reactivo no se puede elegir sin fuente de audio (decisión 5). */
 export const NEEDS_AUDIO_SOURCE = 'Necesita una fuente de audio';
 
-/** El nombre de cada salida (glosario: *salida*). Adalight llega con H3. */
+/** El nombre de cada salida (glosario: *salida*). */
 export const OUTPUT_NAMES: Record<StripState['output']['type'], string> = {
   virtual: 'Virtual',
+  adalight: 'Adalight',
 };
 
 /** El nombre accesible de la lista de tiras: la zona ya tiene su título a la vista. */
