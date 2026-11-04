@@ -20,7 +20,7 @@
 - [x] 1.2 `OutputSchema` con la variante `adalight` (cerrada, con `port` no vacío y `baudRate` como
   unión de literales de la lista de la decisión 6).
   Verificar: los tests de 1.1 pasan.
-- [ ] 1.3 **(test en rojo)** Tests del mensaje `6` en `packages/shared/src/viewer-protocol.test.ts`:
+- [x] 1.3 **(test en rojo)** Tests del mensaje `6` en `packages/shared/src/viewer-protocol.test.ts`:
   `encodeStrips` y `decodeStrips` con una tira `{ "type": "adalight", "port": "/dev/ttyUSB0" }`;
   `decodeStrips` rechaza una salida `adalight` sin `port` y una con `baudRate` (decisión 7).
   Verificar: los tests nuevos fallan porque la salida del mensaje solo admite `virtual`.
