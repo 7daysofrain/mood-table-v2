@@ -122,7 +122,7 @@
 
 ## 3. MOO-115 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests de `StripList` con Testing Library: una tira «Mesa» de 173 LEDs con
+- [x] 3.1 **(test en rojo)** Tests de `StripList` con Testing Library: una tira «Mesa» de 173 LEDs con
   salida Adalight en `/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0` muestra «173 LEDs · Adalight»
   y, debajo, la ruta entera, sin recortar; una tira virtual no tiene línea de puerto
   (`specs/instrument-control`, decisión 7).

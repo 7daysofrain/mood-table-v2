@@ -1,5 +1,5 @@
 import type { StripState } from '@moodtable/shared';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { render } from '../../test/render.tsx';
@@ -20,6 +20,31 @@ describe('la lista de tiras', () => {
     expect(strips[0]).toHaveTextContent('60 LEDs · Virtual');
     expect(strips[1]).toHaveTextContent('Cabina');
     expect(strips[1]).toHaveTextContent('1 LED · Virtual');
+  });
+
+  it('una tira con salida Adalight dice «Adalight» y, debajo, la ruta entera de su puerto', () => {
+    const port = '/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0';
+    const mesa: StripState = {
+      id: 'mesa',
+      name: 'Mesa',
+      ledCount: 173,
+      output: { type: 'adalight', port },
+      effect: 'energy',
+      values: {},
+    };
+    render(<StripList strips={[mesa]} selectedId="mesa" onSelect={vi.fn()} />);
+
+    const strip = screen.getByRole('radio', { name: /Mesa/ });
+    // La línea de los LEDs y la del puerto son dos líneas: la ruta no va pegada a «Adalight».
+    expect(within(strip).getByText('173 LEDs · Adalight')).toBeInTheDocument();
+    expect(within(strip).getByText(port)).toBeInTheDocument();
+  });
+
+  it('una tira virtual no tiene línea de puerto', () => {
+    render(<StripList strips={STRIPS} selectedId="barra" onSelect={vi.fn()} />);
+
+    const strip = screen.getByRole('radio', { name: /Barra/ });
+    expect(strip).toHaveTextContent(/^Barra60 LEDs · Virtual$/);
   });
 
   it('marca la tira seleccionada, y solo esa', () => {
