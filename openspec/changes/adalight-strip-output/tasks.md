@@ -47,7 +47,7 @@
   Verificar: `pnpm install` termina sin compilar nada, y en el Mac
   `node -e "import('serialport').then(m => m.SerialPort.list()).then(console.log)"` desde
   `packages/engine` lista los puertos.
-- [ ] 2.2 **(test en rojo)** Tests de la codificación en `packages/engine/src/adapters/adalight.test.ts`:
+- [x] 2.2 **(test en rojo)** Tests de la codificación en `packages/engine/src/adapters/adalight.test.ts`:
   el frame de 173 LEDs de `specs/physical-strip` (525 bytes, `41 64 61 00 AC F9 FF 00 00…`); la
   cabecera de 1 LED (`00 00 55`) y la de 300 (`01 2B 7F`, con el byte alto en uso); los colores en el
   orden de la tira, sin reordenar.
