@@ -406,12 +406,6 @@ la mesa:
   siguen pintando, y el log lo dice una vez (`… se ha perdido el puerto … deja de pintar`). Al volver
   a enchufarlo, la tira no vuelve hasta reiniciar el motor: la reconexión llega con
   [MOO-112](https://linear.app/7daysofrain/issue/MOO-112). ✅ Comprobado en la mesa (4-nov).
-- **Si la tira física se queda congelada con el motor en marcha** (el visor se mueve, la tira no, y
-  el log no dice nada), **pulsa el botón de reset del Uno**. El sketch vuelve a arrancar y se sincroniza
-  con el siguiente frame, sin tocar el motor. El motor no puede notarlo, porque Adalight no confirma
-  nada: sus envíos salen por el cable aunque el Uno no los lea. Pasó en la mesa (4-nov) tras apagar y
-  encender la Pi varias veces. Dos reinicios del motor, que reinician el Uno por la línea DTR, no lo
-  arreglaron; el botón sí.
 
 ## 8. Audio: nivel de entrada
 
