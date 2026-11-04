@@ -1676,6 +1676,14 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Al parar el motor, la IA usó `pgrep -f`, que también encontró la propia sesión SSH y la cortó: el mismo error que tenía apuntado con `pkill -f`. No rompió nada, y desde entonces para el motor por sus PID exactos.*
 - *El humano sospechó que la WiFi de la Pi no funcionaba. La IA lo comprobó: los dos perfiles de red de NetworkManager medían 0 bytes desde las 13:16. Junto con los errores EXT4 de la SD, apuntan a la tarjeta, y dejó la reparación al humano porque pide `sudo`.*
 
+#### 6.53 Verificar y archivar el change de `MOO-111`
+
+**Prompt 1** (con la #113 integrada):
+
+> mergeado, para la mesa y pasamos a cerrar el change con verify+archive
+
+*Claude Code (`claude-opus-5-5`, 4-nov). La IA paró el motor en la Pi, primero listando los procesos y después matándolos por PID en otra llamada, y apagó la tira con unos frames negros. Comprobó en Linear que `MOO-113`, `114` y `115` estaban en Done, y sacó la rama del archivado desde `main`. `/opsx:verify` cotejó las 20 tareas, los 9 requisitos de las cuatro specs y las 9 decisiones del diseño con el código, los tests y las comprobaciones en la mesa: sin problemas críticos ni advertencias. Al sincronizar, `physical-strip` pasó a ser una spec nueva, y los tres requisitos modificados sustituyeron a los de `engine-config`, `frame-loop` e `instrument-control` con todos sus escenarios.*
+
 ---
 
 ### 7. Pull Requests
