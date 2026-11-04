@@ -95,7 +95,7 @@
   Verificar: lo comprobado, con la línea del log, queda en la descripción de la PR.
   Hecho en la Pi y no en el Mac (4-nov): el usuario prefirió no mover el Arduino, y todo se
   comprueba donde va a funcionar.
-- [ ] 2.10 Prueba en la Pi de la mesa (excepción al DoD de la historia; el usuario está en la mesa),
+- [x] 2.10 Prueba en la Pi de la mesa (excepción al DoD de la historia; el usuario está en la mesa),
   con `/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0` y 115.200 baudios:
   - `pnpm install` carga el precompilado de `serialport` (si no, decisión 1: `allowBuilds` a `true`);
   - el caso feliz de `MOO-111` con música desde el mixer y la *energía*: la tira física pinta lo mismo
@@ -105,6 +105,8 @@
   - la línea de ms y fps del log.
 
   Verificar: lo comprobado, con la línea del log, queda en la descripción de la PR.
+  Con `config/audio/bouncer.wav` como fuente y no con el mixer, que el usuario no tenía a mano
+  (4-nov).
 - [ ] 2.11 Documentación:
   - README §2.2 (adaptador *Adalight serie*: `serialport`, el descarte con `drain()`, la medida del
     log, la pérdida en plena sesión y los fps a saltos; el orden de color, con H4) y la raíz de
