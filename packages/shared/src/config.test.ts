@@ -103,12 +103,10 @@ describe('un fichero de configuración que no sirve', () => {
     expect(error).toMatch(/`ledCount`/);
   });
 
-  it('con una salida de un tipo que no existe, nombra la tira y el campo', () => {
-    const error = errorOf(text({ strips: [{ ...demoStrip, output: { type: 'dmx' } }] }));
-
-    expect(error).toMatch(/«demo»/);
-    expect(error).toMatch(/`output\.type`/);
-    expect(error).toMatch(/«dmx»/);
+  it('con una salida de un tipo que no existe, nombra la tira y el campo y dice cuáles hay', () => {
+    expect(errorOf(text({ strips: [{ ...demoStrip, output: { type: 'dmx' } }] }))).toBe(
+      'la tira «demo», campo `output.type`: «dmx» no es un valor válido (se admite «virtual» o «adalight»)',
+    );
   });
 
   it('con un campo obligatorio que falta, nombra la tira y el campo', () => {
@@ -183,6 +181,60 @@ describe('un fichero de configuración que no sirve', () => {
     [{ strips: [{ ...demoStrip, name: '' }] }, /«demo», campo `name`: no puede estar vacío/],
   ])('con %j, dice qué falla', (config, message) => {
     expect(errorOf(text(config))).toMatch(message);
+  });
+});
+
+describe('la salida Adalight de una tira', () => {
+  /** La tira de la mesa, como la de specs/engine-config (*Tira con salida Adalight*). */
+  const adalight = {
+    type: 'adalight',
+    port: '/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0',
+    baudRate: 115200,
+  };
+  const tableStrip = { id: 'mesa', name: 'Mesa', output: adalight, ledCount: 173, effect: 'breathing' };
+
+  /** La salida de la mesa sin uno de sus campos. */
+  function adalightWithout(field: keyof typeof adalight): Record<string, unknown> {
+    const output: Record<string, unknown> = { ...adalight };
+    delete output[field];
+    return output;
+  }
+
+  it('acepta la tira de la mesa con su puerto serie y sus baudios', () => {
+    const result = parseConfig(text({ strips: [tableStrip] }));
+
+    expect(result.ok && result.config.strips).toEqual([tableStrip]);
+  });
+
+  it.each([
+    9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000, 576000, 921600, 1000000, 1500000,
+    2000000,
+  ])('acepta %d baudios', (baudRate) => {
+    expect(parseConfig(text({ strips: [{ ...tableStrip, output: { ...adalight, baudRate } }] })).ok).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    [adalightWithout('port'), 'la tira «mesa», campo `output.port`: falta y es obligatorio'],
+    [{ ...adalight, port: '' }, 'la tira «mesa», campo `output.port`: no puede estar vacío'],
+    [adalightWithout('baudRate'), 'la tira «mesa», campo `output.baudRate`: falta y es obligatorio'],
+    [
+      { ...adalight, baudRate: 11520 },
+      'la tira «mesa», campo `output.baudRate`: «11520» no es un valor válido (se admite «9600», ' +
+        '«19200», «38400», «57600», «115200», «230400», «460800», «500000», «576000», «921600», ' +
+        '«1000000», «1500000» o «2000000»)',
+    ],
+    [
+      { ...adalight, baudrate: 115200 },
+      'la tira «mesa», campo `output.baudrate`: no existe (¿está bien escrito?)',
+    ],
+    [
+      { ...adalight, parity: 'none' },
+      'la tira «mesa», campo `output.parity`: no existe (¿está bien escrito?)',
+    ],
+  ])('con la salida %j, nombra la tira y el campo y dice qué falla', (output, message) => {
+    expect(errorOf(text({ strips: [demoStrip, { ...tableStrip, output }] }))).toBe(message);
   });
 });
 

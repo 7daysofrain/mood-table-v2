@@ -10,7 +10,7 @@
 
 ## 1. MOO-113 · shared
 
-- [ ] 1.1 **(test en rojo)** Tests del esquema en `packages/shared/src/config.test.ts`: acepta la
+- [x] 1.1 **(test en rojo)** Tests del esquema en `packages/shared/src/config.test.ts`: acepta la
   tira `mesa` de `specs/engine-config` (*Tira con salida Adalight*) y cada velocidad de la lista;
   rechaza, nombrando la tira y el campo, una salida `adalight` sin `port`, con `port` vacío, sin
   `baudRate`, con `"baudRate": 11520` (el mensaje dice qué velocidades admite) y con un campo que no
