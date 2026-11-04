@@ -24,7 +24,7 @@
   `encodeStrips` y `decodeStrips` con una tira `{ "type": "adalight", "port": "/dev/ttyUSB0" }`;
   `decodeStrips` rechaza una salida `adalight` sin `port` y una con `baudRate` (decisión 7).
   Verificar: los tests nuevos fallan porque la salida del mensaje solo admite `virtual`.
-- [ ] 1.4 La salida `adalight` con `port` en `STRIP_FIELDS` (`viewer-protocol.ts`), con su comentario
+- [x] 1.4 La salida `adalight` con `port` en `STRIP_FIELDS` (`viewer-protocol.ts`), con su comentario
   al día. Y sus usos, para que el motor y el panel no se rompan hasta `MOO-114` y `MOO-115`:
   `stripsMessage` (`packages/engine/src/engine.ts`) copia el tipo y el puerto de la salida, sin los
   baudios, con un test en `engine.test.ts`; `OUTPUT_NAMES` (`packages/panel/src/literals.ts`) gana

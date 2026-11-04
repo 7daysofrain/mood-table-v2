@@ -26,6 +26,11 @@ const BAUD_RATES = [
   2000000,
 ] as const;
 
+/** `Unsafe` le da su tipo, que el `map` pierde (quedaría `never`); el esquema es el mismo. */
+const BaudRateSchema = Type.Unsafe<(typeof BAUD_RATES)[number]>(
+  Type.Union(BAUD_RATES.map((rate) => Type.Literal(rate))),
+);
+
 /**
  * Salida de una tira, discriminada por `type`: `virtual`, solo el visor, o `adalight`, la tira física
  * en un puerto serie (`port`, mejor la ruta de `/dev/serial/by-id/`) a unos baudios.
@@ -36,7 +41,7 @@ const OutputSchema = Type.Union([
     {
       type: Type.Literal('adalight'),
       port: Type.String({ minLength: 1 }),
-      baudRate: Type.Union(BAUD_RATES.map((rate) => Type.Literal(rate))),
+      baudRate: BaudRateSchema,
     },
     CLOSED,
   ),
