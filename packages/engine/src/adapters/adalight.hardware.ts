@@ -46,6 +46,8 @@ export const openSerialLink: OpenSerialLink = (path, baudRate) =>
           onLost = listener;
           if (lostReason !== undefined) listener(lostReason);
         },
+        // Un fallo al cerrar llega como `error`, que ya se escucha.
+        close: () => port.close(),
       });
     });
   });

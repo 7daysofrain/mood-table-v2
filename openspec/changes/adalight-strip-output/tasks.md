@@ -78,7 +78,7 @@
   su salida Adalight, que reciben el mismo frame; una tira `virtual` solo el visor; la salida Adalight
   recibe frames sin ningún panel conectado (`specs/frame-loop`).
   Verificar: los tests nuevos fallan porque `createOutputs` solo da el visor.
-- [ ] 2.8 `main.ts`: abre los puertos de las tiras físicas después de la fuente de audio y antes del
+- [x] 2.8 `main.ts`: abre los puertos de las tiras físicas después de la fuente de audio y antes del
   servidor; si alguno falla, el motor no arranca con su mensaje (y para la tarjeta de sonido si estaba
   abierta, como hoy con el servidor); da a cada tira física el visor y su salida Adalight. El
   comentario de cabecera, al día.

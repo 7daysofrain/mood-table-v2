@@ -6,6 +6,7 @@ import {
   AdalightOutput,
   encodeAdalight,
   openAdalight,
+  openAdalightStrips,
   type SerialLink,
 } from './adalight.ts';
 
@@ -18,6 +19,7 @@ class FakeLink implements SerialLink {
   readonly writes: Uint8Array[] = [];
   /** Una copia de cada escritura en el momento de hacerla. */
   readonly copies: Uint8Array[] = [];
+  closed = false;
   private onSent: ((error?: Error) => void) | undefined;
   private onLost: ((reason: string) => void) | undefined;
 
@@ -45,6 +47,10 @@ class FakeLink implements SerialLink {
 
   lose(reason: string): void {
     this.onLost?.(reason);
+  }
+
+  close(): void {
+    this.closed = true;
   }
 }
 
@@ -215,6 +221,22 @@ describe('la salida Adalight', () => {
   });
 });
 
+describe('cerrar la salida Adalight', () => {
+  it('cierra el puerto y descarta desde ahí, sin contarlo como una pérdida', () => {
+    const link = new FakeLink();
+    const log: string[] = [];
+    const output = new AdalightOutput(table, link, { log: (line) => log.push(line), now: () => 0 });
+
+    output.close();
+    link.lose('se ha cerrado');
+    output.write(frameOf(1));
+
+    expect(link.closed).toBe(true);
+    expect(link.copies).toEqual([]);
+    expect(log).toEqual([]);
+  });
+});
+
 describe('abrir el puerto de una tira física', () => {
   const options = { log: () => undefined, now: () => 0 };
 
@@ -249,6 +271,50 @@ describe('abrir el puerto de una tira física', () => {
       error:
         'tira «Mesa» (/dev/ttyUSB0): no se puede abrir el puerto serie ' +
         '(Error: No such file or directory, cannot open /dev/ttyUSB0)',
+    });
+  });
+});
+
+describe('abrir los puertos de todas las tiras físicas', () => {
+  const options = { log: () => undefined, now: () => 0 };
+  const virtual = {
+    id: 'demo',
+    name: 'Tira de prueba',
+    output: { type: 'virtual' as const },
+    ledCount: 60,
+    effect: 'breathing' as const,
+  };
+  const physical = (id: string, port: string) => ({
+    ...virtual,
+    id,
+    name: id,
+    output: { type: 'adalight' as const, port, baudRate: 115200 as const },
+  });
+
+  it('da la salida de cada tira física por su id, y ninguna de las virtuales', async () => {
+    const result = await openAdalightStrips(
+      [virtual, physical('mesa', '/dev/ttyUSB0'), physical('barra', '/dev/ttyUSB1')],
+      () => Promise.resolve(new FakeLink()),
+      options,
+    );
+
+    expect(result.ok && [...result.outputs.keys()]).toEqual(['mesa', 'barra']);
+  });
+
+  it('si un puerto no se abre, cierra los que ya había abierto y da su mensaje', async () => {
+    const first = new FakeLink();
+
+    const result = await openAdalightStrips(
+      [physical('mesa', '/dev/ttyUSB0'), physical('barra', '/dev/ttyUSB1')],
+      (port) =>
+        port === '/dev/ttyUSB0' ? Promise.resolve(first) : Promise.reject(new Error('Resource busy')),
+      options,
+    );
+
+    expect(first.closed).toBe(true);
+    expect(result).toEqual({
+      ok: false,
+      error: 'tira «barra» (/dev/ttyUSB1): no se puede abrir el puerto serie (Resource busy)',
     });
   });
 });

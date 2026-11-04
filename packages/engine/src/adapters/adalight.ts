@@ -16,6 +16,8 @@
  *                      |  (descarta)
  *                      +--falla--> perdida (descarta siempre; lo dice una vez)
  */
+import type { StripConfig } from '@moodtable/shared';
+
 import type { LightOutput } from '../core/frame-loop.ts';
 
 /** Los bytes de la cabecera Adalight. */
@@ -30,6 +32,8 @@ export interface SerialLink {
   write(bytes: Uint8Array, onSent: (error?: Error) => void): void;
   /** Avisa si el puerto falla o se cierra con el motor en marcha (el cable USB se suelta). */
   watchLoss(listener: (reason: string) => void): void;
+  /** Cierra el puerto: un puerto abierto mantendría el proceso en marcha. */
+  close(): void;
 }
 
 /** Abre el puerto serie a unos baudios; rechaza con el motivo del sistema si no puede. */
@@ -84,6 +88,12 @@ export class AdalightOutput implements LightOutput {
     });
   }
 
+  /** Cierra el puerto sin contarlo como una pérdida: desde aquí descarta todos los frames. */
+  close(): void {
+    this.lost = true;
+    this.link.close();
+  }
+
   private measure(start: number, end: number): void {
     if (this.durations.length >= MEASURED_SENDS) return;
     if (this.durations.length === 0) this.firstStart = start;
@@ -131,6 +141,28 @@ export async function openAdalight(
       error: `tira «${strip.name}» (${strip.port}): no se puede abrir el puerto serie (${(error as Error).message})`,
     };
   }
+}
+
+/**
+ * Abre los puertos de todas las tiras físicas, en el orden del fichero, y da la salida de cada una
+ * por su id. Si uno no se abre, cierra los que ya había abierto y da su mensaje.
+ */
+export async function openAdalightStrips(
+  strips: readonly StripConfig[],
+  open: OpenSerialLink,
+  options: AdalightOptions,
+): Promise<{ ok: true; outputs: Map<string, AdalightOutput> } | { ok: false; error: string }> {
+  const outputs = new Map<string, AdalightOutput>();
+  for (const { id, name, ledCount, output } of strips) {
+    if (output.type !== 'adalight') continue;
+    const opened = await openAdalight({ name, ledCount, ...output }, open, options);
+    if (!opened.ok) {
+      for (const each of outputs.values()) each.close();
+      return opened;
+    }
+    outputs.set(id, opened.output);
+  }
+  return { ok: true, outputs };
 }
 
 /** Un búfer de 6 + 3 × LEDs bytes con la cabecera Adalight ya escrita: uno por salida. */
