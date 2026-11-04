@@ -131,9 +131,12 @@
   donde haga falta.
   Verificar: los tests de 3.1 pasan, y los E2E existentes siguen pasando (no hay E2E nuevo: la CI no
   tiene puerto serie, decisión 8).
-- [ ] 3.3 Comprobación en la mesa: con la tira física declarada, la zona Tiras la muestra con
+- [x] 3.3 Comprobación en la mesa: con la tira física declarada, la zona Tiras la muestra con
   «Adalight» y la ruta entera de su puerto, en el ancho de la columna.
   Verificar: el resultado («verificado visualmente») queda en la descripción de la PR.
+  Con `config/audio/bouncer.wav` como fuente, como en 2.10 (4-nov). Tras apagar y encender la Pi, la
+  tira física se quedó congelada aunque el motor enviaba sus frames; dos reinicios del motor no la
+  movieron y el botón de reset del Uno sí.
 - [ ] 3.4 Documentación y cierre de la historia:
   - README §1.3 (zona Tiras: la salida Adalight con su puerto) y la ficha de la historia en §5
     (tareas `MOO-113`, `MOO-114` y `MOO-115`, y sus escenarios);
