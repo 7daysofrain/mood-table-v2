@@ -74,7 +74,7 @@
   lo envuelve en el enlace (escribir y avisar tras el `drain()`, error y cierre). Si no abre, devuelve
   un mensaje con la tira, el puerto y el motivo del sistema (decisión 4).
   Verificar: `pnpm typecheck` en verde; queda fuera de la cobertura por su nombre.
-- [ ] 2.7 **(test en rojo)** Tests de `engine.ts` y `frame-loop`: una tira `adalight` tiene el visor y
+- [x] 2.7 **(test en rojo)** Tests de `engine.ts` y `frame-loop`: una tira `adalight` tiene el visor y
   su salida Adalight, que reciben el mismo frame; una tira `virtual` solo el visor; la salida Adalight
   recibe frames sin ningún panel conectado (`specs/frame-loop`).
   Verificar: los tests nuevos fallan porque `createOutputs` solo da el visor.
