@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { LightOutput } from '../core/frame-loop.ts';
 import { adalightBuffer, AdalightOutput, encodeAdalight, type SerialLink } from './adalight.ts';
 
 /**
@@ -45,7 +46,7 @@ class FakeLink implements SerialLink {
 const table = { name: 'Mesa', ledCount: 173, port: '/dev/ttyUSB0', baudRate: 115200 };
 
 /** Un frame de la mesa que lleva `seq` en el primer LED, para saber de qué pulso es lo escrito. */
-function frameOf(seq: number, frame = new Uint8Array(table.ledCount * 3)): Uint8Array {
+function frameOf(seq: number, frame: Uint8Array = new Uint8Array(table.ledCount * 3)): Uint8Array {
   frame[0] = seq & 0xff;
   frame[1] = (seq >> 8) & 0xff;
   return frame;
@@ -60,7 +61,8 @@ function tick(seq: number): { seq: number; time: number } {
   return { seq, time: seq / 60 };
 }
 
-function outputWith(link: FakeLink, log: string[] = [], now = () => 0): AdalightOutput {
+/** La salida, vista como la ve el bucle: un `LightOutput` más. */
+function outputWith(link: FakeLink, log: string[] = [], now = () => 0): LightOutput {
   return new AdalightOutput(table, link, { log: (line) => log.push(line), now });
 }
 

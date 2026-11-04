@@ -68,7 +68,7 @@
     ahí descarta todos los frames sin lanzar nada.
 
   Verificar: los tests nuevos fallan porque la salida no existe.
-- [ ] 2.5 La salida Adalight (`LightOutput`) en `adalight.ts`, sobre el enlace.
+- [x] 2.5 La salida Adalight (`LightOutput`) en `adalight.ts`, sobre el enlace.
   Verificar: los tests de 2.4 pasan y la cobertura de `adalight.ts` no baja del umbral.
 - [ ] 2.6 `adalight.hardware.ts`: abre el puerto con `serialport` (`path`, `baudRate`, `lock: true`) y
   lo envuelve en el enlace (escribir y avisar tras el `drain()`, error y cierre). Si no abre, devuelve
