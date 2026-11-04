@@ -1644,6 +1644,32 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *La IA había sospechado que el bloqueo de `serialport` solo deja fuera a quien también bloquea, y lo comprobó en la mesa: con un script de Python que tenía el puerto abierto, el motor arrancó y pintó. Recomendó ajustar la spec y no detectarlo en el código (mirar `/proc/*/fd` es frágil y solo de Linux), y el humano lo aceptó. El escenario pasó a «El puerto lo tiene bloqueado otro programa», la decisión 4 explica el límite y `HARDWARE_SETUP.md` dice cómo comprobar con `fuser` que el puerto está libre. Con eso, la IA escribió la documentación: el adaptador en el README §2.2, la tira en `HARDWARE_SETUP.md`, D92-D94 y lo medido en Q1 y A2 del PRD, con el riesgo de E2: solo el envío ya pasa de 45 ms.*
 
+#### 6.51 Un falso aviso del triaje en la #112, como caso de calibración (`MOO-120`)
+
+**Prompt 1** (tras ver el comentario del PR Babysitter en la #112: el e2e, *exige criterio* con p = 0,47):
+
+> Es que esta parte me interesa, porque tenemos un ejemplo que nos puede valer para ayudar a la calibración. Asi que antes de seguir relanzando el job e2e vamos a aprovechar este "falso positivo" para el dogfooding asi que vamos a hacer un analisis de porque no lo ha detectado y asi podemos sacar una nueva tarea para hacer el fix
+
+*Claude Code (`claude-opus-5-5`, 4-nov). El e2e había fallado por 104,7 ms frente a 100, en un test que la PR no toca. La IA reconstruyó lo que recibió el modelo y lo confirmó en la traza de LangSmith: 822 bytes de log que acaban en el nombre del test, sin el error. El corte va «hasta el primer `##[error]`», una regla diseñada con un solo ejemplo (`sonar-issues`), donde esa marca es la última línea; en Playwright es la primera. Con eso, y con una descripción de la PR que dice cubrir «cambia el efecto ≤ 100 ms», 0,47 era una respuesta sensata: el fallo no era del modelo ni del umbral, sino del contexto. La IA añadió que calibrar el umbral (`MOO-76`) no lo arreglaría.*
+
+**Prompt 2** (cuando la IA propuso arreglar el corte del log):
+
+> Espera ahora lo probamos, es que yo veo un problema mas de fondo. Esto lo que me huele es que depende de lo que falle (e2e, lint...etc) vamos a necesitar algun tipo de adaptador que sea capaz de extraer el contexto necesario para enviarle a Clef y que puede triar de manera adecuada. Eso por un lado. Por otro lo que veo también es que ciertas tareas quizas tenga sentido que la decision sea "relanzar" aparte de "es cierto" o "es falso" porque podemos tener timeouts en test unitarios y cosas asi
+
+*Antes de opinar, la IA contó los 52 runs fallidos del historial y miró las anotaciones de GitHub de cada tipo de comprobación. Estuvo de acuerdo con las dos ideas, con matices. Contexto: una implementación genérica (anotaciones más el paso entero) y adaptadores específicos solo donde los datos lo pidan, porque un parser por herramienta se rompe en silencio con cada versión; y el diff como contexto común a todas. Relanzar: como acción y no como cuarta clase, porque un test inestable y además roto necesita las dos respuestas; con cada comprobación declarando si es determinista, y con la regla de §4.1 (dos fallos seguidos escalan) como salvaguarda. Señaló los riesgos: el PAT necesitaría* Actions: write *y cambia el glosario de PB. El humano pidió una tarea en la épica; la IA la creó como* Spike *(`MOO-120`), con los hallazgos, la propuesta y las decisiones abiertas. Al relanzar, el e2e pasó sobre el mismo commit, y la IA lo anotó como la etiqueta del caso: no aplica · relanzar.*
+
+#### 6.52 Mostrar la salida Adalight y su puerto en la zona Tiras, y cerrar la historia (`MOO-115`)
+
+**Prompt 1** (en la mesa, con el motor en marcha y la tira «Mesa» declarada):
+
+> si en el visor se ve bien, la que no cambia es la real
+
+*Claude Code (`claude-opus-5-5`, 4-nov). La IA implementó la sección `MOO-115` en TDD: los tests de `StripList` en rojo y la línea del puerto en la zona Tiras, con la ruta entera partiéndose donde haga falta (decisión 7). En la Pi comprobó la zona Tiras en el navegador, también a ancho de móvil. Cuando el humano vio la tira física congelada, la IA midió antes de suponer: el canvas del visor cambiaba en todas las muestras, y los hilos de libuv entraban y salían de `tcdrain`, así que el motor enviaba y el conversor sacaba los bytes por el cable. El fallo estaba después, en el Uno. Reiniciar el motor no lo arregló; el botón de reset del Uno, sí. La IA lo dejó en `HARDWARE_SETUP.md` y señaló un hueco que no es de esta tarea: el motor no puede notar un Uno colgado, y un `tcdrain` que no vuelve lo dejaría ocupado en silencio.*
+
+*Ajustes:*
+- *Al parar el motor, la IA usó `pgrep -f`, que también encontró la propia sesión SSH y la cortó: el mismo error que tenía apuntado con `pkill -f`. No rompió nada, y desde entonces para el motor por sus PID exactos.*
+- *El humano sospechó que la WiFi de la Pi no funcionaba. La IA lo comprobó: los dos perfiles de red de NetworkManager medían 0 bytes desde las 13:16. Junto con los errores EXT4 de la SD, apuntan a la tarjeta, y dejó la reparación al humano porque pide `sudo`.*
+
 ---
 
 ### 7. Pull Requests

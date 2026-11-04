@@ -109,7 +109,7 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 
 - **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», «Tarjeta de sonido: Mixer de la mesa», con el nombre que le da la configuración y nunca su cadena de ALSA, o «Sin fuente de audio») con un vúmetro de su nivel; si la tarjeta de sonido se pierde en plena sesión, una etiqueta roja «Desconectada» parpadea a su lado (fija si el sistema pide menos movimiento) hasta que el motor la recupera, también en un panel que se abre durante el corte; un silencio no la dispara; y, si la fuente es un fichero, el botón de oírlo en el panel: un altavoz tachado mientras el panel calla y con ondas mientras suena. Más adelante, los fps reales del motor. Sin conexión no muestra fuente, nivel ni botón.
 - **Visor:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
-- **Tiras:** lista de las tiras declaradas en el fichero de configuración, en su orden y en solo lectura: nombre, número de LEDs y salida («60 LEDs · Virtual»; Adalight con su puerto llega con H3). Al abrir el panel queda seleccionada la primera; se selecciona una sola a la vez, y el resto del panel actúa sobre ella.
+- **Tiras:** lista de las tiras declaradas en el fichero de configuración, en su orden y en solo lectura: nombre, número de LEDs y salida («60 LEDs · Virtual»). Una tira física dice «173 LEDs · Adalight» y, debajo, la ruta entera de su puerto serie, partida en varias líneas si no cabe en la columna, porque lo que distingue un puerto de otro suele estar al final; los baudios no se muestran. Al abrir el panel queda seleccionada la primera; se selecciona una sola a la vez, y el resto del panel actúa sobre ella.
 - **Efectos:** los efectos disponibles para la tira seleccionada (hoy, todos: *Energía* y *Respiración*), etiquetados como *Reactivo* o *De ambiente*, con el activo marcado. El activo es el que pinta el motor, no el del fichero ni el último pulsado: al recargar el panel se ve el mismo. Un efecto se elige al pulsarlo, sin esperar a soltar, como el pad de una controladora, y la tira cambia al momento, sin fundido ni indicadores de espera. Sin fuente de audio, los reactivos aparecen desactivados con el motivo, «Necesita una fuente de audio».
 - **Controles:** un control por cada parámetro del efecto activo de la tira seleccionada, generado a partir de su esquema, sin que el panel conozca el efecto: un número con rango es un slider y un color es un selector de color (un desplegable llegará con el primer parámetro que lo necesite). Para la *respiración*, el selector del color y el slider del *periodo*, de 1 a 20 s en escala logarítmica (en la mitad del recorrido marca unos 4,5 s), cada uno con su valor a la vista. La luz responde mientras se arrastra, sin esperar a soltar, y el control sigue al dedo; en reposo muestra los valores con que pinta el motor, también al abrir o recargar el panel. Un efecto sin parámetros, como *Energía*, deja la zona con su título.
 - **Sin conexión con el motor,** Tiras, Efectos y Controles quedan vacías, solo con su título; al volver, sigue seleccionada la misma tira si continúa declarada, y si no, la primera.
@@ -118,7 +118,7 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 
 1. **Probar en el simulador (H1).** Se abre la demo pública y se pulsa el botón de oír de la cabecera: suena el fichero de audio y las tiras virtuales reaccionan en el visor.
 2. **Tocar los parámetros en vivo (H2).** Se elige otro efecto (espectro, energía, scroll o respiración) y la tira cambia al instante. Se mueve un slider (por ejemplo, el periodo de la respiración) y la luz responde mientras se arrastra.
-3. **Pintar la tira física (H3).** En la mesa, la lista de tiras muestra la principal con salida *Adalight · /dev/ttyUSB0*. Lo que se ve en el visor es lo que pinta la mesa.
+3. **Pintar la tira física (H3).** En la mesa, la lista de tiras muestra la tira de la mesa con «173 LEDs · Adalight» y la ruta de su puerto serie (`/dev/serial/by-id/…`). Lo que se ve en el visor es lo que pinta la mesa, aunque no haya ningún panel abierto.
 4. **Declarar mis tiras (H4).** Las tiras, su número de LEDs y su salida son las del fichero de configuración; el panel las muestra pero no las edita.
 5. **Arrancar en el último estado (H5).** Al reiniciar el motor y volver a abrir el panel, cada tira tiene el efecto y los valores con los que se dejó, y el panel avisa de que el estado se ha restaurado.
 
@@ -909,7 +909,7 @@ Los errores responden `{ "message": "…" }`, sin cambiar ninguna tira:
 
 > Documenta 3 de las historias de usuario principales utilizadas durante el desarrollo, teniendo en cuenta las buenas prácticas de producto al respecto.
 
-> **Copia para la entrega (25-sep-2026).** El backlog vive en **Linear** (proyecto [*Mood Table*](https://linear.app/7daysofrain/project/mood-table-d4004b9e3c3d), clave `MOO`), que es su fuente de verdad (`docs/instructions/workflow.md` §3). Aquí se reproduce completo para que se pueda leer sin acceso a Linear.
+> **Copia para la entrega (25-sep-2026), con las filas de H2 y H3 añadidas el 4-nov-2026.** El backlog vive en **Linear** (proyecto [*Mood Table*](https://linear.app/7daysofrain/project/mood-table-d4004b9e3c3d), clave `MOO`), que es su fuente de verdad (`docs/instructions/workflow.md` §3). Aquí se reproduce completo para que se pueda leer sin acceso a Linear.
 
 #### Cómo se ha construido el backlog
 
@@ -926,7 +926,9 @@ Los errores responden `{ "message": "…" }`, sin cambiar ninguna tira:
 | **H1 · Probar el instrumento en el simulador** (`MOO-5`) | `MOO-12` spike de rendimiento en la Pi · **`MOO-13`** · **`MOO-14`** · **`MOO-15`** · `MOO-22` oír el fichero en el panel | Las tres de abajo, refinadas y estimadas (*Todo*); el resto en *Backlog* |
 | H5 · Arrancar en el último estado (`MOO-9`) | `MOO-25` volver al último estado tras reiniciar el motor | *Backlog*, sin refinar; creada para el ticket de base de datos (§6, `MOO-26`) |
 | EN · Base técnica (*enablers*, `MOO-27`) | Sin historias: tareas directas `MOO-28` monorepo, lint, tests y CI · `MOO-29` layout del panel | *Backlog*; épica técnica, no sale del PRD |
-| H2-H4 (must) · S1-S2 (should) (`MOO-6`…`MOO-8`, `MOO-10`, `MOO-11`) | Sin descomponer | *Backlog*: se refinan durante el desarrollo |
+| H2 · Tocar los parámetros en vivo (`MOO-6`) | `MOO-94` cambiar el efecto de una tira · `MOO-95` mover los controles del efecto · `MOO-96` recuperar los valores de un efecto · `MOO-97` intensidad de los efectos reactivos · `MOO-98` efecto espectro · `MOO-99` efecto scroll | `MOO-94`, `95` y `96`, *Done*; `MOO-99`, *Todo*; el resto en *Backlog* |
+| H3 · Pintar la tira física (`MOO-7`) | `MOO-111` pintar en la tira de la mesa lo mismo que en el visor (tareas `MOO-113` contrato compartido, `MOO-114` motor, `MOO-115` panel) · `MOO-112` seguir tocando aunque se desconecte el controlador Adalight | `MOO-111` en curso, se cierra con `MOO-115`; `MOO-112` en *Backlog* |
+| H4 (must) · S1-S2 (should) (`MOO-8`, `MOO-10`, `MOO-11`) | Sin descomponer | *Backlog*: se refinan durante el desarrollo |
 
 **Definition of Done** de las tres (tipo *Feature*, igual para todas las historias de ese tipo):
 
