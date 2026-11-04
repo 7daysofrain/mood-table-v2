@@ -17,7 +17,7 @@
   existe; el tipo desconocido dice que se admiten «virtual» y «adalight»; `port` en una salida
   `virtual` sigue sin existir (decisión 6).
   Verificar: los tests nuevos fallan porque el tipo `adalight` no existe; el resto sigue en verde.
-- [ ] 1.2 `OutputSchema` con la variante `adalight` (cerrada, con `port` no vacío y `baudRate` como
+- [x] 1.2 `OutputSchema` con la variante `adalight` (cerrada, con `port` no vacío y `baudRate` como
   unión de literales de la lista de la decisión 6).
   Verificar: los tests de 1.1 pasan.
 - [ ] 1.3 **(test en rojo)** Tests del mensaje `6` en `packages/shared/src/viewer-protocol.test.ts`:

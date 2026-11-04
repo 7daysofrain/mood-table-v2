@@ -16,8 +16,31 @@ import { MAX_STRIPS } from './viewer-protocol.ts';
  */
 const CLOSED = { additionalProperties: false } as const;
 
-/** Salida de una tira, discriminada por `type`. En H1 solo existe `virtual`, sin más campos. */
-const OutputSchema = Type.Union([Type.Object({ type: Type.Literal('virtual') }, CLOSED)]);
+/**
+ * Las velocidades estándar de Linux (`termios`) hasta 2.000.000, el máximo del CH340 del Arduino de
+ * la mesa. Con una lista y no cualquier entero, una errata (`11520`) no deja arrancar (decisión 6 del
+ * change adalight-strip-output).
+ */
+const BAUD_RATES = [
+  9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000, 576000, 921600, 1000000, 1500000,
+  2000000,
+] as const;
+
+/**
+ * Salida de una tira, discriminada por `type`: `virtual`, solo el visor, o `adalight`, la tira física
+ * en un puerto serie (`port`, mejor la ruta de `/dev/serial/by-id/`) a unos baudios.
+ */
+const OutputSchema = Type.Union([
+  Type.Object({ type: Type.Literal('virtual') }, CLOSED),
+  Type.Object(
+    {
+      type: Type.Literal('adalight'),
+      port: Type.String({ minLength: 1 }),
+      baudRate: Type.Union(BAUD_RATES.map((rate) => Type.Literal(rate))),
+    },
+    CLOSED,
+  ),
+]);
 
 export const StripConfigSchema = Type.Object(
   {
@@ -113,7 +136,7 @@ export function parseConfig(text: string): ConfigResult {
   }
 
   const withDefaults = Value.Default(ConfigFileSchema, structuredClone(data));
-  const errors = withAudioSourceErrors(Value.Errors(ConfigFileSchema, withDefaults), withDefaults);
+  const errors = withVariantErrors(Value.Errors(ConfigFileSchema, withDefaults), withDefaults);
   // Un campo mal escrito da dos errores (el que no existe y el que falta): se nombra el que no existe.
   const error = errors.find((each) => isUnknownField(each)) ?? errors[0];
   if (error) return fail(describeError(error, errors, data));
@@ -153,42 +176,67 @@ interface SchemaError {
   message: string;
 }
 
+/** Una unión de objetos discriminada por `type`, como `audioSource` y la salida de cada tira. */
+type VariantUnion = typeof AudioSourceConfigSchema | typeof OutputSchema;
+
+/** Las uniones discriminadas del fichero, con la ruta de cada una: la fuente y cada salida. */
+function variantUnions(config: unknown): { path: string; schema: VariantUnion }[] {
+  const strips = isObject(config) && Array.isArray(config.strips) ? config.strips : [];
+  return [
+    { path: '/audioSource', schema: AudioSourceConfigSchema },
+    ...strips.map((_, index) => ({ path: `/strips/${index}/output`, schema: OutputSchema })),
+  ];
+}
+
 /**
  * Una unión da los errores de todas sus variantes mezclados: con una tarjeta sin `name`, la variante
- * `file` diría que `name` no existe. Así que los errores de `audioSource` se sustituyen, en su sitio,
- * por los de la variante que nombra su `type`; si no nombra ninguna, solo se habla del `type`.
+ * `file` diría que `name` no existe. Así que los errores de cada unión discriminada se sustituyen, en
+ * su sitio, por los de la variante que nombra su `type`; si no nombra ninguna, solo se habla del
+ * `type`.
  */
-function withAudioSourceErrors(errors: SchemaError[], config: unknown): SchemaError[] {
-  const inSource = (error: SchemaError): boolean =>
-    error.instancePath === '/audioSource' || error.instancePath.startsWith('/audioSource/');
-  const first = errors.findIndex(inSource);
+function withVariantErrors(errors: SchemaError[], config: unknown): SchemaError[] {
+  return variantUnions(config).reduce(
+    (current, { path, schema }) => withErrorsOfVariant(current, config, path, schema),
+    errors,
+  );
+}
+
+function withErrorsOfVariant(
+  errors: SchemaError[],
+  config: unknown,
+  path: string,
+  schema: VariantUnion,
+): SchemaError[] {
+  const inUnion = (error: SchemaError): boolean =>
+    error.instancePath === path || error.instancePath.startsWith(`${path}/`);
+  const first = errors.findIndex(inUnion);
   if (first === -1) return errors;
 
-  const source = isObject(config) ? config.audioSource : undefined;
-  const variant = isObject(source)
-    ? AudioSourceConfigSchema.anyOf.find((each) => each.properties.type.const === source.type)
+  const value = valueAt(config, path.split('/').slice(1));
+  const variant = isObject(value)
+    ? schema.anyOf.find((each) => each.properties.type.const === value.type)
     : undefined;
   let replacement: SchemaError[];
   if (variant) {
-    replacement = Value.Errors(variant, source).map((error) => ({
+    replacement = Value.Errors(variant, value).map((error) => ({
       ...error,
-      instancePath: `/audioSource${error.instancePath}`,
+      instancePath: `${path}${error.instancePath}`,
     }));
   } else {
-    const keep = withoutVariant(source);
-    replacement = errors.filter((error) => inSource(error) && keep(error));
+    const keep = withoutVariant(value, path);
+    replacement = errors.filter((error) => inUnion(error) && keep(error));
   }
-  const others = errors.filter((error) => !inSource(error));
+  const others = errors.filter((error) => !inUnion(error));
   return [...others.slice(0, first), ...replacement, ...others.slice(first)];
 }
 
 /**
- * Qué errores de `audioSource` se cuentan cuando su `type` no nombra ninguna variante: sin objeto,
- * que lo sea; sin `type`, que falta; con uno que no existe, los valores que se admiten.
+ * Qué errores de una unión se cuentan cuando su `type` no nombra ninguna variante: sin objeto, que lo
+ * sea; sin `type`, que falta; con uno que no existe, los valores que se admiten.
  */
-function withoutVariant(source: unknown): (error: SchemaError) => boolean {
-  if (!isObject(source)) return (error) => error.keyword === 'type';
-  if ('type' in source) return (error) => error.instancePath === '/audioSource/type';
+function withoutVariant(value: unknown, path: string): (error: SchemaError) => boolean {
+  if (!isObject(value)) return (error) => error.keyword === 'type';
+  if ('type' in value) return (error) => error.instancePath === `${path}/type`;
   return (error) => error.keyword === 'required';
 }
 
@@ -220,9 +268,11 @@ function describeError(
   const field = [...segments.slice(where), ...(missing ? [missing] : [])].join('.');
   // Sin campo, el problema es la propia tira (por ejemplo, no es un objeto).
   const subject = field ? `campo \`${field}\`` : 'la entrada';
-  const allowed = errors
-    .filter((each) => each.keyword === 'const' && each.instancePath === error.instancePath)
-    .map((each) => String((each.params as Record<string, unknown>).allowedValue));
+  const allowed =
+    LISTED_VALUES[field]?.map(String) ??
+    errors
+      .filter((each) => each.keyword === 'const' && each.instancePath === error.instancePath)
+      .map((each) => String((each.params as Record<string, unknown>).allowedValue));
   const problem = `${subject}: ${describeProblem(error, received, field, allowed)}`;
 
   if (where === 0) return problem;
@@ -232,6 +282,12 @@ function describeError(
   const name = id ? `la tira «${id}»` : `la tira ${index + 1}`;
   return `${name}, ${problem}`;
 }
+
+/**
+ * Los valores admitidos salen de los errores, uno por literal, pero TypeBox da como mucho 8 errores
+ * (`maxErrors`, un ajuste global que comparte con Fastify): las listas más largas se toman del esquema.
+ */
+const LISTED_VALUES: Partial<Record<string, readonly unknown[]>> = { 'output.baudRate': BAUD_RATES };
 
 const TYPE_NAMES: Record<string, string> = {
   array: 'una lista',
@@ -256,6 +312,11 @@ function valueAt(data: unknown, segments: string[]): unknown {
 /** «valor», como se cita un valor del fichero en los mensajes. */
 function quoted(value: string): string {
   return `«${value}»`;
+}
+
+/** «a», «b» o «c»: con trece velocidades, una «o» entre cada dos no se lee. */
+function orList(items: readonly string[]): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} o ${items.at(-1)}`;
 }
 
 /** `id`, como se cita un identificador en los mensajes. */
@@ -290,7 +351,7 @@ function describeProblem(
       if (field === 'effect') {
         return `${value} no es un efecto (hay: ${allowed.map(asCode).join(', ')})`;
       }
-      return `${value} no es un valor válido (se admite ${allowed.map(quoted).join(' o ')})`;
+      return `${value} no es un valor válido (se admite ${orList(allowed.map(quoted))})`;
     }
     default:
       return error.message;
