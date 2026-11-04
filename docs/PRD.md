@@ -148,7 +148,7 @@ tiras en un fichero.
 | # | Supuesto | Si resulta falso |
 |---|---|---|
 | A1 | Una Raspberry Pi 4 tiene potencia de sobra para analizar el audio y pintar las tiras en tiempo real. | Se optimiza el motor o se cambia de enfoque. Se valida con una prueba de rendimiento antes de construir el análisis de audio, en la Pi 4 de la mesa; la 3 B+ no se mide (D47 de la ficha). ✅ **Comprobado el 17-oct:** 0,46 ms por frame con dos tiras de 300 LEDs y análisis de audio, frente a un presupuesto de 16,6 ms (D48; [resultados](spikes/moo-12-rendimiento-pi.md)). |
-| A2 | Adalight da la fluidez suficiente con los LEDs de una tira de mesa (unos 200-300). | Menos LEDs por tira, o se adelanta el firmware propio (S2). |
+| A2 | Adalight da la fluidez suficiente con los LEDs de una tira de mesa (unos 200-300). | Menos LEDs por tira, o se adelanta el firmware propio (S2). ✅ **Comprobado para la mesa el 4-nov** (MOO-114): con 173 LEDs a 115.200 baudios, 45 ms por frame y 20 fps; desde un pulso hasta que su frame ha salido, unos 62 ms, dentro de E1 (≤ 100 ms). Por la cuenta, sin medirlo: en 100 ms caben unos 380 LEDs a esos baudios, unos 315 con un pulso de margen. **Riesgo para E2:** solo el envío ya pasa del umbral de sonido a luz (≤ 45 ms); las salidas son el firmware propio (S2: un ESP32 a 921.600 baudios tarda unos 6 ms), una placa con USB nativo o menos LEDs. |
 | A3 | La reacción al audio se percibe a tempo sin necesitar una señal de tempo aparte. | Se revisaría la decisión de la §5.4. |
 
 ### 6.2 Restricciones (condiciones fijas)
@@ -170,7 +170,7 @@ tiras en un fichero.
 
 | # | Pregunta | Cómo se resuelve |
 |---|---|---|
-| Q1 | ¿Cuántos LEDs por tira admite el instrumento con fluidez? | Con la prueba de rendimiento (A1, A2). **Resuelta en parte (17-oct):** por CPU, una tira de 600 LEDs cabe con margen ([resultados](spikes/moo-12-rendimiento-pi.md)); falta Adalight (A2, H3), que será el límite real. |
+| Q1 | ¿Cuántos LEDs por tira admite el instrumento con fluidez? | Con la prueba de rendimiento (A1, A2). **Resuelta en parte (17-oct):** por CPU, una tira de 600 LEDs cabe con margen ([resultados](spikes/moo-12-rendimiento-pi.md)); falta Adalight (A2, H3), que será el límite real. **Para la mesa (4-nov):** 173 LEDs a 115.200 baudios van a 20 fps, con 45 ms por frame (A2). |
 | Q2 | ¿Qué controles tiene cada efecto? Por ejemplo, sensibilidad, color o velocidad. | Decisión del DJ, a partir de los efectos de la v1. **Resuelta para la *respiración*:** color (por defecto, blanco cálido) y periodo, los segundos de una respiración completa (por defecto, 4); toda la tira a la vez, con una onda suave de casi apagado al máximo (decisión del DJ al especificar MOO-13). El periodo va de 1 a 20 s, con un slider en escala logarítmica (decisión del DJ al explorar MOO-95). Los efectos reactivos, pendientes. |
 | Q3 | Al cambiar de efecto, ¿se pasa con un **fundido** o con un **corte seco**? | ✅ **Resuelta:** corte seco (decisión del DJ al crear MOO-94). Si se echa en falta un fundido, irá en otra historia. |
 | Q4 | ¿Qué hacen los efectos reactivos cuando hay **silencio** o no hay fuente de audio? ¿Se apagan o quedan con un mínimo? | ✅ **Resuelta:** en silencio, un efecto reactivo se apaga y uno de ambiente sigue (decisión del DJ al refinar MOO-14). |

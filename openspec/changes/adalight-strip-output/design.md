@@ -72,7 +72,7 @@ de `arecord`. Sin `tcdrain` desde Node, «ha salido» habría que **calcularlo**
 Context, que es justo lo que no sabemos si se cumple en la mesa. Además `stty -F` solo existe en Linux
 (en macOS es `-f`), y `serialport` deja probar con el Arduino conectado al portátil.
 
-→ **Proponer como D90** en `docs/idea-mood-table.md`: la primera dependencia nativa del motor, y por
+→ **Proponer como D92** en `docs/idea-mood-table.md`: la primera dependencia nativa del motor, y por
 qué.
 
 ### 2. Mientras un frame no ha salido por el cable, el siguiente se descarta
@@ -103,7 +103,7 @@ unos 22 fps en lugar de 20, pero el frame sale hasta 16,7 ms más viejo, los sal
 alternan 2 y 3 pulsos (un tembleque en un *scroll*) y necesita una copia y su estado. Descartar es lo
 que ya decía el README §2.2.
 
-→ **Proponer como D91** en `docs/idea-mood-table.md`, junto con la decisión 3.
+→ **Proponer como D93** en `docs/idea-mood-table.md`, junto con la decisión 3.
 
 ### 3. «A la vez» es ≤ 100 ms, y el log lo mide
 
@@ -186,7 +186,7 @@ Descartado: **cualquier entero positivo**, lo que decía el criterio de la histo
 pasar las erratas. El ejemplo del criterio pasa a ser «unos baudios que no son una velocidad
 estándar».
 
-→ **Proponer como D92** en `docs/idea-mood-table.md`.
+→ **Proponer como D94** en `docs/idea-mood-table.md`.
 
 ### 7. El panel recibe el puerto pero no los baudios, y muestra la ruta entera
 

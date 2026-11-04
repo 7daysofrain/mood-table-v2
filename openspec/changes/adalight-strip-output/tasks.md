@@ -107,13 +107,13 @@
   Verificar: lo comprobado, con la línea del log, queda en la descripción de la PR.
   Con `config/audio/bouncer.wav` como fuente y no con el mixer, que el usuario no tenía a mano
   (4-nov).
-- [ ] 2.11 Documentación:
+- [x] 2.11 Documentación:
   - README §2.2 (adaptador *Adalight serie*: `serialport`, el descarte con `drain()`, la medida del
     log, la pérdida en plena sesión y los fps a saltos; el orden de color, con H4) y la raíz de
     composición;
   - `HARDWARE_SETUP.md`: cómo declarar la tira de la mesa en `config/local.json`, el segundo de tira
     apagada al arrancar (decisión 9) y cómo leer la línea de ms y fps del log;
-  - `docs/idea-mood-table.md` §10: D90 (decisión 1), D91 (decisiones 2 y 3) y D92 (decisión 6);
+  - `docs/idea-mood-table.md` §10: D92 (decisión 1), D93 (decisiones 2 y 3) y D94 (decisión 6);
   - `docs/PRD.md`: Q1 y A2 con lo medido en 2.10 (LEDs, baudios, ms por frame y fps), y en A2 el riesgo
     de E2 y las salidas (S2, placa con USB nativo);
   - `prompts.md`: la entrada de la tarea.
