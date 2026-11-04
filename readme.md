@@ -765,12 +765,35 @@ Se documenta aquí porque es la otra mitad del modelo. Su esquema TypeBox vive e
 |---|---|---|---|
 | `id` | string | Obligatorio, único en el fichero | Identificador estable de la tira; es el `strip_id` de la base de datos. |
 | `name` | string | Obligatorio | Nombre que muestra el panel. |
-| `output` | objeto | Obligatorio | Tipo de salida (`adalight`, `virtual`) y puerto serie si aplica (por ejemplo, `/dev/ttyUSB0`). |
+| `output` | objeto | Obligatorio | Salida de la tira, discriminada por `type`: `virtual` (solo el visor, sin más campos) o `adalight` (la tira física, por su puerto serie; sus campos, abajo). |
 | `ledCount` | entero | > 0 | Número de LEDs. El máximo práctico con Adalight es ≈ 200-300 por tira. |
 | `effect` | enum | Obligatorio; un id del catálogo de efectos (`breathing`…) | Efecto con el que arranca la tira (D52). Con H5, el estado guardado manda sobre él. |
 | `colorOrder` | enum | RGB, RBG, GRB, GBR, BRG, BGR | Orden de los canales que espera la tira. |
 | `maxCurrentMa` | entero | > 0 | Consumo máximo permitido (mA) según su fuente de alimentación. Lo usa el límite de potencia. |
 | `ledMaxMa` | entero | > 0, por defecto 60 | Consumo de un LED en blanco a máximo brillo (mA), para estimar el consumo de cada frame. |
+
+La salida `adalight` declara dónde está el controlador Adalight y a qué velocidad habla:
+
+| Campo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `port` | string | Obligatorio, no vacío | Puerto serie del controlador. Mejor la ruta de `/dev/serial/by-id/`, que no cambia al reiniciar ni al enchufar otro dispositivo serie (`HARDWARE_SETUP.md` §7). El panel la muestra entera. |
+| `baudRate` | entero | Obligatorio; 9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000, 576000, 921600, 1000000, 1500000 o 2000000 | Baudios: los mismos que el sketch del controlador, que el motor no puede comprobar. Solo velocidades estándar, para que una errata (`11520`) no deje arrancar. No salen al panel. |
+
+La tira de la mesa:
+
+```json
+{
+  "id": "mesa",
+  "name": "Mesa",
+  "output": {
+    "type": "adalight",
+    "port": "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0",
+    "baudRate": 115200
+  },
+  "ledCount": 173,
+  "effect": "breathing"
+}
+```
 
 Además de las tiras, el fichero declara la **fuente de audio**, opcional (`audioSource`). Se discrimina por `type`, como `output`: `file` es un fichero WAV con su `path`, absoluta o relativa a la raíz del repositorio (como `config/local.json`, D44). `soundcard` es la tarjeta de sonido (solo Linux, D56):
 

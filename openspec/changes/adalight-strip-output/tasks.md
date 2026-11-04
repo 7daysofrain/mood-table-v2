@@ -32,11 +32,13 @@
   mensaje `6`, un ejemplo y la frase de «lo que no sale al panel» con los baudios.
   Verificar: los tests de 1.3 pasan, el documento describe exactamente lo que hace el código, y
   `pnpm typecheck`, `pnpm test` y `pnpm test:e2e` en verde.
-- [ ] 1.5 README §3 (*Tira declarada*: `output` con `port` y `baudRate` y la lista de velocidades, con
+- [x] 1.5 README §3 (*Tira declarada*: `output` con `port` y `baudRate` y la lista de velocidades, con
   un ejemplo JSON de la tira de la mesa) y `prompts.md`: la entrada de la exploración y la propuesta
   del change (las decisiones de `design.md` y cómo se llegó a ellas) y la de esta tarea.
   Verificar: el README dice lo mismo que el esquema, y `prompts.md` sigue el formato de
   `docs/instructions/course.md` §5.
+  Hecho sin la entrada de la exploración (4-nov): su transcripción no está en el equipo y el usuario
+  decidió dejarla fuera.
 
 ## 2. MOO-114 · engine
 
