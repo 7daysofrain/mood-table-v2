@@ -127,7 +127,7 @@
   y, debajo, la ruta entera, sin recortar; una tira virtual no tiene línea de puerto
   (`specs/instrument-control`, decisión 7).
   Verificar: los tests nuevos fallan porque la zona Tiras no muestra el puerto.
-- [ ] 3.2 La línea del puerto en `StripList.tsx`: pequeña y atenuada, como la de los LEDs, y partiéndose
+- [x] 3.2 La línea del puerto en `StripList.tsx`: pequeña y atenuada, como la de los LEDs, y partiéndose
   donde haga falta.
   Verificar: los tests de 3.1 pasan, y los E2E existentes siguen pasando (no hay E2E nuevo: la CI no
   tiene puerto serie, decisión 8).
