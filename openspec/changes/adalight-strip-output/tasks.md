@@ -42,7 +42,7 @@
 
 ## 2. MOO-114 · engine
 
-- [ ] 2.1 `serialport` 13 en el catálogo de `pnpm-workspace.yaml` y en `packages/engine`;
+- [x] 2.1 `serialport` 13 en el catálogo de `pnpm-workspace.yaml` y en `packages/engine`;
   `@serialport/bindings-cpp: false` en `allowBuilds` (decisión 1).
   Verificar: `pnpm install` termina sin compilar nada, y en el Mac
   `node -e "import('serialport').then(m => m.SerialPort.list()).then(console.log)"` desde
