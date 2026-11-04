@@ -136,8 +136,15 @@ sobre la cuenta.
 `main.ts` abre el puerto de cada tira física después de cargar la fuente de audio y antes del servidor,
 como la tarjeta de sonido: así el motor no arranca a medias. Si alguno falla, el motor no arranca y
 dice qué tira, qué puerto y el motivo que da el sistema (no existe, permiso denegado, ocupado). Con
-`lock: true`, que es el valor por defecto de `serialport`, un puerto que tiene abierto otro programa
-(un Hyperion de la v1, el monitor serie del IDE) da error y no se comparte.
+`lock: true`, que es el valor por defecto de `serialport`, un puerto que tiene bloqueado otro programa
+(otro motor) da error y no se comparte.
+
+El bloqueo (`TIOCEXCL`) solo deja fuera a quien también lo pide. **Un programa que abre el puerto sin
+bloquearlo** (un `cat`, un script, quizá algún monitor serie) no impide arrancar: los dos escriben a la
+vez y la tira pinta una mezcla. Se comprobó en la mesa al implementar `MOO-114`: con un segundo motor,
+«Cannot lock port»; con un script de Python que tenía el puerto abierto, el motor arrancó y pintó.
+Detectarlo pediría mirar qué procesos tienen abierto el fichero (`/proc/*/fd`): frágil, solo de Linux y
+más de lo que pide la historia. Se avisa en `HARDWARE_SETUP.md`.
 
 Es un estado de paso. El PRD (Q5) pide lo contrario: *si falta al arrancar, el motor arranca
 igualmente y lo espera*, y eso llega con `MOO-112`. Mientras tanto, el fallo ruidoso es mejor que el

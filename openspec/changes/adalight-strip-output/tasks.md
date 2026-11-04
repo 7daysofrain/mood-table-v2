@@ -89,7 +89,7 @@
   - la tira física pinta la respiración a la vez que el visor, y responde al mover el periodo y el
     color;
   - el log dice los ms por frame y los fps, y ms + 16,7 ≤ 100 (decisión 3);
-  - con el monitor serie de otro programa abierto en ese puerto, el motor no arranca y lo dice;
+  - con el puerto abierto y bloqueado por otro programa, el motor no arranca y lo dice;
   - al desconectar el Arduino con el motor en marcha, el motor sigue y el log lo dice una vez.
 
   Verificar: lo comprobado, con la línea del log, queda en la descripción de la PR.

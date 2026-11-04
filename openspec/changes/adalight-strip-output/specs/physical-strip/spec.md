@@ -107,7 +107,8 @@ terminar con un código de salida distinto de 0 y decir qué tira, qué puerto y
 abrir.
 
 > Traza: *(asumido)*, `design.md`, decisión 4. Es un estado de paso: el PRD (Q5) pide que el motor
-> arranque y espere al controlador, y eso llega con `MOO-112`.
+> arranque y espere al controlador, y eso llega con `MOO-112`. Un programa que abre el puerto sin
+> bloquearlo no se detecta: comprobado en la mesa (decisión 4).
 
 #### Scenario: El puerto no existe (asumido)
 - **GIVEN** un `config/local.json` con una tira de salida `adalight` en un puerto que no existe (el
@@ -116,9 +117,9 @@ abrir.
 - **THEN** el motor no arranca
 - **AND** el mensaje nombra la tira y el puerto, y dice por qué no lo puede abrir
 
-#### Scenario: El puerto lo tiene otro programa (asumido)
+#### Scenario: El puerto lo tiene bloqueado otro programa (asumido)
 - **GIVEN** un `config/local.json` con una tira de salida `adalight` en un puerto que otro programa
-  tiene abierto
+  tiene abierto y bloqueado (por ejemplo, otro motor)
 - **WHEN** el maker arranca el motor
 - **THEN** el motor no arranca
 - **AND** el mensaje nombra la tira y el puerto, y dice por qué no lo puede abrir
