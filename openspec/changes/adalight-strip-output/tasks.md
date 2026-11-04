@@ -84,7 +84,7 @@
   comentario de cabecera, al día.
   Verificar: los tests de 2.7 pasan; en el Mac, con una tira declarada en un puerto que no existe,
   `pnpm dev` no arranca y nombra la tira, el puerto y el motivo.
-- [ ] 2.9 Prueba en el Mac con el Arduino de la mesa conectado por USB (decisión 1: se puede probar sin
+- [x] 2.9 Prueba en el Mac con el Arduino de la mesa conectado por USB (decisión 1: se puede probar sin
   la Pi), declarado en `config/local.json` con su `/dev/cu.usbserial-…`:
   - la tira física pinta la respiración a la vez que el visor, y responde al mover el periodo y el
     color;
@@ -93,6 +93,8 @@
   - al desconectar el Arduino con el motor en marcha, el motor sigue y el log lo dice una vez.
 
   Verificar: lo comprobado, con la línea del log, queda en la descripción de la PR.
+  Hecho en la Pi y no en el Mac (4-nov): el usuario prefirió no mover el Arduino, y todo se
+  comprueba donde va a funcionar.
 - [ ] 2.10 Prueba en la Pi de la mesa (excepción al DoD de la historia; el usuario está en la mesa),
   con `/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0` y 115.200 baudios:
   - `pnpm install` carga el precompilado de `serialport` (si no, decisión 1: `allowBuilds` a `true`);
