@@ -122,19 +122,24 @@
 
 ## 3. MOO-115 · panel
 
-- [ ] 3.1 **(test en rojo)** Tests de `StripList` con Testing Library: una tira «Mesa» de 173 LEDs con
+- [x] 3.1 **(test en rojo)** Tests de `StripList` con Testing Library: una tira «Mesa» de 173 LEDs con
   salida Adalight en `/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0` muestra «173 LEDs · Adalight»
   y, debajo, la ruta entera, sin recortar; una tira virtual no tiene línea de puerto
   (`specs/instrument-control`, decisión 7).
   Verificar: los tests nuevos fallan porque la zona Tiras no muestra el puerto.
-- [ ] 3.2 La línea del puerto en `StripList.tsx`: pequeña y atenuada, como la de los LEDs, y partiéndose
+- [x] 3.2 La línea del puerto en `StripList.tsx`: pequeña y atenuada, como la de los LEDs, y partiéndose
   donde haga falta.
   Verificar: los tests de 3.1 pasan, y los E2E existentes siguen pasando (no hay E2E nuevo: la CI no
   tiene puerto serie, decisión 8).
-- [ ] 3.3 Comprobación en la mesa: con la tira física declarada, la zona Tiras la muestra con
+- [x] 3.3 Comprobación en la mesa: con la tira física declarada, la zona Tiras la muestra con
   «Adalight» y la ruta entera de su puerto, en el ancho de la columna.
   Verificar: el resultado («verificado visualmente») queda en la descripción de la PR.
-- [ ] 3.4 Documentación y cierre de la historia:
+  Con `config/audio/bouncer.wav` como fuente, como en 2.10 (4-nov). La tira física se quedó
+  congelada aunque el motor enviaba sus frames: una soldadura floja en la tira, que volvió a pintar
+  al moverla.
+  La comprobación la hizo primero la IA en el navegador integrado; el usuario la validó en la mesa
+  el mismo día, con la tira física pintando lo mismo que el visor.
+- [x] 3.4 Documentación y cierre de la historia:
   - README §1.3 (zona Tiras: la salida Adalight con su puerto) y la ficha de la historia en §5
     (tareas `MOO-113`, `MOO-114` y `MOO-115`, y sus escenarios);
   - `prompts.md`: la entrada de la tarea;
@@ -146,3 +151,8 @@
 
   Verificar: la tabla de escenarios de `MOO-111` → test está en la descripción de la PR, y
   `pnpm exec openspec validate adalight-strip-output --strict` pasa.
+  Dos desviaciones (4-nov). En §5 no hay ficha nueva: su copia de la entrega tiene tres historias
+  de H1 y ninguna historia posterior ha añadido la suya; se añaden las filas de H2 y H3 a la tabla de
+  épicas. Y `validate --strict` sale con dos avisos de requisitos de más de 500 caracteres en
+  `physical-strip` (el change es válido sin `--strict`): es el estilo de las specs principales, que
+  tienen el mismo aviso, y partir los requisitos ahora cambiaría la spec ya aplicada.

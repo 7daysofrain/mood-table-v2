@@ -13,8 +13,8 @@ interface StripListProps {
 
 /**
  * Zona Tiras (README §1.3, specs/instrument-control): las tiras declaradas, en solo lectura, con su
- * nombre, su nº de LEDs y su salida. Es un grupo de radios: se selecciona una sola, también con las
- * flechas del teclado, y el resto del panel actúa sobre ella.
+ * nombre, su nº de LEDs, su salida y, si es física, su puerto serie. Es un grupo de radios: se
+ * selecciona una sola, también con las flechas del teclado, y el resto del panel actúa sobre ella.
  */
 export function StripList({ strips, selectedId, onSelect }: Readonly<StripListProps>) {
   return (
@@ -36,6 +36,13 @@ export function StripList({ strips, selectedId, onSelect }: Readonly<StripListPr
                 <Text size="sm" c="dimmed">
                   {`${ledCountLabel(strip.ledCount)} · ${OUTPUT_NAMES[strip.output.type]}`}
                 </Text>
+                {/* La ruta entera, partiéndose donde haga falta: la parte que distingue un puerto
+                    de otro suele ser la del final (decisión 7 del change adalight-strip-output). */}
+                {strip.output.type === 'adalight' && (
+                  <Text size="sm" c="dimmed" style={{ wordBreak: 'break-all' }}>
+                    {strip.output.port}
+                  </Text>
+                )}
               </div>
             </Group>
           </Radio.Card>
