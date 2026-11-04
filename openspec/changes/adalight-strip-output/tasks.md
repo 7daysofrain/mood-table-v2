@@ -52,7 +52,7 @@
   cabecera de 1 LED (`00 00 55`) y la de 300 (`01 2B 7F`, con el byte alto en uso); los colores en el
   orden de la tira, sin reordenar.
   Verificar: los tests nuevos fallan porque `adalight.ts` no existe.
-- [ ] 2.3 La codificación en `packages/engine/src/adapters/adalight.ts`: un búfer por salida con la
+- [x] 2.3 La codificación en `packages/engine/src/adapters/adalight.ts`: un búfer por salida con la
   cabecera escrita al crearla, donde se copian los colores de cada frame.
   Verificar: los tests de 2.2 pasan.
 - [ ] 2.4 **(test en rojo)** Tests de la salida con un enlace falso que decide cuándo «sale» cada
