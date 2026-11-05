@@ -44,7 +44,7 @@
     grave.
 
   Verificar: los tests nuevos fallan y el resto sigue en verde.
-- [ ] 1.4 El `visualize_spectrum` de la v1 en `spectrum.ts`, según las decisiones 1 a 3 de
+- [x] 1.4 El `visualize_spectrum` de la v1 en `spectrum.ts`, según las decisiones 1 a 3 de
   `design.md`:
   - la memoria por tira: suelo, rojo, azul y banda anterior (media tira cada uno, arrancando a 0,01),
     el búfer de la interpolación y el espejo de `mirror.ts`;
