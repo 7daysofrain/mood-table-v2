@@ -22,7 +22,7 @@
 
   Verificar: los tests de 1.1 y `registry.test.ts` pasan, y `pnpm typecheck` y `pnpm lint` (fronteras
   incluidas) van en verde.
-- [ ] 1.3 **(test en rojo)** Tests unitarios en `packages/engine/src/core/effects/scroll.test.ts`,
+- [x] 1.3 **(test en rojo)** Tests unitarios en `packages/engine/src/core/effects/scroll.test.ts`,
   con el montaje de tonos de `energy.test.ts` (`specs/effects`):
   - es reactivo y `defaultParams` es `{}`;
   - sin rasgos del audio o en silencio, todos los LEDs a 0, y la memoria no cambia: tras el silencio,
