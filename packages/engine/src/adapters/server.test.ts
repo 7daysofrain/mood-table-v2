@@ -617,7 +617,7 @@ describe('la API: cambiar el efecto de una tira', () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
-      message: '«strobe» no es un efecto (hay: `breathing`, `energy`)',
+      message: '«strobe» no es un efecto (hay: `breathing`, `scroll`, `energy`)',
     });
     expect(control.slot(0).effect).toBe('energy');
   });

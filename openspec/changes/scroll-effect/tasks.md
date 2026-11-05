@@ -13,7 +13,7 @@
   reactivo, con un esquema sin parámetros que rechaza cualquier campo, entre `energy` y `breathing`
   (decisión 5).
   Verificar: el test nuevo falla y el resto sigue en verde.
-- [ ] 1.2 *Scroll* en el contrato:
+- [x] 1.2 *Scroll* en el contrato:
   - en `packages/shared/src/effects.ts`, `ScrollParamsSchema` y la entrada del catálogo, exportados
     desde `index.ts`;
   - en `packages/panel/src/literals.ts`, `EFFECT_NAMES.scroll = 'Scroll'` y `PARAM_NAMES.scroll = {}`;
