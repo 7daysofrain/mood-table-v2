@@ -80,7 +80,7 @@ https://github.com/7daysofrain/mood-table-v2
 
 - **Espectro:** cada zona de la tira representa una banda de frecuencia.
 - **Energía:** el brillo y la extensión de la luz siguen la energía del audio y los golpes.
-- **Scroll:** la energía entra por un extremo de la tira y la recorre.
+- **Scroll:** la energía nace en el centro de la tira y se desplaza hacia los extremos.
 - **Respiración** (ambiente): un color que sube y baja despacio, sin audio.
 
 **Should-have**
@@ -110,8 +110,8 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 - **Cabecera:** estado de la conexión con el motor y, a su izquierda, la fuente de audio activa («Fichero: bouncer.wav», «Tarjeta de sonido: Mixer de la mesa», con el nombre que le da la configuración y nunca su cadena de ALSA, o «Sin fuente de audio») con un vúmetro de su nivel; si la tarjeta de sonido se pierde en plena sesión, una etiqueta roja «Desconectada» parpadea a su lado (fija si el sistema pide menos movimiento) hasta que el motor la recupera, también en un panel que se abre durante el corte; un silencio no la dispara; y, si la fuente es un fichero, el botón de oírlo en el panel: un altavoz tachado mientras el panel calla y con ondas mientras suena. Más adelante, los fps reales del motor. Sin conexión no muestra fuente, nivel ni botón.
 - **Visor:** todas las tiras declaradas, una fila de LEDs por tira, pintadas en tiempo real con los mismos frames que recibe la tira física.
 - **Tiras:** lista de las tiras declaradas en el fichero de configuración, en su orden y en solo lectura: nombre, número de LEDs y salida («60 LEDs · Virtual»). Una tira física dice «173 LEDs · Adalight» y, debajo, la ruta entera de su puerto serie, partida en varias líneas si no cabe en la columna, porque lo que distingue un puerto de otro suele estar al final; los baudios no se muestran. Al abrir el panel queda seleccionada la primera; se selecciona una sola a la vez, y el resto del panel actúa sobre ella.
-- **Efectos:** los efectos disponibles para la tira seleccionada (hoy, todos: *Energía* y *Respiración*), etiquetados como *Reactivo* o *De ambiente*, con el activo marcado. El activo es el que pinta el motor, no el del fichero ni el último pulsado: al recargar el panel se ve el mismo. Un efecto se elige al pulsarlo, sin esperar a soltar, como el pad de una controladora, y la tira cambia al momento, sin fundido ni indicadores de espera. Sin fuente de audio, los reactivos aparecen desactivados con el motivo, «Necesita una fuente de audio».
-- **Controles:** un control por cada parámetro del efecto activo de la tira seleccionada, generado a partir de su esquema, sin que el panel conozca el efecto: un número con rango es un slider y un color es un selector de color (un desplegable llegará con el primer parámetro que lo necesite). Para la *respiración*, el selector del color y el slider del *periodo*, de 1 a 20 s en escala logarítmica (en la mitad del recorrido marca unos 4,5 s), cada uno con su valor a la vista. La luz responde mientras se arrastra, sin esperar a soltar, y el control sigue al dedo; en reposo muestra los valores con que pinta el motor, también al abrir o recargar el panel. Un efecto sin parámetros, como *Energía*, deja la zona con su título.
+- **Efectos:** los efectos disponibles para la tira seleccionada (hoy, todos: *Energía*, *Scroll* y *Respiración*), etiquetados como *Reactivo* o *De ambiente*, con el activo marcado. El activo es el que pinta el motor, no el del fichero ni el último pulsado: al recargar el panel se ve el mismo. Un efecto se elige al pulsarlo, sin esperar a soltar, como el pad de una controladora, y la tira cambia al momento, sin fundido ni indicadores de espera. Sin fuente de audio, los reactivos aparecen desactivados con el motivo, «Necesita una fuente de audio».
+- **Controles:** un control por cada parámetro del efecto activo de la tira seleccionada, generado a partir de su esquema, sin que el panel conozca el efecto: un número con rango es un slider y un color es un selector de color (un desplegable llegará con el primer parámetro que lo necesite). Para la *respiración*, el selector del color y el slider del *periodo*, de 1 a 20 s en escala logarítmica (en la mitad del recorrido marca unos 4,5 s), cada uno con su valor a la vista. La luz responde mientras se arrastra, sin esperar a soltar, y el control sigue al dedo; en reposo muestra los valores con que pinta el motor, también al abrir o recargar el panel. Un efecto sin parámetros, como *Energía* o *Scroll*, deja la zona con su título.
 - **Sin conexión con el motor,** Tiras, Efectos y Controles quedan vacías, solo con su título; al volver, sigue seleccionada la misma tira si continúa declarada, y si no, la primera.
 
 #### Recorrido por las funcionalidades principales
@@ -896,7 +896,7 @@ Los errores responden `{ "message": "…" }`, sin cambiar ninguna tira:
 
 | Código | Ruta | Cuándo | Ejemplo de `message` |
 |---|---|---|---|
-| `400` | `effect` | El cuerpo no es `{ "effect": "<id>" }` o el efecto no existe | «strobe» no es un efecto (hay: `breathing`, `energy`) |
+| `400` | `effect` | El cuerpo no es `{ "effect": "<id>" }` o el efecto no existe | «strobe» no es un efecto (hay: `breathing`, `scroll`, `energy`) |
 | `400` | `values` | Los valores no cumplen el esquema del efecto activo: falta uno, sobra uno o está fuera de rango (D86) | la tira «demo», efecto `breathing`: `period` debe ser <= 20 |
 | `404` | las dos | La tira no existe | la tira «luces» no existe |
 | `409` | `effect` | El efecto es reactivo y el instrumento no tiene fuente de audio (D80) | la tira «demo», efecto `energy`: necesita una fuente de audio |
@@ -1375,7 +1375,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 **Tests**
 
-- **Unitarios (Vitest):** un tono de 400 Hz cae en el tercio inferior de las bandas y uno de 8 kHz en el superior; *energía* los pinta de rojo y de azul; silencio → *energía* apagada; *respiración* no cambia con audio; sin tiras con audio, no se calculan las bandas.
+- **Unitarios (Vitest):** un tono de 400 Hz cae en el tercio inferior de las bandas y uno de 8 kHz en el superior; *energía* y *scroll* los pintan de rojo y de azul, y el rastro del *scroll* avanza un LED por frame; silencio → *energía* apagada; *respiración* no cambia con audio; sin tiras con audio, no se calculan las bandas.
 - **Integración:** WAV de golpes aislados → la tira se enciende con cada golpe y se apaga antes del siguiente, y frames dorados; el servidor envía la fuente y el nivel a cada panel.
 
 ---

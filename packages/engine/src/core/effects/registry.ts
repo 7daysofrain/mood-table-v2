@@ -7,6 +7,7 @@
 import { breathing } from './breathing.ts';
 import type { Effect } from './effect.ts';
 import { energy } from './energy.ts';
+import { scroll } from './scroll.ts';
 
 /**
  * Un efecto cualquiera, sin importar el tipo de sus parámetros ni de su memoria: el bucle solo los
@@ -14,4 +15,4 @@ import { energy } from './energy.ts';
  */
 export type AnyEffect = Effect<unknown, unknown>;
 
-export const EFFECTS: readonly AnyEffect[] = [breathing, energy];
+export const EFFECTS: readonly AnyEffect[] = [breathing, scroll, energy];

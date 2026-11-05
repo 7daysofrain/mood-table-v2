@@ -6,6 +6,7 @@ import {
   EFFECT_CATALOG,
   EnergyParamsSchema,
   needsAudioSource,
+  ScrollParamsSchema,
 } from './effects.ts';
 
 describe('qué efectos necesitan una fuente de audio', () => {
@@ -15,6 +16,10 @@ describe('qué efectos necesitan una fuente de audio', () => {
 
   it('energía, que es reactivo, la necesita', () => {
     expect(needsAudioSource('energy')).toBe(true);
+  });
+
+  it('scroll, que es reactivo, la necesita', () => {
+    expect(needsAudioSource('scroll')).toBe(true);
   });
 
   it.each(EFFECT_CATALOG.map((effect) => [effect.id, effect.usesAudio] as const))(
@@ -59,7 +64,21 @@ describe('los parámetros de la energía', () => {
   });
 });
 
+describe('los parámetros del scroll', () => {
+  it('acepta un objeto vacío', () => {
+    expect(Value.Check(ScrollParamsSchema, {})).toBe(true);
+  });
+
+  it('rechaza cualquier campo', () => {
+    expect(Value.Check(ScrollParamsSchema, { speed: 2 })).toBe(false);
+  });
+});
+
 describe('el catálogo de efectos', () => {
+  it('pone el scroll entre la respiración y la energía: es el orden de la zona Efectos', () => {
+    expect(EFFECT_CATALOG.map((effect) => effect.id)).toEqual(['breathing', 'scroll', 'energy']);
+  });
+
   it.each(EFFECT_CATALOG.map((effect) => [effect.id, effect] as const))(
     '%s trae su esquema de parámetros, cerrado',
     (_id, effect) => {

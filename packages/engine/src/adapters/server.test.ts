@@ -617,7 +617,7 @@ describe('la API: cambiar el efecto de una tira', () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
-      message: '«strobe» no es un efecto (hay: `breathing`, `energy`)',
+      message: '«strobe» no es un efecto (hay: `breathing`, `scroll`, `energy`)',
     });
     expect(control.slot(0).effect).toBe('energy');
   });
@@ -647,6 +647,28 @@ describe('la API: cambiar el efecto de una tira', () => {
     expect(response.statusCode).toBe(409);
     expect(response.json()).toEqual({
       message: 'la tira «demo», efecto `energy`: necesita una fuente de audio',
+    });
+    expect(control.slot(0).effect).toBe('breathing');
+  });
+
+  it('con scroll, responde 200 con valores {} y la tira pinta scroll', async () => {
+    const { app, control } = await apiWith(demo, true);
+
+    const response = await putEffect(app, 'demo', '{"effect":"scroll"}');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ...demo, effect: 'scroll', values: {} });
+    expect(control.slot(0).effect).toBe('scroll');
+  });
+
+  it('sin fuente de audio, scroll responde 409 y la tira sigue igual', async () => {
+    const { app, control } = await apiWith({ ...demo, effect: 'breathing' }, false);
+
+    const response = await putEffect(app, 'demo', '{"effect":"scroll"}');
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      message: 'la tira «demo», efecto `scroll`: necesita una fuente de audio',
     });
     expect(control.slot(0).effect).toBe('breathing');
   });

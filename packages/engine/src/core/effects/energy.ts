@@ -17,6 +17,7 @@ import { type EnergyParams, EnergyParamsSchema, type StripConfig } from '@moodta
 import { BAND_COUNT } from '../audio/analysis.ts';
 import { blur, follow, gaussianKernel } from '../audio/dsp.ts';
 import type { Effect } from './effect.ts';
+import { halfLength, mirrorOf } from './mirror.ts';
 
 /** `gain` de la v1 para *energía*: valor inicial y factores de subida y bajada a 50 fps. */
 const BAND_GAIN = { initial: 0.01, rise: 0.99, decay: 0.001 };
@@ -95,16 +96,12 @@ export const energy: Effect<EnergyParams, EnergyMemory> = {
 };
 
 function createEnergyMemory(strip: StripConfig): EnergyMemory {
-  // La mitad calculada; con un número impar de LEDs, el del centro es el primero de la mitad.
-  const half = Math.ceil(strip.ledCount / 2);
-  const center = (strip.ledCount - 1) / 2;
+  const half = halfLength(strip.ledCount);
   return {
     gain: new Float64Array(BAND_COUNT).fill(BAND_GAIN.initial),
     leds: new Float64Array(CHANNELS * half).fill(LED_SMOOTHING.initial),
     rounded: new Float64Array(half),
     blurred: new Float64Array(half),
-    mirror: Int32Array.from({ length: strip.ledCount }, (_, led) =>
-      Math.floor(Math.abs(led - center)),
-    ),
+    mirror: mirrorOf(strip.ledCount),
   };
 }

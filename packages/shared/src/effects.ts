@@ -40,13 +40,22 @@ export const EnergyParamsSchema = Type.Object({}, CLOSED);
 export type EnergyParams = Static<typeof EnergyParamsSchema>;
 
 /**
+ * *Scroll*: sin parámetros, como el de la v1 (decisión 1 del change scroll-effect). La velocidad y la
+ * estela llegarán en otra historia, cuando el DJ lo haya visto.
+ */
+export const ScrollParamsSchema = Type.Object({}, CLOSED);
+
+export type ScrollParams = Static<typeof ScrollParamsSchema>;
+
+/**
  * Los efectos que existen (decisión 10 del change virtual-strip-audio-file): su id, en inglés como
  * el resto del fichero, si son reactivos (`true`) o de ambiente (`false`) y el esquema de sus
  * parámetros, con el que el motor valida y el panel dibuja (decisión 5 del change
- * strip-effect-values).
+ * strip-effect-values). El orden es el de la zona Efectos del panel.
  */
 export const EFFECT_CATALOG = [
   { id: 'breathing', usesAudio: false, paramsSchema: BreathingParamsSchema },
+  { id: 'scroll', usesAudio: true, paramsSchema: ScrollParamsSchema },
   { id: 'energy', usesAudio: true, paramsSchema: EnergyParamsSchema },
 ] as const;
 

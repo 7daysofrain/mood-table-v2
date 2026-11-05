@@ -32,11 +32,13 @@ export {
   EFFECT_CATALOG,
   EffectIdSchema,
   EnergyParamsSchema,
+  ScrollParamsSchema,
   type BreathingParams,
   type EffectId,
   type EffectValues,
   type EnergyParams,
   needsAudioSource,
+  type ScrollParams,
 } from './effects.ts';
 
 export {
