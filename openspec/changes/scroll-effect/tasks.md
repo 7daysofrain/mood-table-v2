@@ -102,7 +102,7 @@
   `round(255 · (v/255)²)` calculada una vez (decisión 6). El visor no cambia.
 
   Verificar: `pnpm test` en verde.
-- [ ] 2.3 El WAV de calibración (decisión 8):
+- [x] 2.3 El WAV de calibración (decisión 8):
   - el generador en `packages/engine/test/fixtures/calibracion.ts`, determinista y con la forma del
     de golpes, que escribe `config/audio/calibracion.wav`;
   - su script en `packages/engine/package.json`, junto a `fixtures`;

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node src/main.ts",
+    "calibration": "node test/fixtures/calibracion.ts",
     "fixtures": "node test/fixtures/golpes.ts",
     "openapi": "node src/write-openapi.ts",
     "typecheck": "tsc --noEmit"
