@@ -29,15 +29,15 @@ const QUIET = bands(1e-3);
 const HIT = bands(0.1);
 
 /**
- * Pinta un frame por cada audio de la lista, uno por pulso a 60 fps, y devuelve una copia de cada
+ * Pinta un frame por cada audio de la lista, uno por pulso a `fps`, y devuelve una copia de cada
  * uno.
  */
-function framesOf(ledCount: number, audios: (AudioFeatures | null)[]): Uint8Array[] {
+function framesOf(ledCount: number, audios: (AudioFeatures | null)[], fps = FPS): Uint8Array[] {
   const memory = scroll.createMemory(strip(ledCount));
   const out = new Uint8Array(ledCount * 3);
-  const ctx: FrameContext = { time: 0, dt: 1 / FPS, audio: null };
+  const ctx: FrameContext = { time: 0, dt: 1 / fps, audio: null };
   return audios.map((audio, pulse) => {
-    ctx.time = (pulse + 1) / FPS;
+    ctx.time = (pulse + 1) / fps;
     ctx.audio = audio;
     scroll.render(ctx, defaultParams(scroll), memory, out);
     return out.slice();
@@ -148,6 +148,21 @@ describe('scroll', () => {
       expect(later[led]).toBe(Math.max(...later));
       expect(Math.abs((later[led] ?? 0) - initial * 0.98 ** 10)).toBeLessThanOrEqual(1);
     }
+  });
+
+  it.each([
+    [30, 6],
+    [60, 12],
+  ])('a %s fps, 0,2 s después de entrar por el centro, un golpe está a %s LEDs', (fps, leds) => {
+    // El fichero de golpes no sirve aquí: a los 80 ms del golpe entra en silencio y la tira se apaga.
+    const before = Array.from({ length: fps }, () => QUIET);
+    const after = Array.from({ length: 0.2 * fps }, () => QUIET);
+    const later = channel(framesOf(60, [...before, HIT, ...after], fps).at(-1) ?? new Uint8Array(), 0);
+
+    // Con 60 LEDs, el centro son los LEDs 29 y 30.
+    expect(later[29 - leds]).toBe(Math.max(...later));
+    expect(later[30 + leds]).toBe(Math.max(...later));
+    expect(Math.max(...later)).toBeGreaterThan(0);
   });
 
   it('con un número impar de LEDs, los dos lados son iguales y el del centro lleva el color nuevo', () => {

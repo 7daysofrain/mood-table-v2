@@ -44,12 +44,14 @@
   El comentario de cabecera dice de dónde viene (dancyPi `0906e77`) y qué va por frame y qué con `dt`.
   `render` no crea objetos.
   Verificar: los tests de 1.3 pasan.
-- [ ] 1.5 Tests con el bucle real y el fichero de golpes. `energy-golpes.test.ts` pasa a
+- [x] 1.5 Tests con el bucle real y el fichero de golpes. `energy-golpes.test.ts` pasa a
   `golpes.test.ts`, con un `describe` por efecto y el mismo `run()` (decisión 4). Para *scroll*:
   - la luz de cada golpe aparece en el centro y se aleja hacia los extremos, igual por los dos lados,
     apagándose;
   - en el silencio entre golpes, la tira se apaga;
-  - a 30 fps, 0,2 s después del golpe, la luz está a 6 LEDs del centro, y a 60 fps a 12;
+  - a 30 fps, 0,2 s después del golpe, la luz está a 6 LEDs del centro, y a 60 fps a 12. *Este va
+    en `scroll.test.ts`, con un golpe sintético: en el fichero de golpes, cada golpe suena unos
+    80 ms y lo sigue un silencio digital, así que a los 0,2 s la tira ya está apagada;*
   - una tira con *energía* que pasa a *scroll* con `setEffect` no conserva nada de *energía* desde
     el primer frame: fuera de lo que ha avanzado desde el centro, ningún LED pasa de 1;
   - frames dorados en `core/effects/__golden__/scroll-60-leds.json`, en los mismos instantes que los
