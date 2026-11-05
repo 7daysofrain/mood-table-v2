@@ -2,7 +2,8 @@
 
 > **Origen:** historia [`MOO-99`](https://linear.app/7daysofrain/issue/MOO-99/elegir-el-efecto-scroll)
 > · Elegir el efecto scroll · épica **H2** · expectativas **E3**, **E2**.
-> Tarea: `MOO-118` (portar el efecto scroll de la v1, `engine`).
+> Tareas: `MOO-118` (portar el efecto scroll de la v1, `engine`) y `MOO-123` (ajustar la
+> visualización en la tira real, `engine`).
 
 ## Why
 
@@ -29,6 +30,18 @@ fiel que ver antes de decidir sus controles, que irán en otra historia.
 - La API y el fichero de configuración aceptan `scroll` como id de efecto, porque se generan del
   catálogo. No cambia ninguna ruta.
 
+**Tras la prueba en la mesa (`MOO-123`, 5-nov).** En la tira física, el *scroll* no se parecía al del
+visor: se veía lleno y lento. Había dos causas, ajenas al efecto, que afectan a cualquier tira física:
+
+- **Falta la gamma de la v1.** La v1 corregía cada color con una gamma 2,0 antes de mandarlo a la
+  tira. Sin ella, los valores bajos del rastro, que en pantalla casi no se ven, brillan en los LEDs.
+  La salida a la tira física pasa a aplicarla.
+- **A 115.200 baudios, Adalight solo da 20 fps** con los 173 LEDs de la mesa. El controlador pasa a
+  500.000 baudios, con los que da 59 fps. Cambia la documentación del montaje; el motor ya admitía
+  esa velocidad.
+- **Un WAV de calibración** con golpes limpios (rojo, verde y azul) para comprobar a ojo que la tira
+  responde como el visor.
+
 ## Capabilities
 
 ### New Capabilities
@@ -41,6 +54,8 @@ Ninguna.
   un escenario de *scroll* cada uno.
 - `instrument-control`: la zona Efectos lista *scroll* entre los del catálogo, y el escenario del
   efecto sin parámetros vale también para él.
+- `physical-strip` (`MOO-123`): la tira física lleva los colores del visor corregidos con la gamma de
+  los LEDs, y el escenario de la mesa pasa a 500.000 baudios.
 
 `panel-layout`, `viewer` y `frame-loop` no cambian.
 
@@ -78,3 +93,9 @@ Fuera también, decidido al explorar el change:
     (los efectos que hay hoy).
   - `prompts.md`.
 - **Tests**: unitarios del efecto, frames dorados con el fichero de golpes y un E2E del caso feliz.
+- **`MOO-123`**:
+  - `packages/engine`: la gamma en la codificación Adalight (`adapters/adalight.ts`) y el generador
+    del WAV de calibración, junto al de golpes.
+  - `config/audio/`: `calibracion.wav` y su fila en el README.
+  - Documentación: una D# nueva (`design.md`, decisiones 6 a 8), D46 en lo de los baudios,
+    `HARDWARE_SETUP.md` (§4.1, la configuración y la medida), README y `prompts.md`.
