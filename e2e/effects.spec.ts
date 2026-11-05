@@ -171,16 +171,19 @@ test('el DJ elige el scroll para la tira', async ({ page }) => {
     // centro, y energía, con su desenfoque de 4 LEDs, nunca lo hace. Después avanza un LED por frame.
     const bornAt = (frames: Timeline['frames'], pressed: number) =>
       frames.findIndex(([arrivedAt, , reach]) => arrivedAt >= pressed && reach === 0);
+    // Se espera al frame en que nace y a unos cuantos más, para ver cómo avanza.
+    const FRAMES_AFTER_BIRTH = 4;
     await expect
       .poll(
         async () => {
           const { pressedAt: pressed, frames } = await timeline();
-          return pressed !== undefined && bornAt(frames, pressed) >= 0;
+          if (pressed === undefined) return false;
+          const born = bornAt(frames, pressed);
+          return born >= 0 && frames.length - born > FRAMES_AFTER_BIRTH;
         },
         { message: 'la luz del scroll nace en el centro', timeout: 5000 },
       )
       .toBe(true);
-    await page.waitForTimeout(100);
     const { pressedAt, frames } = await timeline();
     if (pressedAt === undefined) throw new Error('No se anotó la pulsación');
     expect(
