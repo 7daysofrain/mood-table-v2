@@ -74,7 +74,7 @@
   `e2e/engine.ts` acepta `scroll` como efecto de arranque si hace falta (`specs/instrument-control`,
   criterios de `MOO-99`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 1.8 Documentación:
+- [x] 1.8 Documentación:
   - **D95** en `docs/idea-mood-table.md` (decisiones 1 y 2 de `design.md`);
   - README §1.2: *Scroll*, «la energía nace en el centro de la tira y se desplaza hacia los
     extremos»;

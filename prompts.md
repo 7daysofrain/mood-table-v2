@@ -1684,6 +1684,43 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Claude Code (`claude-opus-5-5`, 4-nov). La IA paró el motor en la Pi, primero listando los procesos y después matándolos por PID en otra llamada, y apagó la tira con unos frames negros. Comprobó en Linear que `MOO-113`, `114` y `115` estaban en Done, y sacó la rama del archivado desde `main`. `/opsx:verify` cotejó las 20 tareas, los 9 requisitos de las cuatro specs y las 9 decisiones del diseño con el código, los tests y las comprobaciones en la mesa: sin problemas críticos ni advertencias. Al sincronizar, `physical-strip` pasó a ser una spec nueva, y los tres requisitos modificados sustituyeron a los de `engine-config`, `frame-loop` e `instrument-control` con todos sus escenarios.*
 
+#### 6.54 Elegir el efecto scroll: refinamiento, estimación, exploración y change (`MOO-99`)
+
+**Prompt 1** (en `/refine-story MOO-99`, el caso feliz del humano):
+
+> quiero que cuando seleccione una tira en el visor aparezca un nuevo efecto llamado scroll y que cuando lo seleccione me muestre los controles asociados en el visor y lanze el efecto "scroll" a las tiras. El efecto scroll es el que viene definido por el codigo de dancingPy
+
+*Claude Code (`claude-opus-5-5`, 4-nov). Antes de traducirlo, la IA leyó el `visualize_scroll` de dancyPi en el commit que fijó D49 y encontró un conflicto: la historia y el README decían que la luz «entra por un extremo», y en la v1 nace en el centro y va hacia los dos extremos. El humano eligió portarlo tal cual y corregir la frase, aclaró que «visor» era el panel y que el efecto va a la tira seleccionada, y eligió velocidad y estela como controles. El subagente `poke-holes` devolvió 8 candidatos, que se vieron uno a uno. `/estimate-story` dio un 3 al humano y al estimador.*
+
+**Prompt 2** (con el criterio del silencio ya aceptado: la luz sigue hasta los extremos y se desvanece):
+
+> que hace ahora mismo el efecto de la v1?
+
+*La IA lo comprobó en el código, no de memoria, y reconoció que había propuesto mal el criterio 1: en la v1, en silencio el efecto ni se llama, así que la tira pasa a negro al momento y el rastro se congela, como ya hace *energía*. El humano aceptó corregirlo.*
+
+**Prompt 3** (en `/opsx:explore`, 5-nov, tras decidir que la estela se mide en LEDs y con cuatro formas de avanzar a cualquier velocidad sobre la mesa):
+
+> mmm la verdad es que me lo estoy pensando de nuevo. Quizás lo que mas sentido tiene es realizar una implementación lo mas fiel posible, aunque sea sin controles. Y una vez que tenga la referencia nos ponemos a realizar modificaciones sobre el efecto. Es complicado decidir sin ver el resultado real
+
+*La IA le dio la razón con un precedente, *energía* (D49), y con el riesgo que había señalado el estimador, que estaba justo en los controles. Le enseñó el coste: la historia refinada cambia, dos criterios salen y hay que re-estimarla. El humano decidió dividir e ir fiel al código: 1 LED y ×0,98 por frame. La IA avisó de la consecuencia (la velocidad queda atada a los fps) y propuso que la ganancia fuera con `dt`, como en *energía*. `/opsx:propose` escribió el change `scroll-effect` con una sola sección (`MOO-118`) y la nota de Q2 en el PRD.*
+
+*Ajustes:*
+- *Las dos hipótesis de la exploración (la estela en LEDs y una rejilla de 8 celdas por LED) no entran en el change: se guardan para la historia de velocidad y estela.*
+- *Re-estimar `MOO-99` queda pendiente: la historia es más pequeña desde que se dividió.*
+
+#### 6.55 Portar el efecto scroll de la v1 (`MOO-118`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-99
+
+*Claude Code (`claude-opus-5-5`, 5-nov). La IA implementó la sección `MOO-118` en TDD, con un commit por paso, en la rama de la tarea, que sale de la de la historia con el PRD y el change encima. *Scroll* entra en el catálogo, en el panel y en el registro del motor a la vez, porque `registry.test.ts` exige que coincidan. El efecto es un fichero, `scroll.ts`, y el espejo de *energía* pasa a `mirror.ts` para usarlo los dos, sin cambiar los frames dorados de *energía*. `energy-golpes.test.ts` pasa a `golpes.test.ts`, con un `describe` por efecto. El E2E reconoce el scroll en el visor porque su primer frame con luz solo enciende el centro, algo que *energía*, con su desenfoque de 4 LEDs, nunca hace; pasó tres veces seguidas.*
+
+*Ajustes:*
+- *El diseño ponía el scroll «entre energía y respiración», pero el catálogo tenía la respiración primero. La IA preguntó y el humano eligió no mover nada: Respiración, Scroll, Energía. Así el diff del OpenAPI solo añade `scroll`.*
+- *Al mirar los frames con el fichero de golpes, la IA vio que cada golpe suena unos 80 ms y lo sigue un silencio digital: la luz avanza 4 LEDs y la tira se apaga. El test de 30 y 60 fps (6 y 12 LEDs a los 0,2 s) no cabía ahí y pasó a `scroll.test.ts`, con un golpe sintético; quedó anotado en el `tasks.md`.*
+- *El diseño decía que, por arrancar la memoria a 1, el primer frame enseña los LEDs a 1 de 255. No es así: antes de pintar se apagan a 0,98, que se trunca a 0. Se corrigió la frase del `design.md`.*
+
 ---
 
 ### 7. Pull Requests

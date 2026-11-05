@@ -64,8 +64,8 @@ Motivación y alcance: `proposal.md`. Requisitos: `specs/effects` y `specs/instr
 - **La ganancia propia tiene las mismas constantes que la de *energía*.** En la v1 era el mismo
   objeto, `gain`. Aquí cada efecto tiene la suya, dentro de su memoria, como pide README §2.2.
 - **El desenfoque de sigma 0,2** usa `gaussianKernel` (radio 1). Apenas se nota, pero es el de la v1.
-- **La memoria arranca a 1, como el `p` de la v1**, no a 0. En el primer frame, los LEDs que aún no
-  tienen música valen 1 de 255, y al siguiente ya han bajado a 0.
+- **La memoria arranca a 1, como el `p` de la v1**, no a 0. No llega a verse: en el primer frame ya
+  se ha apagado a 0,98, que se trunca a 0.
 - **El espejo y la tira impar, como en *energía*:** la mitad calculada es `ceil(N/2)` y, con un
   número impar de LEDs, el del centro es el primero de la mitad. Se reutiliza el mismo cálculo.
 - **La salida se recorta a 0-255 y se trunca**, como el `astype(int)` de la v1. El color nuevo puede
