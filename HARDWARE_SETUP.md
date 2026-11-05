@@ -141,7 +141,7 @@ En `Adalight-FastLED/Arduino/LEDstream_FastLED/LEDstream_FastLED.ino`, cambia es
 | `Num_Leds` | `173` | Los LEDs reales de la tira. Si pones más, sobran sin problema; si pones menos, los últimos no se encienden |
 | `Brightness` | `64` | Tope del 25 % para no pasar de los 8 A del adaptador (§3) |
 | `PIN_DATA` | `6` | El pin donde va el rojo de datos |
-| `SerialSpeed` | `115200` | La velocidad que usan Hyperion y el motor |
+| `SerialSpeed` | `500000` | A 115.200, Adalight solo da 20 fps con 173 LEDs; a 500.000, 59 (D96). Es exacta para el Uno a 16 MHz. Con Hyperion se usaba 115.200 |
 
 `LED_TYPE` (`WS2812B`) y `COLOR_ORDER` (`GRB`) ya vienen bien para esta tira. Compila y carga (el
 puerto aparece como `/dev/cu.usbserial-…` en macOS):
@@ -364,7 +364,7 @@ la mesa:
   "output": {
     "type": "adalight",
     "port": "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0",
-    "baudRate": 115200
+    "baudRate": 500000
   },
   "ledCount": 173,
   "effect": "breathing"
@@ -378,11 +378,13 @@ la mesa:
   reinicia (la línea DTR), y mientras arranca el sketch los frames se pierden sin hacer daño. Al parar
   el motor, el Uno se vuelve a reiniciar y la tira se queda como estaba o se apaga.
 - **La medida del log.** Tras los primeros 50 frames, el motor dice una vez cuánto tarda cada uno en
-  salir por el puerto y a cuántos frames por segundo va la tira. ✅ En la mesa (4-nov):
+  salir por el puerto y a cuántos frames por segundo va la tira. ✅ En la mesa (5-nov):
 
   ```
-  Tira «Mesa»: 45 ms por frame, 20 fps (115200 baudios, 173 LEDs)
+  Tira «Mesa»: 11 ms por frame, 59 fps (500000 baudios, 173 LEDs)
   ```
+
+  A 115.200 baudios eran 45 ms y 20 fps (4-nov).
 
   Esos milisegundos más un pulso del motor (16,7 ms a 60 fps) es lo que tarda la tira física, como
   mucho, en pintar lo que ya pinta el visor: tiene que quedar por debajo de 100 ms. Con más LEDs o

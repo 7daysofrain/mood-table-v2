@@ -110,7 +110,7 @@
     con `audioSource` apuntando a él).
 
   Verificar: dos ejecuciones dan el mismo fichero byte a byte.
-- [ ] 2.4 Documentación:
+- [x] 2.4 Documentación:
   - **D96** en `docs/idea-mood-table.md` (decisiones 6 a 8 de `design.md`), y en D46, «115.200
     baudios» tachado con un puntero a D96;
   - `HARDWARE_SETUP.md`: `SerialSpeed` a `500000` en §4.1, con el porqué, y el ejemplo de

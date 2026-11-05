@@ -1721,6 +1721,37 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Al mirar los frames con el fichero de golpes, la IA vio que cada golpe suena unos 80 ms y lo sigue un silencio digital: la luz avanza 4 LEDs y la tira se apaga. El test de 30 y 60 fps (6 y 12 LEDs a los 0,2 s) no cabía ahí y pasó a `scroll.test.ts`, con un golpe sintético; quedó anotado en el `tasks.md`.*
 - *El diseño decía que, por arrancar la memoria a 1, el primer frame enseña los LEDs a 1 de 255. No es así: antes de pintar se apagan a 0,98, que se trunca a 0. Se corrigió la frase del `design.md`.*
 
+#### 6.56 La tira real no se parecía al visor: gamma, baudios y un WAV de calibración (`MOO-123`)
+
+**Prompt 1** (con el scroll de `MOO-118` ya en la Pi y la tira de la mesa pintándolo):
+
+> vale, ya estamos. Malas noticias, lo que se pinta en la tira fisica no se parece en nada a lo que veo en la virtual. Te diria que va como lento... pero no se describirtelo adecuadamente. ¿Podemos generar un wav con un golpe limpio para poder hacer una especia de debug visual?
+
+*Claude Code (`claude-opus-5-5`, 5-nov). La IA empezó a preparar un WAV con golpes limpios y simuló frame a frame lo que debía pintar el scroll. Antes de que lo probara, el humano dio la pista clave:*
+
+**Prompt 2:**
+
+> una cosa que se puede ver es que en la virtual veo muchos espacios "en blanco" como de pixeles apagados, sin embargo eso no ocurre en la fisica
+
+*La IA lo relacionó con la gamma. Un LED da una luz proporcional al valor y la pantalla no, así que el rastro tenue que en el visor no se ve brilla en la tira. Antes de afirmarlo comprobó en dancyPi que la v1 la aplicaba, y que su `gamma_table.npy` es exactamente `round(255 · (v/255)²)`. La probó en la Pi con un parche provisional detrás de una variable de entorno, y el humano confirmó que ya se parecía.*
+
+**Prompt 3:**
+
+> si, se parece, pero los FPS son claramente un problema. Podemos subir los baudios?
+
+*La IA explicó por qué 500.000: es exacta para el Uno a 16 MHz, y a 230.400 se desviaba un 3,5 %. Compiló el sketch y lo cargó en el Arduino desde el Mac. La tira pasó de 20 a 59 fps. Después probaron el WAV de golpes limpios en la mesa: rojo, verde y azul, igual que en la simulación. El humano pidió guardarlo «para calibrar el responsiveness».*
+
+**Prompt 4** (cuando la IA propuso una historia nueva para la gamma y los baudios):
+
+> Es que creo que crear una nueva historia en Linear para algo que ya tenemos hecho tiene como poco sentido. Yo lo que haría en todo caso, por dejar algo de trazabilidad, es meter una task en esta misma historia como "ajustes de visualizacion en tira real" o algo asi. Se que no es muy extricto, pero lo otro me parece burocracia sin beneficio
+
+*La IA lo aceptó y señaló el único coste: la gamma afecta a todos los efectos y queda colgada de una historia del scroll. Lo compensó con una D# (D96) que enlaza a la tarea. Creó `MOO-123` dentro de `MOO-99` antes de integrar `MOO-118`, para que la historia no se cerrara sola. Después añadió la sección 2 al change `scroll-effect` con `/opsx:update`, en su versión mínima: la gamma fija en la salida Adalight, los baudios solo en la documentación y el WAV sin test.*
+
+*Ajustes:*
+- *Con la gamma, los tests de la salida dejaron de leer el pulso: guardaban el número en los dos primeros bytes, y la gamma junta los valores bajos. Ahora lo guardan con valores del 128 al 255, que la gamma no junta.*
+- *El WAV de `config/audio/` es idéntico, byte a byte, al que el humano vio en la mesa.*
+- *En la PR de `MOO-118`, el triador del PR Babysitter clasificó como «real», con p = 0,83, un E2E inestable que la PR no tocaba, y como «exige criterio» un hallazgo real de Sonar. La IA reprodujo el contexto que recibió cada uno con su propio código y lo dejó como evidencia en `MOO-120`. El humano decidió solo recoger evidencias y calibrar el triador después de la entrega.*
+
 ---
 
 ### 7. Pull Requests
