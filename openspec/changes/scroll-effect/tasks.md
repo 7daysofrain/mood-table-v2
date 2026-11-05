@@ -121,10 +121,13 @@
 
   Verificar: `git grep 115200` solo lo encuentra en tests, en la lista de velocidades admitidas y en
   el historial (decisiones y medidas antiguas).
-- [ ] 2.5 En la mesa: la Pi con la rama de esta tarea, sin el parche provisional ni `MOODTABLE_GAMMA`,
+- [x] 2.5 En la mesa: la Pi con la rama de esta tarea, sin el parche provisional ni `MOODTABLE_GAMMA`,
   con el WAV de calibración y el *scroll*.
 
   Verificar: el DJ confirma a ojo que la tira se ve como el visor.
+
+  Hecho el 5-nov: la Pi con esta rama, sin el parche, a 500.000 baudios (11 ms por frame, 56 fps) y
+  con `calibracion.wav`. El DJ confirmó que se ve igual que con el arreglo provisional.
 
 ## Workflow follow-up
 
