@@ -673,6 +673,28 @@ describe('la API: cambiar el efecto de una tira', () => {
     expect(control.slot(0).effect).toBe('breathing');
   });
 
+  it('con el espectro, responde 200 con valores {} y la tira pinta el espectro', async () => {
+    const { app, control } = await apiWith(demo, true);
+
+    const response = await putEffect(app, 'demo', '{"effect":"spectrum"}');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ...demo, effect: 'spectrum', values: {} });
+    expect(control.slot(0).effect).toBe('spectrum');
+  });
+
+  it('sin fuente de audio, el espectro responde 409 y la tira sigue igual', async () => {
+    const { app, control } = await apiWith({ ...demo, effect: 'breathing' }, false);
+
+    const response = await putEffect(app, 'demo', '{"effect":"spectrum"}');
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      message: 'la tira «demo», efecto `spectrum`: necesita una fuente de audio',
+    });
+    expect(control.slot(0).effect).toBe('breathing');
+  });
+
   it('sin tiras, toda tira responde 404', async () => {
     const built = await buildServer({ panelDir });
     apps.push(built);
