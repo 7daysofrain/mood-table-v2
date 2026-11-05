@@ -1,7 +1,8 @@
 # Design
 
-> Decisiones tomadas con el DJ al refinar `MOO-99` (4-nov) y al explorar el change (5-nov). Todas son
-> de `MOO-118` (engine). Las decisiones 1 y 2 pasan a **D95** en `docs/idea-mood-table.md`.
+> Decisiones tomadas con el DJ al refinar `MOO-99` (4-nov) y al explorar el change (5-nov). Las 1 a 5
+> son de `MOO-118` (engine), y las 1 y 2 pasan a **D95** en `docs/idea-mood-table.md`. Las 6 a 8 son
+> de `MOO-123` (engine), salen de la prueba en la mesa del 5-nov y pasan a **D96**.
 
 ## Context
 
@@ -23,7 +24,12 @@
 - **Cada cambio de efecto crea una memoria nueva** (`createSlot`, `core/control.ts`). En la v1, en
   cambio, *energía* y *scroll* compartían el array `p`.
 
-Motivación y alcance: `proposal.md`. Requisitos: `specs/effects` y `specs/instrument-control`.
+- **La prueba en la mesa (5-nov, `MOO-123`).** Con el *scroll* en la tira de la mesa, la tira física
+  no se parecía al visor. Con dos arreglos provisionales en la Pi (decisiones 6 y 7), el DJ confirmó
+  que coincide, también con un WAV de golpes limpios (decisión 8).
+
+Motivación y alcance: `proposal.md`. Requisitos: `specs/effects`, `specs/instrument-control` y
+`specs/physical-strip`.
 
 ## Goals / Non-Goals
 
@@ -138,8 +144,48 @@ de dos formas:
   (fichero, API y protocolo del visor) se generan del catálogo.
 - Motor: `scroll` en `EFFECTS`, en el orden del catálogo.
 - Panel: `EFFECT_NAMES.scroll = 'Scroll'` y `PARAM_NAMES.scroll = {}`. El orden de la zona Efectos
-  es el del catálogo, así que *scroll* va entre *energía* y *respiración*, igual que en el spec.
+  es el del catálogo: Respiración, Scroll, Energía, decidido con el DJ al aplicar (`MOO-118`).
 - `docs/openapi.yaml`, regenerado con `pnpm openapi`.
+
+### 6. La gamma 2,0 de la v1, fija en la salida Adalight
+
+- **La v1 la aplicaba.** dancyPi (`0906e77`, `python/led.py`) pasa cada valor por `gamma_table.npy`
+  antes de enviarlo, con `SOFTWARE_GAMMA_CORRECTION = True` en la Raspberry. La tabla es exactamente
+  `round(255 · (v/255)²)`: comprobado valor a valor, sin ninguna diferencia.
+- **Sin ella, la tira se ve llena y lenta.** Un LED da una luz proporcional al valor, y la pantalla no:
+  un 30 de 255 en pantalla casi no se ve y en el LED es un 12 % de su luz. Los valores bajos del rastro
+  del *scroll* (×0,98 por frame, aún un 17 % al final de media tira) brillan en la tira.
+- **Dónde:** en la codificación Adalight (`adapters/adalight.ts`), la parte pura y con tests, con una
+  fórmula aplicada a cada byte. Sin tabla: indexarla obliga, por el tipado estricto, a ramas que no
+  pueden darse, y SonarQube las cuenta como código nuevo sin cubrir. El visor sigue recibiendo los
+  valores sin corregir.
+- **Consecuencia:** lo que vale menos de 12 se apaga, como en la v1.
+- **Descartado:** un campo `gamma` por tira en el fichero de configuración, como el flag por
+  dispositivo de la v1. Hoy solo hay un controlador, que no corrige nada. Se añadirá si llega uno con
+  su propia gamma (el firmware propio, S2).
+
+### 7. El controlador de la mesa, a 500.000 baudios
+
+- **A 115.200 baudios, 20 fps.** Un frame de 173 LEDs son 525 bytes: 45 ms en el cable, que ocupan 3
+  pulsos (D93). El *scroll*, que avanza un LED por frame, se veía a saltos de 3 LEDs.
+- **A 500.000, 59 fps** medidos en la mesa: 11 ms por frame, que caben en un pulso.
+- **Por qué 500.000:** es exacta para el Uno a 16 MHz. 230.400 se desvía un 3,5 %, demasiado para un
+  clon con CH340. 1.000.000 no da más fps, porque el motor ya va a 60, y exige más al clon y al cable.
+- **Solo cambia la documentación.** El motor ya admitía la velocidad (D94). La configuración de la mesa
+  (`config/local.json`) no está en el repo y el sketch tampoco (D46): `HARDWARE_SETUP.md` §4.1 dice
+  qué valores poner.
+
+### 8. Un WAV de golpes limpios para calibrar la tira
+
+- **`config/audio/calibracion.wav`:** 9 s en bucle, mono, PCM de 16 bits a 44,1 kHz. Un golpe de
+  30 ms (un seno con ventana de Hann) en los segundos 1, 4 y 7, a 400 Hz, 2 kHz y 8 kHz. Con *scroll*,
+  cada uno es un pulso de un solo color (rojo, verde y azul) que nace en el centro.
+- **Entre golpes, ruido de ±1 LSB y no silencio digital.** Para un fichero, el motor solo cuenta como
+  silencio el digital, y en silencio *scroll* apaga la tira y congela el rastro. Con el ruido, el
+  pulso recorre la tira entera y el fondo queda en negro.
+- **El generador** va junto al de golpes (`packages/engine/test/fixtures/`), con su script de pnpm.
+  Es determinista (semilla fija), como el de golpes.
+- **Sin test**, decidido con el DJ: es una herramienta para mirar la tira, no un requisito.
 
 ## Risks / Trade-offs
 
@@ -153,3 +199,7 @@ de dos formas:
   este change. Si molesta, irá a la historia de los controles (sensibilidad, Q7).
 - **[Un salto de frames del bucle se ve como un parón de un frame]**: un pulso es un paso. → Aceptado:
   el bucle va holgado en la Pi (0,46 ms por frame frente a 16,6 ms, D48).
+- **[A 500.000 baudios, el Arduino va justo]** (`MOO-123`): mientras FastLED pinta los 173 LEDs
+  (~5 ms) no recibe nada, y entre un frame y el siguiente quedan ~6 ms. Si un frame llega antes,
+  se pierde y se ve un tirón suelto. → Mitigación: no se ha visto en la mesa. Si aparece, 1.000.000
+  baudios dejan ~11 ms.

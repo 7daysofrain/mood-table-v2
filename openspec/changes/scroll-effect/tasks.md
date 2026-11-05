@@ -1,7 +1,7 @@
 # Tasks
 
-> Una tarea de Linear, una sección y una PR contra `main`. Cada paso es un commit con `Refs MOO-118`,
-> y la PR lleva `Fixes MOO-118`. Un paso marcado **(test en rojo)** deja a propósito tests que
+> Una tarea de Linear, una sección y una PR contra `main`. Cada paso es un commit con `Refs` de su
+> tarea (`Refs MOO-118`, `Refs MOO-123`), y la PR lleva `Fixes` de la suya. Un paso marcado **(test en rojo)** deja a propósito tests que
 > fallan, y el siguiente los pone en verde. Antes de dar la sección por terminada: `pnpm lint`,
 > `pnpm typecheck`, `pnpm test` y `pnpm test:e2e` en verde. La nota de Q2 en el PRD («*scroll*: sin
 > parámetros por ahora») va en el commit del change, en la rama de la historia. El
@@ -86,6 +86,49 @@
 
   Verificar: lo que dice el README coincide con lo que hace el motor, y `prompts.md` sigue el formato
   de `docs/instructions/course.md` §5.
+
+## 2. MOO-123 · engine
+
+> Sale de la prueba en la mesa del 5-nov (`design.md`, decisiones 6 a 8). Antes de empezar, la Pi tiene
+> dos arreglos provisionales: un parche sin commit en `adapters/adalight.ts` (`MOODTABLE_GAMMA`) y el
+> Arduino ya a 500.000 baudios, con sus `local.json`.
+
+- [x] 2.1 **(test en rojo)** En `packages/engine/src/adapters/adalight.test.ts`, la codificación aplica
+  la gamma: un LED a (128, 30, 255) sale como (64, 4, 255), y en la frontera el 11 sale 0 y el 12, 1.
+  El test del frame de 173 LEDs con el primero en rojo puro sigue igual (`specs/physical-strip`).
+
+  Verificar: los tests nuevos fallan y los demás pasan.
+- [x] 2.2 La gamma en la codificación Adalight (`adapters/adalight.ts`), `round(255 · (v/255)²)` en
+  cada byte (decisión 6). El visor no cambia. *(Empezó como una tabla de 256 valores; pasó a la
+  fórmula porque las ramas de indexarla bajaban la cobertura del código nuevo por debajo del 80 %.)*
+
+  Verificar: `pnpm test` en verde.
+- [x] 2.3 El WAV de calibración (decisión 8):
+  - el generador en `packages/engine/test/fixtures/calibracion.ts`, determinista y con la forma del
+    de golpes, que escribe `config/audio/calibracion.wav`;
+  - su script en `packages/engine/package.json`, junto a `fixtures`;
+  - su fila en `config/audio/README.md`: qué es, cómo regenerarlo y cómo usarlo (una configuración
+    con `audioSource` apuntando a él).
+
+  Verificar: dos ejecuciones dan el mismo fichero byte a byte.
+- [x] 2.4 Documentación:
+  - **D96** en `docs/idea-mood-table.md` (decisiones 6 a 8 de `design.md`), y en D46, «115.200
+    baudios» tachado con un puntero a D96;
+  - `HARDWARE_SETUP.md`: `SerialSpeed` a `500000` en §4.1, con el porqué, y el ejemplo de
+    configuración y la línea del log medida, a 500.000;
+  - README: el techo de Adalight por tira y el ejemplo de `baudRate`;
+  - la ficha: la línea de las salidas de luz y el riesgo del techo de fps;
+  - `prompts.md`: la entrada de esta tarea.
+
+  Verificar: `git grep 115200` solo lo encuentra en tests, en la lista de velocidades admitidas y en
+  el historial (decisiones y medidas antiguas).
+- [x] 2.5 En la mesa: la Pi con la rama de esta tarea, sin el parche provisional ni `MOODTABLE_GAMMA`,
+  con el WAV de calibración y el *scroll*.
+
+  Verificar: el DJ confirma a ojo que la tira se ve como el visor.
+
+  Hecho el 5-nov: la Pi con esta rama, sin el parche, a 500.000 baudios (11 ms por frame, 56 fps) y
+  con `calibracion.wav`. El DJ confirmó que se ve igual que con el arreglo provisional.
 
 ## Workflow follow-up
 
