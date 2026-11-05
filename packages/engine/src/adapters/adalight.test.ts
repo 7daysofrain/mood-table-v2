@@ -57,16 +57,31 @@ class FakeLink implements SerialLink {
 /** La tira de la mesa (D46). */
 const table = { name: 'Mesa', ledCount: 173, port: '/dev/ttyUSB0', baudRate: 115200 };
 
+/**
+ * Los valores de un canal que la gamma no junta (del 128 al 255), y de qué valor sale cada byte
+ * escrito: el pulso se guarda en base 128 con ellos y se lee pasando por la propia codificación.
+ */
+const DIGIT = 128;
+const digitOf = new Map(
+  Array.from({ length: DIGIT }, (_, digit) => [
+    encodeAdalight(adalightBuffer(1), Uint8Array.of(DIGIT + digit, 0, 0))[6],
+    digit,
+  ]),
+);
+
 /** Un frame de la mesa que lleva `seq` en el primer LED, para saber de qué pulso es lo escrito. */
 function frameOf(seq: number, frame: Uint8Array = new Uint8Array(table.ledCount * 3)): Uint8Array {
-  frame[0] = seq & 0xff;
-  frame[1] = (seq >> 8) & 0xff;
+  frame[0] = DIGIT + (seq % DIGIT);
+  frame[1] = DIGIT + Math.floor(seq / DIGIT);
   return frame;
 }
 
 /** El pulso que lleva un frame escrito en el puerto (tras los 6 bytes de la cabecera). */
 function seqOf(written: Uint8Array): number {
-  return (written[6] ?? 0) + ((written[7] ?? 0) << 8);
+  const low = digitOf.get(written[6] ?? 0);
+  const high = digitOf.get(written[7] ?? 0);
+  if (low === undefined || high === undefined) throw new Error('El frame escrito no lleva un pulso');
+  return low + high * DIGIT;
 }
 
 function tick(seq: number): { seq: number; time: number } {
@@ -103,11 +118,27 @@ describe('la codificación Adalight', () => {
   });
 
   it('copia los colores en el orden de la tira, sin reordenarlos', () => {
-    const frame = Uint8Array.of(1, 2, 3, 4, 5, 6);
+    // 0 y 255 no cambian con la gamma: aquí solo cuenta el orden.
+    const frame = Uint8Array.of(255, 0, 0, 0, 0, 255);
 
     expect(Array.from(encodeAdalight(adalightBuffer(2), frame).subarray(6))).toEqual([
-      1, 2, 3, 4, 5, 6,
+      255, 0, 0, 0, 0, 255,
     ]);
+  });
+
+  it('corrige cada canal con la gamma 2,0 de los LEDs: un color tenue sale más tenue', () => {
+    const frame = Uint8Array.of(128, 30, 255);
+
+    expect(Array.from(encodeAdalight(adalightBuffer(1), frame).subarray(6))).toEqual([64, 4, 255]);
+  });
+
+  it.each([
+    [0, 0],
+    [11, 0],
+    [12, 1],
+    [255, 255],
+  ])('con la gamma, un %d sale como %d', (value, encoded) => {
+    expect(encodeAdalight(adalightBuffer(1), Uint8Array.of(value, 0, 0))[6]).toBe(encoded);
   });
 
   it('escribe en el búfer de la salida, sin crear otro', () => {

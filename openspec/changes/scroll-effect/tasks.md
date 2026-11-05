@@ -93,7 +93,7 @@
 > dos arreglos provisionales: un parche sin commit en `adapters/adalight.ts` (`MOODTABLE_GAMMA`) y el
 > Arduino ya a 500.000 baudios, con sus `local.json`.
 
-- [ ] 2.1 **(test en rojo)** En `packages/engine/src/adapters/adalight.test.ts`, la codificación aplica
+- [x] 2.1 **(test en rojo)** En `packages/engine/src/adapters/adalight.test.ts`, la codificación aplica
   la gamma: un LED a (128, 30, 255) sale como (64, 4, 255), y en la frontera el 11 sale 0 y el 12, 1.
   El test del frame de 173 LEDs con el primero en rojo puro sigue igual (`specs/physical-strip`).
 
