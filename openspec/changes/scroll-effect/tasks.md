@@ -9,7 +9,7 @@
 
 ## 1. MOO-118 · engine
 
-- [ ] 1.1 **(test en rojo)** En `packages/shared/src/effects.test.ts`, el catálogo incluye `scroll`,
+- [x] 1.1 **(test en rojo)** En `packages/shared/src/effects.test.ts`, el catálogo incluye `scroll`,
   reactivo, con un esquema sin parámetros que rechaza cualquier campo, entre `energy` y `breathing`
   (decisión 5).
   Verificar: el test nuevo falla y el resto sigue en verde.
