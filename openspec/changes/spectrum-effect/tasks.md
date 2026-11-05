@@ -27,7 +27,7 @@
   Verificar: los tests de 1.1 y `registry.test.ts` pasan, y `pnpm typecheck` y `pnpm lint` (fronteras
   incluidas) van en verde. Los tests del panel y los E2E que dependan del orden de la zona Efectos se
   ajustan en este mismo paso.
-- [ ] 1.3 **(test en rojo)** Tests unitarios en `packages/engine/src/core/effects/spectrum.test.ts`,
+- [x] 1.3 **(test en rojo)** Tests unitarios en `packages/engine/src/core/effects/spectrum.test.ts`,
   con el montaje de tonos de `energy.test.ts` y `scroll.test.ts` (`specs/effects`):
   - es reactivo y `defaultParams` es `{}`;
   - sin rasgos del audio o en silencio, todos los LEDs a 0, y la memoria no cambia: tras el silencio,
