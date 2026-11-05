@@ -5,7 +5,8 @@
  * efecto, con el mismo `run()`. Va aquí, en la raíz del motor, porque junta el núcleo y un adaptador.
  *
  * Cada golpe suena unos 80 ms y lo sigue un silencio digital: con *scroll*, la luz avanza unos pocos
- * LEDs y se apaga hasta el golpe siguiente.
+ * LEDs y se apaga hasta el golpe siguiente. Con el *espectro*, el suelo apenas sube con tan poco
+ * sonido, así que no sale del arranque en rojo (decisión 2 del change spectrum-effect).
  */
 import { fileURLToPath } from 'node:url';
 
@@ -18,6 +19,7 @@ import { createControl } from './core/control.ts';
 import { breathing } from './core/effects/breathing.ts';
 import { energy } from './core/effects/energy.ts';
 import { scroll } from './core/effects/scroll.ts';
+import { spectrum } from './core/effects/spectrum.ts';
 import { createFrameLoop, type LightOutput } from './core/frame-loop.ts';
 
 const GOLPES = fileURLToPath(new URL('../test/fixtures/golpes.wav', import.meta.url));
@@ -44,7 +46,7 @@ interface Change {
 /** Los frames de cada tira desde el arranque hasta `seconds`, con su instante. */
 function run(strips: StripConfig[], fps: number, seconds: number, changes: Change[] = []) {
   const frames = strips.map(() => [] as { time: number; colors: Uint8Array }[]);
-  const control = createControl({ strips, effects: [energy, breathing, scroll], hasAudioSource: true });
+  const control = createControl({ strips, effects: [energy, breathing, scroll, spectrum], hasAudioSource: true });
   const loop = createFrameLoop(
     strips.map((config, index) => {
       const output: LightOutput = {
@@ -250,6 +252,59 @@ describe('scroll con el fichero de golpes', () => {
 
     await expect(golden(frames)).toMatchFileSnapshot(
       './core/effects/__golden__/scroll-60-leds.json',
+    );
+  });
+});
+
+describe('espectro con el fichero de golpes', () => {
+  it('la luz de cada golpe aparece igual por los dos lados de la tira', () => {
+    const [frames = []] = run([strip('demo', 'spectrum')], 60, 4);
+
+    for (const hit of [1, 2, 3]) {
+      const lit = between(frames, hit, hit + 0.1).filter(({ colors }) => !isDark(colors));
+      expect(lit.length).toBeGreaterThan(2);
+      for (const { colors } of lit) expect(isMirrored(colors)).toBe(true);
+    }
+  });
+
+  it('en el silencio entre golpes, la tira se apaga', () => {
+    const [frames = []] = run([strip('demo', 'spectrum')], 60, 4);
+
+    expect(between(frames, 0, 0.99).every(({ colors }) => isDark(colors))).toBe(true);
+    for (const hit of [1, 2, 3]) {
+      expect(between(frames, hit + 0.2, hit + 0.95).every(({ colors }) => isDark(colors))).toBe(
+        true,
+      );
+    }
+  });
+
+  it('al pasar de energía al espectro, desde el primer frame pinta lo mismo que si viniera de otro efecto', () => {
+    const at = 1 + 2 / 60;
+    const toSpectrum = (stripId: string) => ({ at, stripId, effect: 'spectrum' as const });
+    const [fromEnergy = [], fromBreathing = []] = run(
+      [strip('energia', 'energy'), strip('respiracion', 'breathing')],
+      60,
+      1.1,
+      [toSpectrum('energia'), toSpectrum('respiracion')],
+    );
+    const [energyOnly = []] = run([strip('energia', 'energy')], 60, 1.1);
+
+    // Energía estaba encendida y, sin el cambio, lo seguiría estando en ese frame…
+    expect(isDark(between(fromEnergy, at - 1 / 60, at - 1 / 60)[0]?.colors ?? new Uint8Array())).toBe(
+      false,
+    );
+    const atChange = between(fromEnergy, at, at)[0]?.colors ?? new Uint8Array();
+    expect(atChange).not.toEqual(between(energyOnly, at, at)[0]?.colors);
+    // …y desde el cambio, la tira pinta lo mismo que una que viene de la respiración.
+    expect(between(fromEnergy, at, 1.1)).toEqual(between(fromBreathing, at, 1.1));
+    expect(isDark(atChange)).toBe(false);
+  });
+
+  it('da los frames de referencia en una tira de 60 LEDs a 60 fps', async () => {
+    const [frames = []] = run([strip('demo', 'spectrum')], 60, 2.1);
+
+    await expect(golden(frames)).toMatchFileSnapshot(
+      './core/effects/__golden__/spectrum-60-leds.json',
     );
   });
 });

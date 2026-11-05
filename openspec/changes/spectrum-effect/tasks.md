@@ -55,7 +55,7 @@
   El comentario de cabecera dice de dónde viene (dancyPi `0906e77`), qué va por frame y qué con `dt`,
   y que el arranque en rojo se conserva a propósito. `render` no crea objetos.
   Verificar: los tests de 1.3 pasan.
-- [ ] 1.5 Tests con el bucle real y el fichero de golpes, en un `describe` nuevo de `golpes.test.ts`
+- [x] 1.5 Tests con el bucle real y el fichero de golpes, en un `describe` nuevo de `golpes.test.ts`
   (decisión 4):
   - la luz de cada golpe aparece igual por los dos lados de la tira;
   - en el silencio entre golpes, la tira se apaga;
