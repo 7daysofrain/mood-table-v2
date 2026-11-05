@@ -98,8 +98,9 @@
   El test del frame de 173 LEDs con el primero en rojo puro sigue igual (`specs/physical-strip`).
 
   Verificar: los tests nuevos fallan y los demás pasan.
-- [x] 2.2 La gamma en la codificación Adalight (`adapters/adalight.ts`), con una tabla de 256 valores
-  `round(255 · (v/255)²)` calculada una vez (decisión 6). El visor no cambia.
+- [x] 2.2 La gamma en la codificación Adalight (`adapters/adalight.ts`), `round(255 · (v/255)²)` en
+  cada byte (decisión 6). El visor no cambia. *(Empezó como una tabla de 256 valores; pasó a la
+  fórmula porque las ramas de indexarla bajaban la cobertura del código nuevo por debajo del 80 %.)*
 
   Verificar: `pnpm test` en verde.
 - [x] 2.3 El WAV de calibración (decisión 8):

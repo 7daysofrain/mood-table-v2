@@ -156,7 +156,9 @@ de dos formas:
   un 30 de 255 en pantalla casi no se ve y en el LED es un 12 % de su luz. Los valores bajos del rastro
   del *scroll* (×0,98 por frame, aún un 17 % al final de media tira) brillan en la tira.
 - **Dónde:** en la codificación Adalight (`adapters/adalight.ts`), la parte pura y con tests, con una
-  tabla de 256 valores calculada una vez. El visor sigue recibiendo los valores sin corregir.
+  fórmula aplicada a cada byte. Sin tabla: indexarla obliga, por el tipado estricto, a ramas que no
+  pueden darse, y SonarQube las cuenta como código nuevo sin cubrir. El visor sigue recibiendo los
+  valores sin corregir.
 - **Consecuencia:** lo que vale menos de 12 se apaga, como en la v1.
 - **Descartado:** un campo `gamma` por tira en el fichero de configuración, como el flag por
   dispositivo de la v1. Hoy solo hay un controlador, que no corrige nada. Se añadirá si llega uno con

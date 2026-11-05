@@ -27,12 +27,6 @@ import type { LightOutput } from '../core/frame-loop.ts';
 /** Los bytes de la cabecera Adalight. */
 const HEADER_LENGTH = 6;
 
-/**
- * La gamma de los LEDs, valor a valor: `round(255 · (v/255)²)`. Es la `gamma_table.npy` de la v1
- * (dancyPi, `0906e77`), idéntica. Por debajo de 12 sale 0.
- */
-const GAMMA = Uint8Array.from({ length: 256 }, (_, value) => Math.round(255 * (value / 255) ** 2));
-
 /** Cuántos envíos mide antes de decir en el log lo que tarda cada frame (decisión 3). */
 const MEASURED_SENDS = 50;
 
@@ -189,8 +183,16 @@ export function adalightBuffer(ledCount: number): Uint8Array {
  * y devuelve `buffer`.
  */
 export function encodeAdalight(buffer: Uint8Array, frame: Uint8Array): Uint8Array {
-  for (let index = 0; index < frame.length; index++) {
-    buffer[HEADER_LENGTH + index] = GAMMA[frame[index] ?? 0] ?? 0;
-  }
+  frame.forEach((value, index) => {
+    buffer[HEADER_LENGTH + index] = gamma(value);
+  });
   return buffer;
+}
+
+/**
+ * La gamma de los LEDs: `round(255 · (v/255)²)`. Da lo mismo que la `gamma_table.npy` de la v1
+ * (dancyPi, `0906e77`), valor a valor. Por debajo de 12 sale 0.
+ */
+function gamma(value: number): number {
+  return Math.round(255 * (value / 255) ** 2);
 }
