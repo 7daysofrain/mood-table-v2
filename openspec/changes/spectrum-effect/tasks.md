@@ -82,7 +82,7 @@
   `e2e/engine.ts` acepta `spectrum` como efecto de arranque si hace falta (`specs/instrument-control`,
   criterios de `MOO-98`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 1.8 Documentación:
+- [x] 1.8 Documentación:
   - la **D#** nueva en `docs/idea-mood-table.md` (decisiones 1 a 3 de `design.md`);
   - README §1.2: *Espectro*, «cada zona de la tira representa una banda de frecuencia: los graves en
     el centro y los agudos en los extremos»;

@@ -1,8 +1,8 @@
 # Design
 
 > Decisiones tomadas con el DJ al refinar `MOO-98` y al explorar el change (5-nov). Todas son de
-> `MOO-122` (engine). Las decisiones 1 a 3 pasan a una **D#** nueva en `docs/idea-mood-table.md` (la
-> siguiente libre al implementar; hoy sería D96, si *scroll* entra con D95).
+> `MOO-122` (engine). Las decisiones 1 a 3 pasan a una **D#** nueva en `docs/idea-mood-table.md`:
+> **D97** (la D96 la tomó `MOO-123`, la gamma y los baudios).
 
 ## Context
 
