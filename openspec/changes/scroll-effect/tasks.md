@@ -58,7 +58,7 @@
     de *energía*.
 
   Verificar: los tests pasan, los de *energía* siguen igual y su fichero dorado no cambia.
-- [ ] 1.6 La API y el OpenAPI:
+- [x] 1.6 La API y el OpenAPI:
   - `pnpm openapi` regenera `docs/openapi.yaml` con `scroll` en los ids de efecto;
   - un test en `packages/engine/src/adapters/server.test.ts`: `PUT /api/strips/{stripId}/effect` con
     `scroll` responde `200` con valores `{}`, y sin fuente de audio responde `409`.

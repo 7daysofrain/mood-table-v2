@@ -32,6 +32,9 @@ paths:
                         - breathing
                     - type: string
                       enum:
+                        - scroll
+                    - type: string
+                      enum:
                         - energy
               additionalProperties: false
       parameters:
@@ -112,6 +115,57 @@ paths:
                             maximum: 20
                             default: 4
                             x-scale: log
+                        additionalProperties: false
+                    additionalProperties: false
+                  - type: object
+                    required:
+                      - id
+                      - name
+                      - ledCount
+                      - output
+                      - effect
+                      - values
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      ledCount:
+                        type: integer
+                        minimum: 1
+                      output:
+                        anyOf:
+                          - type: object
+                            required:
+                              - type
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - virtual
+                            additionalProperties: false
+                          - type: object
+                            required:
+                              - type
+                              - port
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - adalight
+                              port:
+                                type: string
+                                minLength: 1
+                            additionalProperties: false
+                      effect:
+                        type: string
+                        enum:
+                          - scroll
+                      values:
+                        type: object
+                        properties: {}
                         additionalProperties: false
                     additionalProperties: false
                   - type: object
@@ -242,6 +296,9 @@ paths:
                 - type: object
                   properties: {}
                   additionalProperties: false
+                - type: object
+                  properties: {}
+                  additionalProperties: false
       parameters:
         - schema:
             type: string
@@ -320,6 +377,57 @@ paths:
                             maximum: 20
                             default: 4
                             x-scale: log
+                        additionalProperties: false
+                    additionalProperties: false
+                  - type: object
+                    required:
+                      - id
+                      - name
+                      - ledCount
+                      - output
+                      - effect
+                      - values
+                    properties:
+                      id:
+                        type: string
+                        minLength: 1
+                      name:
+                        type: string
+                        minLength: 1
+                      ledCount:
+                        type: integer
+                        minimum: 1
+                      output:
+                        anyOf:
+                          - type: object
+                            required:
+                              - type
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - virtual
+                            additionalProperties: false
+                          - type: object
+                            required:
+                              - type
+                              - port
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - adalight
+                              port:
+                                type: string
+                                minLength: 1
+                            additionalProperties: false
+                      effect:
+                        type: string
+                        enum:
+                          - scroll
+                      values:
+                        type: object
+                        properties: {}
                         additionalProperties: false
                     additionalProperties: false
                   - type: object
