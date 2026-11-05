@@ -1752,6 +1752,17 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El WAV de `config/audio/` es idéntico, byte a byte, al que el humano vio en la mesa.*
 - *En la PR de `MOO-118`, el triador del PR Babysitter clasificó como «real», con p = 0,83, un E2E inestable que la PR no tocaba, y como «exige criterio» un hallazgo real de Sonar. La IA reprodujo el contexto que recibió cada uno con su propio código y lo dejó como evidencia en `MOO-120`. El humano decidió solo recoger evidencias y calibrar el triador después de la entrega.*
 
+#### 6.57 Verificar y archivar el change de `MOO-99`
+
+**Prompt 1** (con la #117 integrada):
+
+> integrada, pasamos a la fase de verify y archive
+
+*Claude Code (`claude-opus-5-5`, 5-nov). La IA comprobó en Linear que `MOO-118` y `MOO-123` estaban en Done, y `MOO-99` cerrada con ellas, y sacó la rama del archivado desde `main`. `/opsx:verify` cotejó las 13 tareas, los 8 requisitos de las tres specs y las 8 decisiones del diseño con el código, los tests y la prueba en la mesa: sin problemas críticos, avisos ni sugerencias. Al sincronizar, `effects` ganó los dos requisitos del scroll, y los seis modificados sustituyeron a los de `effects`, `instrument-control` y `physical-strip` con todos sus escenarios. La IA comprobó que cada requisito quedaba tal cual y que el resto de los specs no cambiaba.*
+
+*Ajustes:*
+- *`openspec validate --specs --strict` marca 11 specs por requisitos de más de 500 caracteres. Ya fallaban antes del sync: las trazas cuentan como texto. Sin `--strict`, los 13 validan.*
+
 ---
 
 ### 7. Pull Requests
