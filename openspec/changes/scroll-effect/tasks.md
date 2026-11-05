@@ -34,7 +34,7 @@
   - con un número impar de LEDs, los dos lados son iguales y el del centro lleva el color nuevo.
 
   Verificar: los tests nuevos fallan y el resto sigue en verde.
-- [ ] 1.4 El `visualize_scroll` de la v1 en `scroll.ts`, según las decisiones 1 a 3 de `design.md`:
+- [x] 1.4 El `visualize_scroll` de la v1 en `scroll.ts`, según las decisiones 1 a 3 de `design.md`:
   - la memoria por tira: la ganancia de cada banda y la media tira por canal, arrancando a 1, con sus
     búferes de trabajo y el espejo de *energía*;
   - la ganancia con `follow` y `dt`;
