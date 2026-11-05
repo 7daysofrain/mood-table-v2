@@ -86,7 +86,7 @@
   - la **D#** nueva en `docs/idea-mood-table.md` (decisiones 1 a 3 de `design.md`);
   - README §1.2: *Espectro*, «cada zona de la tira representa una banda de frecuencia: los graves en
     el centro y los agudos en los extremos»;
-  - README §1.3: los efectos de la zona Efectos son *Energía*, *Scroll*, *Espectro* y *Respiración*,
+  - README §1.3: los efectos de la zona Efectos son *Respiración*, *Espectro*, *Scroll* y *Energía*,
     y el *Espectro*, como *Energía*, deja Controles con su título;
   - README §4: el ejemplo del `400` lista `spectrum`;
   - `prompts.md`: la entrada del refinamiento, la estimación, la exploración y la propuesta de

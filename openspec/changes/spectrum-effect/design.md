@@ -147,7 +147,7 @@ igual por los dos lados, y a negro en el silencio entre ellos.
 Son frames **de regresión**. La fidelidad a la v1 se comprueba con los tests unitarios (dónde cae cada
 tono, el verde de un cambio, el arranque en rojo) y con el DJ mirándolo en el visor.
 
-### 5. Catálogo, registro y panel en la misma PR; el *espectro*, detrás de los otros reactivos
+### 5. Catálogo, registro y panel en la misma PR; el *espectro*, detrás de la *respiración*
 
 - `@moodtable/shared`: `SpectrumParamsSchema = Type.Object({}, CLOSED)` y la entrada
   `{ id: 'spectrum', usesAudio: true, … }` en `EFFECT_CATALOG`. Los esquemas que listan los ids
@@ -156,11 +156,15 @@ tono, el verde de un cambio, el arranque en rojo) y con el DJ mirándolo en el v
 - Panel: `EFFECT_NAMES.spectrum = 'Espectro'` y `PARAM_NAMES.spectrum = {}`.
 - `docs/openapi.yaml`, regenerado con `pnpm openapi`.
 
-**El sitio en la lista:** el orden de la zona Efectos es el del catálogo. El *espectro* va **detrás
-de *energía* y *scroll*** y delante de *respiración*: los reactivos, en el orden en que han llegado,
-y el de ambiente al final. Lo decidió el DJ al revisar el change; la IA proponía ponerlo el primero,
-con el orden del PRD (§5.1). Ningún comportamiento depende del orden: el efecto inicial de cada tira
-lo declara el fichero (D52).
+**El sitio en la lista:** el orden de la zona Efectos es el del catálogo, que hoy es *respiración*,
+*scroll* y *energía* (decidido con el DJ al aplicar `MOO-118`). El *espectro* va **detrás de la
+*respiración*** y delante de *scroll* y *energía*: el reactivo más nuevo, el primero tras el de
+ambiente, como entró *scroll*. Queda Respiración, Espectro, Scroll, Energía.
+
+Al revisar el change, el DJ lo había puesto detrás de *energía* y *scroll* y delante de
+*respiración*, pero sobre el orden anterior a `MOO-118`; al aplicar, con el orden ya cambiado, eligió
+este (la IA lo recomendó porque es lo que pedía el paso 1.1 y sigue el patrón de *scroll*). Ningún
+comportamiento depende del orden: el efecto inicial de cada tira lo declara el fichero (D52).
 
 ### 6. Se escribe encima de *scroll*, que se integra y se archiva antes
 
