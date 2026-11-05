@@ -12,7 +12,7 @@
 
 ## 1. MOO-122 · engine
 
-- [ ] 1.1 **(test en rojo)** En `packages/shared/src/effects.test.ts`, el catálogo incluye
+- [x] 1.1 **(test en rojo)** En `packages/shared/src/effects.test.ts`, el catálogo incluye
   `spectrum`, reactivo, con un esquema sin parámetros que rechaza cualquier campo, entre `scroll` y
   `breathing` (decisión 5).
   Verificar: el test nuevo falla y el resto sigue en verde.

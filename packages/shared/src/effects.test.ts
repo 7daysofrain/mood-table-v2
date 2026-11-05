@@ -7,6 +7,7 @@ import {
   EnergyParamsSchema,
   needsAudioSource,
   ScrollParamsSchema,
+  SpectrumParamsSchema,
 } from './effects.ts';
 
 describe('qué efectos necesitan una fuente de audio', () => {
@@ -20,6 +21,10 @@ describe('qué efectos necesitan una fuente de audio', () => {
 
   it('scroll, que es reactivo, la necesita', () => {
     expect(needsAudioSource('scroll')).toBe(true);
+  });
+
+  it('el espectro, que es reactivo, la necesita', () => {
+    expect(needsAudioSource('spectrum')).toBe(true);
   });
 
   it.each(EFFECT_CATALOG.map((effect) => [effect.id, effect.usesAudio] as const))(
@@ -74,9 +79,24 @@ describe('los parámetros del scroll', () => {
   });
 });
 
+describe('los parámetros del espectro', () => {
+  it('acepta un objeto vacío', () => {
+    expect(Value.Check(SpectrumParamsSchema, {})).toBe(true);
+  });
+
+  it('rechaza cualquier campo', () => {
+    expect(Value.Check(SpectrumParamsSchema, { bands: 12 })).toBe(false);
+  });
+});
+
 describe('el catálogo de efectos', () => {
-  it('pone el scroll entre la respiración y la energía: es el orden de la zona Efectos', () => {
-    expect(EFFECT_CATALOG.map((effect) => effect.id)).toEqual(['breathing', 'scroll', 'energy']);
+  it('pone el espectro entre la respiración y el scroll: es el orden de la zona Efectos', () => {
+    expect(EFFECT_CATALOG.map((effect) => effect.id)).toEqual([
+      'breathing',
+      'spectrum',
+      'scroll',
+      'energy',
+    ]);
   });
 
   it.each(EFFECT_CATALOG.map((effect) => [effect.id, effect] as const))(
