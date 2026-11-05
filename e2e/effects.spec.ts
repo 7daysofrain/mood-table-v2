@@ -5,7 +5,7 @@ import { type Page, expect, test } from '@playwright/test';
 import { createTestEngine } from './engine.ts';
 
 /**
- * E2E de las historias `MOO-94` y `MOO-99`: el DJ cambia el efecto de una tira desde el panel, con
+ * E2E de las historias `MOO-94`, `MOO-99` y `MOO-98`: el DJ cambia el efecto de una tira desde el panel, con
  * la música sonando (specs/instrument-control). Cada test lanza su propio motor, con el fichero de
  * golpes y la tira con energía.
  */
@@ -20,10 +20,11 @@ const MAX_SWITCH_MS = 100;
 interface Timeline {
   pressedAt: number | undefined;
   /**
-   * Instante de llegada de cada frame de la tira, si es de la respiración y hasta dónde llega su
-   * luz, en LEDs desde el centro (0, solo los del centro; -1, apagada).
+   * Instante de llegada de cada frame de la tira, si es de la respiración, hasta dónde llega su
+   * luz, en LEDs desde el centro (0, solo los del centro; -1, apagada), y si algún canal brilla más
+   * en un LED que en el de al lado más cerca del centro.
    */
-  frames: [arrivedAt: number, breathing: boolean, reach: number][];
+  frames: [arrivedAt: number, breathing: boolean, reach: number, risesOutwards: boolean][];
 }
 
 declare global {
@@ -37,6 +38,9 @@ declare global {
  * tira 0 que llega por el WebSocket del visor (tipo `1`, `docs/instructions/viewer-protocol.md`).
  * Un frame es de la respiración si todos sus LEDs tienen el mismo color y no están apagados: la
  * respiración nunca baja del 5 %, y energía con este fichero es un dibujo en espejo o negro.
+ *
+ * Energía nunca sube hacia fuera: cada canal es una barra que nace en el centro, desenfocada. El
+ * espectro, con los golpes, que son ruido, brilla más en los extremos (los agudos) que en el centro.
  */
 async function recordTimeline(page: Page): Promise<void> {
   await page.addInitScript(() => {
@@ -62,13 +66,25 @@ async function recordTimeline(page: Page): Promise<void> {
           const center = ((bytes.length - HEADER_BYTES) / 3 - 1) / 2;
           let uniform = true;
           let reach = -1;
+          let risesOutwards = false;
           for (let index = HEADER_BYTES; index < bytes.length; index += 3) {
             const [r = 0, g = 0, b = 0] = bytes.subarray(index, index + 3);
             if (r !== red || g !== green || b !== blue) uniform = false;
-            const fromCenter = Math.floor(Math.abs((index - HEADER_BYTES) / 3 - center));
+            const led = (index - HEADER_BYTES) / 3;
+            const fromCenter = Math.floor(Math.abs(led - center));
             if (r + g + b > 0) reach = Math.max(reach, fromCenter);
+            if (Math.abs(led - center) < 1) continue;
+            const inner = HEADER_BYTES + (led < center ? led + 1 : led - 1) * 3;
+            for (let channel = 0; channel < 3; channel++) {
+              if ((bytes[index + channel] ?? 0) > (bytes[inner + channel] ?? 0)) risesOutwards = true;
+            }
           }
-          timeline.frames.push([performance.now(), uniform && red + green + blue > 0, reach]);
+          timeline.frames.push([
+            performance.now(),
+            uniform && red + green + blue > 0,
+            reach,
+            risesOutwards,
+          ]);
         });
       }
     };
@@ -195,6 +211,59 @@ test('el DJ elige el scroll para la tira', async ({ page }) => {
     const lit = run.slice(0, run.indexOf(-1) === -1 ? run.length : run.indexOf(-1));
     expect(lit.length).toBeGreaterThan(1);
     expect(lit).toEqual(lit.map((_, step) => step));
+  } finally {
+    await engine.stop();
+  }
+});
+
+test('el DJ elige el espectro para la tira', async ({ page }) => {
+  const engine = await createTestEngine({ audioFile: GOLPES, effect: 'energy' });
+  await engine.start();
+  try {
+    await recordTimeline(page);
+    await page.goto(engine.url);
+    await expect(effect(page, 'Energía')).toHaveAttribute('aria-current', 'true');
+    const timeline = () => page.evaluate(() => window.moodTableTimeline);
+    // Antes de elegir, se espera a ver un golpe pintado por energía.
+    await expect
+      .poll(async () => (await timeline()).frames.some(([, , reach]) => reach > 0), {
+        message: 'energía pinta un golpe',
+      })
+      .toBe(true);
+
+    await effect(page, 'Espectro').click();
+
+    // Queda marcado como el activo, reactivo, y la zona Controles solo tiene su título.
+    await expect(effect(page, 'Espectro')).toHaveAttribute('aria-current', 'true');
+    await expect(effect(page, 'Espectro')).toContainText('Reactivo');
+    await expect(effect(page, 'Energía')).not.toHaveAttribute('aria-current');
+    await expect(zone(page, 'Controles')).toHaveText(/^Controles$/);
+
+    // Los frames dejan de ser los de energía: el primero del espectro con luz sube hacia los
+    // extremos, y desde él ninguno con luz es como los de energía. Se espera a más de un golpe.
+    const lit = (frames: Timeline['frames'], pressed: number) =>
+      frames.filter(([arrivedAt, , reach]) => arrivedAt >= pressed && reach >= 0);
+    await expect
+      .poll(
+        async () => {
+          const { pressedAt: pressed, frames } = await timeline();
+          if (pressed === undefined) return 0;
+          const after = lit(frames, pressed);
+          const first = after.findIndex(([, , , rises]) => rises);
+          return first < 0 ? 0 : after.slice(first).length;
+        },
+        { message: 'el espectro pinta más de un golpe', timeout: 5000 },
+      )
+      .toBeGreaterThan(4);
+    const { pressedAt, frames } = await timeline();
+    if (pressedAt === undefined) throw new Error('No se anotó la pulsación');
+    expect(
+      frames.some(([arrivedAt, , reach, rises]) => arrivedAt < pressedAt && reach >= 0 && rises),
+      'energía nunca sube hacia los extremos',
+    ).toBe(false);
+    const after = lit(frames, pressedAt);
+    const first = after.findIndex(([, , , rises]) => rises);
+    expect(after.slice(first).every(([, , , rises]) => rises)).toBe(true);
   } finally {
     await engine.stop();
   }
