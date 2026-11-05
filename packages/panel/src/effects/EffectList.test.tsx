@@ -7,6 +7,7 @@ import { EffectList } from './EffectList.tsx';
 const ENERGY = { name: /^Energía/ };
 const BREATHING = { name: /^Respiración/ };
 const SCROLL = { name: /^Scroll/ };
+const SPECTRUM = { name: /^Espectro/ };
 
 describe('la lista de efectos', () => {
   it('muestra cada efecto del catálogo, etiquetado como reactivo o de ambiente', () => {
@@ -81,7 +82,7 @@ describe('la lista de efectos', () => {
   it('sin fuente de audio, los reactivos están desactivados, con el motivo a la vista', () => {
     const onChoose = vi.fn();
     render(<EffectList active="breathing" hasAudioSource={false} onChoose={onChoose} />);
-    const reactives = [screen.getByRole('button', ENERGY), screen.getByRole('button', SCROLL)];
+    const reactives = [ENERGY, SCROLL, SPECTRUM].map((name) => screen.getByRole('button', name));
 
     for (const reactive of reactives) {
       expect(reactive).toBeDisabled();
@@ -89,7 +90,7 @@ describe('la lista de efectos', () => {
       fireEvent.pointerDown(reactive);
     }
     const reasons = screen.getAllByText('Necesita una fuente de audio');
-    expect(reasons).toHaveLength(2);
+    expect(reasons).toHaveLength(3);
     for (const reason of reasons) expect(reason).toBeVisible();
     expect(onChoose).not.toHaveBeenCalled();
 
