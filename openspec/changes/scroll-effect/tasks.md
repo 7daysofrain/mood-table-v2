@@ -98,7 +98,7 @@
   El test del frame de 173 LEDs con el primero en rojo puro sigue igual (`specs/physical-strip`).
 
   Verificar: los tests nuevos fallan y los demás pasan.
-- [ ] 2.2 La gamma en la codificación Adalight (`adapters/adalight.ts`), con una tabla de 256 valores
+- [x] 2.2 La gamma en la codificación Adalight (`adapters/adalight.ts`), con una tabla de 256 valores
   `round(255 · (v/255)²)` calculada una vez (decisión 6). El visor no cambia.
 
   Verificar: `pnpm test` en verde.
