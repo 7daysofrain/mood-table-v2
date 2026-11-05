@@ -5,9 +5,9 @@ import { type Page, expect, test } from '@playwright/test';
 import { createTestEngine } from './engine.ts';
 
 /**
- * E2E de la historia `MOO-94`: el DJ cambia el efecto de una tira desde el panel, con la música
- * sonando (specs/instrument-control). Lanza su propio motor, con el fichero de golpes y la tira con
- * energía.
+ * E2E de las historias `MOO-94` y `MOO-99`: el DJ cambia el efecto de una tira desde el panel, con
+ * la música sonando (specs/instrument-control). Cada test lanza su propio motor, con el fichero de
+ * golpes y la tira con energía.
  */
 
 /** El fichero de golpes: 4 s con un golpe de 50 ms en los segundos 1, 2 y 3 y silencio digital. */
@@ -19,8 +19,11 @@ const MAX_SWITCH_MS = 100;
 /** Lo que el script de la página anota: cuándo pulsó el DJ y cuándo llegó cada frame de la tira. */
 interface Timeline {
   pressedAt: number | undefined;
-  /** Instante de llegada de cada frame de la tira, y si es de la respiración. */
-  frames: [arrivedAt: number, breathing: boolean][];
+  /**
+   * Instante de llegada de cada frame de la tira, si es de la respiración y hasta dónde llega su
+   * luz, en LEDs desde el centro (0, solo los del centro; -1, apagada).
+   */
+  frames: [arrivedAt: number, breathing: boolean, reach: number][];
 }
 
 declare global {
@@ -56,14 +59,16 @@ async function recordTimeline(page: Page): Promise<void> {
           const bytes = new Uint8Array(data);
           if (bytes[0] !== 1 || bytes[5] !== 0) return;
           const [red = 0, green = 0, blue = 0] = bytes.subarray(HEADER_BYTES, HEADER_BYTES + 3);
+          const center = ((bytes.length - HEADER_BYTES) / 3 - 1) / 2;
           let uniform = true;
+          let reach = -1;
           for (let index = HEADER_BYTES; index < bytes.length; index += 3) {
-            if (bytes[index] !== red || bytes[index + 1] !== green || bytes[index + 2] !== blue) {
-              uniform = false;
-              break;
-            }
+            const [r = 0, g = 0, b = 0] = bytes.subarray(index, index + 3);
+            if (r !== red || g !== green || b !== blue) uniform = false;
+            const fromCenter = Math.floor(Math.abs((index - HEADER_BYTES) / 3 - center));
+            if (r + g + b > 0) reach = Math.max(reach, fromCenter);
           }
-          timeline.frames.push([performance.now(), uniform && red + green + blue > 0]);
+          timeline.frames.push([performance.now(), uniform && red + green + blue > 0, reach]);
         });
       }
     };
@@ -134,6 +139,59 @@ test('el DJ cambia el efecto de la tira desde el panel', async ({ page }) => {
     await page.reload();
     await expect(effect(page, 'Respiración')).toHaveAttribute('aria-current', 'true');
     await expect(effect(page, 'Energía')).not.toHaveAttribute('aria-current');
+  } finally {
+    await engine.stop();
+  }
+});
+
+test('el DJ elige el scroll para la tira', async ({ page }) => {
+  const engine = await createTestEngine({ audioFile: GOLPES, effect: 'energy' });
+  await engine.start();
+  try {
+    await recordTimeline(page);
+    await page.goto(engine.url);
+    await expect(effect(page, 'Energía')).toHaveAttribute('aria-current', 'true');
+    const timeline = () => page.evaluate(() => window.moodTableTimeline);
+    // Antes de elegir, se espera a ver un golpe pintado por energía.
+    await expect
+      .poll(async () => (await timeline()).frames.some(([, , reach]) => reach > 0), {
+        message: 'energía pinta un golpe',
+      })
+      .toBe(true);
+
+    await effect(page, 'Scroll').click();
+
+    // Queda marcado como el activo, reactivo, y la zona Controles solo tiene su título.
+    await expect(effect(page, 'Scroll')).toHaveAttribute('aria-current', 'true');
+    await expect(effect(page, 'Scroll')).toContainText('Reactivo');
+    await expect(effect(page, 'Energía')).not.toHaveAttribute('aria-current');
+    await expect(zone(page, 'Controles')).toHaveText(/^Controles$/);
+
+    // La luz del scroll nace en el centro: su primer frame con luz solo enciende los LEDs del
+    // centro, y energía, con su desenfoque de 4 LEDs, nunca lo hace. Después avanza un LED por frame.
+    const bornAt = (frames: Timeline['frames'], pressed: number) =>
+      frames.findIndex(([arrivedAt, , reach]) => arrivedAt >= pressed && reach === 0);
+    await expect
+      .poll(
+        async () => {
+          const { pressedAt: pressed, frames } = await timeline();
+          return pressed !== undefined && bornAt(frames, pressed) >= 0;
+        },
+        { message: 'la luz del scroll nace en el centro', timeout: 5000 },
+      )
+      .toBe(true);
+    await page.waitForTimeout(100);
+    const { pressedAt, frames } = await timeline();
+    if (pressedAt === undefined) throw new Error('No se anotó la pulsación');
+    expect(
+      frames.some(([arrivedAt, , reach]) => arrivedAt < pressedAt && reach === 0),
+      'energía nunca enciende solo el centro',
+    ).toBe(false);
+    const born = bornAt(frames, pressedAt);
+    const run = frames.slice(born).map(([, , reach]) => reach);
+    const lit = run.slice(0, run.indexOf(-1) === -1 ? run.length : run.indexOf(-1));
+    expect(lit.length).toBeGreaterThan(1);
+    expect(lit).toEqual(lit.map((_, step) => step));
   } finally {
     await engine.stop();
   }

@@ -64,7 +64,7 @@
     `scroll` responde `200` con valores `{}`, y sin fuente de audio responde `409`.
 
   Verificar: los tests pasan y el diff del OpenAPI solo añade `scroll`.
-- [ ] 1.7 E2E del caso feliz en `e2e/effects.spec.ts`, con el fichero de golpes y la tira con
+- [x] 1.7 E2E del caso feliz en `e2e/effects.spec.ts`, con el fichero de golpes y la tira con
   *energía*:
   - el DJ elige *Scroll*;
   - queda marcado como el activo, etiquetado como reactivo;
