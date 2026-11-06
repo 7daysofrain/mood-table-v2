@@ -136,7 +136,7 @@ Hay tres formas de probar Mood Table, de menos a más esfuerzo: la **demo públi
 1. Abre `https://moodtable.josebaalonso.tech`.
 2. Pulsa el botón de oír (el altavoz de la cabecera): suena una pista de ejemplo y las dos tiras virtuales reaccionan (**H1**).
 3. En **Efectos**, cambia de *Espectro* a *Energía* o *Scroll*: la tira cambia al instante (**H2**).
-4. En **Controles**, mueve *Sensibilidad*: la luz responde mientras arrastras (**H2**).
+4. En **Intensidad**, baja el fader: todas las tiras bajan su brillo a la vez y, abajo del todo, se apagan (**H2**).
 5. En **Tiras**, selecciona la otra tira: los controles pasan a ser los suyos (**H4**).
 
 La demo comparte el estado entre todos los visitantes y lo reinicia cada cierto tiempo. La tira física (**H3**) y el arranque en el último estado (**H5**) se ven en el vídeo de la mesa (§2.4) o en local (abajo).
@@ -926,7 +926,7 @@ Los errores responden `{ "message": "…" }`, sin cambiar ninguna tira:
 | **H1 · Probar el instrumento en el simulador** (`MOO-5`) | `MOO-12` spike de rendimiento en la Pi · **`MOO-13`** · **`MOO-14`** · **`MOO-15`** · `MOO-22` oír el fichero en el panel | Las tres de abajo, refinadas y estimadas (*Todo*); el resto en *Backlog* |
 | H5 · Arrancar en el último estado (`MOO-9`) | `MOO-25` volver al último estado tras reiniciar el motor | *Backlog*, sin refinar; creada para el ticket de base de datos (§6, `MOO-26`) |
 | EN · Base técnica (*enablers*, `MOO-27`) | Sin historias: tareas directas `MOO-28` monorepo, lint, tests y CI · `MOO-29` layout del panel | *Backlog*; épica técnica, no sale del PRD |
-| H2 · Tocar los parámetros en vivo (`MOO-6`) | `MOO-94` cambiar el efecto de una tira · `MOO-95` mover los controles del efecto · `MOO-96` recuperar los valores de un efecto · `MOO-97` intensidad de los efectos reactivos · `MOO-98` efecto espectro · `MOO-99` efecto scroll | `MOO-94`, `95`, `96`, `98` y `99`, *Done*; el resto en *Backlog* |
+| H2 · Tocar los parámetros en vivo (`MOO-6`) | `MOO-94` cambiar el efecto de una tira · `MOO-95` mover los controles del efecto · `MOO-96` recuperar los valores de un efecto · `MOO-97` intensidad de todas las tiras · `MOO-98` efecto espectro · `MOO-99` efecto scroll | `MOO-94`, `95`, `96`, `98` y `99`, *Done*; el resto en *Backlog* |
 | H3 · Pintar la tira física (`MOO-7`) | `MOO-111` pintar en la tira de la mesa lo mismo que en el visor (tareas `MOO-113` contrato compartido, `MOO-114` motor, `MOO-115` panel) · `MOO-112` seguir tocando aunque se desconecte el controlador Adalight | `MOO-111` en curso, se cierra con `MOO-115`; `MOO-112` en *Backlog* |
 | H4 (must) · S1-S2 (should) (`MOO-8`, `MOO-10`, `MOO-11`) | Sin descomponer | *Backlog*: se refinan durante el desarrollo |
 
@@ -1343,7 +1343,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 **Requisitos técnicos** (§2.2)
 
 - **Análisis:** en cada pulso pide a la fuente la ventana de audio que acaba en ese instante (*pull*, D50); ventana y **FFT** sobre esas muestras (`fft.js`, validada en el spike `MOO-12`); rasgos: 24 bandas mel y si la ventana es silencio, como en la v1 (D49), **sin detector de golpes**; el nivel de la fuente, siempre que haya fuente. Se calcula una vez por frame y lo comparten todas las tiras.
-- **Efecto *energía*:** el de la v1 (D49); `usesAudio: true`; recibe los rasgos en `FrameContext.audio`; en silencio, la tira se apaga. **Sin parámetros**, como la v1: la sensibilidad llega con H2.
+- **Efecto *energía*:** el de la v1 (D49); `usesAudio: true`; recibe los rasgos en `FrameContext.audio`; en silencio, la tira se apaga. **Sin parámetros**, como la v1: la sensibilidad de cada efecto es la pregunta Q2 del PRD (D99).
 - **Nivel y fuente** al panel por el mismo WebSocket del visor, como mensajes del protocolo (D51).
 
 **Tareas de desarrollo** *(previstas; el detalle definitivo será la sección `MOO-20` del `tasks.md`)*
