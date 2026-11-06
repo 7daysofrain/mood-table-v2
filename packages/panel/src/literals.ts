@@ -10,6 +10,7 @@ import type { EffectId, EffectValues, StripState } from '@moodtable/shared';
 /** El nombre de cada efecto, como lo dice el glosario (PRD §8). */
 export const EFFECT_NAMES: Record<EffectId, string> = {
   breathing: 'Respiración',
+  spectrum: 'Espectro',
   scroll: 'Scroll',
   energy: 'Energía',
 };
@@ -17,6 +18,7 @@ export const EFFECT_NAMES: Record<EffectId, string> = {
 /** El nombre de cada parámetro de cada efecto, como lo lee el DJ junto a su control. */
 export const PARAM_NAMES: { [E in EffectId]: Record<keyof EffectValues<E>, string> } = {
   breathing: { color: 'Color', period: 'Periodo (s)' },
+  spectrum: {},
   scroll: {},
   energy: {},
 };

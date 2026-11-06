@@ -362,13 +362,14 @@ describe('las zonas Tiras y Efectos', () => {
     expect(effect('Respiración')).toHaveAttribute('aria-current', 'true');
   });
 
-  it('sin fuente de audio, energía y scroll están desactivados con su motivo', () => {
+  it('sin fuente de audio, energía, scroll y espectro están desactivados con su motivo', () => {
     panelWithStrips({ kind: 'none' });
 
     expect(effect('Energía')).toBeDisabled();
     expect(effect('Scroll')).toBeDisabled();
+    expect(effect('Espectro')).toBeDisabled();
     const reasons = within(zone('Efectos')).getAllByText('Necesita una fuente de audio');
-    expect(reasons).toHaveLength(2);
+    expect(reasons).toHaveLength(3);
     for (const reason of reasons) expect(reason).toBeVisible();
     expect(effect('Respiración')).toBeEnabled();
   });

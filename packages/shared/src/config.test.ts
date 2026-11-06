@@ -253,7 +253,7 @@ describe('el efecto de cada tira', () => {
 
   it('con un efecto que no existe, nombra la tira y dice cuáles hay', () => {
     expect(errorOf(text({ strips: [{ ...demoStrip, effect: 'energia' }] }))).toBe(
-      'la tira «demo», campo `effect`: «energia» no es un efecto (hay: `breathing`, `scroll`, `energy`)',
+      'la tira «demo», campo `effect`: «energia» no es un efecto (hay: `breathing`, `spectrum`, `scroll`, `energy`)',
     );
   });
 });

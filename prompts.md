@@ -1787,6 +1787,47 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El cambio de efecto se calienta con otro efecto (Scroll) y no con el que se mide. Así sigue dentro de la medida lo que tarda el panel en pintar por primera vez los controles de la respiración: 24 ms, frente a 17 si se calienta con el mismo.*
 - *Un paso de teclado en el control del periodo es 0,001 de su recorrido: cambia el valor pero no el texto «4,0». El calentamiento espera a que el motor confirme el valor, en vez de mirar el texto.*
 
+#### 6.59 Elegir el efecto espectro: refinamiento, estimación, exploración y change (`MOO-98`)
+
+**Prompt 1** (en `/refine-story MOO-98`, el caso feliz del humano):
+
+> quiero que cuando seleccione una tira en el panel aparezca un nuevo efecto llamado espectro y que cuando lo seleccione lanze el efecto "espectro" a la tira seleccionada. El efecto espectro es el que viene definido por el codigo de dancingPy
+
+*Claude Code (`claude-opus-5-5`, 5-nov). Es la misma frase que la del *scroll* (6.54), y la IA la tradujo igual: quitó los pasos de la interfaz y marcó *(asumido)* los dos `Given` que el humano no había dicho. De los 8 candidatos de `poke-holes`, el humano se quedó con tres: el silencio, sin controles por ahora (como el *scroll*) y dónde cae cada banda en la tira. En `/estimate-story`, el humano dio un 3 «porque es prima hermana de la MOO-99», y el estimador, otro 3.*
+
+**Prompt 2** (en `/opsx:explore`, tras leer la IA el `visualize_spectrum` de dancyPi y ver que, como cada cambio de efecto estrena memoria, la tira saldría roja unos segundos cada vez que se elige el espectro):
+
+> A
+
+*La IA le dio dos opciones: A, tal cual, y B, un suelo caliente que empieza al nivel del primer frame con audio. Recomendó A por el criterio que ya se había seguido con *energía* (D49) y con el *scroll*: primero la v1, y se ajusta después de verla. El humano eligió A. Después, con el mismo criterio que el movimiento del *scroll* (D95), eligió que el verde fuera «por frame» y que los suavizados fueran con `dt`. Las tres decisiones son D97.*
+
+**Prompt 3** (con el *scroll* aún en la PR #116):
+
+> puedes trabajar en un worktree separado y hacerlo?
+
+*La IA avisó de que los dos changes modificaban los mismos requisitos y que, si el del espectro se archivaba primero, se perdería al archivar el del *scroll*. Escribió el change `spectrum-effect` en un worktree, con una sola sección (`MOO-122`), encima del texto del *scroll*, y dejó escrito en el `design.md` el orden: integrar #116, archivar `scroll-effect`, traer `main` y validar. Al revisarlo, el humano respondió «Espectro al final» al sitio en la lista. Después la IA quitó en Linear los dos *(asumido)* del segundo escenario, ya comprobados en el código de la v1.*
+
+*Ajustes:*
+- *Los umbrales de los escenarios con tonos (el cuarto exterior apagado, el rojo por encima de 128 al arrancar, como mucho 5 a los 10 s) salieron de cuentas con las constantes de la v1, sin ejecutar nada. Quedaron *(asumido)* para comprobarlos al implementar.*
+
+#### 6.60 Portar el efecto espectro de la v1 (`MOO-122`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-98
+
+*Claude Code (`claude-opus-5-5`, 5-nov). La IA comprobó que #116 y el archivado de `scroll-effect` (#118) estaban en `main`. Creó la rama de la tarea desde `main` y le pasó los dos commits de la historia. En el PRD quedaron las dos frases de Q2, la del *scroll* y la del espectro. Antes de implementar, comprobó que los bloques MODIFIED del change solo añadían el espectro al texto ya archivado. Después implementó la sección `MOO-122` en TDD, con un commit por paso. Antes de dejar los tests en rojo, los pasó contra el port para comprobar los umbrales *(asumido)*: el rojo queda en 3 a los 10 s, frente al tope de 5, y el verde con un tono quieto, en 0. Para el E2E, la IA buscó en el visor algo que distinguiera el espectro de *energía*. La separación entre canales no servía, porque los dos se solapaban. Encontró una firma estructural: *energía* nunca brilla más hacia fuera que hacia el centro, y el espectro, con el ruido de los golpes, siempre. La comprobó en todos los frames a 20, 30, 50 y 60 fps. El E2E pasó tres veces seguidas.*
+
+**Prompt 2** (cuando la IA preguntó otra vez por el orden de la lista, tras encontrar el «Espectro al final» de la revisión del change):
+
+> en realidad el orden no es importante, pon el que sea
+
+*Al aplicar, la IA vio que el `design.md` ponía el espectro «detrás de energía y scroll y delante de respiración», pero el catálogo ya era Respiración, Scroll, Energía desde `MOO-118`. Preguntó y el humano eligió Respiración, Espectro, Scroll, Energía. Al preparar esta entrada, la IA encontró la respuesta literal de la revisión, «Espectro al final», que con ese catálogo significaba ponerlo el último. Se la enseñó al humano antes de documentarlo, y el humano dijo que el orden no importa. Se quedó el que ya estaba implementado.*
+
+*Ajustes:*
+- *La D# del diseño pasó de D96 a D97, porque `MOO-123` ya había tomado la D96.*
+- *Con el fichero de golpes, el espectro sale tenue, a un 4 % del máximo: no tiene ganancia propia, y la ganancia común arranca en 0,1 y baja muy despacio, así que unos golpes cortos y flojos se quedan por debajo. Es la v1 tal cual; con música a un volumen normal, la ganancia común sube al momento.*
+
 ---
 
 ### 7. Pull Requests

@@ -33,12 +33,14 @@ export {
   EffectIdSchema,
   EnergyParamsSchema,
   ScrollParamsSchema,
+  SpectrumParamsSchema,
   type BreathingParams,
   type EffectId,
   type EffectValues,
   type EnergyParams,
   needsAudioSource,
   type ScrollParams,
+  type SpectrumParams,
 } from './effects.ts';
 
 export {
