@@ -639,61 +639,33 @@ describe('la API: cambiar el efecto de una tira', () => {
     expect(control.slot(0).effect).toBe('energy');
   });
 
-  it('sin fuente de audio, un efecto reactivo responde 409 y la tira sigue igual', async () => {
-    const { app, control } = await apiWith({ ...demo, effect: 'breathing' }, false);
+  it.each(['energy', 'scroll', 'spectrum'] as const)(
+    'sin fuente de audio, %s, que es reactivo, responde 409 y la tira sigue igual',
+    async (effect) => {
+      const { app, control } = await apiWith({ ...demo, effect: 'breathing' }, false);
 
-    const response = await putEffect(app, 'demo', '{"effect":"energy"}');
+      const response = await putEffect(app, 'demo', JSON.stringify({ effect }));
 
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({
-      message: 'la tira «demo», efecto `energy`: necesita una fuente de audio',
-    });
-    expect(control.slot(0).effect).toBe('breathing');
-  });
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toEqual({
+        message: `la tira «demo», efecto \`${effect}\`: necesita una fuente de audio`,
+      });
+      expect(control.slot(0).effect).toBe('breathing');
+    },
+  );
 
-  it('con scroll, responde 200 con valores {} y la tira pinta scroll', async () => {
-    const { app, control } = await apiWith(demo, true);
+  it.each(['scroll', 'spectrum'] as const)(
+    'con %s, que no tiene parámetros, responde 200 con valores {} y la tira lo pinta',
+    async (effect) => {
+      const { app, control } = await apiWith(demo, true);
 
-    const response = await putEffect(app, 'demo', '{"effect":"scroll"}');
+      const response = await putEffect(app, 'demo', JSON.stringify({ effect }));
 
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ ...demo, effect: 'scroll', values: {} });
-    expect(control.slot(0).effect).toBe('scroll');
-  });
-
-  it('sin fuente de audio, scroll responde 409 y la tira sigue igual', async () => {
-    const { app, control } = await apiWith({ ...demo, effect: 'breathing' }, false);
-
-    const response = await putEffect(app, 'demo', '{"effect":"scroll"}');
-
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({
-      message: 'la tira «demo», efecto `scroll`: necesita una fuente de audio',
-    });
-    expect(control.slot(0).effect).toBe('breathing');
-  });
-
-  it('con el espectro, responde 200 con valores {} y la tira pinta el espectro', async () => {
-    const { app, control } = await apiWith(demo, true);
-
-    const response = await putEffect(app, 'demo', '{"effect":"spectrum"}');
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ ...demo, effect: 'spectrum', values: {} });
-    expect(control.slot(0).effect).toBe('spectrum');
-  });
-
-  it('sin fuente de audio, el espectro responde 409 y la tira sigue igual', async () => {
-    const { app, control } = await apiWith({ ...demo, effect: 'breathing' }, false);
-
-    const response = await putEffect(app, 'demo', '{"effect":"spectrum"}');
-
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({
-      message: 'la tira «demo», efecto `spectrum`: necesita una fuente de audio',
-    });
-    expect(control.slot(0).effect).toBe('breathing');
-  });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ ...demo, effect, values: {} });
+      expect(control.slot(0).effect).toBe(effect);
+    },
+  );
 
   it('sin tiras, toda tira responde 404', async () => {
     const built = await buildServer({ panelDir });
