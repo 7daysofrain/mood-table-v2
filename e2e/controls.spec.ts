@@ -177,11 +177,23 @@ test('el DJ mueve los controles de la respiración y la luz responde mientras ar
     await expect(color).toContainText('#FFA957');
     await expect(period).toHaveAttribute('aria-valuetext', '4,0');
 
+    // E1 se mide en directo, con el panel ya usado en las pruebas de antes de la sesión (D98): el
+    // DJ mueve el periodo un paso con el teclado y lo devuelve, y el motor lo confirma.
+    await period.focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowLeft');
+    await settledTimeline(page);
+
     // Arrastrar el periodo: la luz responde a cada movimiento en menos de 100 ms.
     await resetTimeline(page);
     await drag(page, period, 120);
     const periodTimes = responseTimes(await settledTimeline(page));
     expect(periodTimes.length, 'movimientos anotados del periodo').toBeGreaterThan(DRAG_STEPS / 2);
+    // El peor tiempo queda en el informe, para ver cuánto margen deja a los 100 ms.
+    test.info().annotations.push({
+      type: 'movimiento → luz (periodo)',
+      description: `${Math.max(...periodTimes).toFixed(1)} ms`,
+    });
     expect(Math.max(...periodTimes), 'ms del movimiento a la luz (periodo)').toBeLessThan(MAX_RESPONSE_MS);
 
     // Al soltar, la tira se queda con el valor del control.
@@ -198,6 +210,10 @@ test('el DJ mueve los controles de la respiración y la luz responde mientras ar
     await drag(page, controls.getByRole('slider', { name: 'Saturación y brillo' }), -80);
     const colorTimes = responseTimes(await settledTimeline(page));
     expect(colorTimes.length, 'movimientos anotados del color').toBeGreaterThan(DRAG_STEPS / 2);
+    test.info().annotations.push({
+      type: 'movimiento → luz (color)',
+      description: `${Math.max(...colorTimes).toFixed(1)} ms`,
+    });
     expect(Math.max(...colorTimes), 'ms del movimiento a la luz (color)').toBeLessThan(MAX_RESPONSE_MS);
     const colorText = (await color.textContent())?.match(/#[0-9A-F]{6}/)?.[0];
     expect(colorText).toBeDefined();

@@ -1763,7 +1763,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *`openspec validate --specs --strict` marca 11 specs por requisitos de más de 500 caracteres. Ya fallaban antes del sync: las trazas cuentan como texto. Sin `--strict`, los 13 validan.*
 
-#### 6.58 Elegir el efecto espectro: refinamiento, estimación, exploración y change (`MOO-98`)
+#### 6.58 Medir E1 en los E2E con el panel ya usado (`MOO-128`)
+
+**Prompt 1:**
+
+> podemos hacer la MOO-128 sin change?
+
+*Claude Code (`claude-opus-5-5`, 6-nov). La IA leyó la tarea y la regla de las *chores* (`workflow.md` §6). Comprobó en `specs/instrument-control` que los 100 ms de E1 ya se exigen para cualquier cambio, también el primero, así que arreglarlo no toca requisitos y puede ir sin change. Avisó de una zona gris: si la causa obligaba a cambiar algo que el DJ notara, como un arranque más lento, sí llevaría change.*
+
+**Prompt 2:**
+
+> Sinceramente que se tenga un poco de delay al arrancar es irrelevante. El DJ no lo enciende e inmediatamente se pone a hacer el performance. Hay siempre un tiempo previo de checks por tanto yo simplemente ignoraría ese delay del calentado. Lo que importa ocurre durante el performance
+
+*La IA lo contrastó con E1 en el PRD («se toca en directo») y le dio la razón. Señaló un riesgo: si el coste se pagaba la primera vez que se usa cada efecto, y no una vez por arranque, también caería en plena sesión. Propuso medirlo antes de cambiar los E2E.*
+
+**Prompt 3:**
+
+> No, calienta y ya
+
+*La IA calentó primero el motor por la API, y el retraso no bajó: unos 40 ms igual, incluso repitiendo el mismo cambio de efecto o con el panel abierto. El diagnóstico del ticket (el bucle del motor bloqueado) era falso. Calentar desde el panel sí lo bajaba: el coste era del navegador, en el primer clic tras cargar el panel. Los E2E pasan a usar el panel una vez antes de medir. Cambio de efecto: de 39-45 a 23-24 ms. Primer arrastre: de 33-38 a 4-7 ms. La decisión quedó como D98 y se reescribió la tarea en Linear, con título y etiqueta nuevos.*
+
+*Ajustes:*
+- *El cambio de efecto se calienta con otro efecto (Scroll) y no con el que se mide. Así sigue dentro de la medida lo que tarda el panel en pintar por primera vez los controles de la respiración: 24 ms, frente a 17 si se calienta con el mismo.*
+- *Un paso de teclado en el control del periodo es 0,001 de su recorrido: cambia el valor pero no el texto «4,0». El calentamiento espera a que el motor confirme el valor, en vez de mirar el texto.*
+
+#### 6.59 Elegir el efecto espectro: refinamiento, estimación, exploración y change (`MOO-98`)
 
 **Prompt 1** (en `/refine-story MOO-98`, el caso feliz del humano):
 
@@ -1786,7 +1810,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *Los umbrales de los escenarios con tonos (el cuarto exterior apagado, el rojo por encima de 128 al arrancar, como mucho 5 a los 10 s) salieron de cuentas con las constantes de la v1, sin ejecutar nada. Quedaron *(asumido)* para comprobarlos al implementar.*
 
-#### 6.59 Portar el efecto espectro de la v1 (`MOO-122`)
+#### 6.60 Portar el efecto espectro de la v1 (`MOO-122`)
 
 **Prompt 1:**
 

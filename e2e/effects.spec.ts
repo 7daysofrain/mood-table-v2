@@ -114,6 +114,17 @@ test('el DJ cambia el efecto de la tira desde el panel', async ({ page }) => {
     await expect(effect(page, 'Energía')).toHaveAttribute('aria-current', 'true');
     await expect(effect(page, 'Respiración')).not.toHaveAttribute('aria-current');
 
+    // E1 se mide en directo, con el panel ya usado en las pruebas de antes de la sesión (D98): el
+    // DJ prueba otro efecto y vuelve. Siendo otro, lo que tarda el panel en pintar por primera vez
+    // los controles de la respiración sigue dentro de la medida.
+    await effect(page, 'Scroll').click();
+    await expect(effect(page, 'Scroll')).toHaveAttribute('aria-current', 'true');
+    await effect(page, 'Energía').click();
+    await expect(effect(page, 'Energía')).toHaveAttribute('aria-current', 'true');
+    await page.evaluate(() => {
+      Object.assign(window.moodTableTimeline, { pressedAt: undefined, frames: [] });
+    });
+
     // Elige la respiración: la tira se pinta con ella en menos de 100 ms desde que la pulsa.
     await effect(page, 'Respiración').click();
     await expect(effect(page, 'Respiración')).toHaveAttribute('aria-current', 'true');
