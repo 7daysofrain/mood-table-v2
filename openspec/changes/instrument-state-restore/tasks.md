@@ -42,7 +42,7 @@
   (`strip_state` y `strip_effects`, sin `schema_version`) y `save` en una transacción con *upsert*.
   Verificar: los tests de 1.5 pasan, y `sqlite3 data/instrument-state.db '.schema'` muestra las dos
   tablas y la de control.
-- [ ] 1.7 La raíz de composición (`packages/engine/src/main.ts`) elige el adaptador según
+- [x] 1.7 La raíz de composición (`packages/engine/src/main.ts`) elige el adaptador según
   `instrumentState` y lo abre al arrancar, antes que el búfer de control; todavía no restaura ni
   guarda. `e2e/config.json` y los ficheros que genera `e2e/engine.ts` declaran `memory`.
   Verificar: `pnpm dev` crea `data/instrument-state.db`; con la carpeta en solo lectura, el motor
