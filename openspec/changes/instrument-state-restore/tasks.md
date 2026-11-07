@@ -47,7 +47,7 @@
   guarda. `e2e/config.json` y los ficheros que genera `e2e/engine.ts` declaran `memory`.
   Verificar: `pnpm dev` crea `data/instrument-state.db`; con la carpeta en solo lectura, el motor
   arranca y lo dice en el log; `pnpm test:e2e` en verde y sin ficheros nuevos en `data/`.
-- [ ] 1.8 Documentación: README §3 (el modelo sin `schema_version`, con la razón de D104; la tabla de
+- [x] 1.8 Documentación: README §3 (el modelo sin `schema_version`, con la razón de D104; la tabla de
   control de migraciones; los casos de apertura; `node:sqlite`; la incoherencia de la demo, que va en
   memoria), §1.4 (dónde queda el estado y el campo `instrumentState`) y §2.5 (la demo declara
   `memory`). `prompts.md`: la entrada de la exploración y la propuesta del change, y la de esta tarea.
@@ -80,7 +80,8 @@
   y otra tira que el fichero ya no declara), `pnpm dev` arranca con la tira respirando en azul, y la
   fila de la otra tira sigue en la base.
 - [ ] 2.6 Documentación: README §2.2 (*Configuración de las tiras* y *Búfer de control*: la
-  restauración, la reserva del efecto del fichero y los valores que no encajan). `prompts.md`: la
+  restauración, la reserva del efecto del fichero y los valores que no encajan) y §3
+  (*Reconciliación al arrancar*: ya no escribe nada al arrancar; lo hace el primer guardado). `prompts.md`: la
   entrada de esta tarea.
   Verificar: lo que describe el README coincide con lo que hace el motor.
 
