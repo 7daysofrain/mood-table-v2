@@ -272,3 +272,34 @@ export function decodeStrips(message: Uint8Array): StripsMessage | undefined {
   }
   return Value.Check(StripsMessageSchema, data) ? data : undefined;
 }
+
+/** Tipo del mensaje de la intensidad (decisión 5 del change instrument-intensity). */
+export const INTENSITY_MESSAGE_TYPE = 7;
+
+/** Tipo (1 byte) + intensidad (`float64`, big-endian). */
+const INTENSITY_MESSAGE_BYTES = 9;
+
+/**
+ * El mensaje de la intensidad con que pinta el motor: lo recibe cada panel al conectarse y todos cada
+ * vez que cambia. Va en 64 bits para que el panel reciba exactamente el valor que envió. Es nuevo en
+ * cada llamada.
+ */
+export function encodeIntensity(intensity: number): Uint8Array {
+  if (!(intensity >= 0 && intensity <= 1)) {
+    throw new RangeError(`La intensidad va de 0 a 1: ${intensity}`);
+  }
+  const message = new Uint8Array(INTENSITY_MESSAGE_BYTES);
+  const view = new DataView(message.buffer);
+  view.setUint8(0, INTENSITY_MESSAGE_TYPE);
+  view.setFloat64(1, intensity, false);
+  return message;
+}
+
+/** La intensidad que lleva `message`, o `undefined` si no es un mensaje de intensidad bien formado. */
+export function decodeIntensity(message: Uint8Array): number | undefined {
+  if (message.length !== INTENSITY_MESSAGE_BYTES) return undefined;
+  const view = new DataView(message.buffer, message.byteOffset, message.byteLength);
+  if (view.getUint8(0) !== INTENSITY_MESSAGE_TYPE) return undefined;
+  const intensity = view.getFloat64(1, false);
+  return intensity >= 0 && intensity <= 1 ? intensity : undefined;
+}
