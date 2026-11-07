@@ -31,7 +31,7 @@
   `{ "intensity": 1 }` y `{ "intensity": 0.4 }`, y rechaza `1.5`, `-0.1`, `"alta"`, `{}` y
   `{ "intensity": 0.5, "strip": "demo" }`; la respuesta acepta el mismo ejemplo (decisión 4).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 1.2 `SetIntensityBodySchema` y el esquema de la respuesta en
+- [x] 1.2 `SetIntensityBodySchema` y el esquema de la respuesta en
   `packages/shared/src/commands.ts`, cerrados y con `minimum: 0` y `maximum: 1`, exportados desde el
   punto de entrada del paquete con sus tipos.
   Verificar: los tests de 1.1 pasan y `pnpm typecheck` en verde.
