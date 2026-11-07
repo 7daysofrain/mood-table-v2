@@ -30,7 +30,7 @@
   correr contra cualquier adaptador (design.md, decisión 8).
   Verificar: los tests de contrato pasan con el adaptador en memoria y `pnpm lint` no da errores de
   fronteras.
-- [ ] 1.5 **(test en rojo)** Tests del adaptador SQLite en
+- [x] 1.5 **(test en rojo)** Tests del adaptador SQLite en
   `packages/engine/src/adapters/sqlite-state-store.test.ts`, con ficheros temporales: los de
   contrato de 1.4; las restricciones del esquema (un efecto activo sin sus valores se rechaza);
   las migraciones (se aplican una vez y quedan en la tabla de control); y los cuatro casos de
