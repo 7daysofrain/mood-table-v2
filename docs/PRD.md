@@ -178,6 +178,7 @@ tiras en un fichero.
 | Q6 | ¿Cuál será el mando físico definitivo: la F1, un mando propio u otro? | Más adelante (visión, §5.3). |
 | Q7 | ¿El instrumento se adapta solo al volumen de la entrada (una señal muy baja o saturada), o eso lo resuelve el DJ con un control de sensibilidad (H2, Q2)? | Decisión del DJ. |
 | Q8 | Si un cambio de efecto o de valor no llega al motor (el motor se ha caído o lo rechaza), ¿qué ve el DJ en el panel? | Decisión del DJ. Mientras tanto, el panel solo marca el efecto que pinta el motor (MOO-94), y al soltar un control este vuelve al valor que pinta el motor (MOO-95). |
+| Q9 | ¿El brillo general de todas las tiras (la intensidad de MOO-97) vuelve tras reiniciar, como el estado del instrumento, o arranca siempre al máximo? | Decisión del DJ. Mientras tanto, no se guarda: MOO-25 guarda el efecto activo y los valores de cada tira, y la intensidad arranca al máximo (MOO-97). |
 
 ## 8. Glosario
 
@@ -187,6 +188,7 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | Término | En código | Definición |
 |---|---|---|
 | **Tira** | `strip` | Tira LED declarada en el fichero de configuración: nombre, salida, nº de LEDs, orden de color y límite de potencia. Existe porque está cableada (o declarada como virtual). |
+| **Identificador de la tira** | `id` | Lo que distingue a una tira en el fichero de configuración, y con lo que el motor encuentra su estado guardado (H5). Lo elige el maker. Cambiar el nombre, el nº de LEDs o la salida no la hace otra tira; cambiar el identificador, sí. |
 | **Tira virtual** | `strip` con salida `virtual` | Tira cuya salida es virtual: no tiene hardware y solo se ve en el visor. |
 | **Visor** | `viewer` | Vista del navegador que dibuja **todas** las tiras (físicas y virtuales), LED a LED y en tiempo real. |
 | **Simulador** | *(no es una pieza)* | Uso del instrumento **sin tiras físicas**: solo tiras virtuales, con cualquier fuente de audio (fichero, o tarjeta de sonido en Linux). Es la H1. |
