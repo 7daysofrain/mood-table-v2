@@ -23,7 +23,7 @@
 - [x] 1.3 El esquema de `instrumentState` en `packages/shared/src/config.ts` y la resolución de su
   ruta en `packages/engine/src/adapters/config-file.ts`, como la del audio. `data/` en `.gitignore`.
   Verificar: los tests de 1.2 pasan.
-- [ ] 1.4 El puerto `StateStore` y los tipos del estado del instrumento en
+- [x] 1.4 El puerto `StateStore` y los tipos del estado del instrumento en
   `packages/engine/src/core/state-store.ts`, y el adaptador en memoria en
   `packages/engine/src/adapters/memory-state-store.ts`, con los tests de contrato del puerto
   (guardar y leer devuelve lo mismo; guardar no borra las tiras que no van en la foto) escritos para

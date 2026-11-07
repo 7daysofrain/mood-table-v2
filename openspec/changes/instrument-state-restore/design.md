@@ -173,8 +173,9 @@ packages/engine
 
 - **Los tipos del estado van en el núcleo, no en `shared`**: solo los usa el motor. La descripción de
   `MOO-26` decía `shared`; no hace falta ensanchar su API.
-- **El puerto es síncrono**: `load()` devuelve el estado guardado o qué ha pasado (decisión 4), y
-  `save(estado)` lo escribe entero.
+- **El puerto es síncrono**: `load()` devuelve el estado guardado (vacío si no hay nada), y
+  `save(estado)` lo escribe entero. Lo que ha pasado al abrir (decisión 4) lo dice la apertura del
+  adaptador SQLite, con el aviso para el log: el puerto no sabe de ficheros.
 - **Las migraciones** son una lista numerada en el adaptador; una tabla de control guarda las
   aplicadas. La 1 crea `strip_state` y `strip_effects` (README §3, sin `schema_version`).
 - **El adaptador SQLite no es `*.hardware.ts`**: se prueba con ficheros temporales, sin hardware.
