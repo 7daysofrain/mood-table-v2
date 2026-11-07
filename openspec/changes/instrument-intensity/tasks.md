@@ -26,7 +26,7 @@
 
 ## 1. MOO-125 · shared
 
-- [ ] 1.1 **(test en rojo)** Tests de los esquemas de la intensidad en
+- [x] 1.1 **(test en rojo)** Tests de los esquemas de la intensidad en
   `packages/shared/src/commands.test.ts`, con `Value.Check`: el cuerpo acepta `{ "intensity": 0 }`,
   `{ "intensity": 1 }` y `{ "intensity": 0.4 }`, y rechaza `1.5`, `-0.1`, `"alta"`, `{}` y
   `{ "intensity": 0.5, "strip": "demo" }`; la respuesta acepta el mismo ejemplo (decisión 4).
