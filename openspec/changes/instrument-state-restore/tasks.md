@@ -14,13 +14,13 @@
   `node --test` o un script de una línea). `engines` de `package.json` sube a `>=24.15`.
   Verificar: el test pasa en local y en el CI, y en la Pi `node -e` abre `node:sqlite` sin flag ni
   aviso (design.md, decisión 1 y riesgo de Vitest).
-- [ ] 1.2 **(test en rojo)** El campo `instrumentState` en
+- [x] 1.2 **(test en rojo)** El campo `instrumentState` en
   `packages/shared/src/config.test.ts`: sin el campo, SQLite en `data/instrument-state.db` resuelto
   desde la raíz; `sqlite` con ruta relativa y absoluta; `memory`; un `type` que no existe, un `path`
   vacío y un campo de más no arrancan, con el mensaje que nombra el campo
   (`specs/engine-config`, *El fichero dice dónde se guarda el estado del instrumento*).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 1.3 El esquema de `instrumentState` en `packages/shared/src/config.ts` y la resolución de su
+- [x] 1.3 El esquema de `instrumentState` en `packages/shared/src/config.ts` y la resolución de su
   ruta en `packages/engine/src/adapters/config-file.ts`, como la del audio. `data/` en `.gitignore`.
   Verificar: los tests de 1.2 pasan.
 - [ ] 1.4 El puerto `StateStore` y los tipos del estado del instrumento en

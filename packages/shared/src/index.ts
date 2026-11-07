@@ -19,11 +19,13 @@ export {
 export {
   AudioSourceConfigSchema,
   ConfigFileSchema,
+  InstrumentStateConfigSchema,
   parseConfig,
   StripConfigSchema,
   type AudioSourceConfig,
   type Config,
   type ConfigResult,
+  type InstrumentStateConfig,
   type StripConfig,
 } from './config.ts';
 
