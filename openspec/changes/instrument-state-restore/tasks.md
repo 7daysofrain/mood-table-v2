@@ -37,7 +37,7 @@
   apertura de design.md, decisión 4 (sin fichero, dañado, sin permiso, de una versión más nueva),
   con lo que dice cada uno al log.
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 1.6 El adaptador SQLite en `packages/engine/src/adapters/sqlite-state-store.ts`: apertura con
+- [x] 1.6 El adaptador SQLite en `packages/engine/src/adapters/sqlite-state-store.ts`: apertura con
   WAL, `synchronous = FULL` y `foreign_keys = ON`, creación de la carpeta, migración 1
   (`strip_state` y `strip_effects`, sin `schema_version`) y `save` en una transacción con *upsert*.
   Verificar: los tests de 1.5 pasan, y `sqlite3 data/instrument-state.db '.schema'` muestra las dos
