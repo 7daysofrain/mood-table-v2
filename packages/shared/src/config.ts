@@ -80,6 +80,20 @@ export const AudioSourceConfigSchema = Type.Union([
   ),
 ]);
 
+/**
+ * Dónde se guarda el estado del instrumento (H5), discriminado por `type` como `audioSource`:
+ * `sqlite` en el fichero de `path`, absoluta o relativa a la raíz del repositorio, o `memory`, que no
+ * guarda nada (la demo pública y los E2E). Sin el campo, SQLite en `data/`, que git ignora: así la
+ * mesa y el simulador recuerdan sin declarar nada (decisión 7 del change instrument-state-restore).
+ */
+export const InstrumentStateConfigSchema = Type.Union(
+  [
+    Type.Object({ type: Type.Literal('sqlite'), path: Type.String({ minLength: 1 }) }, CLOSED),
+    Type.Object({ type: Type.Literal('memory') }, CLOSED),
+  ],
+  { default: { type: 'sqlite', path: 'data/instrument-state.db' } },
+);
+
 /** Por defecto, solo local: el panel no tiene contraseña (README §2.5, decisión 13). */
 const ServerSchema = Type.Object(
   {
@@ -96,6 +110,7 @@ export const ConfigFileSchema = Type.Object(
     server: Type.Optional(ServerSchema),
     // Opcional: sin ella, el instrumento no tiene fuente de audio.
     audioSource: Type.Optional(AudioSourceConfigSchema),
+    instrumentState: Type.Optional(InstrumentStateConfigSchema),
     strips: Type.Array(StripConfigSchema, { minItems: 1, maxItems: MAX_STRIPS }),
   },
   CLOSED,
@@ -105,12 +120,15 @@ export type StripConfig = Static<typeof StripConfigSchema>;
 
 export type AudioSourceConfig = Static<typeof AudioSourceConfigSchema>;
 
+export type InstrumentStateConfig = Static<typeof InstrumentStateConfigSchema>;
+
 /** La configuración ya validada, con los valores por defecto aplicados. */
 export interface Config {
   fps: number;
   server: { host: string; port: number };
   /** Sin `audioSource`, el instrumento no tiene fuente de audio. */
   audioSource?: AudioSourceConfig;
+  instrumentState: InstrumentStateConfig;
   strips: StripConfig[];
 }
 
@@ -181,14 +199,23 @@ interface SchemaError {
   message: string;
 }
 
-/** Una unión de objetos discriminada por `type`, como `audioSource` y la salida de cada tira. */
-type VariantUnion = typeof AudioSourceConfigSchema | typeof OutputSchema;
+/**
+ * Una unión de objetos discriminada por `type`, como `audioSource`, `instrumentState` y la salida de
+ * cada tira.
+ */
+type VariantUnion =
+  | typeof AudioSourceConfigSchema
+  | typeof InstrumentStateConfigSchema
+  | typeof OutputSchema;
 
-/** Las uniones discriminadas del fichero, con la ruta de cada una: la fuente y cada salida. */
+/**
+ * Las uniones discriminadas del fichero, con la ruta de cada una: la fuente, el estado y cada salida.
+ */
 function variantUnions(config: unknown): { path: string; schema: VariantUnion }[] {
   const strips = isObject(config) && Array.isArray(config.strips) ? config.strips : [];
   return [
     { path: '/audioSource', schema: AudioSourceConfigSchema },
+    { path: '/instrumentState', schema: InstrumentStateConfigSchema },
     ...strips.map((_, index) => ({ path: `/strips/${index}/output`, schema: OutputSchema })),
   ];
 }

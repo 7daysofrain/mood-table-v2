@@ -42,7 +42,7 @@ export interface TestEngineOptions {
 /**
  * Prepara un motor con una tira virtual de 60 LEDs en un puerto libre, sin arrancarlo, con la fuente
  * de audio y el efecto que pida el test. Su fichero de configuración va en la carpeta de resultados
- * del test, que Playwright vacía en cada ejecución.
+ * del test, que Playwright vacía en cada ejecución. El estado del instrumento va en memoria.
  */
 export async function createTestEngine({
   audioFile,
@@ -55,6 +55,8 @@ export async function createTestEngine({
     JSON.stringify({
       server: { host: '127.0.0.1', port },
       ...(audioFile ? { audioSource: { type: 'file', path: audioFile } } : {}),
+      // En memoria: los E2E no escriben en `data/` ni se pisan entre ejecuciones.
+      instrumentState: { type: 'memory' },
       strips: [
         { id: 'e2e', name: 'Tira de los E2E', output: { type: 'virtual' }, ledCount: 60, effect },
       ],

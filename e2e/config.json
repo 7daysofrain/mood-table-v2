@@ -1,6 +1,7 @@
 {
   "fps": 60,
   "server": { "host": "127.0.0.1", "port": 4173 },
+  "instrumentState": { "type": "memory" },
   "strips": [
     {
       "id": "e2e",

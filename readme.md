@@ -143,7 +143,7 @@ La demo comparte el estado entre todos los visitantes y lo reinicia cada cierto 
 
 #### 2. Simulador en local (sin hardware)
 
-**Requisitos:** Node.js 24 (la versión de `.nvmrc`; con otra, `pnpm install` falla) y pnpm (`corepack enable`). Linux, macOS o Windows.
+**Requisitos:** Node.js 24.15 o posterior de la serie 24 (la de `.nvmrc`; con otra, `pnpm install` falla: el estado se guarda con `node:sqlite`, §3) y pnpm (`corepack enable`). Linux, macOS o Windows.
 
 ```bash
 git clone https://github.com/7daysofrain/mood-table-v2.git
@@ -156,7 +156,7 @@ pnpm dev
 
 **Fuente de audio:** el simulador usa un fichero de audio en cualquier sistema. La tarjeta de sonido como fuente solo funciona en Linux (ALSA): en macOS y Windows se usa el fichero.
 
-**Base de datos:** no hay que instalar nada. SQLite es un fichero que el motor crea al arrancar; **las migraciones se aplican solas** al arrancar y **no hay semillas**: la reconciliación crea el estado inicial de cada tira declarada con los valores por defecto de cada efecto (§3).
+**Base de datos:** no hay que instalar nada. SQLite es un fichero que el motor crea al arrancar, `data/instrument-state.db` en la raíz del repositorio, y git lo ignora; el campo `instrumentState` del fichero de configuración lo pone en otra ruta o lo deja en memoria (§3). **Las migraciones se aplican solas** al arrancar y **no hay semillas**: sin estado guardado, cada tira arranca con el efecto que declara y los valores por defecto de cada efecto. Si el fichero está dañado o no se puede usar, el motor arranca igualmente y lo dice en el log (§3, *Al abrir el estado*).
 
 **Probar el arranque en el último estado (H5):** cambia el efecto y algún control, para el motor (`Ctrl+C`), vuelve a lanzar `pnpm dev` y recarga el panel: cada tira vuelve como la dejaste.
 
@@ -612,7 +612,7 @@ La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la 
 
 #### En la demo pública (internet)
 
-- **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria**: nada se escribe en disco y el estado vuelve al inicial cada cierto tiempo. Todos los visitantes ven el mismo visor; que uno vea lo que toca otro se asume como parte de la demo.
+- **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria** (su configuración declara `"instrumentState": { "type": "memory" }`, §3): nada se escribe en disco y el estado vuelve al inicial cada cierto tiempo. Todos los visitantes ven el mismo visor; que uno vea lo que toca otro se asume como parte de la demo.
 - **Sin hardware.** La configuración de la demo solo declara tiras virtuales, así que no hay puertos serie expuestos.
 - **Límite de peticiones** por IP en la API (`@fastify/rate-limit`) y **máximo de conexiones WebSocket** simultáneas.
 - **HTTPS** con Caddy y certificado de Let's Encrypt; la instancia solo abre los puertos 80 y 443 y se administra sin SSH, por AWS Systems Manager (§2.4).
@@ -702,9 +702,9 @@ Todos los niveles automáticos se ejecutan en cada PR (§2.4).
 
 Una tira existe porque está cableada, así que no se da de alta desde el panel. Y la definición de un efecto es código, así que no se duplica en la base de datos: **el código define, la base de datos guarda lo que decide el usuario.**
 
-**Motor de persistencia: SQLite**, detrás del puerto `StateStore` (§2.1). La razón principal no es la rúbrica sino el aparato: **la Pi de una mesa de DJ se desenchufa sin apagarla**. Con las transacciones de SQLite, un corte de luz a mitad de un guardado deja el dato anterior o el nuevo, nunca uno a medias, y el arranque en el último estado (H5) sigue funcionando. Además, las restricciones viven en el esquema y los cambios se versionan con migraciones. Se descartó un fichero JSON: habría que implementar a mano la escritura segura y el modelo quedaría sin claves ni restricciones.
+**Motor de persistencia: SQLite**, con `node:sqlite`, que viene con Node (nada nativo que compilar en la Pi, D103), detrás del puerto `StateStore` (§2.1). La razón principal no es la rúbrica sino el aparato: **la Pi de una mesa de DJ se desenchufa sin apagarla**. Con las transacciones de SQLite, un corte de luz a mitad de un guardado deja el dato anterior o el nuevo, nunca uno a medias, y el arranque en el último estado (H5) sigue funcionando. Además, las restricciones viven en el esquema y los cambios se versionan con migraciones. Se descartó un fichero JSON: habría que implementar a mano la escritura segura y el modelo quedaría sin claves ni restricciones.
 
-Hay dos adaptadores del puerto: **SQLite** (producción y demo) y **en memoria** (tests). La base de datos es un único fichero en la Pi, sin servidor.
+Hay dos adaptadores del puerto: **SQLite** (la mesa y el simulador) y **en memoria** (la demo pública y los tests, §2.5). La base de datos es un único fichero, sin servidor: por defecto, `data/instrument-state.db` en la raíz del repositorio.
 
 ### **3.1. Diagrama del modelo de datos:**
 
@@ -720,8 +720,7 @@ erDiagram
   STRIP_EFFECTS {
     TEXT strip_id PK "clave compuesta (strip_id, effect_id)"
     TEXT effect_id PK "spectrum | energy | scroll | …"
-    TEXT values_json "NOT NULL, validado con el esquema TypeBox"
-    INTEGER schema_version "NOT NULL, CHECK > 0"
+    TEXT values_json "NOT NULL, CHECK json_valid"
     TEXT updated_at "NOT NULL, ISO 8601"
   }
   STRIP_EFFECTS ||--o| STRIP_STATE : "(strip_id, active_effect_id) es el efecto activo"
@@ -749,11 +748,12 @@ Una fila por cada combinación de tira y efecto. Guarda los valores **de todos l
 |---|---|---|---|
 | `strip_id` | TEXT | PK (compuesta) | Tira a la que pertenecen los valores. |
 | `effect_id` | TEXT | PK (compuesta) | Identificador del efecto (`spectrum`, `energy`, `scroll`…). |
-| `values_json` | TEXT | NOT NULL | Valores de los parámetros en JSON. Se validan contra el esquema TypeBox del efecto al leer y al escribir. |
-| `schema_version` | INTEGER | NOT NULL, `CHECK > 0` | Versión del esquema del efecto con la que se guardaron los valores. Si el esquema cambia, los valores se migran o se sustituyen por los valores por defecto. |
+| `values_json` | TEXT | NOT NULL, `CHECK (json_valid(values_json))` | Valores de los parámetros en JSON. Se validan con el esquema TypeBox **actual** del efecto: al escribir, en cada `PUT` (§4); al leer, al restaurar (abajo). |
 | `updated_at` | TEXT | NOT NULL | Fecha de la última modificación. |
 
 **Relación:** `strip_effects` 1 — 0..1 `strip_state`. El estado de una tira apunta siempre a exactamente una fila de sus valores; cada fila de valores es la del efecto activo (1) o no (0). La clave foránea se hace cumplir con `PRAGMA foreign_keys = ON`.
+
+**Por qué no hay `schema_version` (D104):** al restaurar, los valores de cada efecto pasan por su esquema actual: los campos que faltan toman su valor por defecto, los que sobran se quitan y, si aun así no lo cumplen, solo ese efecto vuelve a sus valores por defecto. Es la misma validación que ya hace cada `PUT`, y cubre el caso habitual (un parámetro nuevo) sin perder lo demás. Con una versión por efecto habría que acordarse de subirla y escribir migraciones para efectos de dos parámetros. Lo que se pierde: si un parámetro cambia de significado sin cambiar de nombre ni de rango, no se detecta.
 
 **Por qué los valores van en una columna JSON y no en una fila por parámetro:** la definición de los parámetros (tipo, rango, valor por defecto) pertenece al código del efecto, en su esquema TypeBox. La base de datos solo guarda valores. Una fila por parámetro obligaría a duplicar en tablas lo que ya define el esquema y a guardar valores de tipos distintos (número, color, opción) en una misma columna. La integridad de los valores la garantiza la validación con el esquema.
 
@@ -813,6 +813,12 @@ Además de las tiras, el fichero declara la **fuente de audio**, opcional (`audi
 
 Sin fuente de audio, solo funcionan los efectos de ambiente.
 
+Por último, el fichero dice **dónde se guarda el estado del instrumento** (`instrumentState`, opcional), discriminado por `type` como la fuente de audio: `sqlite`, con su `path` (absoluta o relativa a la raíz del repositorio), o `memory`, que no guarda nada y hace que cada arranque sea como el primero (la demo pública y los E2E). Sin el campo, SQLite en `data/instrument-state.db`: así la mesa y el simulador recuerdan sin declarar nada.
+
+```json
+"instrumentState": { "type": "sqlite", "path": "/var/lib/moodtable/estado.db" }
+```
+
 #### Reconciliación al arrancar
 
 Como las tiras viven en el fichero, la base de datos no puede tener una clave foránea hacia ellas. La sustituye una reconciliación al arrancar, dentro de una transacción:
@@ -823,14 +829,25 @@ Como las tiras viven en el fichero, la base de datos no puede tener una clave fo
 
 #### Garantías y evolución del esquema
 
-- **Durabilidad ante cortes de luz:** SQLite en modo WAL con `synchronous = FULL`; cada guardado es una transacción. El guardado se agrupa con un pequeño retardo (§2.2) para no escribir en la tarjeta SD con cada movimiento de un slider.
-- **Migraciones versionadas:** el esquema se crea y evoluciona con migraciones numeradas que se aplican al arrancar; una tabla de control registra cuáles se han aplicado.
+- **Durabilidad ante cortes de luz:** SQLite en modo WAL con `synchronous = FULL`; cada guardado escribe el estado entero en una transacción, sin borrar nunca una fila. Se guarda 500 ms después del último cambio (§2.2, D103), para no escribir en la tarjeta SD con cada movimiento de un slider: tras un corte, como mucho se pierde eso o un arrastre a medias.
+- **Migraciones versionadas:** el esquema se crea y evoluciona con migraciones numeradas que se aplican al arrancar, cada una en su transacción; la tabla de control `schema_migrations` (`version`, `applied_at`) registra cuáles se han aplicado.
 - **Sin datos personales:** la base de datos no guarda nada de usuarios, solo el estado del aparato.
+
+#### Al abrir el estado
+
+El estado guardado nunca impide arrancar: un instrumento que no arranca es peor que uno que no recuerda. El DJ se entera por el log del motor, no por el panel.
+
+| Caso | Qué hace el motor | Log |
+|---|---|---|
+| No existe el fichero | Lo crea, con su carpeta, y arranca como la primera vez (un fichero borrado no se distingue de un primer arranque) | Nada |
+| Está dañado (SQLite dice que no es una base de datos o que está corrupta, o falla `PRAGMA quick_check`) | Lo aparta como `<fichero>.dañado-<fecha ISO>`, con su `-wal` y su `-shm`, crea uno nuevo y arranca como la primera vez | Que no ha podido recuperar el estado, por qué y dónde ha dejado el dañado |
+| No lo puede crear ni abrir (permiso, disco de solo lectura) | Arranca **sin guardar**, como con `memory` | Qué fichero no puede usar y por qué |
+| Tiene migraciones que este motor no conoce (se ha vuelto a una versión anterior) | Arranca sin guardar y **no toca el fichero**, para no perder el estado de la versión nueva | Que el estado es de una versión más nueva del motor |
 
 #### Cómo se prueba la persistencia
 
-1. **Tests de contrato del puerto:** el mismo conjunto de tests se ejecuta contra el adaptador SQLite y contra el adaptador en memoria. Guardar y leer devuelve lo mismo, y los valores fuera de esquema se rechazan.
-2. **Tests de restricciones:** SQLite rechaza lo que el esquema prohíbe (un efecto activo sin valores guardados para esa tira, una versión de esquema no positiva).
+1. **Tests de contrato del puerto:** el mismo conjunto de tests se ejecuta contra el adaptador SQLite y contra el adaptador en memoria. Guardar y leer devuelve lo mismo, y guardar no borra las tiras ni los efectos que no van en el estado guardado.
+2. **Tests de restricciones y de apertura:** SQLite rechaza lo que el esquema prohíbe (un efecto activo sin valores guardados para esa tira), las migraciones se aplican una sola vez, y cada caso de apertura hace lo de la tabla de arriba, con ficheros temporales.
 3. **Test de reconciliación:** se añade y se quita una tira del fichero de configuración, se arranca, y se comprueba el estado resultante.
 4. **Test de arranque tras corte:** se arranca el motor, se cambian el efecto y los parámetros de una tira por la API, **se mata el proceso sin cerrarlo** (`kill -9`, que simula desenchufar), se vuelve a arrancar y se comprueba que la API devuelve el mismo estado.
 5. **Comprobación manual:** la base de datos se puede inspeccionar con `sqlite3` (por ejemplo, `SELECT * FROM strip_state;`).
