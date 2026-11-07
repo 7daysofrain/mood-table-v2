@@ -35,7 +35,7 @@
   `packages/shared/src/commands.ts`, cerrados y con `minimum: 0` y `maximum: 1`, exportados desde el
   punto de entrada del paquete con sus tipos.
   Verificar: los tests de 1.1 pasan y `pnpm typecheck` en verde.
-- [ ] 1.3 **(test en rojo)** Tests del mensaje `7` en `packages/shared/src/viewer-protocol.test.ts`:
+- [x] 1.3 **(test en rojo)** Tests del mensaje `7` en `packages/shared/src/viewer-protocol.test.ts`:
   codificar 0,5 da los bytes del ejemplo de `design.md` (decisión 5); 0,4 y 0,07 vuelven exactos al
   decodificar; se rechaza un mensaje que no mide 9 bytes, uno con `NaN` y uno fuera de 0..1; el
   mensaje se reconoce por su tipo junto a los demás.
