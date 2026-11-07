@@ -47,7 +47,7 @@
   (change `instrument-intensity`, decisión 5).
   Verificar: los tests de 1.3 pasan, el documento describe exactamente lo que hace el código, y
   `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 1.5 `prompts.md`: la entrada del refinamiento, la estimación, la exploración y la propuesta de
+- [x] 1.5 `prompts.md`: la entrada del refinamiento, la estimación, la exploración y la propuesta de
   `MOO-97` (la redefinición de la historia, la capa de transformaciones descartada y las tres
   decisiones del panel), y la de esta tarea.
   Verificar: sigue el formato de `docs/instructions/course.md` §5.
