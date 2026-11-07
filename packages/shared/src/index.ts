@@ -49,12 +49,14 @@ export {
 
 export {
   decodeFrame,
+  decodeIntensity,
   decodeLevel,
   decodePosition,
   decodeSource,
   decodeSourceStatus,
   decodeStrips,
   encodeFrame,
+  encodeIntensity,
   encodeLevel,
   encodePosition,
   encodeSource,
@@ -63,6 +65,7 @@ export {
   FRAME_HEADER_BYTES,
   FRAME_MESSAGE_TYPE,
   type FrameMessage,
+  INTENSITY_MESSAGE_TYPE,
   LEVEL_MESSAGE_TYPE,
   type LevelMessage,
   MAX_STRIPS,

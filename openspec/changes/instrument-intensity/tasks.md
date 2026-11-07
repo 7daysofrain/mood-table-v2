@@ -40,7 +40,7 @@
   decodificar; se rechaza un mensaje que no mide 9 bytes, uno con `NaN` y uno fuera de 0..1; el
   mensaje se reconoce por su tipo junto a los demás.
   Verificar: los tests nuevos fallan porque el mensaje `7` no existe.
-- [ ] 1.4 El mensaje `7` en `packages/shared/src/viewer-protocol.ts` (codificar y decodificar, en
+- [x] 1.4 El mensaje `7` en `packages/shared/src/viewer-protocol.ts` (codificar y decodificar, en
   coma flotante de 64 bits, big-endian) y su sección en `docs/instructions/viewer-protocol.md`: la
   tabla de bytes y el ejemplo, cuándo se envía (al conectarse, después del `6`, y en cada cambio, a
   todos los paneles), la lista de lo que viaja por la conexión, las reglas de rechazo y el origen
