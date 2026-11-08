@@ -66,7 +66,7 @@
   para cada efecto del registro, pintar sobre un búfer lleno de `0xAB` da el mismo frame que sobre
   uno a cero, con y sin audio (decisión 2).
   Verificar: el test pasa con los cuatro efectos, y falla si se le hace leer `out` a uno de ellos.
-- [ ] 2.4 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`:
+- [x] 2.4 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`:
   arranca con la intensidad a 1; `setIntensity(0.4)` da `changed` y `intensity()` devuelve 0,4; la
   misma otra vez da `unchanged` y no avisa; `1.5`, `-0.1`, `NaN` y `"alta"` dan `invalid` y no la
   cambian; `watchIntensity` recibe un aviso por cada `changed`; un cambio de intensidad no avisa al

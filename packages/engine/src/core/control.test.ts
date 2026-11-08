@@ -362,4 +362,100 @@ describe('el búfer de control', () => {
       expect(control.slot(1).values).toEqual(BLUE);
     });
   });
+
+  // Decisiones 4 y 8 del change instrument-intensity: la intensidad es del instrumento, no de una tira.
+  describe('la intensidad', () => {
+    const BLUE = { color: '#2040FF', period: 7 };
+
+    /** Dos tiras y quien escucha la intensidad: cuenta un aviso por cada cambio. */
+    function withIntensity() {
+      const { control, notices } = twoStrips();
+      const intensityNotices: number[] = [];
+      control.watchIntensity(() => intensityNotices.push(control.intensity()));
+      return { control, notices, intensityNotices };
+    }
+
+    it('arranca al máximo', () => {
+      expect(withIntensity().control.intensity()).toBe(1);
+    });
+
+    it('cambiarla da changed, y el búfer la devuelve', () => {
+      const { control } = withIntensity();
+
+      expect(control.setIntensity(0.4)).toBe('changed');
+      expect(control.intensity()).toBe(0.4);
+    });
+
+    it('la misma intensidad da unchanged y no avisa', () => {
+      const { control, intensityNotices } = withIntensity();
+      control.setIntensity(0.4);
+
+      expect(control.setIntensity(0.4)).toBe('unchanged');
+      expect(intensityNotices).toEqual([0.4]);
+    });
+
+    it.each([
+      ['por encima de 1', 1.5],
+      ['por debajo de 0', -0.1],
+      ['NaN', Number.NaN],
+      ['infinita', Number.POSITIVE_INFINITY],
+      ['un texto', 'alta'],
+      ['nada', undefined],
+    ])('%s da invalid y no la cambia ni avisa', (_label, value) => {
+      const { control, intensityNotices } = withIntensity();
+      control.setIntensity(0.4);
+
+      expect(control.setIntensity(value)).toBe('invalid');
+      expect(control.intensity()).toBe(0.4);
+      expect(intensityNotices).toEqual([0.4]);
+    });
+
+    it('acepta los dos extremos', () => {
+      const { control } = withIntensity();
+
+      expect(control.setIntensity(0)).toBe('changed');
+      expect(control.intensity()).toBe(0);
+      expect(control.setIntensity(1)).toBe('changed');
+      expect(control.intensity()).toBe(1);
+    });
+
+    it('quien la escucha recibe un aviso por cada cambio, y ninguno al dejar de escuchar', () => {
+      const { control } = twoStrips();
+      const received: number[] = [];
+      const stop = control.watchIntensity(() => received.push(control.intensity()));
+
+      control.setIntensity(0.4);
+      control.setIntensity(0);
+      stop();
+      control.setIntensity(0.7);
+
+      expect(received).toEqual([0.4, 0]);
+    });
+
+    it('cambiarla no avisa a quien escucha las tiras ni toca el efecto ni los valores de ninguna', () => {
+      const { control, notices } = withIntensity();
+      control.setValues('b', BLUE);
+      notices.length = 0;
+      const slots = [control.slot(0), control.slot(1)];
+
+      control.setIntensity(0.4);
+      control.setIntensity(0);
+
+      expect(notices).toEqual([]);
+      expect(control.slot(0)).toBe(slots[0]);
+      expect(control.slot(1)).toBe(slots[1]);
+      expect(control.slot(1).values).toEqual(BLUE);
+    });
+
+    it('cambiar el efecto o los valores de una tira no avisa a quien escucha la intensidad', () => {
+      const { control, intensityNotices } = withIntensity();
+
+      control.setEffect('b', 'energy');
+      control.setEffect('b', 'breathing');
+      control.setValues('b', BLUE);
+
+      expect(intensityNotices).toEqual([]);
+      expect(control.intensity()).toBe(1);
+    });
+  });
 });
