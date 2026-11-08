@@ -6,6 +6,7 @@ import { type ControlBuffer, createControl } from './control.ts';
 import { breathing } from './effects/breathing.ts';
 import { defaultParams, type Effect } from './effects/effect.ts';
 import { energy } from './effects/energy.ts';
+import type { InstrumentState } from './state-store.ts';
 
 function strip(id: string, effect: EffectId): StripConfig {
   return { id, name: id, output: { type: 'virtual' }, ledCount: 4, effect };
@@ -456,6 +457,104 @@ describe('el búfer de control', () => {
 
       expect(intensityNotices).toEqual([]);
       expect(control.intensity()).toBe(1);
+    });
+  });
+
+  // Decisión 6 del change instrument-state-restore: el búfer arranca desde el estado restaurado y da
+  // su foto para el guardador.
+  describe('arrancar desde un estado y dar su foto', () => {
+    const BLUE = { color: '#2040FF', period: 7 };
+    const ctx = (time: number) => ({ time, dt: 1 / 60, audio: null });
+
+    /** A guardada con el efecto de prueba y la respiración en azul, y B con la energía. */
+    const initial: InstrumentState = {
+      a: { activeEffect: 'pulse', values: { breathing: BLUE, pulse: { speed: 5 } } },
+      b: { activeEffect: 'energy', values: { energy: {} } },
+    };
+
+    function fromState(state: InstrumentState = initial) {
+      return createControl({
+        strips: [strip('a', 'breathing'), strip('b', 'breathing')],
+        effects: [breathing, energy, pulse],
+        hasAudioSource: true,
+        initial: state,
+      });
+    }
+
+    it('cada tira arranca con el efecto activo y los valores del estado, no con los del fichero', () => {
+      const control = fromState();
+
+      expect([control.slot(0).effect, control.slot(1).effect]).toEqual(['pulse', 'energy']);
+      expect(control.slot(0).values).toEqual({ speed: 5 });
+    });
+
+    it('el primer render ya pinta con los valores del estado', () => {
+      const control = fromState();
+      const out = new Uint8Array(12);
+
+      control.slot(0).render(ctx(0), out);
+
+      expect(out).toEqual(new Uint8Array(12).fill(5));
+    });
+
+    it('vuelven también los valores de los efectos no activos', () => {
+      const control = fromState();
+
+      expect(control.setEffect('a', 'breathing')).toBe('changed');
+
+      expect(control.slot(0).values).toEqual(BLUE);
+    });
+
+    it('una tira sin estado arranca con el efecto del fichero y sus valores por defecto', () => {
+      const control = fromState({ b: { activeEffect: 'energy', values: { energy: {} } } });
+
+      expect(control.slot(0).effect).toBe('breathing');
+      expect(control.slot(0).values).toEqual(defaultParams(breathing));
+    });
+
+    it('la foto devuelve el estado con que arrancó', () => {
+      expect(fromState().snapshot()).toEqual(initial);
+    });
+
+    it('sin estado, la foto tiene el efecto del fichero de cada tira con sus valores por defecto', () => {
+      const { control } = twoStrips();
+
+      expect(control.snapshot()).toEqual({
+        a: { activeEffect: 'energy', values: { energy: {} } },
+        b: { activeEffect: 'breathing', values: { breathing: defaultParams(breathing) } },
+      });
+    });
+
+    it('la foto recoge los cambios de efecto y de valores', () => {
+      const control = fromState();
+      control.setEffect('a', 'breathing');
+      control.setValues('a', { color: '#FF2020', period: 3 });
+      control.setEffect('b', PULSE);
+
+      expect(control.snapshot()).toEqual({
+        a: {
+          activeEffect: 'breathing',
+          values: { breathing: { color: '#FF2020', period: 3 }, pulse: { speed: 5 } },
+        },
+        b: { activeEffect: 'pulse', values: { energy: {}, pulse: { speed: 2 } } },
+      });
+    });
+
+    it('lo que haga después quien recibe la foto no cambia el búfer', () => {
+      const control = fromState();
+      const photo = control.snapshot() as Record<string, { values: Record<string, unknown> }>;
+      photo.a!.values.pulse = { speed: 9 };
+
+      expect(control.snapshot()).toEqual(initial);
+      expect(control.slot(0).values).toEqual({ speed: 5 });
+    });
+
+    it('lo que haga después quien dio el estado no cambia el búfer', () => {
+      const state = structuredClone(initial) as Record<string, { values: Record<string, unknown> }>;
+      const control = fromState(state as InstrumentState);
+      state.a!.values.pulse = { speed: 9 };
+
+      expect(control.slot(0).values).toEqual({ speed: 5 });
     });
   });
 });

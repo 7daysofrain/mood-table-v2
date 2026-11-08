@@ -20,6 +20,7 @@ import Value from 'typebox/value';
 
 import { defaultParams, type Effect, type FrameContext } from './effects/effect.ts';
 import { type AnyEffect, EFFECTS } from './effects/registry.ts';
+import type { InstrumentState } from './state-store.ts';
 
 /**
  * Qué ha pasado con un cambio de efecto. No lanza: cada mando lo traduce a lo suyo (la API, a un
@@ -96,6 +97,8 @@ export interface ControlBuffer extends Commands {
    * dejar de escuchar.
    */
   watchIntensity(listener: () => void): () => void;
+  /** La foto del estado del instrumento: el efecto activo y los valores de cada efecto de cada tira. */
+  snapshot(): InstrumentState;
 }
 
 export interface ControlOptions {
@@ -105,6 +108,8 @@ export interface ControlOptions {
   effects?: readonly AnyEffect[];
   /** Si el instrumento tiene fuente de audio: sin ella, una tira no puede pasar a un reactivo. */
   hasAudioSource: boolean;
+  /** El estado restaurado con que arranca cada tira (`restore`). Pendiente. */
+  initial?: InstrumentState;
 }
 
 /** La ranura por dentro: el búfer sustituye sus valores y conoce su esquema. */
@@ -247,6 +252,9 @@ export function createControl({
     watchIntensity(listener) {
       intensityListeners.add(listener);
       return () => intensityListeners.delete(listener);
+    },
+    snapshot() {
+      throw new Error('pendiente');
     },
   };
 }

@@ -67,7 +67,7 @@
 - [x] 2.2 La restauración en `packages/engine/src/core/restore.ts`, función pura (design.md,
   decisiones 5 y 6).
   Verificar: los tests de 2.1 pasan.
-- [ ] 2.3 **(test en rojo)** Tests del búfer en `packages/engine/src/core/control.test.ts`: arranca
+- [x] 2.3 **(test en rojo)** Tests del búfer en `packages/engine/src/core/control.test.ts`: arranca
   desde un estado dado (efecto activo y valores de cada efecto, también de los no activos, y el
   primer `render` ya los lleva) y su foto del estado devuelve lo que tiene, también tras
   `setEffect` y `setValues`. Los tests de arranque desde el fichero siguen igual.
