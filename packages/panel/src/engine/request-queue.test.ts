@@ -1,7 +1,13 @@
 import type { EffectId } from '@moodtable/shared';
 import { describe, expect, it, vi } from 'vitest';
 
-import { effectRequests, type FetchLike, valueRequests } from './strip-requests.ts';
+import {
+  effectRequests,
+  type FetchLike,
+  INTENSITY_KEY,
+  intensityRequests,
+  valueRequests,
+} from './request-queue.ts';
 
 interface Sent {
   url: string;
@@ -274,5 +280,48 @@ describe('el envío de los cambios de valores', () => {
     requests.send('barra', BLUE);
     await at(sent, 3).finish({ ok: true });
     expect(listener).toHaveBeenCalledTimes(2);
+  });
+});
+
+// Decisión 9 del change instrument-intensity: la misma cola, con una sola clave y sin tira.
+describe('el envío de los cambios de intensidad', () => {
+  it('un cambio envía PUT /api/intensity con la intensidad en JSON, al momento', () => {
+    const { fetch, sent } = fakeFetch();
+
+    intensityRequests(fetch).send(INTENSITY_KEY, 0.4);
+
+    expect(sent).toHaveLength(1);
+    expect(at(sent, 0)).toMatchObject({
+      url: '/api/intensity',
+      method: 'PUT',
+      contentType: 'application/json',
+      body: { intensity: 0.4 },
+    });
+  });
+
+  it('con uno en camino, al terminar solo se envía el último', async () => {
+    const { fetch, sent } = fakeFetch();
+    const requests = intensityRequests(fetch);
+
+    requests.send(INTENSITY_KEY, 0.4);
+    requests.send(INTENSITY_KEY, 0.3);
+    requests.send(INTENSITY_KEY, 0.2);
+    await at(sent, 0).finish({ ok: true });
+
+    expect(sent.map(({ body }) => body)).toEqual([{ intensity: 0.4 }, { intensity: 0.2 }]);
+  });
+
+  it('dice si hay envíos en camino y avisa cuando se queda sin ellos', async () => {
+    const { fetch, sent } = fakeFetch();
+    const requests = intensityRequests(fetch);
+    const listener = vi.fn();
+    requests.subscribe(listener);
+
+    requests.send(INTENSITY_KEY, 0.4);
+    expect(requests.busy(INTENSITY_KEY)).toBe(true);
+    await at(sent, 0).finish({ ok: true });
+
+    expect(requests.busy(INTENSITY_KEY)).toBe(false);
+    expect(listener).toHaveBeenCalledWith(INTENSITY_KEY, true);
   });
 });

@@ -113,29 +113,29 @@
 
 ## 3. MOO-127 · panel
 
-- [ ] 3.1 `StripRequests` pasa a ser `RequestQueue<T>` en
+- [x] 3.1 `StripRequests` pasa a ser `RequestQueue<T>` en
   `packages/panel/src/engine/request-queue.ts` y recibe cómo construir la URL de cada clave. Las
   colas de efectos y de valores siguen con la tira como clave y las mismas rutas. Sus tests se mueven
   con ella, sin cambiar lo que comprueban (decisión 9).
   Verificar: `pnpm test` en verde sin tocar ninguna aserción, y `pnpm typecheck` en verde.
-- [ ] 3.2 **(test en rojo)** Tests en `packages/panel/src/engine/`, con un `fetch` y un socket
+- [x] 3.2 **(test en rojo)** Tests en `packages/panel/src/engine/`, con un `fetch` y un socket
   falsos: la cola de la intensidad envía `PUT /api/intensity` con `{ "intensity": … }`; con uno en
   camino, solo se envía el último; la conexión decodifica el mensaje `7` y da la intensidad del
   motor, que vuelve a no conocerse al perder la conexión.
   Verificar: los tests nuevos fallan porque la cola y el mensaje no existen en el panel.
-- [ ] 3.3 La cola de la intensidad (`intensityRequests`) y la intensidad en `EngineConnection`
+- [x] 3.3 La cola de la intensidad (`intensityRequests`) y la intensidad en `EngineConnection`
   (`packages/panel/src/engine/connection.ts`).
   Verificar: los tests de 3.2 pasan.
-- [ ] 3.4 **(test en rojo)** Tests de `useDraftIntensity` en
+- [x] 3.4 **(test en rojo)** Tests de `useDraftIntensity` en
   `packages/panel/src/intensity/use-draft-intensity.test.ts`: mientras se arrastra, el valor sigue
   al dedo aunque llegue un eco atrasado (100 % → 40 % con el motor en 70 %); al soltar, sigue con su
   valor hasta que la cola se vacía y llega el eco, y entonces muestra el del motor; si el motor no
   lo aplica, vuelve a la intensidad que pinta; lo que envía va redondeado a dos decimales
   (`specs/intensity`, decisiones 7 y 9).
   Verificar: los tests nuevos fallan porque el hook no existe.
-- [ ] 3.5 El hook `useDraftIntensity` en `packages/panel/src/intensity/use-draft-intensity.ts`.
+- [x] 3.5 El hook `useDraftIntensity` en `packages/panel/src/intensity/use-draft-intensity.ts`.
   Verificar: los tests de 3.4 pasan.
-- [ ] 3.6 **(test en rojo)** Tests de la zona y del panel (`IntensityZone.test.tsx`, `App.test.tsx` y
+- [x] 3.6 **(test en rojo)** Tests de la zona y del panel (`IntensityZone.test.tsx`, `App.test.tsx` y
   los de `PanelLayout`), con la conexión y la cola falsas:
   - el panel tiene seis zonas, se encuentran por su nombre («Intensidad» incluida) y la intensidad
     es la última en el orden de lectura;
@@ -146,12 +146,12 @@
     zonas vacías (`specs/intensity`, `specs/panel-layout`).
 
   Verificar: los tests nuevos fallan porque la zona no existe.
-- [ ] 3.7 La zona en `packages/panel/src/intensity/IntensityZone.tsx`, con el `Slider` vertical de
+- [x] 3.7 La zona en `packages/panel/src/intensity/IntensityZone.tsx`, con el `Slider` vertical de
   Mantine, paso 0,01 y la etiqueta en porcentaje; sus textos en `literals.ts`; y su sitio en
   `PanelLayout.tsx`, en un `AppShell.Aside` de unos 100 px, después de `AppShell.Main` (decisiones 6
   y 7).
   Verificar: los tests de 3.6 pasan, y con `pnpm dev`, el fader atenúa la tira de la demo en el visor.
-- [ ] 3.8 E2E del caso feliz en `e2e/intensity.spec.ts`, con un motor propio, el fichero de golpes y
+- [x] 3.8 E2E del caso feliz en `e2e/intensity.spec.ts`, con un motor propio, el fichero de golpes y
   dos tiras, una con la respiración y otra con *energía*:
   - el panel se abre con «100 %»;
   - al arrastrar el fader, el visor pinta el cambio en las dos tiras en menos de 100 ms desde cada
@@ -163,7 +163,7 @@
   `e2e/panel.spec.ts` pasa a esperar seis zonas (`specs/intensity`, `specs/panel-layout`, criterios
   de `MOO-97`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 3.9 Documentación:
+- [x] 3.9 Documentación:
   - **D102** (decisiones 6 y 7) en `docs/idea-mood-table.md` §10;
   - README §1.3: la zona *Intensidad* (qué hace, que no depende de la tira seleccionada y que sin
     conexión queda vacía, como las demás), y el recorrido de H2 suma la intensidad;

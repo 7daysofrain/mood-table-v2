@@ -1,6 +1,6 @@
 /**
- * Los textos de las zonas Tiras, Efectos y Controles (decisión 9 de los changes strip-effect-switch
- * y strip-effect-values), en castellano y sin librería de i18n. Los nombres salen de `EffectId`, de
+ * Los textos de las zonas Tiras, Efectos, Controles e Intensidad (decisión 9 de los changes
+ * strip-effect-switch y strip-effect-values, decisión 7 del change instrument-intensity), en castellano y sin librería de i18n. Los nombres salen de `EffectId`, de
  * los valores de cada efecto y del tipo de salida: un efecto, un parámetro o una salida nuevos no
  * compilan hasta tener el suyo. Pasar el panel al inglés (MOO-104) traerá aquí los
  * textos que hoy están en cada componente.
@@ -47,6 +47,17 @@ export const CONTROL_LABELS = { saturation: 'Saturación y brillo', hue: 'Tono' 
 /** El valor de un slider, con un decimal y coma: «4,0». La unidad va en el nombre del parámetro. */
 export function formatValue(value: number): string {
   return value.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+/** El nombre accesible del fader de la intensidad, el mismo que el título de su zona. */
+export const INTENSITY_LABEL = 'Intensidad';
+
+/**
+ * La intensidad, de 0 a 1, como la lee el DJ: un porcentaje entero, «40 %». No promete más
+ * precisión de la que hay: por debajo del 10 %, la tira va a saltos.
+ */
+export function formatPercent(intensity: number): string {
+  return `${Math.round(intensity * 100)} %`;
 }
 
 /** «1 LED», «60 LEDs». */

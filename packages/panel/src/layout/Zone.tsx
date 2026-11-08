@@ -6,6 +6,8 @@ interface ZoneProps {
   title: string;
   /** Altura mínima, para que la zona se vea aunque esté vacía. */
   minHeight?: number;
+  /** Ocupa toda la altura de su sitio y su contenido se lleva lo que deja el título. */
+  fill?: boolean;
   /** Contenido que pone la historia que rellena la zona. */
   children?: ReactNode;
 }
@@ -14,11 +16,18 @@ interface ZoneProps {
  * Una zona del panel: una región con nombre (`<section aria-labelledby>`) que las historias y sus
  * tests localizan por su título (specs/panel-layout).
  */
-export function Zone({ title, minHeight, children }: ZoneProps) {
+export function Zone({ title, minHeight, fill = false, children }: Readonly<ZoneProps>) {
   const titleId = useId();
 
   return (
-    <Paper component="section" aria-labelledby={titleId} withBorder p="md" mih={minHeight}>
+    <Paper
+      component="section"
+      aria-labelledby={titleId}
+      withBorder
+      p="md"
+      mih={minHeight}
+      {...(fill && { h: '100%', display: 'flex', style: { flexDirection: 'column' } })}
+    >
       <Title id={titleId} order={2} size="h4" mb="sm">
         {title}
       </Title>

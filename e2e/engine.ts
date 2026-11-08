@@ -37,16 +37,20 @@ export interface TestEngineOptions {
   audioFile?: string;
   /** El efecto con el que arranca la tira. Por defecto, la respiración. */
   effect?: 'breathing' | 'energy';
+  /** Varias tiras, una por efecto y en este orden, en lugar de la única de `effect`. */
+  effects?: readonly ('breathing' | 'energy')[];
 }
 
 /**
- * Prepara un motor con una tira virtual de 60 LEDs en un puerto libre, sin arrancarlo, con la fuente
- * de audio y el efecto que pida el test. Su fichero de configuración va en la carpeta de resultados
- * del test, que Playwright vacía en cada ejecución. El estado del instrumento va en memoria.
+ * Prepara un motor con una tira virtual de 60 LEDs (o una por efecto de `effects`) en un puerto
+ * libre, sin arrancarlo, con la fuente de audio y el efecto que pida el test. Su fichero de
+ * configuración va en la carpeta de resultados del test, que Playwright vacía en cada ejecución. El
+ * estado del instrumento va en memoria.
  */
 export async function createTestEngine({
   audioFile,
   effect = 'breathing',
+  effects = [effect],
 }: TestEngineOptions = {}): Promise<TestEngine> {
   const port = await freePort();
   const config = test.info().outputPath('config.json');
@@ -57,9 +61,13 @@ export async function createTestEngine({
       ...(audioFile ? { audioSource: { type: 'file', path: audioFile } } : {}),
       // En memoria: los E2E no escriben en `data/` ni se pisan entre ejecuciones.
       instrumentState: { type: 'memory' },
-      strips: [
-        { id: 'e2e', name: 'Tira de los E2E', output: { type: 'virtual' }, ledCount: 60, effect },
-      ],
+      strips: effects.map((each, index) => ({
+        id: index === 0 ? 'e2e' : `e2e-${index + 1}`,
+        name: index === 0 ? 'Tira de los E2E' : `Tira ${index + 1} de los E2E`,
+        output: { type: 'virtual' },
+        ledCount: 60,
+        effect: each,
+      })),
     }),
   );
 

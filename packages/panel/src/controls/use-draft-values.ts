@@ -9,10 +9,10 @@
 import type { EffectId, SetValuesBody, StripState } from '@moodtable/shared';
 import { useEffect, useRef, useState } from 'react';
 
-import type { StripRequests } from '../engine/strip-requests.ts';
+import type { RequestQueue } from '../engine/request-queue.ts';
 
 /** Lo que los controles usan de la cola de valores: así los tests pueden darle una falsa. */
-export type ValueRequests = Pick<StripRequests<SetValuesBody>, 'send' | 'busy' | 'subscribe'>;
+export type ValueRequests = Pick<RequestQueue<SetValuesBody>, 'send' | 'busy' | 'subscribe'>;
 
 type Values = Record<string, unknown>;
 

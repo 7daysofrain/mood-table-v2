@@ -1922,6 +1922,27 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El `design.md` decía que `load()` devolvía también lo que había pasado al abrir. Pasó a decirlo la apertura del adaptador SQLite, porque el puerto no sabe de ficheros, y se corrigió la frase.*
 - *La comprobación en la Pi (`node:sqlite` sin flag ni aviso) quedó para el humano: desde el Mac, `moodtable.local` no resolvía.*
 
+#### 6.66 Mover la intensidad desde el panel (`MOO-127`)
+
+**Prompt 1** (con la PR de `MOO-126` en verde, antes de aprobarla):
+
+> Está todo verde. ¿Ouedo ver su funcionamiento antes de aprobarlo? A ser posible en la PI
+
+**Prompt 2** (cuando la IA le recordó que el fader no llega hasta `MOO-127`, así que en la Pi se vería con `curl`):
+
+> Entonces no, espero a que esté el fader. Mergeo
+
+*Claude Code (`claude-opus-5-5`, 8-nov). La IA solo había mirado el estado de la Pi, sin tocar nada. La prueba en la mesa quedó para el paso 3.10 de esta tarea, con el fader. Tras integrar la PR, implementó la sección `MOO-127` en TDD, con un commit por paso:*
+- *`StripRequests` pasa a ser `RequestQueue`, que recibe la URL de cada clave; sus tests se mueven sin tocar ninguna aserción;*
+- *la cola de la intensidad, con una sola clave, y el mensaje `7` en la conexión;*
+- *`useDraftIntensity`, la regla de `useDraftValues` con el eco comparado por igualdad;*
+- *la zona «Intensidad», con el `Slider` vertical de Mantine en un `AppShell.Aside`;*
+- *el E2E del caso feliz, con dos tiras y el panel ya usado (D98): tres pasadas seguidas en verde, con el peor tiempo de movimiento a luz en 18, 20 y 50 ms.*
+
+*Ajustes:*
+- *Al mirar la zona en el navegador, la IA vio que a unos 100 px, como decía el `design.md`, el título «Intensidad» se cortaba y «100 %» se partía en dos líneas. La columna pasó a 140 px, y queda en D102.*
+- *El E2E no pudo arrancar a la primera: el puerto de su servidor lo ocupaban los E2E de otra sesión, en otro worktree. La IA no paró ese proceso: esperó a que lo liberara.*
+
 ---
 
 ### 7. Pull Requests

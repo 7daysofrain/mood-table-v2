@@ -2,7 +2,7 @@ import type { StripState } from '@moodtable/shared';
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { QueueListener } from '../engine/strip-requests.ts';
+import type { QueueListener } from '../engine/request-queue.ts';
 import { useDraftValues, type ValueRequests } from './use-draft-values.ts';
 
 /** La cabina respirando con `period`, como la cuenta el motor. */

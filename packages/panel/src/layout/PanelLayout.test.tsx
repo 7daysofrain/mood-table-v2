@@ -4,8 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { render } from '../../test/render.tsx';
 import { PanelLayout } from './PanelLayout.tsx';
 
-/** Zonas con nombre del glosario (PRD §8), en el orden del wireframe (specs/panel-layout). */
-const ZONAS = ['Visor', 'Tiras', 'Efectos', 'Controles'];
+/**
+ * Zonas con nombre del glosario (PRD §8), en el orden del wireframe (specs/panel-layout): la
+ * intensidad, a la derecha de todo, es la última en el orden de lectura.
+ */
+const ZONAS = ['Visor', 'Tiras', 'Efectos', 'Controles', 'Intensidad'];
 
 describe('PanelLayout', () => {
   it('tiene una cabecera y una región por cada zona, sin ninguna otra', () => {
@@ -29,7 +32,7 @@ describe('PanelLayout', () => {
     expect(screen.getByRole('heading', { name: 'Visor' })).toBeInTheDocument();
   });
 
-  it('ordena las zonas como el wireframe: cabecera, visor, tiras, efectos, controles', () => {
+  it('ordena las zonas como el wireframe: cabecera, visor, tiras, efectos, controles, intensidad', () => {
     render(<PanelLayout status="disconnected" />);
 
     const enOrden = [screen.getByRole('banner'), ...ZONAS.map((nombre) => screen.getByRole('region', { name: nombre }))];
@@ -43,7 +46,7 @@ describe('PanelLayout', () => {
   it('deja vacías, solo con su título, las zonas que aún no rellena ninguna historia', () => {
     render(<PanelLayout status="disconnected" />);
 
-    for (const nombre of ['Tiras', 'Efectos', 'Controles']) {
+    for (const nombre of ['Tiras', 'Efectos', 'Controles', 'Intensidad']) {
       expect(screen.getByRole('region', { name: nombre })).toHaveTextContent(new RegExp(`^${nombre}$`));
     }
   });
@@ -53,6 +56,12 @@ describe('PanelLayout', () => {
 
     const visor = screen.getByRole('region', { name: 'Visor' });
     expect(within(visor).getByLabelText('Tiras del visor')).toBeInTheDocument();
+  });
+
+  it('pone el contenido de la intensidad en su zona', () => {
+    render(<PanelLayout status="disconnected" intensity={<p>fader</p>} />);
+
+    expect(screen.getByRole('region', { name: 'Intensidad' })).toHaveTextContent('fader');
   });
 
   it.each([
