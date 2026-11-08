@@ -1920,7 +1920,40 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *El test del fichero dañado falló: el `-wal` apartado desaparecía. La IA comprobó que SQLite borra el `-wal` y el `-shm` al cerrar la conexión que ha fallado. Por eso el adaptador aparta los ficheros antes de cerrarla.*
 - *El `design.md` decía que `load()` devolvía también lo que había pasado al abrir. Pasó a decirlo la apertura del adaptador SQLite, porque el puerto no sabe de ficheros, y se corrigió la frase.*
-- *La comprobación en la Pi (`node:sqlite` sin flag ni aviso) quedó para el humano: desde el Mac, `moodtable.local` no resolvía.*
+- *La comprobación en la Pi (`node:sqlite` sin flag ni aviso) quedó pendiente porque desde el Mac `moodtable.local` no resolvía. Al día siguiente, el humano la lanzó con `!` y la IA le hizo ver que se había ejecutado en el Mac; la repitió ella por `ssh moodtable-pi`, que ya conectaba (Node 24.22, sin aviso).*
+- *Codex dejó dos P2 sobre el adaptador SQLite: pasaba el fichero a WAL antes de ver que era de una versión más nueva, y perdía una tira con id `__proto__`. El humano preguntó si los tests de contrato no debían ser un `.test.ts`. La IA explicó por qué no, pero le dio la razón en que no debían estar en `src/`, y los movió a `packages/engine/test/`. Los tres arreglos van en commits aparte, con un test que primero falla.*
+
+**Prompt 2** (tras pasar la PR a lista para revisar y subir enseguida un merge con `main`):
+
+> No he visto saltar al triador, está encendido?
+
+*La IA comprobó que el contenedor estaba en marcha y reconstruyó qué había pasado. La revisión automática de Codex era del push anterior y llegó cuando el sistema ya seguía el merge. En el merge, Codex contestó a la petición del sistema sin hallazgos, porque no repite lo que ya ha comentado, así que la PR quedó lista para integrar sin triaje.*
+
+**Prompt 3:**
+
+> Puedes lanzarlo manualmente el triador?
+
+*No hay un comando para eso. La IA escribió un script de un solo uso que repite el nodo `triar` del grafo con los adaptadores reales, lo corrió dentro del contenedor (que tiene el `.env`) y no publicó nada: los dos P2, *reales* con p = 0,85 y 0,84.*
+
+**Prompt 4:**
+
+> Primero hay que apuntar el hueco que tiene el triador en estas situaciones, asi que mete esta información en el historia que tenemos de calibración del triador.
+
+*La IA lo añadió a `MOO-76` como notas para el refinamiento: qué pasó, el resultado del triaje a mano, por qué afecta a medir el triaje (faltan datos y el aviso de lista para integrar engaña) y la pregunta de dónde arreglarlo. Señaló que el aviso que engaña es más un fallo del seguimiento que de calibración.*
+
+#### 6.66 Restaurar el estado del instrumento al arrancar (`MOO-129`)
+
+**Prompt 1** (integrada la PR de `MOO-26`, cuando la IA propuso seguir con la sección siguiente del change):
+
+> Sí, sigue
+
+*Claude Code (`claude-opus-5-5`, 8-nov). La IA creó la rama desde `main` e implementó la sección `MOO-129` en TDD, un commit por paso: los tests de la restauración en rojo, la restauración como función pura del núcleo, los tests del búfer de control en rojo y el búfer que arranca desde un estado y da su foto. Después, la raíz de composición, que carga el estado, lo restaura y crea el búfer con él. Lo comprobó a mano con una base preparada con `sqlite3`: la tira arranca respirando en azul, se conserva la fila de una tira que el fichero ya no declara y, con un efecto guardado reactivo sin fuente de audio, arranca con el del fichero y lo dice en el log.*
+
+*Ajustes:*
+- *Al conectar el búfer en `main.ts`, la IA vio que el servidor recibe `{ ...control, snapshot }` y que ese `snapshot` es el mensaje de las tiras para el panel. Con el mismo nombre en el búfer, funcionaba solo porque el de la derecha pisa al del spread. Renombró la foto del búfer a `instrumentState()`, el término del glosario, en un commit aparte.*
+- *Por el arreglo de Codex en `MOO-26`, la restauración y el búfer leen la tira de cada `id` con `Object.hasOwn`, y los tests incluyen una tira `__proto__`.*
+- *Añadió que, si el estado guardado no se puede leer, el motor arranque como la primera vez y lo diga en el log: lo pide el requisito de que un estado dañado no impida arrancar, aunque el `tasks.md` no lo nombraba.*
+- *La primera comprobación a mano falló porque el fichero declaraba el scroll, que es reactivo: la respiración es el único efecto de ambiente.*
 
 ---
 

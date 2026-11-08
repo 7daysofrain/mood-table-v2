@@ -79,7 +79,7 @@
   Verificar: con un `data/instrument-state.db` preparado a mano con `sqlite3` (la respiración en azul
   y otra tira que el fichero ya no declara), `pnpm dev` arranca con la tira respirando en azul, y la
   fila de la otra tira sigue en la base.
-- [ ] 2.6 Documentación: README §2.2 (*Configuración de las tiras* y *Búfer de control*: la
+- [x] 2.6 Documentación: README §2.2 (*Configuración de las tiras* y *Búfer de control*: la
   restauración, la reserva del efecto del fichero y los valores que no encajan) y §3
   (*Reconciliación al arrancar*: ya no escribe nada al arrancar; lo hace el primer guardado). `prompts.md`: la
   entrada de esta tarea.
