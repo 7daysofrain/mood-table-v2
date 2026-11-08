@@ -54,28 +54,28 @@
 
 ## 2. MOO-126 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests de `applyIntensity` en `packages/engine/src/core/intensity.test.ts`:
+- [x] 2.1 **(test en rojo)** Tests de `applyIntensity` en `packages/engine/src/core/intensity.test.ts`:
   a 1, el frame no cambia; a 0,5, `255, 169, 87` pasa a `128, 85, 44` (redondeado, no truncado); a 0,
   todos los canales a 0; con varios LEDs, cada canal por separado (decisiones 2 y 3).
   Verificar: los tests nuevos fallan porque la función no existe.
-- [ ] 2.2 `applyIntensity` en `packages/engine/src/core/intensity.ts`: escala el frame en su sitio,
+- [x] 2.2 `applyIntensity` en `packages/engine/src/core/intensity.ts`: escala el frame en su sitio,
   sin crear nada, y a 1 sale sin tocarlo.
   Verificar: los tests de 2.1 pasan.
-- [ ] 2.3 El contrato de `Effect` en `packages/engine/src/core/effects/effect.ts` dice que un efecto
+- [x] 2.3 El contrato de `Effect` en `packages/engine/src/core/effects/effect.ts` dice que un efecto
   escribe todo `out` en cada `render` y nunca lee lo que había. Con un test en `registry.test.ts`:
   para cada efecto del registro, pintar sobre un búfer lleno de `0xAB` da el mismo frame que sobre
   uno a cero, con y sin audio (decisión 2).
   Verificar: el test pasa con los cuatro efectos, y falla si se le hace leer `out` a uno de ellos.
-- [ ] 2.4 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`:
+- [x] 2.4 **(test en rojo)** Tests del búfer de control en `packages/engine/src/core/control.test.ts`:
   arranca con la intensidad a 1; `setIntensity(0.4)` da `changed` y `intensity()` devuelve 0,4; la
   misma otra vez da `unchanged` y no avisa; `1.5`, `-0.1`, `NaN` y `"alta"` dan `invalid` y no la
   cambian; `watchIntensity` recibe un aviso por cada `changed`; un cambio de intensidad no avisa al
   `watch` de las tiras ni toca el efecto ni los valores de ninguna tira (decisiones 4 y 8).
   Verificar: los tests nuevos fallan porque `setIntensity` no existe.
-- [ ] 2.5 `setIntensity` en el puerto `Commands`, con `intensity()` y `watchIntensity` en
+- [x] 2.5 `setIntensity` en el puerto `Commands`, con `intensity()` y `watchIntensity` en
   `ControlBuffer` (`packages/engine/src/core/control.ts`).
   Verificar: los tests de 2.4 pasan y `pnpm lint` no da errores de fronteras.
-- [ ] 2.6 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
+- [x] 2.6 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
   salidas en memoria: con dos tiras y la intensidad a 0,5, cada frame vale el del efecto a la mitad,
   redondeado; las dos tiras de un pulso llevan la misma intensidad cuando cambia entre dos pulsos; a
   0, todos los LEDs apagados; a 1, el mismo frame que sin intensidad; una tira con salida `adalight`
@@ -83,11 +83,11 @@
   intensidad de 1 a 0 y de vuelta a 1, pinta el mismo frame que si no se hubiera tocado; la salida
   del nivel recibe el mismo nivel a cualquier intensidad (`specs/intensity`, criterios de `MOO-97`).
   Verificar: los tests nuevos fallan porque el bucle no aplica la intensidad.
-- [ ] 2.7 El bucle (`packages/engine/src/core/frame-loop.ts`) lee la intensidad al empezar cada pulso
+- [x] 2.7 El bucle (`packages/engine/src/core/frame-loop.ts`) lee la intensidad al empezar cada pulso
   y la aplica entre el `render` y las salidas, con un comentario que fija el orden: efecto,
   intensidad, límite de potencia (H4) y salidas.
   Verificar: los tests de 2.6 pasan y los frames dorados siguen en verde.
-- [ ] 2.8 **(test en rojo)** Tests de la ruta y del mensaje en
+- [x] 2.8 **(test en rojo)** Tests de la ruta y del mensaje en
   `packages/engine/src/adapters/server.test.ts`, con `inject` y un búfer real:
   `PUT /api/intensity` responde `200` con la intensidad aplicada; `400` con `{ message }` para `1.5`,
   `"alta"`, `{}` y un campo de más, sin cambiar la intensidad; un panel que se conecta recibe el `7`
@@ -95,13 +95,13 @@
   no envía nada; `/api/openapi.json` describe la ruta con su cuerpo, el rango de 0 a 1 y las
   respuestas `200` y `400` (`specs/intensity`, decisiones 4 y 5).
   Verificar: los tests nuevos fallan porque la ruta no existe.
-- [ ] 2.9 La ruta y el mensaje `7` en `packages/engine/src/adapters/server.ts`, con un
+- [x] 2.9 La ruta y el mensaje `7` en `packages/engine/src/adapters/server.ts`, con un
   `PanelIntensity` aparte del `PanelStrips`; su conexión en `packages/engine/src/main.ts` con el
   mismo búfer; y `docs/openapi.yaml` regenerado con `pnpm openapi`.
   Verificar: los tests de 2.8 pasan, el test del fichero del OpenAPI sigue en verde, y con
   `pnpm dev`, un `curl -X PUT` a `/api/intensity` con `{ "intensity": 0.2 }` atenúa la tira de la
   demo en el visor.
-- [ ] 2.10 Documentación:
+- [x] 2.10 Documentación:
   - **D100** (decisiones 1 a 3) y **D101** (decisiones 4 y 5) en `docs/idea-mood-table.md` §10;
   - README §2.1: el plano de tiempo real pasa a efecto → intensidad → límite de potencia → salidas;
   - README §2.2: el bucle aplica la intensidad, el búfer de control la guarda, y el adaptador *API

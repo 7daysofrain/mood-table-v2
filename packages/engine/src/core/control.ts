@@ -9,6 +9,10 @@
  * Todo lo que crea objetos (la memoria y los valores del efecto) pasa en `setEffect` y en
  * `setValues`, fuera del bucle, que solo lee referencias: el cambio entra entero en el pulso
  * siguiente, nunca a medias.
+ *
+ * También guarda la intensidad del instrumento (decisión 8 del change instrument-intensity), que no
+ * es de ninguna tira: un número que se sustituye fuera del bucle y que el bucle lee al empezar cada
+ * pulso. Vive en memoria y no se guarda (H5).
  */
 import { type EffectId, needsAudioSource, type StripConfig } from '@moodtable/shared';
 import type { TSchema } from 'typebox';
@@ -43,11 +47,28 @@ export type SetValuesResult =
   /** No cumplen el esquema del efecto activo, y la tira no cambia. Dice por qué, en castellano. */
   | { invalid: string };
 
+/**
+ * Qué ha pasado con un cambio de intensidad (decisión 4 del change instrument-intensity). No lanza,
+ * como `setValues`.
+ */
+export type SetIntensityResult =
+  /** Todas las tiras pintan con la intensidad nueva desde el pulso siguiente. */
+  | 'changed'
+  /** Ya era la intensidad: no se avisa a nadie. */
+  | 'unchanged'
+  /** No es un número finito de 0 a 1, y la intensidad no cambia. */
+  | 'invalid';
+
 /** Puerto de los mandos (README §2.1): la API HTTP hoy, la F1 y la pantalla táctil después. */
 export interface Commands {
   setEffect(stripId: string, effect: EffectId): SetEffectResult;
   /** Todos los valores del efecto activo de la tira, que se validan con su esquema. */
   setValues(stripId: string, values: unknown): SetValuesResult;
+  /**
+   * La intensidad de todas las tiras, de 0 a 1. Se valida aquí también, no solo en la API: un mando
+   * futuro, como la F1, entra por este puerto sin pasar por ella.
+   */
+  setIntensity(intensity: unknown): SetIntensityResult;
 }
 
 /** El efecto que pinta una tira, con sus valores y su memoria ya creados. */
@@ -67,6 +88,14 @@ export interface ControlBuffer extends Commands {
    * venga. Devuelve cómo dejar de escuchar.
    */
   watch(listener: () => void): () => void;
+  /** La intensidad con que pintan todas las tiras, de 0 a 1. El bucle la lee en cada pulso. */
+  intensity(): number;
+  /**
+   * Avisa a `listener` cada vez que cambia la intensidad, venga de donde venga. Es un aviso aparte
+   * del de las tiras, para que un cambio de intensidad no rehaga el estado de todas. Devuelve cómo
+   * dejar de escuchar.
+   */
+  watchIntensity(listener: () => void): () => void;
 }
 
 export interface ControlOptions {
@@ -165,6 +194,9 @@ export function createControl({
 
   const slots = strips.map((strip, index) => slotFor(index, strip, strip.effect));
   const listeners = new Set<() => void>();
+  // Al arrancar, al máximo: cada tira pinta su efecto tal cual (specs/intensity).
+  let intensity = 1;
+  const intensityListeners = new Set<() => void>();
 
   return {
     setEffect(stripId, effect) {
@@ -203,6 +235,18 @@ export function createControl({
     watch(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
+    },
+    setIntensity(value) {
+      if (typeof value !== 'number' || !(value >= 0 && value <= 1)) return 'invalid';
+      if (value === intensity) return 'unchanged';
+      intensity = value;
+      for (const listener of intensityListeners) listener();
+      return 'changed';
+    },
+    intensity: () => intensity,
+    watchIntensity(listener) {
+      intensityListeners.add(listener);
+      return () => intensityListeners.delete(listener);
     },
   };
 }

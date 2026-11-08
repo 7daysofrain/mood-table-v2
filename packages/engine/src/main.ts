@@ -2,13 +2,13 @@
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
  * adaptadores. Carga la configuración y la fuente de audio, si la declara, abre los puertos serie
  * de las tiras físicas, abre el estado del instrumento, crea el búfer de control, arranca el
- * servidor del panel (que anuncia la fuente, el estado de la tarjeta y las tiras, envía su nivel y la
- * posición del fichero, sirve el fichero y recibe los mandos de la API) y el motor, y da a cada tira
- * sus salidas: el visor siempre (D43) y, a las tiras físicas, también su salida Adalight. Si la
- * configuración no sirve, el fichero de audio no se puede leer o su formato no vale, la tarjeta de
- * sonido o el puerto de una tira física no se pueden abrir, o el servidor no puede escuchar, el
- * motor no arranca: dice qué falla y termina con código 1. El estado del instrumento, en cambio,
- * nunca impide arrancar.
+ * servidor del panel (que anuncia la fuente, el estado de la tarjeta, las tiras y la intensidad,
+ * envía su nivel y la posición del fichero, sirve el fichero y recibe los mandos de la API) y el
+ * motor, y da a cada tira sus salidas: el visor siempre (D43) y, a las tiras físicas, también su
+ * salida Adalight. Si la configuración no sirve, el fichero de audio no se puede leer o su formato
+ * no vale, la tarjeta de sonido o el puerto de una tira física no se pueden abrir, o el servidor no
+ * puede escuchar, el motor no arranca: dice qué falla y termina con código 1. El estado del
+ * instrumento, en cambio, nunca impide arrancar.
  */
 import { join } from 'node:path';
 
@@ -101,6 +101,7 @@ async function main(): Promise<string | undefined> {
       audioBytes: audio?.ok ? audio.bytes : undefined,
       watchSourceStatus: soundcard?.onStatus,
       strips: { ...control, snapshot: () => stripsMessage(loaded.config, control) },
+      intensity: control,
     });
   } catch (error) {
     // Un `arecord` vivo, un intento pendiente o un puerto serie abierto mantendrían el proceso en

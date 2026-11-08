@@ -6,8 +6,10 @@
  * navegador recibe la fuente de audio al conectarse y su nivel y la posición del fichero en cada
  * pulso. Con la tarjeta de sonido, también su estado: al conectarse y cada vez que cambia
  * (decisión 3 del change soundcard-reconnect). Y las tiras con su efecto activo, también al
- * conectarse y cada vez que cambia el de una (decisión 3 del change strip-effect-switch). Con un fichero como fuente, lo sirve en `/audio`
- * para que el panel lo oiga (decisión 6 del change panel-audio-playback).
+ * conectarse y cada vez que cambia el de una (decisión 3 del change strip-effect-switch). Y la
+ * intensidad del instrumento, también al conectarse y cada vez que cambia (decisión 5 del change
+ * instrument-intensity). Con un fichero como fuente, lo sirve en `/audio` para que el panel lo oiga
+ * (decisión 6 del change panel-audio-playback).
  *
  * Es también el adaptador *API HTTP* (decisiones 2 y 6 del change strip-effect-switch): por HTTP
  * llegan los mandos, validados con los esquemas de `@moodtable/shared`, y el OpenAPI se genera de
@@ -32,6 +34,7 @@ import {
   ApiErrorSchema,
   EFFECT_CATALOG,
   encodeFrame,
+  encodeIntensity,
   encodeLevel,
   encodePosition,
   encodeSource,
@@ -39,6 +42,8 @@ import {
   encodeStrips,
   SetEffectBodySchema,
   SetEffectResponseSchema,
+  SetIntensityBodySchema,
+  SetIntensityResponseSchema,
   SetValuesBodySchema,
   SetValuesResponseSchema,
   type SourceMessage,
@@ -53,11 +58,22 @@ import type { Commands } from '../core/control.ts';
 import type { LevelOutput, LightOutput, PositionOutput } from '../core/frame-loop.ts';
 
 /** Las tiras del instrumento: la API cambia su efecto, y cada panel recibe la foto. */
-export interface PanelStrips extends Commands {
+export interface PanelStrips extends Pick<Commands, 'setEffect' | 'setValues'> {
   /** Las tiras, en el orden del fichero, con el efecto que pinta cada una. */
   snapshot(): StripsMessage;
   /** Avisa cada vez que cambia el efecto de una tira. Devuelve cómo dejar de escuchar. */
   watch(listener: () => void): () => void;
+}
+
+/**
+ * La intensidad del instrumento (decisión 8 del change instrument-intensity): la API la cambia, y
+ * cada panel la recibe. Va aparte de `PanelStrips` porque no es de ninguna tira.
+ */
+export interface PanelIntensity extends Pick<Commands, 'setIntensity'> {
+  /** La intensidad con que pintan todas las tiras, de 0 a 1. */
+  intensity(): number;
+  /** Avisa cada vez que cambia la intensidad. Devuelve cómo dejar de escuchar. */
+  watchIntensity(listener: () => void): () => void;
 }
 
 /** Lo que necesita la app del motor, sin la dirección en la que escucha. */
@@ -79,6 +95,11 @@ export interface AppOptions {
   watchSourceStatus?: (listener: (status: SourceStatus) => void) => () => void;
   /** Las tiras, con sus mandos. Sin ellas, la API no conoce ninguna tira. */
   strips?: PanelStrips;
+  /**
+   * La intensidad, con su mando. El motor siempre la tiene; sin ella (el OpenAPI, tests que no la
+   * miran), ningún panel la recibe y la ruta, que existe para el OpenAPI, es un fallo del motor.
+   */
+  intensity?: PanelIntensity;
 }
 
 export interface ServerOptions extends AppOptions {
@@ -124,6 +145,13 @@ const BAD_VALUES_BODY = 'el cuerpo debe ser un objeto JSON con todos los valores
 /** La ruta de los valores de una tira (decisión 4 del change strip-effect-values). */
 const VALUES_ROUTE = '/api/strips/:stripId/values';
 
+/** La ruta de la intensidad (decisión 4 del change instrument-intensity). */
+const INTENSITY_ROUTE = '/api/intensity';
+
+/** Lo que se dice de un cuerpo que no es `{ "intensity": <0..1> }`. */
+const BAD_INTENSITY_BODY =
+  'el cuerpo debe ser un objeto JSON con el campo `intensity`, un número de 0 a 1, y ninguno más';
+
 /**
  * El mensaje de un `400`: si el cuerpo tiene la forma buena, lo que falla es el efecto, y se dicen
  * los que hay, como en el fichero de configuración.
@@ -164,13 +192,21 @@ function panelHost({ address, family }: AddressInfo): string {
   return family === 'IPv6' ? `[${address}]` : address;
 }
 
+/** El mensaje de un `400`, según la ruta. */
+function badRequestMessage(route: string | undefined, body: unknown): string {
+  if (route === VALUES_ROUTE) return BAD_VALUES_BODY;
+  if (route === INTENSITY_ROUTE) return BAD_INTENSITY_BODY;
+  return describeBadRequest(body);
+}
+
 /**
- * La API: cambiar el efecto de una tira (decisión 6) y sus valores (decisión 4 del change
- * strip-effect-values). Va en su propio plugin, así que su validador y su forma de responder los
- * errores no tocan las demás rutas. Valida con TypeBox, como `Value.Check`: el AJV de Fastify
- * quitaría en silencio los campos de más (`removeAdditional`), y el esquema los rechaza.
+ * La API: cambiar el efecto de una tira (decisión 6), sus valores (decisión 4 del change
+ * strip-effect-values) y la intensidad (decisión 4 del change instrument-intensity). Va en su
+ * propio plugin, así que su validador y su forma de responder los errores no tocan las demás
+ * rutas. Valida con TypeBox, como `Value.Check`: el AJV de Fastify quitaría en silencio los campos
+ * de más (`removeAdditional`), y el esquema los rechaza.
  */
-function apiPlugin(strips: PanelStrips | undefined) {
+function apiPlugin(strips: PanelStrips | undefined, intensity: PanelIntensity | undefined) {
   return (plugin: FastifyInstance, _options: unknown, done: () => void): void => {
     const api = plugin
       .setValidatorCompiler(TypeBoxValidatorCompiler)
@@ -178,10 +214,7 @@ function apiPlugin(strips: PanelStrips | undefined) {
     // Los 400 (un JSON roto o que no cumple el esquema) responden `{ message }`, como los demás.
     api.setErrorHandler((error: FastifyError, request, reply) => {
       if (error.statusCode !== 400) throw error;
-      const message =
-        request.routeOptions.url === VALUES_ROUTE
-          ? BAD_VALUES_BODY
-          : describeBadRequest(request.body);
+      const message = badRequestMessage(request.routeOptions.url, request.body);
       void reply.code(400).send({ message });
     });
     api.put(
@@ -268,6 +301,37 @@ function apiPlugin(strips: PanelStrips | undefined) {
         void reply.send(strip);
       },
     );
+    api.put(
+      INTENSITY_ROUTE,
+      {
+        schema: {
+          summary: 'Cambia la intensidad de todas las tiras',
+          description:
+            'Un máster de brillo para todo el instrumento, sea cual sea el efecto de cada tira: ' +
+            'cada canal de cada LED vale lo que pinta el efecto por la intensidad, redondeado. ' +
+            'Se aplica desde el pulso siguiente, y todos los paneles la reciben por el WebSocket ' +
+            'del visor. El motor arranca con 1, el máximo, y no la guarda.',
+          tags: ['instrumento'],
+          body: SetIntensityBodySchema,
+          response: {
+            200: { description: 'La intensidad aplicada', ...SetIntensityResponseSchema },
+            400: {
+              description: 'El cuerpo no es un número de 0 a 1 en el campo `intensity`',
+              ...ApiErrorSchema,
+            },
+          },
+        },
+      },
+      (request, reply) => {
+        if (!intensity) throw new Error('El motor no tiene intensidad');
+        // El esquema ya ha validado el cuerpo; el búfer vuelve a validar, por si llega otro mando.
+        if (intensity.setIntensity(request.body.intensity) === 'invalid') {
+          void reply.code(400).send({ message: BAD_INTENSITY_BODY });
+          return;
+        }
+        void reply.send({ intensity: intensity.intensity() });
+      },
+    );
     done();
   };
 }
@@ -278,6 +342,7 @@ export async function buildServer({
   audioBytes,
   watchSourceStatus,
   strips,
+  intensity,
 }: AppOptions): Promise<EngineApp> {
   const app = Fastify();
   // El OpenAPI solo describe las rutas con etiqueta: la API, no el panel, el visor ni el audio.
@@ -302,14 +367,17 @@ export async function buildServer({
   }
   // El navegador solo recibe. Al conectarse, la fuente de audio, que no cambia mientras el motor
   // corre (decisión 5 del change virtual-strip-audio-file), el último estado de la tarjeta, si lo
-  // hay, y las tiras con el efecto que pinta cada una; los frames y el nivel, en cada pulso.
+  // hay, las tiras con el efecto que pinta cada una y, la última, la intensidad; los frames y el
+  // nivel, en cada pulso.
   const sourceMessage = encodeSource(source);
   let statusMessage: Uint8Array | undefined;
   let stripsMessage = strips && encodeStrips(strips.snapshot());
+  let intensityMessage = intensity && encodeIntensity(intensity.intensity());
   app.get(VIEWER_PATH, { websocket: true }, (socket) => {
     socket.send(sourceMessage);
     if (statusMessage) socket.send(statusMessage);
     if (stripsMessage) socket.send(stripsMessage);
+    if (intensityMessage) socket.send(intensityMessage);
   });
   // El fichero entero, tal cual: el panel lo pide una vez por conexión. Son los bytes que el motor
   // leyó al arrancar, no el disco de ahora, así que se oye lo mismo que se analiza aunque el
@@ -319,7 +387,7 @@ export async function buildServer({
     const body = Buffer.from(audioBytes.buffer, audioBytes.byteOffset, audioBytes.byteLength);
     return reply.type('audio/wav').send(body);
   });
-  await app.register(apiPlugin(strips));
+  await app.register(apiPlugin(strips, intensity));
   app.get(OPENAPI_PATH, () => app.swagger());
 
   const browsers = app.websocketServer.clients;
@@ -339,6 +407,12 @@ export async function buildServer({
   const unwatchStrips = strips?.watch(() => {
     stripsMessage = encodeStrips(strips.snapshot());
     broadcast(stripsMessage);
+  });
+  // Por su propio aviso: un cambio de intensidad no rehace la foto de las tiras (decisión 5 del
+  // change instrument-intensity).
+  const unwatchIntensity = intensity?.watchIntensity(() => {
+    intensityMessage = encodeIntensity(intensity.intensity());
+    broadcast(intensityMessage);
   });
 
   return {
@@ -366,6 +440,7 @@ export async function buildServer({
     close() {
       unwatchSourceStatus?.();
       unwatchStrips?.();
+      unwatchIntensity?.();
       return app.close();
     },
   };

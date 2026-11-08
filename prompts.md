@@ -1865,7 +1865,27 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El mensaje `7` mide 9 bytes, igual que el nivel y que un frame de un LED. Los tests comprueban que ningún decodificador lo confunde con los otros.*
 - *El codificador también rechaza una intensidad fuera de 0 a 1, como los del nivel y la posición. El `tasks.md` solo pedía el rechazo al decodificar.*
 
-#### 6.63 Volver al último estado tras reiniciar: refinamiento, estimación, exploración y change (`MOO-25`)
+#### 6.63 Aplicar la intensidad a todas las tiras y cambiarla por la API (`MOO-126`)
+
+**Prompt 1** (tras integrar la PR de `MOO-125`):
+
+> mergeado
+
+*Claude Code (`claude-opus-5-5`, 8-nov). La IA sacó la rama de la tarea de `main` e implementó la sección `MOO-126` en TDD, con un commit por paso:*
+- *`applyIntensity`, que escala el frame en su sitio y no lo toca a 1;*
+- *el contrato de `Effect`: un efecto escribe todo su frame y nunca lee lo que había;*
+- *la intensidad en el búfer de control, con su propio aviso;*
+- *el bucle, que la aplica entre el efecto y las salidas;*
+- *`PUT /api/intensity` y el mensaje `7` a todos los paneles.*
+
+*Lo comprobó con `pnpm dev`: con un `curl` a 0,2, el canal más alto de los frames del visor pasó de 253 a 51, y la tira se vio atenuada en el panel. Documentó D100 y D101 y las secciones §2.1, §2.2 y §4 del README.*
+
+*Ajustes:*
+- *El test del contrato pinta cada efecto sobre basura y sobre ceros y exige el mismo frame. La IA comprobó dos cosas que el test no dice por sí solo: que falla si se hace leer `out` a un efecto (lo probó con la respiración y con energía), y que con el tono de prueba los efectos reactivos sí encienden LEDs. Si no encendieran, comparar ceros con ceros no probaría nada.*
+- *El escenario del spec cambia la intensidad entre dos pulsos, y eso pasaría también si el bucle la leyera una vez por tira. El test la cambia a mitad del pulso, desde la salida de la primera tira, y así sí prueba que la segunda lleva la misma.*
+- *`PanelStrips` deja de heredar todo el puerto `Commands`: el servidor recibe la intensidad en un `PanelIntensity` aparte. La ruta existe siempre, porque `pnpm openapi` monta el servidor sin búfer de control; sin `PanelIntensity`, responder sería un fallo del motor.*
+
+#### 6.64 Volver al último estado tras reiniciar: refinamiento, estimación, exploración y change (`MOO-25`)
 
 **Prompt 1** (en `/refine-story MOO-25`, el caso feliz del humano):
 
@@ -1889,7 +1909,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Al ir a escribir la ficha, la IA vio que la rama local de `MOO-97`, sin subir, ya usaba D99 a D102. Renumeró las del change a D103 y D104, para que no choquen se integre antes la que se integre.*
 - *Después, a petición del humano, actualizó en Linear los criterios de `MOO-25` (el margen de 500 ms y el log) y la descripción de `MOO-26` (los tipos en el núcleo, `node:sqlite` y los casos de apertura).*
 
-#### 6.64 La base de persistencia del estado del instrumento (`MOO-26`)
+#### 6.65 La base de persistencia del estado del instrumento (`MOO-26`)
 
 **Prompt 1:**
 

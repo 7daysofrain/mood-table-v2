@@ -501,3 +501,153 @@ describe('el umbral de silencio de la fuente (specs/effects)', () => {
     expect(energyFrames(noiseSource(-80)).some((colors) => !isDark(colors))).toBe(true);
   });
 });
+
+/** El frame `colors` con cada canal multiplicado por `intensity` y redondeado (decisión 3). */
+function scaled(colors: Uint8Array, intensity: number): number[] {
+  return Array.from(colors, (value) => Math.round(value * intensity));
+}
+
+/**
+ * Dos tiras, A con la respiración y B con *energía*, y la fuente del tono, como en la mesa: una de
+ * ambiente y una reactiva. Devuelve los frames de cada una y el nivel.
+ */
+function ambientAndReactive() {
+  const a = recorder();
+  const b = recorder();
+  const level = levelRecorder();
+  const loop = createLoop(
+    [
+      { config: strip('a', 6), outputs: [a.output] },
+      { config: { ...strip('b', 6), effect: 'energy' }, outputs: [b.output] },
+    ],
+    60,
+    { effects: [breathing, energy], audioSource: toneSource().source, levelOutputs: [level.output] },
+  );
+  return { loop, control: loop.control, a: a.frames, b: b.frames, levels: level.levels };
+}
+
+/** Los pulsos de `from` a `last`, ambos incluidos. */
+function runPulses(loop: { tick(now: number): void }, from: number, last: number): void {
+  for (let pulse = from; pulse <= last; pulse++) loop.tick(pulse * FRAME_MS);
+}
+
+// specs/intensity y criterios de MOO-97; decisiones 2 y 3 del change instrument-intensity.
+describe('el bucle con la intensidad', () => {
+  it('a 0,5, el frame de cada tira vale el de su efecto a la mitad, redondeado', () => {
+    const reference = ambientAndReactive();
+    const dimmed = ambientAndReactive();
+    dimmed.control.setIntensity(0.5);
+
+    runPulses(reference.loop, 0, 30);
+    runPulses(dimmed.loop, 0, 30);
+
+    // Que la energía pinte algo: si no, comparar ceros no dice nada.
+    expect(reference.b.some(({ colors }) => colors.some((value) => value > 0))).toBe(true);
+    expect(dimmed.a.map(({ colors }) => Array.from(colors))).toEqual(
+      reference.a.map(({ colors }) => scaled(colors, 0.5)),
+    );
+    expect(dimmed.b.map(({ colors }) => Array.from(colors))).toEqual(
+      reference.b.map(({ colors }) => scaled(colors, 0.5)),
+    );
+  });
+
+  it('las dos tiras de un pulso llevan la misma intensidad aunque cambie a mitad del pulso', () => {
+    const b = recorder();
+    // La salida de A cambia la intensidad mientras recibe su frame: B, en el mismo pulso, aún no.
+    // Solo se llama dentro de `tick`, con el bucle ya creado.
+    const changesMidPulse: LightOutput = {
+      write(_frame, tick) {
+        if (tick.seq === 1) loop.control.setIntensity(0.5);
+      },
+    };
+    const a = recorder();
+    const loop = createLoop(
+      [
+        { config: solidStrip('a', 1), outputs: [a.output, changesMidPulse] },
+        { config: solidStrip('b', 1), outputs: [b.output] },
+      ],
+      60,
+      { effects: [solid] },
+    );
+
+    runPulses(loop, 0, 2);
+
+    const pulses = (frames: typeof a.frames) => frames.map(({ colors }) => Array.from(colors));
+    expect(pulses(a.frames)).toEqual([[10, 20, 30], [10, 20, 30], [5, 10, 15]]);
+    expect(pulses(b.frames)).toEqual(pulses(a.frames));
+  });
+
+  it('a 0, todos los LEDs de todas las tiras apagados, suene o no la música', () => {
+    const { loop, control, a, b } = ambientAndReactive();
+    control.setIntensity(0);
+
+    runPulses(loop, 0, 30);
+
+    expect([...a, ...b].every(({ colors }) => isDark(colors))).toBe(true);
+  });
+
+  it('a 1, el mismo frame que pinta el efecto, sin quitarle ni añadirle', () => {
+    const { output, frames } = recorder();
+    const loop = createLoop([{ config: strip('demo', 4), outputs: [output] }], 60);
+    loop.control.setIntensity(0.3);
+    loop.control.setIntensity(1);
+
+    runPulses(loop, 0, 10);
+
+    expect(frames.map(({ colors }) => colors)).toEqual(
+      frames.map(({ time }) => breathingAt(time, 4)),
+    );
+  });
+
+  it.each([0.5, 0])(
+    'una tira con salida adalight entrega a su salida y al visor el mismo frame a %s',
+    (intensity) => {
+      const adalight = recorder();
+      const viewer = recorder();
+      const config: StripConfig = {
+        ...strip('mesa', 4),
+        output: { type: 'adalight', port: '/dev/ttyACM0', baudRate: 500_000 },
+      };
+      const loop = createLoop([{ config, outputs: [adalight.output, viewer.output] }], 60);
+      loop.control.setIntensity(intensity);
+
+      runPulses(loop, 0, 10);
+
+      expect(adalight.frames).toEqual(viewer.frames);
+      expect(adalight.frames.map(({ colors }) => Array.from(colors))).toEqual(
+        adalight.frames.map(({ time }) => scaled(breathingAt(time, 4), intensity)),
+      );
+    },
+  );
+
+  it('la respiración, tras pasar de 1 a 0 y volver a 1, pinta como si no se hubiera tocado', () => {
+    const reference = ambientAndReactive();
+    const touched = ambientAndReactive();
+
+    runPulses(reference.loop, 0, 60);
+    runPulses(touched.loop, 0, 20);
+    touched.control.setIntensity(0);
+    runPulses(touched.loop, 21, 40);
+    touched.control.setIntensity(1);
+    runPulses(touched.loop, 41, 60);
+
+    const frames = (each: typeof reference.a) => each.map(({ colors }) => Array.from(colors));
+    expect(touched.a.slice(21, 41).every(({ colors }) => isDark(colors))).toBe(true);
+    expect(frames(touched.a.slice(41))).toEqual(frames(reference.a.slice(41)));
+    // La energía también sigue por donde iba: la intensidad no toca su memoria.
+    expect(frames(touched.b.slice(41))).toEqual(frames(reference.b.slice(41)));
+  });
+
+  it('la salida del nivel recibe el mismo nivel a cualquier intensidad', () => {
+    const reference = ambientAndReactive();
+    const dimmed = ambientAndReactive();
+
+    runPulses(reference.loop, 0, 10);
+    dimmed.control.setIntensity(0);
+    runPulses(dimmed.loop, 0, 5);
+    dimmed.control.setIntensity(0.3);
+    runPulses(dimmed.loop, 6, 10);
+
+    expect(dimmed.levels).toEqual(reference.levels);
+  });
+});
