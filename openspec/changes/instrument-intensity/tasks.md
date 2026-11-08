@@ -123,7 +123,7 @@
   camino, solo se envía el último; la conexión decodifica el mensaje `7` y da la intensidad del
   motor, que vuelve a no conocerse al perder la conexión.
   Verificar: los tests nuevos fallan porque la cola y el mensaje no existen en el panel.
-- [ ] 3.3 La cola de la intensidad (`intensityRequests`) y la intensidad en `EngineConnection`
+- [x] 3.3 La cola de la intensidad (`intensityRequests`) y la intensidad en `EngineConnection`
   (`packages/panel/src/engine/connection.ts`).
   Verificar: los tests de 3.2 pasan.
 - [ ] 3.4 **(test en rojo)** Tests de `useDraftIntensity` en

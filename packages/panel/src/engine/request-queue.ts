@@ -6,11 +6,12 @@
  * ganar lo último que hizo el DJ. El ritmo lo marca lo que tarda la petición, no un reloj, así que
  * vale también mientras se arrastra un control.
  *
- * La clave es la tira en las colas del efecto y de los valores, independientes. No avisa de
+ * La clave es la tira en las colas del efecto y de los valores, independientes, y una sola en la
+ * de la intensidad, que es del instrumento. No avisa de
  * errores: el panel marca lo que el motor dice por el WebSocket, y un error se ve en el visor
  * (PRD Q8).
  */
-import type { EffectId, SetEffectBody, SetValuesBody } from '@moodtable/shared';
+import type { EffectId, SetEffectBody, SetIntensityBody, SetValuesBody } from '@moodtable/shared';
 
 /** Lo que el envío usa de `fetch`: así los tests pueden darle uno falso. */
 export type FetchLike = (url: string, init: RequestInit) => Promise<Pick<Response, 'ok'>>;
@@ -116,4 +117,13 @@ export function effectRequests(fetch?: FetchLike): RequestQueue<EffectId> {
 /** La cola de los cambios de valores: `PUT /api/strips/{stripId}/values`, con todos los valores. */
 export function valueRequests(fetch?: FetchLike): RequestQueue<SetValuesBody> {
   return new RequestQueue<SetValuesBody>(stripUrl('values'), (values) => values, fetch);
+}
+
+/** La única clave de la cola de la intensidad: la intensidad es del instrumento, no de una tira. */
+export const INTENSITY_KEY = 'intensity';
+
+/** La cola de los cambios de intensidad: `PUT /api/intensity`, con una sola clave. */
+export function intensityRequests(fetch?: FetchLike): RequestQueue<number> {
+  const bodyOf = (intensity: number): SetIntensityBody => ({ intensity });
+  return new RequestQueue<number>(() => '/api/intensity', bodyOf, fetch);
 }
