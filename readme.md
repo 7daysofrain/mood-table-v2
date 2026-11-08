@@ -192,7 +192,7 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 ### **2.1. Diagrama de arquitectura:**
 > Usa el formato que consideres más adecuado para representar los componentes principales de la aplicación y las tecnologías utilizadas. Explica si sigue algún patrón predefinido, justifica por qué se ha elegido esta arquitectura, y destaca los beneficios principales que aportan al proyecto y justifican su uso, así como sacrificios o déficits que implica.
 
-Mood Table es **un único proceso Node.js (TypeScript)** que corre en la Raspberry Pi de la mesa. En su centro está el **motor**: un bucle que, en cada frame, analiza el audio una vez y pinta **todas las tiras declaradas**, cada una con su propio efecto, su límite de potencia y su salida. Todo lo que toca el mundo exterior (la tarjeta de sonido, los puertos serie, el navegador, el disco, el fichero de configuración) está fuera del núcleo, en adaptadores que se conectan a él por interfaces.
+Mood Table es **un único proceso Node.js (TypeScript)** que corre en la Raspberry Pi de la mesa. En su centro está el **motor**: un bucle que, en cada frame, analiza el audio una vez y pinta **todas las tiras declaradas**, cada una con su propio efecto, la intensidad común a todas, su límite de potencia y su salida. Todo lo que toca el mundo exterior (la tarjeta de sonido, los puertos serie, el navegador, el disco, el fichero de configuración) está fuera del núcleo, en adaptadores que se conectan a él por interfaces.
 
 ```mermaid
 flowchart LR
@@ -217,17 +217,17 @@ flowchart LR
         dsp["Análisis de audio<br/>común · siempre que<br/>haya fuente"]
         subgraph t1["Tira 1"]
           direction LR
-          fx1["Efecto"] --> pwr1["Límite de<br/>potencia"]
+          fx1["Efecto"] --> int1["Intensidad<br/>común"] --> pwr1["Límite de<br/>potencia"]
         end
         subgraph tn["Tira N"]
           direction LR
-          fxn["Efecto"] --> pwrn["Límite de<br/>potencia"]
+          fxn["Efecto"] --> intn["Intensidad<br/>común"] --> pwrn["Límite de<br/>potencia"]
         end
         dsp --> fx1
         dsp --> fxn
       end
       subgraph cpl["Plano de control"]
-        ctrl["Búfer de control<br/>efecto y parámetros por tira"]
+        ctrl["Búfer de control<br/>efecto y parámetros por tira<br/>intensidad del instrumento"]
       end
       ctrl -. "leído al inicio<br/>de cada frame" .-> t1
       ctrl -.-> tn
@@ -268,13 +268,13 @@ flowchart LR
   classDef cp fill:#d0ebff,stroke:#1864ab,color:#000
   classDef ext fill:#f1f3f5,stroke:#495057,color:#000
   classDef opt fill:#f1f3f5,stroke:#495057,color:#000,stroke-dasharray: 5 5
-  class dsp,fx1,pwr1,fxn,pwrn,alsa,wav,ada1,adan,wsout rt
+  class dsp,fx1,int1,pwr1,fxn,intn,pwrn,alsa,wav,ada1,adan,wsout rt
   class ctrl,http,store,load cp
   class mixer,panel,strip1,cfg ext
   class strip2 opt
 ```
 
-*Naranja: plano de tiempo real. Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El MVP se demuestra con una tira física (la de la mesa, por Adalight), que el visor muestra en tiempo real, y con tiras virtuales en el simulador; el modelo admite N tiras.*
+*Naranja: plano de tiempo real, con un orden fijo en cada tira: efecto, intensidad, límite de potencia y salidas (el límite, el último, porque protege la fuente; D100). Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El MVP se demuestra con una tira física (la de la mesa, por Adalight), que el visor muestra en tiempo real, y con tiras virtuales en el simulador; el modelo admite N tiras.*
 
 #### Patrón: hexagonal ligera (puertos y adaptadores)
 
@@ -345,7 +345,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 #### Núcleo (motor)
 
 **Bucle de frames** — TypeScript, sin dependencias de E/S.
-Marca el ritmo del sistema a una tasa objetivo configurable (30-60 fps). En cada vuelta: (1) lee del búfer de control el efecto de cada tira, (2) si hay fuente de audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica su límite de potencia y entrega el frame a su salida y al visor. Mide cuánto tarda cada vuelta; si llega tarde, **se salta el frame en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
+Marca el ritmo del sistema a una tasa objetivo configurable (30-60 fps). En cada vuelta: (1) lee del búfer de control el efecto de cada tira y la intensidad, una sola vez, así que todas las tiras del pulso llevan la misma, (2) si hay fuente de audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica la intensidad y su límite de potencia, y entrega el frame a su salida y al visor. Mide cuánto tarda cada vuelta; si llega tarde, **se salta el frame en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
 
 **Análisis de audio** — TypeScript + FFT (`fft.js`, validada en el spike de rendimiento, D48).
 En cada pulso pide a la fuente de audio la ventana que acaba en el instante del pulso: el puerto es *pull*, así que el ritmo lo marca el motor y no la fuente (D50). Mientras haya fuente, mide su **nivel** (el RMS de la ventana, antes de cualquier ajuste) en cada pulso y lo envía al panel. Calcula además, en cada pulso, los **rasgos** que consumen los efectos, como la v1 (D49): una ventana de Hamming de 40 ms y una FFT, **24 bandas mel** de 200 Hz a 12 kHz (una escala parecida a la del oído) normalizadas con una ganancia automática y suavizadas, y si la ventana es silencio digital. **No detecta golpes**: *energía* marca cada uno con la subida rápida y la caída suave de su luz, y ningún efecto del MVP necesita más. Se calcula **una vez por frame** y lo comparten todas las tiras. Se calcula aunque ninguna tira tenga un efecto reactivo, para que una pueda pasar a uno en cualquier momento con el análisis ya estable (D79). Sin fuente de audio no se calcula, y el motor funciona igual.
@@ -366,11 +366,14 @@ interface Effect<P, M> {
 
 El **esquema** es lo que permite que el panel genere los controles sin conocer el efecto y que la API rechace un valor fuera de rango. La **memoria explícita** del efecto (lo que recuerda entre frames, como la posición del scroll o el suavizado; no confundir con el estado del instrumento, que es lo que se guarda) es **por tira**, y hace que, con la misma entrada, un efecto produzca siempre los mismos frames, así que se puede testear. `usesAudio` le dice al panel cómo etiquetar el efecto, y al panel y a la API si se puede elegir sin fuente de audio (D80). El MVP incluye tres efectos reactivos, **espectro**, **energía** y **scroll** (los de la v1, reescritos), y uno de ambiente, **respiración**.
 
+**Intensidad** — TypeScript, una para todo el instrumento.
+Un máster de brillo para todas las tiras, sea cual sea su efecto: multiplica cada canal del frame por la intensidad, de 0 a 1, y redondea, como hace la *respiración* con su nivel. Va después del efecto y antes del límite de potencia, y escala el búfer de la tira en su sitio, sin crear nada; a 1 no lo toca. Ningún efecto la conoce, así que su memoria sigue igual y la respiración sigue por donde iba aunque la intensidad pase por cero. Por eso el contrato de los efectos dice que un efecto escribe todo su frame y nunca lee lo que había, y un test del registro lo comprueba con todos (D100). Es lineal sobre los valores de pantalla: la gamma de la salida Adalight va después (D96), así que el visor y la mesa siguen coincidiendo. Por debajo de un 10 %, la tira cambia de tono antes de apagarse, por los 256 escalones de cada canal.
+
 **Límite de potencia** — TypeScript, uno por tira.
 Estima el consumo del frame a partir del valor de cada canal y del consumo máximo por LED declarado para esa tira. Si supera el límite configurado para su fuente de alimentación, escala el brillo de todo el frame en proporción. Protege fuentes y tiras, algo que en la v1 hacían por debajo piezas de terceros.
 
 **Búfer de control** — TypeScript.
-Guarda lo que el bucle necesita **de cada tira**: su efecto activo, con sus valores y su memoria ya creados (la *ranura* de la tira). Guarda además **los valores de cada efecto de cada tira**, incluidos los de los efectos no activos, con la forma de `strip_effects` (§3.2). Implementa el puerto `Commands`: un cambio de efecto (ya validado) crea la ranura nueva **fuera del bucle**, con los valores con que la tira dejó ese efecto (los de por defecto la primera vez) y la memoria nueva, y la deja en el sitio de la tira; el bucle la recoge al inicio del pulso siguiente, entera, así que el primer frame ya lleva esos valores. De varios cambios seguidos queda el último, y elegir el efecto activo no lo reinicia. Un cambio de valores (`setValues`) no rehace la ranura: el búfer los valida con el esquema del efecto activo y sustituye la referencia a los valores de la ranura por una copia, que apunta también como los valores de ese efecto en esa tira, así que la memoria del efecto sigue y la respiración no salta de brillo. Devuelve qué ha pasado (cambiado, sin cambio, la tira no existe, necesita fuente de audio, valores que no cumplen el esquema, con el motivo) en lugar de lanzar, y avisa de cada cambio, venga del mando que venga, para que el servidor lo cuente a todos los paneles. Lo crea `main.ts` antes que el servidor y el bucle, que dependen de él (D77). Con H5, cada cambio avisará al puerto de persistencia, que guardará con un pequeño retardo (agrupa los cambios mientras se arrastra un slider en lugar de escribir en disco cien veces).
+Guarda lo que el bucle necesita **de cada tira**: su efecto activo, con sus valores y su memoria ya creados (la *ranura* de la tira). Guarda además **los valores de cada efecto de cada tira**, incluidos los de los efectos no activos, con la forma de `strip_effects` (§3.2). Implementa el puerto `Commands`: un cambio de efecto (ya validado) crea la ranura nueva **fuera del bucle**, con los valores con que la tira dejó ese efecto (los de por defecto la primera vez) y la memoria nueva, y la deja en el sitio de la tira; el bucle la recoge al inicio del pulso siguiente, entera, así que el primer frame ya lleva esos valores. De varios cambios seguidos queda el último, y elegir el efecto activo no lo reinicia. Un cambio de valores (`setValues`) no rehace la ranura: el búfer los valida con el esquema del efecto activo y sustituye la referencia a los valores de la ranura por una copia, que apunta también como los valores de ese efecto en esa tira, así que la memoria del efecto sigue y la respiración no salta de brillo. Devuelve qué ha pasado (cambiado, sin cambio, la tira no existe, necesita fuente de audio, valores que no cumplen el esquema, con el motivo) en lugar de lanzar, y avisa de cada cambio, venga del mando que venga, para que el servidor lo cuente a todos los paneles. Guarda además la **intensidad** del instrumento, que no es de ninguna tira: empieza en 1, cambia con `setIntensity` (que también valida, porque un mando futuro como la F1 entra por el mismo puerto) y avisa por su propio aviso, para que un cambio de intensidad no rehaga el mensaje de las tiras (D101). Vive en memoria y no se guarda. Lo crea `main.ts` antes que el servidor y el bucle, que dependen de él (D77). Con H5, cada cambio avisará al puerto de persistencia, que guardará con un pequeño retardo (agrupa los cambios mientras se arrastra un slider en lugar de escribir en disco cien veces).
 
 #### Configuración de las tiras
 
@@ -384,8 +387,8 @@ Al arrancar, lee el fichero de configuración del despliegue, que declara las ti
 | **Tarjeta de sonido** | `AudioSource` | `arecord` (ALSA) como proceso hijo | Lanza `arecord` con la cadena de dispositivo declarada (16 bits, mono, 48 kHz, periodos de 10 ms) y guarda lo que entrega por `stdout` en un búfer circular de medio segundo: cuando el bucle pide la ventana, da las últimas muestras, sin mirar el instante (D50). Tira los primeros 300 ms, el chasquido que hace la tarjeta al abrirse. El motor solo no arranca si `arecord` termina antes de entregar nada (no puede abrir la tarjeta, o no hay `arecord`: solo Linux); si termina en plena sesión, la fuente da silencio, lo dice en el log y cada segundo vuelve a lanzar `arecord` con la misma cadena hasta recuperarla, sin reiniciar el motor; al recuperarla, lo dice en el log y vuelve a tirar 300 ms (D57, D60). Avisa al servidor de si está conectada o perdida, para que lo sepan los paneles (D61). Declara su umbral de silencio, para que el ruido de fondo no encienda los efectos reactivos (D58). Sin binarios nativos en Node: lanzar el proceso está en `soundcard.hardware.ts`, y el resto, con tests. |
 | **Fichero WAV** | `AudioSource` | Lector WAV en TypeScript | Lee y decodifica el fichero entero al arrancar (PCM de 16 bits, mono o estéreo, que se mezcla a mono). Suena en bucle con el reloj del motor: en cada pulso da el audio de ese instante, contado desde el arranque, y al llegar al final vuelve a empezar. También dice en qué punto del fichero acaba la ventana de cada pulso (`positionAt`), con la misma cuenta, para que el panel lo oiga por ese punto (D53). Guarda los bytes que leyó, que el servidor sirve en `/audio` sin volver a leer el disco. Es la fuente del simulador y de los tests. |
 | **Adalight serie** | `LightOutput` | `serialport` | Una instancia **por tira física**, en su puerto y a sus baudios (§3). Corrige cada canal con la gamma 2,0 de la v1, para que la tira se vea como el visor (D96), añade la cabecera Adalight (`Ada` + número de LEDs + checksum) y escribe por USB serie con `serialport`, la primera dependencia nativa del motor (D92). El orden de color lo pone por ahora el sketch del controlador (D46); con H4, el motor reordenará los canales según el de la tira. **Nunca encola:** mientras el frame anterior no ha salido por el cable (`drain()`), descarta el nuevo, así que cada frame que pinta es el del pulso en curso y el retraso queda acotado: lo que tarda un frame en salir más un pulso (D93). En la mesa, 11 ms por frame y 59 fps a 500.000 baudios con 173 LEDs (a 115.200 eran 45 ms y 20 fps, D96); los fps van a saltos, porque un envío ocupa un número entero de pulsos. Tras sus primeros 50 envíos, dice en el log una vez la mediana y los fps. Si el puerto no se abre al arrancar (no existe, sin permiso o bloqueado por otro programa), el motor no arranca, hasta `MOO-112`; si se pierde en plena sesión, lo dice una vez en el log y deja de escribir, y el resto del instrumento sigue. Abrir el puerto está en `adalight.hardware.ts`, y el resto, con tests. |
-| **Visor** | `LightOutput` | WebSocket (`@fastify/websocket`) | Una instancia **por tira** (D43). Codifica cada frame con el [protocolo del visor](docs/instructions/viewer-protocol.md) y lo envía en binario a todos los navegadores conectados, por una sola conexión por navegador (D45). Por la misma conexión, cada navegador recibe la fuente de audio al conectarse y, en cada pulso, su nivel (D51) y, si la fuente es un fichero, el punto del fichero por el que va el motor (D53). Con la tarjeta de sonido, también su estado, al conectarse y cada vez que cambia (D61). Y las tiras con el efecto que pinta cada una, al conectarse y a todos cada vez que cambia el de una (mensaje `6`, D78). |
-| **API HTTP** | `Commands` | Fastify + TypeBox (`@fastify/swagger`) | Recibe los mandos del panel: `PUT /api/strips/{stripId}/effect` cambia el efecto de una tira y `PUT /api/strips/{stripId}/values`, sus valores (§4). Valida cada petición con los esquemas TypeBox de `@moodtable/shared` (los valores los valida el búfer de control, con el esquema del efecto activo: D87) y publica el OpenAPI generado de ellos en `/api/openapi.json` (D81). El estado no se lee por aquí: llega por el WebSocket del visor (D78). También sirve el build del panel. |
+| **Visor** | `LightOutput` | WebSocket (`@fastify/websocket`) | Una instancia **por tira** (D43). Codifica cada frame con el [protocolo del visor](docs/instructions/viewer-protocol.md) y lo envía en binario a todos los navegadores conectados, por una sola conexión por navegador (D45). Por la misma conexión, cada navegador recibe la fuente de audio al conectarse y, en cada pulso, su nivel (D51) y, si la fuente es un fichero, el punto del fichero por el que va el motor (D53). Con la tarjeta de sonido, también su estado, al conectarse y cada vez que cambia (D61). Y las tiras con el efecto que pinta cada una, al conectarse y a todos cada vez que cambia el de una (mensaje `6`, D78), y la intensidad, al conectarse, después de las tiras, y a todos cada vez que cambia (mensaje `7`, D101). |
+| **API HTTP** | `Commands` | Fastify + TypeBox (`@fastify/swagger`) | Recibe los mandos del panel: `PUT /api/strips/{stripId}/effect` cambia el efecto de una tira, `PUT /api/strips/{stripId}/values`, sus valores, y `PUT /api/intensity`, la intensidad de todas las tiras (§4). Valida cada petición con los esquemas TypeBox de `@moodtable/shared` (los valores los valida el búfer de control, con el esquema del efecto activo: D87) y publica el OpenAPI generado de ellos en `/api/openapi.json` (D81). El estado no se lee por aquí: llega por el WebSocket del visor (D78). También sirve el build del panel. |
 | **Persistencia** | `StateStore` | SQLite (§3) · en memoria para tests | Guarda y carga el estado de cada tira: efecto activo y valores de cada efecto. Al arrancar, el motor recupera el último estado desde aquí. |
 
 **Raíz de composición (`main.ts`).** Carga la configuración (`config/local.json`), crea el búfer de control con sus tiras, crea los adaptadores que indica (fuente de audio, las salidas de cada tira, API, persistencia), los conecta al núcleo y arranca el bucle con un temporizador. Abre los puertos serie de las tiras físicas después de la fuente de audio y antes del servidor, para no arrancar a medias. Cada tira tiene su lista de salidas: el visor siempre, más Adalight si es física (D43). Es el único punto del código que conoce todas las piezas.
@@ -841,12 +844,13 @@ Como las tiras viven en el fichero, la base de datos no puede tener una clave fo
 
 > Si tu backend se comunica a través de API, describe los endpoints principales (máximo 3) en formato OpenAPI. Opcionalmente puedes añadir un ejemplo de petición y de respuesta para mayor claridad
 
-La API HTTP recibe los **mandos** del instrumento. El **estado** (las tiras con su efecto activo y sus valores, los frames, la fuente de audio) no se lee por aquí: llega al panel por el WebSocket del visor (D78). La especificación completa es **OpenAPI 3.1**, generada de los mismos esquemas TypeBox con los que el motor valida cada petición: el motor la sirve en `/api/openapi.json`, y [`docs/openapi.yaml`](docs/openapi.yaml) guarda una copia que `pnpm openapi` regenera y que un test compara con el código (D81).
+La API HTTP recibe los **mandos** del instrumento. El **estado** (las tiras con su efecto activo y sus valores, la intensidad, los frames, la fuente de audio) no se lee por aquí: llega al panel por el WebSocket del visor (D78). La especificación completa es **OpenAPI 3.1**, generada de los mismos esquemas TypeBox con los que el motor valida cada petición: el motor la sirve en `/api/openapi.json`, y [`docs/openapi.yaml`](docs/openapi.yaml) guarda una copia que `pnpm openapi` regenera y que un test compara con el código (D81).
 
 | Método | Ruta | Qué hace |
 |---|---|---|
 | `PUT` | `/api/strips/{stripId}/effect` | Cambia el efecto de una tira. La tira lo pinta desde el pulso siguiente, con un corte seco y los valores con que dejó ese efecto (los de por defecto la primera vez), y todos los paneles reciben las tiras por el WebSocket. Elegir el efecto que ya tiene no lo reinicia |
 | `PUT` | `/api/strips/{stripId}/values` | Cambia los valores de una tira: todos los del efecto activo. La tira pinta con ellos desde el pulso siguiente, sin reiniciar el efecto (la respiración no salta de brillo), y todos los paneles reciben las tiras por el WebSocket (D87) |
+| `PUT` | `/api/intensity` | Cambia la intensidad de todas las tiras, un máster de brillo de 0 a 1: cada canal de cada LED vale lo que pinta el efecto por la intensidad, redondeado. Se aplica desde el pulso siguiente y todos los paneles la reciben por el WebSocket. El motor arranca con 1, el máximo, y no la guarda (D101) |
 
 Ejemplo de petición: pasar la tira `demo` a la respiración.
 
@@ -892,16 +896,32 @@ Respuesta `200`: la tira, con sus valores nuevos.
 }
 ```
 
-Los errores responden `{ "message": "…" }`, sin cambiar ninguna tira:
+Ejemplo de petición: bajar todas las tiras al 40 %.
+
+```http
+PUT /api/intensity
+Content-Type: application/json
+
+{ "intensity": 0.4 }
+```
+
+Respuesta `200`: la intensidad aplicada.
+
+```json
+{ "intensity": 0.4 }
+```
+
+Los errores responden `{ "message": "…" }`, sin cambiar nada:
 
 | Código | Ruta | Cuándo | Ejemplo de `message` |
 |---|---|---|---|
 | `400` | `effect` | El cuerpo no es `{ "effect": "<id>" }` o el efecto no existe | «strobe» no es un efecto (hay: `breathing`, `spectrum`, `scroll`, `energy`) |
 | `400` | `values` | Los valores no cumplen el esquema del efecto activo: falta uno, sobra uno o está fuera de rango (D86) | la tira «demo», efecto `breathing`: `period` debe ser <= 20 |
-| `404` | las dos | La tira no existe | la tira «luces» no existe |
+| `400` | `intensity` | El cuerpo no es `{ "intensity": <número de 0 a 1> }`: falta, sobra un campo, no es un número o está fuera de rango | el cuerpo debe ser un objeto JSON con el campo `intensity`, un número de 0 a 1, y ninguno más |
+| `404` | `effect` y `values` | La tira no existe | la tira «luces» no existe |
 | `409` | `effect` | El efecto es reactivo y el instrumento no tiene fuente de audio (D80) | la tira «demo», efecto `energy`: necesita una fuente de audio |
 
-**Estado y frames del visor (WebSocket).** Lo que el motor cuenta al panel (los frames, la fuente de audio y su nivel, las tiras con su efecto activo y sus valores) no va por la API HTTP, sino por un WebSocket con mensajes binarios. Su formato, byte a byte, está en [`docs/instructions/viewer-protocol.md`](docs/instructions/viewer-protocol.md).
+**Estado y frames del visor (WebSocket).** Lo que el motor cuenta al panel (los frames, la fuente de audio y su nivel, las tiras con su efecto activo y sus valores, la intensidad) no va por la API HTTP, sino por un WebSocket con mensajes binarios. Su formato, byte a byte, está en [`docs/instructions/viewer-protocol.md`](docs/instructions/viewer-protocol.md).
 
 ---
 

@@ -101,7 +101,7 @@
   Verificar: los tests de 2.8 pasan, el test del fichero del OpenAPI sigue en verde, y con
   `pnpm dev`, un `curl -X PUT` a `/api/intensity` con `{ "intensity": 0.2 }` atenúa la tira de la
   demo en el visor.
-- [ ] 2.10 Documentación:
+- [x] 2.10 Documentación:
   - **D100** (decisiones 1 a 3) y **D101** (decisiones 4 y 5) en `docs/idea-mood-table.md` §10;
   - README §2.1: el plano de tiempo real pasa a efecto → intensidad → límite de potencia → salidas;
   - README §2.2: el bucle aplica la intensidad, el búfer de control la guarda, y el adaptador *API
