@@ -126,7 +126,7 @@
 - [x] 3.3 La cola de la intensidad (`intensityRequests`) y la intensidad en `EngineConnection`
   (`packages/panel/src/engine/connection.ts`).
   Verificar: los tests de 3.2 pasan.
-- [ ] 3.4 **(test en rojo)** Tests de `useDraftIntensity` en
+- [x] 3.4 **(test en rojo)** Tests de `useDraftIntensity` en
   `packages/panel/src/intensity/use-draft-intensity.test.ts`: mientras se arrastra, el valor sigue
   al dedo aunque llegue un eco atrasado (100 % → 40 % con el motor en 70 %); al soltar, sigue con su
   valor hasta que la cola se vacía y llega el eco, y entonces muestra el del motor; si el motor no
