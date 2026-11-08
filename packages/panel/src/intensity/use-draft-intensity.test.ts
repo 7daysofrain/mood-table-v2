@@ -95,6 +95,19 @@ describe('la intensidad que muestra el fader', () => {
     expect(draft.shown()).toBe(0.6);
   });
 
+  it('tras el eco, el valor local se retira: si el motor vuelve a la intensidad de antes, la muestra', () => {
+    const draft = draftOf(1);
+    draft.change(0.4);
+    draft.release();
+    draft.finish(true);
+    draft.echo(0.4);
+
+    // Otro panel, o la API, la devuelve a 1: el fader no resucita el 0,4 de antes.
+    draft.echo(1);
+
+    expect(draft.shown()).toBe(1);
+  });
+
   it('si el eco llega antes de que la cola se vacíe, también acaba en la del motor', () => {
     const draft = draftOf(1);
     draft.change(0.4);
