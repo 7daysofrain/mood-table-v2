@@ -617,3 +617,57 @@ paths:
                     type: string
                     minLength: 1
                 additionalProperties: false
+  /api/intensity:
+    put:
+      summary: Cambia la intensidad de todas las tiras
+      tags:
+        - instrumento
+      description: "Un máster de brillo para todo el instrumento, sea cual sea el
+        efecto de cada tira: cada canal de cada LED vale lo que pinta el efecto
+        por la intensidad, redondeado. Se aplica desde el pulso siguiente, y
+        todos los paneles la reciben por el WebSocket del visor. El motor
+        arranca con 1, el máximo, y no la guarda."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - intensity
+              properties:
+                intensity:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+              additionalProperties: false
+      responses:
+        "200":
+          description: La intensidad aplicada
+          content:
+            application/json:
+              schema:
+                description: La intensidad aplicada
+                type: object
+                required:
+                  - intensity
+                properties:
+                  intensity:
+                    type: number
+                    minimum: 0
+                    maximum: 1
+                additionalProperties: false
+        "400":
+          description: El cuerpo no es un número de 0 a 1 en el campo `intensity`
+          content:
+            application/json:
+              schema:
+                description: El cuerpo no es un número de 0 a 1 en el campo `intensity`
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    minLength: 1
+                additionalProperties: false

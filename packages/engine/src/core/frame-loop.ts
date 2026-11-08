@@ -11,6 +11,10 @@
  * virtual-strip-audio-file), aunque ninguna tenga un efecto reactivo: así una tira puede pasar a
  * uno en cualquier momento (decisión 4 del change strip-effect-switch). Si la fuente sabe en qué
  * punto está, entrega esa posición en cada pulso (decisión 9 del change panel-audio-playback).
+ *
+ * El plano de tiempo real de cada tira va en un orden fijo (README §2.1; decisión 1 del change
+ * instrument-intensity): efecto → intensidad → límite de potencia (H4, todavía no existe) → salidas.
+ * El límite de potencia irá siempre el último, porque protege la fuente (D14).
  */
 import type { StripConfig } from '@moodtable/shared';
 
@@ -18,6 +22,7 @@ import { type AudioAnalyzer, createAudioAnalyzer } from './audio/analysis.ts';
 import type { AudioSource } from './audio/audio-source.ts';
 import type { ControlBuffer } from './control.ts';
 import type { FrameContext } from './effects/effect.ts';
+import { applyIntensity } from './intensity.ts';
 
 /** El pulso al que pertenece un frame. Es el mismo objeto en todos los frames. */
 export interface Tick {
@@ -150,10 +155,15 @@ export function createFrameLoop(
 
       if (listener) listen(listener, tick, ctx);
 
-      // La ranura que hay al empezar el pulso: un cambio posterior entra en el siguiente.
+      // La intensidad y la ranura que hay al empezar el pulso: un cambio posterior entra en el
+      // siguiente, y todas las tiras del pulso llevan la misma intensidad (decisión 2 del change
+      // instrument-intensity).
+      const intensity = control.intensity();
       let index = 0;
       for (const { frame, outputs } of frames) {
+        // El orden del plano de tiempo real: efecto, intensidad, límite de potencia (H4) y salidas.
         control.slot(index++).render(ctx, frame);
+        applyIntensity(frame, intensity);
         for (const output of outputs) output.write(frame, tick);
       }
     },
