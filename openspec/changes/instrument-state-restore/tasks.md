@@ -74,7 +74,7 @@
   Verificar: los tests nuevos fallan; el resto sigue en verde.
 - [x] 2.4 `createControl` acepta el estado inicial y da su foto (`packages/engine/src/core/control.ts`).
   Verificar: los tests de 2.3 pasan, y los del bucle y del servidor siguen en verde.
-- [ ] 2.5 La raíz de composición carga el estado del adaptador, lo restaura con las tiras del
+- [x] 2.5 La raíz de composición carga el estado del adaptador, lo restaura con las tiras del
   fichero, escribe los avisos en el log y crea el búfer con él.
   Verificar: con un `data/instrument-state.db` preparado a mano con `sqlite3` (la respiración en azul
   y otra tira que el fichero ya no declara), `pnpm dev` arranca con la tira respirando en azul, y la

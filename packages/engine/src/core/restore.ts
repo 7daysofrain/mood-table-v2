@@ -19,14 +19,14 @@ import type { StripConfig } from '@moodtable/shared';
 import Value from 'typebox/value';
 
 import { defaultParams } from './effects/effect.ts';
-import type { AnyEffect } from './effects/registry.ts';
+import { type AnyEffect, EFFECTS } from './effects/registry.ts';
 import type { InstrumentState, SavedStrip } from './state-store.ts';
 
 export interface RestoreOptions {
   /** Las tiras del fichero, en su orden. */
   strips: readonly StripConfig[];
-  /** Los efectos que tiene el motor. */
-  effects: readonly AnyEffect[];
+  /** Los efectos que tiene el motor. Por defecto, el registro. */
+  effects?: readonly AnyEffect[];
   /** Si el instrumento tiene fuente de audio: sin ella, una tira no puede arrancar con un reactivo. */
   hasAudioSource: boolean;
   /** Lo que devuelve el puerto `StateStore`; vacío en el primer arranque. */
@@ -43,7 +43,12 @@ export interface Restored {
   notices: string[];
 }
 
-export function restore({ strips, effects, hasAudioSource, saved }: RestoreOptions): Restored {
+export function restore({
+  strips,
+  effects = EFFECTS,
+  hasAudioSource,
+  saved,
+}: RestoreOptions): Restored {
   const byId = new Map<string, AnyEffect>(effects.map((effect) => [effect.id, effect]));
   const notices: string[] = [];
 
@@ -73,7 +78,7 @@ export function restore({ strips, effects, hasAudioSource, saved }: RestoreOptio
     let active = byId.get(kept.activeEffect) ?? fromFile;
     if (active.usesAudio && !hasAudioSource) {
       notices.push(
-        `la tira «${strip.id}»: su efecto guardado, \`${active.id}\`, necesita una fuente de audio ` +
+        `La tira «${strip.id}»: su efecto guardado, \`${active.id}\`, necesita una fuente de audio ` +
           `(\`audioSource\`) y el fichero no declara ninguna; arranca con \`${fromFile.id}\`.`,
       );
       active = fromFile;
