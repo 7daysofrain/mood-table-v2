@@ -94,7 +94,7 @@
   más rápido, ninguna (`specs/instrument-state`, *El estado se guarda cuando el DJ deja de tocar* y
   *Una escritura lenta queda en el log*).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 3.2 El guardador en `packages/engine/src/core/state-saver.ts`, con el temporizador y el reloj
+- [x] 3.2 El guardador en `packages/engine/src/core/state-saver.ts`, con el temporizador y el reloj
   inyectados (design.md, decisiones 2 y 3), y su montaje en la raíz de composición sobre `watch()`.
   Verificar: los tests de 3.1 pasan; con `pnpm dev`, cambiar el color en el panel y esperar 1 s deja
   ese color en `SELECT * FROM strip_effects;`.
