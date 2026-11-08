@@ -58,7 +58,7 @@
   a 1, el frame no cambia; a 0,5, `255, 169, 87` pasa a `128, 85, 44` (redondeado, no truncado); a 0,
   todos los canales a 0; con varios LEDs, cada canal por separado (decisiones 2 y 3).
   Verificar: los tests nuevos fallan porque la función no existe.
-- [ ] 2.2 `applyIntensity` en `packages/engine/src/core/intensity.ts`: escala el frame en su sitio,
+- [x] 2.2 `applyIntensity` en `packages/engine/src/core/intensity.ts`: escala el frame en su sitio,
   sin crear nada, y a 1 sale sin tocarlo.
   Verificar: los tests de 2.1 pasan.
 - [ ] 2.3 El contrato de `Effect` en `packages/engine/src/core/effects/effect.ts` dice que un efecto
