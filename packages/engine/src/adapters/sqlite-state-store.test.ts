@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { describeStateStoreContract } from '../core/state-store.contract.ts';
+import { describeStateStoreContract } from '../../test/state-store-contract.ts';
 import type { InstrumentState } from '../core/state-store.ts';
 import { openSqliteStateStore, type OpenedStateStore } from './sqlite-state-store.ts';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { describeStateStoreContract } from '../core/state-store.contract.ts';
+import { describeStateStoreContract } from '../../test/state-store-contract.ts';
 import { createMemoryStateStore } from './memory-state-store.ts';
 
 describeStateStoreContract('el adaptador en memoria', () => createMemoryStateStore());

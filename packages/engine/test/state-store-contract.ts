@@ -2,10 +2,13 @@
  * Tests de contrato del puerto `StateStore` (README §3, *cómo se prueba la persistencia*): el mismo
  * conjunto corre contra cada adaptador, así que el núcleo puede probarse con el de memoria y fiarse
  * de que el de SQLite hace lo mismo.
+ *
+ * Vive en `test/` y no en `src/`: es código de test, así que ni la cobertura ni SonarQube lo cuentan
+ * como del producto. No es un `.test.ts` porque no tiene tests propios: los registra cada adaptador.
  */
 import { describe, expect, it } from 'vitest';
 
-import type { InstrumentState, StateStore } from './state-store.ts';
+import type { InstrumentState, StateStore } from '../src/core/state-store.ts';
 
 /** Un estado que el test puede cambiar después de guardarlo o de leerlo. */
 type Editable = Record<string, { activeEffect: string; values: Record<string, unknown> }>;
