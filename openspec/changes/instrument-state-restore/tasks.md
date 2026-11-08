@@ -56,7 +56,7 @@
 
 ## 2. MOO-129 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests de la restauración en `packages/engine/src/core/restore.test.ts`,
+- [x] 2.1 **(test en rojo)** Tests de la restauración en `packages/engine/src/core/restore.test.ts`,
   con dos tiras y un efecto de prueba con parámetros: sin estado, el efecto del fichero con valores
   por defecto; con estado, el efecto activo y los valores de cada efecto guardados; tira nueva, tira
   que vuelve a declararse, tira con otro nombre, LEDs o salida, y tira con otro `id`; efecto
@@ -64,22 +64,22 @@
   uno fuera de rango; efecto activo que ya no existe (`specs/instrument-state`, requisitos de
   conciliación, del efecto del fichero y de los valores que ya no encajan).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 2.2 La restauración en `packages/engine/src/core/restore.ts`, función pura (design.md,
+- [x] 2.2 La restauración en `packages/engine/src/core/restore.ts`, función pura (design.md,
   decisiones 5 y 6).
   Verificar: los tests de 2.1 pasan.
-- [ ] 2.3 **(test en rojo)** Tests del búfer en `packages/engine/src/core/control.test.ts`: arranca
+- [x] 2.3 **(test en rojo)** Tests del búfer en `packages/engine/src/core/control.test.ts`: arranca
   desde un estado dado (efecto activo y valores de cada efecto, también de los no activos, y el
   primer `render` ya los lleva) y su foto del estado devuelve lo que tiene, también tras
   `setEffect` y `setValues`. Los tests de arranque desde el fichero siguen igual.
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 2.4 `createControl` acepta el estado inicial y da su foto (`packages/engine/src/core/control.ts`).
+- [x] 2.4 `createControl` acepta el estado inicial y da su foto (`packages/engine/src/core/control.ts`).
   Verificar: los tests de 2.3 pasan, y los del bucle y del servidor siguen en verde.
-- [ ] 2.5 La raíz de composición carga el estado del adaptador, lo restaura con las tiras del
+- [x] 2.5 La raíz de composición carga el estado del adaptador, lo restaura con las tiras del
   fichero, escribe los avisos en el log y crea el búfer con él.
   Verificar: con un `data/instrument-state.db` preparado a mano con `sqlite3` (la respiración en azul
   y otra tira que el fichero ya no declara), `pnpm dev` arranca con la tira respirando en azul, y la
   fila de la otra tira sigue en la base.
-- [ ] 2.6 Documentación: README §2.2 (*Configuración de las tiras* y *Búfer de control*: la
+- [x] 2.6 Documentación: README §2.2 (*Configuración de las tiras* y *Búfer de control*: la
   restauración, la reserva del efecto del fichero y los valores que no encajan) y §3
   (*Reconciliación al arrancar*: ya no escribe nada al arrancar; lo hace el primer guardado). `prompts.md`: la
   entrada de esta tarea.

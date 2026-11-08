@@ -1,14 +1,14 @@
 /**
  * Raíz de composición (README §2.1): el único módulo que conoce a la vez el núcleo y los
  * adaptadores. Carga la configuración y la fuente de audio, si la declara, abre los puertos serie
- * de las tiras físicas, abre el estado del instrumento, crea el búfer de control, arranca el
- * servidor del panel (que anuncia la fuente, el estado de la tarjeta, las tiras y la intensidad,
- * envía su nivel y la posición del fichero, sirve el fichero y recibe los mandos de la API) y el
- * motor, y da a cada tira sus salidas: el visor siempre (D43) y, a las tiras físicas, también su
- * salida Adalight. Si la configuración no sirve, el fichero de audio no se puede leer o su formato
- * no vale, la tarjeta de sonido o el puerto de una tira física no se pueden abrir, o el servidor no
- * puede escuchar, el motor no arranca: dice qué falla y termina con código 1. El estado del
- * instrumento, en cambio, nunca impide arrancar.
+ * de las tiras físicas, abre y restaura el estado del instrumento, crea desde él el búfer de
+ * control, arranca el servidor del panel (que anuncia la fuente, el estado de la tarjeta, las tiras
+ * y la intensidad, envía su nivel y la posición del fichero, sirve el fichero y recibe los mandos de
+ * la API) y el motor, y da a cada tira sus salidas: el visor siempre (D43) y, a las tiras físicas,
+ * también su salida Adalight. Si la configuración no sirve, el fichero de audio no se puede leer o
+ * su formato no vale, la tarjeta de sonido o el puerto de una tira física no se pueden abrir, o el
+ * servidor no puede escuchar, el motor no arranca: dice qué falla y termina con código 1. El estado
+ * del instrumento, en cambio, nunca impide arrancar.
  */
 import { join } from 'node:path';
 
@@ -24,6 +24,8 @@ import { openSoundcard } from './adapters/soundcard.ts';
 import { spawnCapture } from './adapters/soundcard.hardware.ts';
 import { type OpenedStateStore, openSqliteStateStore } from './adapters/sqlite-state-store.ts';
 import { createControl } from './core/control.ts';
+import { restore } from './core/restore.ts';
+import type { InstrumentState } from './core/state-store.ts';
 import {
   sourceMessage,
   startEngine,
@@ -45,6 +47,22 @@ function openInstrumentState(config: InstrumentStateConfig): OpenedStateStore {
     return { store: createMemoryStateStore(), close: () => undefined };
   }
   return openSqliteStateStore(config.path);
+}
+
+/**
+ * El estado guardado. Si no se puede leer, el motor arranca como la primera vez y lo dice al log:
+ * el estado del instrumento nunca impide arrancar (decisión 4).
+ */
+function loadSaved({ store }: OpenedStateStore): InstrumentState {
+  try {
+    return store.load();
+  } catch (error) {
+    console.error(
+      `No se ha podido leer el estado guardado del instrumento (${(error as Error).message}); ` +
+        'el motor arranca como la primera vez.',
+    );
+    return {};
+  }
 }
 
 async function main(): Promise<string | undefined> {
@@ -83,11 +101,21 @@ async function main(): Promise<string | undefined> {
   const instrumentState = openInstrumentState(loaded.config.instrumentState);
   if (instrumentState.notice) console.error(instrumentState.notice);
 
+  // Lo guardado, conciliado con las tiras del fichero (decisión 6): cada tira con su efecto y sus
+  // valores, o con los del fichero. Los avisos van al log.
+  const restored = restore({
+    strips: loaded.config.strips,
+    hasAudioSource: audioSource !== undefined,
+    saved: loadSaved(instrumentState),
+  });
+  for (const notice of restored.notices) console.error(notice);
+
   // El búfer de control, antes que el servidor y el bucle, que dependen de él (decisión 1 del
-  // change strip-effect-switch).
+  // change strip-effect-switch), desde el estado restaurado.
   const control = createControl({
     strips: loaded.config.strips,
     hasAudioSource: audioSource !== undefined,
+    initial: restored.state,
   });
 
   const { host, port } = loaded.config.server;

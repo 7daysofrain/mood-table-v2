@@ -333,7 +333,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 - **Latencia de HTTP en los sliders.** Mover un parámetro por HTTP es algo más lento que por WebSocket (milisegundos en red local; el panel limita el envío mientras arrastras). Si en uso real no se siente inmediato, `setParam` pasaría a WebSocket; el cambio es acotado porque `Commands` es un puerto.
 - **Techo de Adalight por tira.** A 115.200 baudios, unos 19 fps con 200 LEDs en cada puerto serie; la mesa va a 500.000 baudios, con 59 fps a 173 LEDs (D96). Limita el número de LEDs por tira en el MVP (≤ 200-300); el firmware propio es la salida.
 - **Cambiar el hardware exige reiniciar.** La configuración de las tiras se lee al arrancar. Es aceptable en un aparato que se cablea una vez.
-- **Sin clave foránea hacia las tiras.** Como las tiras viven en el fichero, la base de datos no puede apuntar a ellas. Al arrancar, el motor **reconcilia**: crea el estado de las tiras nuevas e ignora el de las que ya no existen.
+- **Sin clave foránea hacia las tiras.** Como las tiras viven en el fichero, la base de datos no puede apuntar a ellas. Al arrancar, el motor **concilia** el estado guardado con las tiras del fichero, por su `id`: las nuevas arrancan como la primera vez y el estado de las que ya no se declaran se conserva, sin usarse (§3).
 - **Montaje manual.** Sin contenedor, `main.ts` crece con cada adaptador nuevo. Aceptable con el número de piezas previsto.
 - **Proceso único = punto único de fallo.** Si el proceso cae, se apaga todo. `systemd` lo reinicia y vuelve al último estado guardado.
 
@@ -374,12 +374,15 @@ Un máster de brillo para todas las tiras, sea cual sea su efecto: multiplica ca
 Estima el consumo del frame a partir del valor de cada canal y del consumo máximo por LED declarado para esa tira. Si supera el límite configurado para su fuente de alimentación, escala el brillo de todo el frame en proporción. Protege fuentes y tiras, algo que en la v1 hacían por debajo piezas de terceros.
 
 **Búfer de control** — TypeScript.
-Guarda lo que el bucle necesita **de cada tira**: su efecto activo, con sus valores y su memoria ya creados (la *ranura* de la tira). Guarda además **los valores de cada efecto de cada tira**, incluidos los de los efectos no activos, con la forma de `strip_effects` (§3.2). Implementa el puerto `Commands`: un cambio de efecto (ya validado) crea la ranura nueva **fuera del bucle**, con los valores con que la tira dejó ese efecto (los de por defecto la primera vez) y la memoria nueva, y la deja en el sitio de la tira; el bucle la recoge al inicio del pulso siguiente, entera, así que el primer frame ya lleva esos valores. De varios cambios seguidos queda el último, y elegir el efecto activo no lo reinicia. Un cambio de valores (`setValues`) no rehace la ranura: el búfer los valida con el esquema del efecto activo y sustituye la referencia a los valores de la ranura por una copia, que apunta también como los valores de ese efecto en esa tira, así que la memoria del efecto sigue y la respiración no salta de brillo. Devuelve qué ha pasado (cambiado, sin cambio, la tira no existe, necesita fuente de audio, valores que no cumplen el esquema, con el motivo) en lugar de lanzar, y avisa de cada cambio, venga del mando que venga, para que el servidor lo cuente a todos los paneles. Guarda además la **intensidad** del instrumento, que no es de ninguna tira: empieza en 1, cambia con `setIntensity` (que también valida, porque un mando futuro como la F1 entra por el mismo puerto) y avisa por su propio aviso, para que un cambio de intensidad no rehaga el mensaje de las tiras (D101). Vive en memoria y no se guarda. Lo crea `main.ts` antes que el servidor y el bucle, que dependen de él (D77). Con H5, cada cambio avisará al puerto de persistencia, que guardará con un pequeño retardo (agrupa los cambios mientras se arrastra un slider en lugar de escribir en disco cien veces).
+Guarda lo que el bucle necesita **de cada tira**: su efecto activo, con sus valores y su memoria ya creados (la *ranura* de la tira). Guarda además **los valores de cada efecto de cada tira**, incluidos los de los efectos no activos, con la forma de `strip_effects` (§3.2). Implementa el puerto `Commands`: un cambio de efecto (ya validado) crea la ranura nueva **fuera del bucle**, con los valores con que la tira dejó ese efecto (los de por defecto la primera vez) y la memoria nueva, y la deja en el sitio de la tira; el bucle la recoge al inicio del pulso siguiente, entera, así que el primer frame ya lleva esos valores. De varios cambios seguidos queda el último, y elegir el efecto activo no lo reinicia. Un cambio de valores (`setValues`) no rehace la ranura: el búfer los valida con el esquema del efecto activo y sustituye la referencia a los valores de la ranura por una copia, que apunta también como los valores de ese efecto en esa tira, así que la memoria del efecto sigue y la respiración no salta de brillo. Devuelve qué ha pasado (cambiado, sin cambio, la tira no existe, necesita fuente de audio, valores que no cumplen el esquema, con el motivo) en lugar de lanzar, y avisa de cada cambio, venga del mando que venga, para que el servidor lo cuente a todos los paneles. Guarda además la **intensidad** del instrumento, que no es de ninguna tira: empieza en 1, cambia con `setIntensity` (que también valida, porque un mando futuro como la F1 entra por el mismo puerto) y avisa por su propio aviso, para que un cambio de intensidad no rehaga el mensaje de las tiras (D101). Vive en memoria y no se guarda. Lo crea `main.ts` antes que el servidor y el bucle, que dependen de él (D77), con el **estado del instrumento ya restaurado**: cada tira arranca con su efecto activo y los valores de cada efecto que dejó el DJ, y no con los del fichero. Da la foto de ese estado (`instrumentState()`), la que se guarda. Con H5, cada cambio avisará al puerto de persistencia, que guardará con un pequeño retardo (agrupa los cambios mientras se arrastra un slider en lugar de escribir en disco cien veces).
 
 #### Configuración de las tiras
 
 **Carga de configuración** — TypeScript + TypeBox.
-Al arrancar, lee el fichero de configuración del despliegue, que declara las tiras (identificador, nombre, salida y puerto, número de LEDs, orden de color y límites de potencia) y la fuente de audio. Lo valida contra su esquema TypeBox: si algo está mal, **el motor no arranca** y dice exactamente qué campo falla. Después **reconcilia** con la base de datos: crea el estado de las tiras nuevas (con el efecto que declaran y valores por defecto) e ignora el de las que ya no están declaradas.
+Al arrancar, lee el fichero de configuración del despliegue, que declara las tiras (identificador, nombre, salida y puerto, número de LEDs, orden de color y límites de potencia) y la fuente de audio. Lo valida contra su esquema TypeBox: si algo está mal, **el motor no arranca** y dice exactamente qué campo falla.
+
+**Restauración del estado** — TypeScript + TypeBox, función pura del núcleo (`restore.ts`).
+Después, `main.ts` lee el estado guardado y lo concilia con las tiras del fichero, por su `id`: cambiar el nombre, los LEDs o la salida de una tira no la hace otra. Una tira sin estado guardado arranca como la primera vez, con el efecto que declara (`effect`) y los valores por defecto. Con estado, **manda lo que dejó el DJ**: su efecto activo y los valores de cada efecto. El efecto del fichero hace de **reserva** si el guardado ya no existe o necesita una fuente de audio que el fichero ya no declara; en este caso, el log lo dice. La reserva siempre se puede pintar, porque el fichero no deja declarar un efecto reactivo sin fuente. Los valores guardados de cada efecto se validan con su **esquema actual** (D104): los campos que faltan toman su valor por defecto y los que sobran se quitan, y si aun así no lo cumplen, solo ese efecto vuelve a sus valores por defecto. Los de un efecto que ya no existe se ignoran. Si el estado guardado no se puede leer, el motor arranca como la primera vez y lo dice en el log.
 
 #### Adaptadores
 
@@ -670,8 +673,8 @@ La estrategia sigue la arquitectura (§2.1): el núcleo no tiene E/S, así que c
 
 | Nivel | Qué se prueba | Herramienta |
 |---|---|---|
-| **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (una sinusoide de 100 Hz cae en su banda). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). | Vitest |
-| **Integración** | API con `fastify.inject()`, sin abrir puertos. Tests de contrato de `StateStore` contra SQLite y en memoria. Reconciliación al arrancar. Arranque tras `kill -9` (§3). | Vitest |
+| **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (una sinusoide de 100 Hz cae en su banda). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). Restauración del estado al arrancar (§3). | Vitest |
+| **Integración** | API con `fastify.inject()`, sin abrir puertos. Tests de contrato de `StateStore` contra SQLite y en memoria. Arranque tras `kill -9` (§3). | Vitest |
 | **E2E (flujo principal)** | El motor arranca con fuente = WAV; en el navegador, el visor reacciona a la música, mover un control cambia la luz y, tras reiniciar el motor, vuelve el último estado. | Playwright |
 | **Hardware** | Tira física de la mesa: lista de comprobación manual (`HARDWARE_SETUP.md`) y vídeo. | Manual |
 
@@ -736,7 +739,7 @@ erDiagram
 
 #### `strip_state` — estado de cada tira (H5)
 
-Lo que el motor restaura al arrancar: qué efecto tenía cada tira. Una fila por tira declarada.
+Lo que el motor restaura al arrancar: qué efecto tenía cada tira. Una fila por tira guardada, también de las que el fichero ya no declara.
 
 | Atributo | Tipo | Restricciones | Descripción |
 |---|---|---|---|
@@ -771,7 +774,7 @@ Se documenta aquí porque es la otra mitad del modelo. Su esquema TypeBox vive e
 | `name` | string | Obligatorio | Nombre que muestra el panel. |
 | `output` | objeto | Obligatorio | Salida de la tira, discriminada por `type`: `virtual` (solo el visor, sin más campos) o `adalight` (la tira física, por su puerto serie; sus campos, abajo). |
 | `ledCount` | entero | > 0 | Número de LEDs. El máximo práctico con Adalight es ≈ 200-300 por tira. |
-| `effect` | enum | Obligatorio; un id del catálogo de efectos (`breathing`…) | Efecto con el que arranca la tira (D52). Con H5, el estado guardado manda sobre él. |
+| `effect` | enum | Obligatorio; un id del catálogo de efectos (`breathing`…) | Efecto con el que arranca la tira (D52). Si hay estado guardado de la tira, manda sobre él, salvo que ya no se pueda pintar (§2.2). |
 | `colorOrder` | enum | RGB, RBG, GRB, GBR, BRG, BGR | Orden de los canales que espera la tira. |
 | `maxCurrentMa` | entero | > 0 | Consumo máximo permitido (mA) según su fuente de alimentación. Lo usa el límite de potencia. |
 | `ledMaxMa` | entero | > 0, por defecto 60 | Consumo de un LED en blanco a máximo brillo (mA), para estimar el consumo de cada frame. |
@@ -825,11 +828,12 @@ Por último, el fichero dice **dónde se guarda el estado del instrumento** (`in
 
 #### Reconciliación al arrancar
 
-Como las tiras viven en el fichero, la base de datos no puede tener una clave foránea hacia ellas. La sustituye una reconciliación al arrancar, dentro de una transacción:
+Como las tiras viven en el fichero, la base de datos no puede tener una clave foránea hacia ellas. La sustituye una reconciliación al arrancar, en memoria y **sin escribir nada** (la restauración de §2.2): las filas las crea o las cambia el primer guardado, que escribe el estado entero del búfer sin borrar ninguna.
 
-- **Tira nueva en el fichero:** se crean sus filas en `strip_effects` con los valores por defecto de cada efecto y su `strip_state` con el efecto que declara (`effect`).
-- **Efecto nuevo en el código:** se crea su fila en `strip_effects` para cada tira, con sus valores por defecto.
-- **Tira que ya no está en el fichero:** su estado se ignora (no se borra, por si vuelve a declararse).
+- **Tira nueva en el fichero:** arranca con el efecto que declara (`effect`) y sus valores por defecto; sus filas aparecen en el primer guardado.
+- **Efecto nuevo en el código:** no hace falta nada. Una tira lo empieza con sus valores por defecto la primera vez que se elige, y su fila aparece en el guardado siguiente.
+- **Tira que ya no está en el fichero:** su estado no se usa, pero no se borra: si vuelve a declararse, recupera lo suyo.
+- **Efecto que ya no está en el código:** sus valores no se usan, y su fila se conserva.
 
 #### Garantías y evolución del esquema
 
@@ -852,7 +856,7 @@ El estado guardado nunca impide arrancar: un instrumento que no arranca es peor 
 
 1. **Tests de contrato del puerto:** el mismo conjunto de tests se ejecuta contra el adaptador SQLite y contra el adaptador en memoria. Guardar y leer devuelve lo mismo, y guardar no borra las tiras ni los efectos que no van en el estado guardado.
 2. **Tests de restricciones y de apertura:** SQLite rechaza lo que el esquema prohíbe (un efecto activo sin valores guardados para esa tira), las migraciones se aplican una sola vez, y cada caso de apertura hace lo de la tabla de arriba, con ficheros temporales.
-3. **Test de reconciliación:** se añade y se quita una tira del fichero de configuración, se arranca, y se comprueba el estado resultante.
+3. **Tests de la restauración:** la función pura del núcleo, sin disco, con tiras nuevas, quitadas, vueltas a declarar o con otro `id`, el efecto guardado reactivo sin fuente de audio, valores que ya no encajan y un efecto activo que ya no existe.
 4. **Test de arranque tras corte:** se arranca el motor, se cambian el efecto y los parámetros de una tira por la API, **se mata el proceso sin cerrarlo** (`kill -9`, que simula desenchufar), se vuelve a arrancar y se comprueba que la API devuelve el mismo estado.
 5. **Comprobación manual:** la base de datos se puede inspeccionar con `sqlite3` (por ejemplo, `SELECT * FROM strip_state;`).
 
