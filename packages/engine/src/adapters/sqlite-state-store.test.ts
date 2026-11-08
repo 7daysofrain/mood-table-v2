@@ -200,4 +200,21 @@ describe('al abrir el estado guardado', () => {
     expect(result.store.load()).toEqual({ mesa: { activeEffect: 'energy', values: { energy: {} } } });
     expect(await readFile(path)).toEqual(before);
   });
+
+  it('de una versión más nueva y sin WAL, tampoco le cambia el modo del diario', async () => {
+    const path = join(dir, 'estado.db');
+    const db = new DatabaseSync(path);
+    db.exec(`PRAGMA journal_mode = DELETE;
+      CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL);
+      INSERT INTO schema_migrations (version, applied_at) VALUES (99, 'x');`);
+    db.close();
+    const before = await readFile(path);
+
+    const result = open(path);
+    result.close();
+
+    expect(result.notice).toContain('versión más nueva del motor');
+    expect(await readFile(path)).toEqual(before);
+    expect(existsSync(`${path}-wal`)).toBe(false);
+  });
 });

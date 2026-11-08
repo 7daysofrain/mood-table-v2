@@ -98,7 +98,7 @@ export function openSqliteStateStore(
   const { db } = opening;
 
   try {
-    const newer = migrate(db, now);
+    const newer = newerMigration(db);
     if (newer !== undefined) {
       db.close();
       return {
@@ -110,6 +110,9 @@ export function openSqliteStateStore(
         close: () => undefined,
       };
     }
+    // Hasta aquí no se ha escrito nada en el fichero: el modo WAL queda guardado en él.
+    db.exec('PRAGMA journal_mode = WAL');
+    migrate(db, now);
   } catch (error) {
     db.close();
     return withoutSaving(path, error);
@@ -127,7 +130,11 @@ export function openSqliteStateStore(
 /** El fichero abierto y comprobado, o por qué no; si no, `close` cierra lo que llegó a abrir. */
 type Opening = { ok: true; db: DatabaseSync } | { ok: false; error: unknown; close: () => void };
 
-/** Abre el fichero con sus garantías y comprueba que no está dañado. */
+/**
+ * Abre el fichero y comprueba que no está dañado, sin escribir en él: `synchronous` y `foreign_keys`
+ * son de la conexión, y el modo WAL, que sí se guarda en el fichero, se pone después de ver que este
+ * motor conoce todas sus migraciones.
+ */
 function tryOpen(path: string): Opening {
   let db: DatabaseSync;
   try {
@@ -136,8 +143,8 @@ function tryOpen(path: string): Opening {
     return { ok: false, error, close: () => undefined };
   }
   try {
-    // `journal_mode` es la primera lectura del fichero: si no es una base de datos, falla aquí.
-    db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON;');
+    db.exec('PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON;');
+    // `quick_check` es la primera lectura del fichero: si no es una base de datos, falla aquí.
     const check = db.prepare('PRAGMA quick_check').get();
     if (check?.quick_check !== 'ok') {
       throw new DamagedError(`PRAGMA quick_check: ${String(check?.quick_check)}`);
@@ -148,18 +155,28 @@ function tryOpen(path: string): Opening {
   }
 }
 
-/**
- * Aplica las migraciones pendientes, cada una en su transacción. Si el fichero tiene alguna que este
- * motor no conoce, no aplica nada y devuelve la más alta.
- */
-function migrate(db: DatabaseSync, now: () => Date): number | undefined {
+/** La migración aplicada más alta, o 0 si no hay ninguna (o ni siquiera la tabla de control). */
+function latestMigration(db: DatabaseSync): number {
+  const table = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'")
+    .get();
+  if (!table) return 0;
+  const row = db.prepare('SELECT MAX(version) AS latest FROM schema_migrations').get();
+  return typeof row?.latest === 'number' ? row.latest : 0;
+}
+
+/** Si el fichero tiene migraciones que este motor no conoce, la más alta. Solo lee. */
+function newerMigration(db: DatabaseSync): number | undefined {
+  const latest = latestMigration(db);
+  return latest > MIGRATIONS.length ? latest : undefined;
+}
+
+/** Aplica las migraciones pendientes, cada una en su transacción. */
+function migrate(db: DatabaseSync, now: () => Date): void {
   db.exec(
     'CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)',
   );
-  const row = db.prepare('SELECT MAX(version) AS latest FROM schema_migrations').get();
-  const latest = typeof row?.latest === 'number' ? row.latest : 0;
-  if (latest > MIGRATIONS.length) return latest;
-
+  const latest = latestMigration(db);
   const record = db.prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)');
   MIGRATIONS.slice(latest).forEach((sql, index) => {
     inTransaction(db, () => {
@@ -167,7 +184,6 @@ function migrate(db: DatabaseSync, now: () => Date): number | undefined {
       record.run(latest + index + 1, now().toISOString());
     });
   });
-  return undefined;
 }
 
 function sqliteStore(db: DatabaseSync, now: () => Date): StateStore {
