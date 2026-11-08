@@ -105,7 +105,7 @@
   el DJ arrastra el periodo y el motor se mata antes de soltar; al volver, el periodo es el de antes
   (`specs/instrument-state`, *Tras reiniciar…* y *El estado se guarda cuando el DJ deja de tocar*).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 3.4 Documentación: README §2.2 (el guardado con su retardo, que ya no es «pequeño» sino de
+- [x] 3.4 Documentación: README §2.2 (el guardado con su retardo, que ya no es «pequeño» sino de
   500 ms, y el log de las escrituras lentas), §2.4 (servicio `systemd` + estado guardado) y §2.6 (el
   E2E de arranque tras corte). `prompts.md`: la entrada de esta tarea.
   Verificar: lo que describe el README coincide con lo que hace el motor.

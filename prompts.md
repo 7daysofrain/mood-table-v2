@@ -1941,20 +1941,6 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *La IA lo añadió a `MOO-76` como notas para el refinamiento: qué pasó, el resultado del triaje a mano, por qué afecta a medir el triaje (faltan datos y el aviso de lista para integrar engaña) y la pregunta de dónde arreglarlo. Señaló que el aviso que engaña es más un fallo del seguimiento que de calibración.*
 
-#### 6.66 Restaurar el estado del instrumento al arrancar (`MOO-129`)
-
-**Prompt 1** (integrada la PR de `MOO-26`, cuando la IA propuso seguir con la sección siguiente del change):
-
-> Sí, sigue
-
-*Claude Code (`claude-opus-5-5`, 8-nov). La IA creó la rama desde `main` e implementó la sección `MOO-129` en TDD, un commit por paso: los tests de la restauración en rojo, la restauración como función pura del núcleo, los tests del búfer de control en rojo y el búfer que arranca desde un estado y da su foto. Después, la raíz de composición, que carga el estado, lo restaura y crea el búfer con él. Lo comprobó a mano con una base preparada con `sqlite3`: la tira arranca respirando en azul, se conserva la fila de una tira que el fichero ya no declara y, con un efecto guardado reactivo sin fuente de audio, arranca con el del fichero y lo dice en el log.*
-
-*Ajustes:*
-- *Al conectar el búfer en `main.ts`, la IA vio que el servidor recibe `{ ...control, snapshot }` y que ese `snapshot` es el mensaje de las tiras para el panel. Con el mismo nombre en el búfer, funcionaba solo porque el de la derecha pisa al del spread. Renombró la foto del búfer a `instrumentState()`, el término del glosario, en un commit aparte.*
-- *Por el arreglo de Codex en `MOO-26`, la restauración y el búfer leen la tira de cada `id` con `Object.hasOwn`, y los tests incluyen una tira `__proto__`.*
-- *Añadió que, si el estado guardado no se puede leer, el motor arranque como la primera vez y lo diga en el log: lo pide el requisito de que un estado dañado no impida arrancar, aunque el `tasks.md` no lo nombraba.*
-- *La primera comprobación a mano falló porque el fichero declaraba el scroll, que es reactivo: la respiración es el único efecto de ambiente.*
-
 #### 6.66 Mover la intensidad desde el panel (`MOO-127`)
 
 **Prompt 1** (con la PR de `MOO-126` en verde, antes de aprobarla):
@@ -1975,6 +1961,35 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *Al mirar la zona en el navegador, la IA vio que a unos 100 px, como decía el `design.md`, el título «Intensidad» se cortaba y «100 %» se partía en dos líneas. La columna pasó a 140 px, y queda en D102.*
 - *El E2E no pudo arrancar a la primera: el puerto de su servidor lo ocupaban los E2E de otra sesión, en otro worktree. La IA no paró ese proceso: esperó a que lo liberara.*
+
+#### 6.67 Restaurar el estado del instrumento al arrancar (`MOO-129`)
+
+**Prompt 1** (integrada la PR de `MOO-26`, cuando la IA propuso seguir con la sección siguiente del change):
+
+> Sí, sigue
+
+*Claude Code (`claude-opus-5-5`, 8-nov). La IA creó la rama desde `main` e implementó la sección `MOO-129` en TDD, un commit por paso: los tests de la restauración en rojo, la restauración como función pura del núcleo, los tests del búfer de control en rojo y el búfer que arranca desde un estado y da su foto. Después, la raíz de composición, que carga el estado, lo restaura y crea el búfer con él. Lo comprobó a mano con una base preparada con `sqlite3`: la tira arranca respirando en azul, se conserva la fila de una tira que el fichero ya no declara y, con un efecto guardado reactivo sin fuente de audio, arranca con el del fichero y lo dice en el log.*
+
+*Ajustes:*
+- *Al conectar el búfer en `main.ts`, la IA vio que el servidor recibe `{ ...control, snapshot }` y que ese `snapshot` es el mensaje de las tiras para el panel. Con el mismo nombre en el búfer, funcionaba solo porque el de la derecha pisa al del spread. Renombró la foto del búfer a `instrumentState()`, el término del glosario, en un commit aparte.*
+- *Por el arreglo de Codex en `MOO-26`, la restauración y el búfer leen la tira de cada `id` con `Object.hasOwn`, y los tests incluyen una tira `__proto__`.*
+- *Añadió que, si el estado guardado no se puede leer, el motor arranque como la primera vez y lo diga en el log: lo pide el requisito de que un estado dañado no impida arrancar, aunque el `tasks.md` no lo nombraba.*
+- *La primera comprobación a mano falló porque el fichero declaraba el scroll, que es reactivo: la respiración es el único efecto de ambiente.*
+
+#### 6.68 Guardar cada cambio del instrumento, agrupando los seguidos (`MOO-130`)
+
+**Prompt 1** (tras integrar el humano la PR de `MOO-129`):
+
+> mergeado
+
+*Claude Code (`claude-opus-5-5`, 8-nov). La IA comprobó que Codex no había dejado comentarios en la PR, creó la rama desde `main` e implementó la última sección del change en TDD, un commit por paso. Primero el guardador: escucha los avisos del búfer y guarda el estado entero 500 ms después del último cambio, con el temporizador y el reloj inyectados. Después, su montaje en `main.ts` y el E2E de arranque tras corte. Comprobó el guardador a mano por la API, como el panel: un color y `SIGKILL` a 1 s quedan en la base, y a los 200 ms no.*
+
+*Ajustes:*
+- *El `tasks.md` pedía probar el guardador con el adaptador en memoria, pero la regla de fronteras no deja a un test del núcleo importar un adaptador. El test usa un almacén falso que apunta los guardados y tarda lo que diga el reloj falso.*
+- *La IA añadió dos casos que el `tasks.md` no nombraba. Si un guardado falla, lo dice en el log y el motor sigue, porque un error en el temporizador habría tirado el proceso. Al pararlo, el guardador no guarda lo pendiente: guardar al apagar es un non-goal del change.*
+- *En el E2E, el color no se puede escribir en hexadecimal: el test usa el que sale de arrastrar el selector, como el de `MOO-96`. En el caso del arrastre, la IA mata el motor nada más acabar el último paso, y comprueba después que el motor seguía el arrastre: esperar antes a confirmarlo podía acercarse a los 500 ms.*
+- *Para ver que el E2E prueba el guardado, la IA subió el retardo a 5 s: los dos casos fallaron, y lo devolvió a 500 ms. Después pasó la suite entera tres veces seguidas, en verde.*
+- *Al añadir esta entrada, la IA vio que `main` tenía dos 6.66: la de `MOO-127` (#124) y la de `MOO-129` (#125), que entró después sin conflicto porque estaban en sitios distintos del fichero. Por el orden en que se integraron, `MOO-129` pasa a 6.67 y esta a 6.68.*
 
 ---
 
