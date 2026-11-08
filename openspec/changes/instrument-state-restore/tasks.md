@@ -56,7 +56,7 @@
 
 ## 2. MOO-129 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests de la restauración en `packages/engine/src/core/restore.test.ts`,
+- [x] 2.1 **(test en rojo)** Tests de la restauración en `packages/engine/src/core/restore.test.ts`,
   con dos tiras y un efecto de prueba con parámetros: sin estado, el efecto del fichero con valores
   por defecto; con estado, el efecto activo y los valores de cada efecto guardados; tira nueva, tira
   que vuelve a declararse, tira con otro nombre, LEDs o salida, y tira con otro `id`; efecto
