@@ -7,7 +7,7 @@ import { AudioPlayer } from './audio/player.ts';
 import { EngineConnection, viewerUrl } from './engine/connection.ts';
 import { ControlList } from './controls/ControlList.tsx';
 import type { ValueRequests } from './controls/use-draft-values.ts';
-import { effectRequests, type StripRequests, valueRequests } from './engine/strip-requests.ts';
+import { effectRequests, type RequestQueue, valueRequests } from './engine/request-queue.ts';
 import { EffectList } from './effects/EffectList.tsx';
 import { AudioSourceIndicator } from './layout/AudioSourceIndicator.tsx';
 import { PanelLayout } from './layout/PanelLayout.tsx';
@@ -30,7 +30,7 @@ export type PanelConnection = Pick<
 >;
 
 /** Lo que el panel usa del envío de los cambios de efecto. */
-export type PanelEffectRequests = Pick<StripRequests<EffectId>, 'send'>;
+export type PanelEffectRequests = Pick<RequestQueue<EffectId>, 'send'>;
 
 /** Lo que el panel usa del envío de los cambios de valores. */
 export type PanelValueRequests = ValueRequests;

@@ -1,7 +1,7 @@
 import type { EffectId } from '@moodtable/shared';
 import { describe, expect, it, vi } from 'vitest';
 
-import { effectRequests, type FetchLike, valueRequests } from './strip-requests.ts';
+import { effectRequests, type FetchLike, valueRequests } from './request-queue.ts';
 
 interface Sent {
   url: string;

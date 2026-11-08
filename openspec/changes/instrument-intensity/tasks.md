@@ -113,7 +113,7 @@
 
 ## 3. MOO-127 · panel
 
-- [ ] 3.1 `StripRequests` pasa a ser `RequestQueue<T>` en
+- [x] 3.1 `StripRequests` pasa a ser `RequestQueue<T>` en
   `packages/panel/src/engine/request-queue.ts` y recibe cómo construir la URL de cada clave. Las
   colas de efectos y de valores siguen con la tira como clave y las mismas rutas. Sus tests se mueven
   con ella, sin cambiar lo que comprueban (decisión 9).
