@@ -79,9 +79,9 @@ export function openSqliteStateStore(
     const moved = `${path}.dañado-${now().toISOString()}`;
     try {
       moveAside(path, moved);
-    } catch (failure) {
+    } catch (error_) {
       opening.close();
-      return withoutSaving(path, failure);
+      return withoutSaving(path, error_);
     }
     // Se cierra después de apartarlo: al cerrar, SQLite borra el `-wal` y el `-shm` por su nombre
     // de antes, y los apartados se conservan.
