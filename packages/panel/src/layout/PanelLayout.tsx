@@ -19,12 +19,17 @@ interface PanelLayoutProps {
   effects?: ReactNode;
   /** Contenido de la zona «Controles». */
   controls?: ReactNode;
+  /** Contenido de la zona «Intensidad». */
+  intensity?: ReactNode;
 }
 
 /**
  * Estructura del panel (README §1.3, specs/panel-layout): cabecera arriba, visor a todo el ancho y,
- * debajo, tiras, efectos y controles en tres columnas. Cada historia pone su contenido en su zona; las
- * que aún no rellena ninguna, quedan vacías.
+ * debajo, tiras, efectos y controles en tres columnas. A la derecha de todo y a toda la altura bajo
+ * la cabecera, la intensidad, que es del instrumento y no de la tira seleccionada (decisión 6 del
+ * change instrument-intensity); va después de `AppShell.Main`, así que es la última zona en el orden
+ * de lectura. Cada historia pone su contenido en su zona; las que aún no rellena ninguna, quedan
+ * vacías.
  */
 export function PanelLayout({
   status,
@@ -33,9 +38,10 @@ export function PanelLayout({
   strips,
   effects,
   controls,
+  intensity,
 }: Readonly<PanelLayoutProps>) {
   return (
-    <AppShell header={{ height: 60 }} padding="md">
+    <AppShell header={{ height: 60 }} aside={{ width: 140, breakpoint: 0 }} padding="md">
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Title order={1} size="h3">
@@ -61,6 +67,12 @@ export function PanelLayout({
           </SimpleGrid>
         </Stack>
       </AppShell.Main>
+
+      <AppShell.Aside p="md" pl={0} withBorder={false}>
+        <Zone title="Intensidad" fill>
+          {intensity}
+        </Zone>
+      </AppShell.Aside>
     </AppShell>
   );
 }

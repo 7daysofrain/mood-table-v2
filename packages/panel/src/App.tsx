@@ -7,8 +7,15 @@ import { AudioPlayer } from './audio/player.ts';
 import { EngineConnection, viewerUrl } from './engine/connection.ts';
 import { ControlList } from './controls/ControlList.tsx';
 import type { ValueRequests } from './controls/use-draft-values.ts';
-import { effectRequests, type RequestQueue, valueRequests } from './engine/request-queue.ts';
+import {
+  effectRequests,
+  intensityRequests,
+  type RequestQueue,
+  valueRequests,
+} from './engine/request-queue.ts';
 import { EffectList } from './effects/EffectList.tsx';
+import { IntensityZone } from './intensity/IntensityZone.tsx';
+import type { IntensityRequests } from './intensity/use-draft-intensity.ts';
 import { AudioSourceIndicator } from './layout/AudioSourceIndicator.tsx';
 import { PanelLayout } from './layout/PanelLayout.tsx';
 import { StripList } from './strips/StripList.tsx';
@@ -23,6 +30,7 @@ export type PanelConnection = Pick<
   | 'sourceLost'
   | 'level'
   | 'strips'
+  | 'intensity'
   | 'subscribe'
   | 'subscribePositions'
   | 'start'
@@ -34,6 +42,9 @@ export type PanelEffectRequests = Pick<RequestQueue<EffectId>, 'send'>;
 
 /** Lo que el panel usa del envío de los cambios de valores. */
 export type PanelValueRequests = ValueRequests;
+
+/** Lo que el panel usa del envío de los cambios de intensidad. */
+export type PanelIntensityRequests = IntensityRequests;
 
 /** Lo que el panel usa del reproductor del fichero de audio. */
 export type PanelPlayer = Pick<
@@ -47,18 +58,21 @@ export type PanelPlayer = Pick<
  * frames. Con un fichero como fuente, la cabecera deja oírlo al ritmo del visor (change
  * panel-audio-playback). Las zonas Tiras y Efectos muestran las tiras del motor y cambian el
  * efecto de la seleccionada (change strip-effect-switch). La zona Controles mueve los valores de su
- * efecto activo (change strip-effect-values).
+ * efecto activo (change strip-effect-values). La zona Intensidad mueve la intensidad de todas las
+ * tiras (change instrument-intensity).
  */
 export function App({
   connection: provided,
   player: providedPlayer,
   requests: providedRequests,
   valueRequests: providedValueRequests,
+  intensityRequests: providedIntensityRequests,
 }: Readonly<{
   connection?: PanelConnection;
   player?: PanelPlayer;
   requests?: PanelEffectRequests;
   valueRequests?: PanelValueRequests;
+  intensityRequests?: PanelIntensityRequests;
 }>) {
   const [connection] = useState<PanelConnection>(
     () => provided ?? new EngineConnection(viewerUrl(window.location)),
@@ -66,6 +80,9 @@ export function App({
   const [player] = useState<PanelPlayer>(() => providedPlayer ?? new AudioPlayer(connection));
   const [requests] = useState<PanelEffectRequests>(() => providedRequests ?? effectRequests());
   const [values] = useState<PanelValueRequests>(() => providedValueRequests ?? valueRequests());
+  const [intensityQueue] = useState<PanelIntensityRequests>(
+    () => providedIntensityRequests ?? intensityRequests(),
+  );
   // La tira seleccionada se guarda por su `id`, también sin conexión: al volver, si sigue declarada,
   // vuelve a estar seleccionada, y si no, la primera (decisión 8).
   const [selectedId, setSelectedId] = useState<string>();
@@ -97,6 +114,7 @@ export function App({
   const source = useSyncExternalStore(subscribe, () => connection.source);
   const sourceLost = useSyncExternalStore(subscribe, () => connection.sourceLost);
   const strips = useSyncExternalStore(subscribe, () => connection.strips);
+  const intensity = useSyncExternalStore(subscribe, () => connection.intensity);
   const selected = strips?.find((strip) => strip.id === selectedId) ?? strips?.[0];
   // La que se selecciona sola (la primera al abrir, o al faltar la elegida) también se guarda: si no,
   // con las tiras en otro orden al volver, quedaría seleccionada otra. Sin tiras no se toca.
@@ -130,6 +148,9 @@ export function App({
         )
       }
       controls={selected && <ControlList strip={selected} requests={values} />}
+      intensity={
+        intensity !== undefined && <IntensityZone intensity={intensity} requests={intensityQueue} />
+      }
     />
   );
 }

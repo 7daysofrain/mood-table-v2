@@ -146,7 +146,7 @@
     zonas vacías (`specs/intensity`, `specs/panel-layout`).
 
   Verificar: los tests nuevos fallan porque la zona no existe.
-- [ ] 3.7 La zona en `packages/panel/src/intensity/IntensityZone.tsx`, con el `Slider` vertical de
+- [x] 3.7 La zona en `packages/panel/src/intensity/IntensityZone.tsx`, con el `Slider` vertical de
   Mantine, paso 0,01 y la etiqueta en porcentaje; sus textos en `literals.ts`; y su sitio en
   `PanelLayout.tsx`, en un `AppShell.Aside` de unos 100 px, después de `AppShell.Main` (decisiones 6
   y 7).
