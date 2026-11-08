@@ -5,6 +5,8 @@ import {
   ApiErrorSchema,
   SetEffectBodySchema,
   SetEffectResponseSchema,
+  SetIntensityBodySchema,
+  SetIntensityResponseSchema,
   SetValuesBodySchema,
   SetValuesResponseSchema,
 } from './commands.ts';
@@ -68,6 +70,32 @@ describe('la respuesta del cambio de valores', () => {
     };
 
     expect(Value.Check(SetValuesResponseSchema, strip)).toBe(true);
+  });
+});
+
+describe('el cuerpo del cambio de intensidad', () => {
+  it.each([
+    ['apagado', { intensity: 0 }],
+    ['al máximo', { intensity: 1 }],
+    ['el ejemplo, al 40 %', { intensity: 0.4 }],
+  ])('acepta la intensidad %s', (_name, body) => {
+    expect(Value.Check(SetIntensityBodySchema, body)).toBe(true);
+  });
+
+  it.each([
+    ['por encima del máximo', { intensity: 1.5 }],
+    ['por debajo de cero', { intensity: -0.1 }],
+    ['que no es un número', { intensity: 'alta' }],
+    ['que falta', {}],
+    ['con campos de más', { intensity: 0.5, strip: 'demo' }],
+  ])('rechaza una intensidad %s', (_name, body) => {
+    expect(Value.Check(SetIntensityBodySchema, body)).toBe(false);
+  });
+});
+
+describe('la respuesta del cambio de intensidad', () => {
+  it('acepta la intensidad aplicada, como en el ejemplo', () => {
+    expect(Value.Check(SetIntensityResponseSchema, { intensity: 0.4 })).toBe(true);
   });
 });
 

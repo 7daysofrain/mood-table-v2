@@ -35,9 +35,25 @@ export const SetValuesBodySchema = Type.Unsafe<SetValuesBody>(
   Type.Union(EFFECT_CATALOG.map((effect) => effect.paramsSchema)),
 );
 
+/**
+ * La intensidad del instrumento, de 0 (todo apagado) a 1 (cada tira pinta su efecto tal cual). Es del
+ * instrumento, no de una tira (decisión 4 del change instrument-intensity).
+ */
+const IntensityFields = { intensity: Type.Number({ minimum: 0, maximum: 1 }) };
+
+/** El cuerpo de `PUT /api/intensity`. */
+export const SetIntensityBodySchema = Type.Object(IntensityFields, CLOSED);
+
+/** La respuesta `200` de `PUT /api/intensity`: la intensidad aplicada, cambie o no. */
+export const SetIntensityResponseSchema = Type.Object(IntensityFields, CLOSED);
+
 /** La respuesta de cualquier error de la API (`400`, `404`, `409`): una frase que dice qué pasa. */
 export const ApiErrorSchema = Type.Object({ message: Type.String({ minLength: 1 }) }, CLOSED);
 
 export type SetEffectBody = Static<typeof SetEffectBodySchema>;
+
+export type SetIntensityBody = Static<typeof SetIntensityBodySchema>;
+
+export type SetIntensityResponse = Static<typeof SetIntensityResponseSchema>;
 
 export type ApiError = Static<typeof ApiErrorSchema>;
