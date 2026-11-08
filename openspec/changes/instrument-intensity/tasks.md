@@ -151,7 +151,7 @@
   `PanelLayout.tsx`, en un `AppShell.Aside` de unos 100 px, después de `AppShell.Main` (decisiones 6
   y 7).
   Verificar: los tests de 3.6 pasan, y con `pnpm dev`, el fader atenúa la tira de la demo en el visor.
-- [ ] 3.8 E2E del caso feliz en `e2e/intensity.spec.ts`, con un motor propio, el fichero de golpes y
+- [x] 3.8 E2E del caso feliz en `e2e/intensity.spec.ts`, con un motor propio, el fichero de golpes y
   dos tiras, una con la respiración y otra con *energía*:
   - el panel se abre con «100 %»;
   - al arrastrar el fader, el visor pinta el cambio en las dos tiras en menos de 100 ms desde cada
