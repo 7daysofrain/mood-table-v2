@@ -87,7 +87,7 @@
 
 ## 3. MOO-130 · engine
 
-- [ ] 3.1 **(test en rojo)** Tests del guardador en `packages/engine/src/core/state-saver.test.ts`,
+- [x] 3.1 **(test en rojo)** Tests del guardador en `packages/engine/src/core/state-saver.test.ts`,
   con un reloj falso y el adaptador en memoria: un cambio suelto se guarda a los 500 ms y no antes;
   cambios seguidos, uno cada 100 ms, solo se guardan 500 ms después del último; cada guardado lleva
   el estado entero; un guardado de más de 10 ms deja una línea en el log con lo que ha tardado, y uno
