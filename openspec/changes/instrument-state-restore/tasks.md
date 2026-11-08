@@ -9,7 +9,7 @@
 
 ## 1. MOO-26 · db
 
-- [ ] 1.1 Comprobación previa: un test de Vitest que abre una base `node:sqlite` en un fichero
+- [x] 1.1 Comprobación previa: un test de Vitest que abre una base `node:sqlite` en un fichero
   temporal, crea una tabla en una transacción y la lee (en Vitest 5, en el CI y en la Pi con
   `node --test` o un script de una línea). `engines` de `package.json` sube a `>=24.15`.
   Verificar: el test pasa en local y en el CI, y en la Pi `node -e` abre `node:sqlite` sin flag ni
