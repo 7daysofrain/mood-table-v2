@@ -64,7 +64,7 @@
   uno fuera de rango; efecto activo que ya no existe (`specs/instrument-state`, requisitos de
   conciliación, del efecto del fichero y de los valores que ya no encajan).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 2.2 La restauración en `packages/engine/src/core/restore.ts`, función pura (design.md,
+- [x] 2.2 La restauración en `packages/engine/src/core/restore.ts`, función pura (design.md,
   decisiones 5 y 6).
   Verificar: los tests de 2.1 pasan.
 - [ ] 2.3 **(test en rojo)** Tests del búfer en `packages/engine/src/core/control.test.ts`: arranca
