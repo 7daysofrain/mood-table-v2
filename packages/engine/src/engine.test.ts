@@ -21,7 +21,12 @@ const demoStrip = {
   effect: 'breathing' as const,
 };
 
-const config: Config = { fps: 60, server: { host: '127.0.0.1', port: 8080 }, strips: [demoStrip] };
+const config: Config = {
+  fps: 60,
+  server: { host: '127.0.0.1', port: 8080 },
+  instrumentState: { type: 'memory' },
+  strips: [demoStrip],
+};
 
 beforeEach(() => {
   vi.useFakeTimers();

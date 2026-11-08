@@ -4,6 +4,9 @@
 # Configuración de cada instalación: pnpm dev la crea a partir de config/demo.json
 config/local.json
 
+# Estado del instrumento: lo crea el motor (instrumentState, change instrument-state-restore)
+/data/
+
 # Borradores de trabajo (Cowork)
 docs/borradores/
 
