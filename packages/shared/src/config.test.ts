@@ -11,6 +11,9 @@ const demoStrip = {
   effect: 'breathing',
 };
 
+/** Sin `instrumentState`, el estado se guarda en SQLite en `data/` (specs/engine-config). */
+const DEFAULT_INSTRUMENT_STATE = { type: 'sqlite', path: 'data/instrument-state.db' };
+
 function text(value: unknown): string {
   return JSON.stringify(value);
 }
@@ -34,7 +37,12 @@ describe('un fichero de configuración válido', () => {
 
     expect(result).toEqual({
       ok: true,
-      config: { fps: 60, server: { host: '127.0.0.1', port: 8080 }, strips: [demoStrip] },
+      config: {
+        fps: 60,
+        server: { host: '127.0.0.1', port: 8080 },
+        instrumentState: DEFAULT_INSTRUMENT_STATE,
+        strips: [demoStrip],
+      },
     });
   });
 
@@ -288,6 +296,7 @@ describe('la fuente de audio', () => {
         fps: 60,
         server: { host: '127.0.0.1', port: 8080 },
         audioSource,
+        instrumentState: DEFAULT_INSTRUMENT_STATE,
         strips: [demoStrip],
       },
     });
@@ -365,5 +374,46 @@ describe('la tarjeta de sonido como fuente de audio', () => {
     ],
   ])('con %j, nombra el campo y dice qué falla', (audioSource, message) => {
     expect(errorOf(text({ audioSource, strips: [demoStrip] }))).toBe(message);
+  });
+});
+
+describe('dónde se guarda el estado del instrumento', () => {
+  function instrumentStateOf(instrumentState: unknown): unknown {
+    const result = parseConfig(text({ instrumentState, strips: [demoStrip] }));
+    if (!result.ok) throw new Error(result.error);
+    return result.config.instrumentState;
+  }
+
+  it('sin instrumentState, en SQLite en data/instrument-state.db', () => {
+    const result = parseConfig(text({ strips: [demoStrip] }));
+
+    expect(result.ok && result.config.instrumentState).toEqual(DEFAULT_INSTRUMENT_STATE);
+  });
+
+  it.each(['estado.db', '/var/lib/moodtable/estado.db'])(
+    'acepta SQLite con la ruta %j',
+    (path) => {
+      expect(instrumentStateOf({ type: 'sqlite', path })).toEqual({ type: 'sqlite', path });
+    },
+  );
+
+  it('acepta memory, sin ruta', () => {
+    expect(instrumentStateOf({ type: 'memory' })).toEqual({ type: 'memory' });
+  });
+
+  it.each([
+    [
+      { type: 'json' },
+      'campo `instrumentState.type`: «json» no es un valor válido (se admite «sqlite» o «memory»)',
+    ],
+    [{ type: 'sqlite' }, 'campo `instrumentState.path`: falta y es obligatorio'],
+    [{ type: 'sqlite', path: '' }, 'campo `instrumentState.path`: no puede estar vacío'],
+    [
+      { type: 'memory', path: 'estado.db' },
+      'campo `instrumentState.path`: no existe (¿está bien escrito?)',
+    ],
+    [{ path: 'estado.db' }, 'campo `instrumentState.type`: falta y es obligatorio'],
+  ])('con %j, no arranca: nombra el campo y dice qué falla', (instrumentState, message) => {
+    expect(errorOf(text({ instrumentState, strips: [demoStrip] }))).toBe(message);
   });
 });

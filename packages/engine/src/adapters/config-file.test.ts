@@ -46,7 +46,12 @@ describe('la lectura de config/local.json', () => {
       ok: true,
       path: join(root, 'config', 'local.json'),
       file: 'config/local.json',
-      config: { fps: 60, server: { host: '127.0.0.1', port: 8080 }, strips: [demoStrip] },
+      config: {
+        fps: 60,
+        server: { host: '127.0.0.1', port: 8080 },
+        instrumentState: { type: 'sqlite', path: join(root, 'data', 'instrument-state.db') },
+        strips: [demoStrip],
+      },
     });
   });
 
@@ -159,6 +164,48 @@ describe('la ruta del fichero de audio', () => {
     const result = await loadConfig(root, '');
 
     expect(result.ok && 'audioSource' in result.config).toBe(false);
+  });
+});
+
+describe('la ruta del estado del instrumento', () => {
+  it('sin instrumentState, es data/instrument-state.db en la raíz del repositorio', async () => {
+    await writeConfig(JSON.stringify({ strips: [demoStrip] }));
+
+    const result = await loadConfig(root, '');
+
+    expect(result.ok && result.config.instrumentState).toEqual({
+      type: 'sqlite',
+      path: join(root, 'data', 'instrument-state.db'),
+    });
+  });
+
+  it('relativa, la resuelve desde la raíz del repositorio y la deja absoluta', async () => {
+    const instrumentState = { type: 'sqlite', path: 'otra/estado.db' };
+    await writeConfig(JSON.stringify({ instrumentState, strips: [demoStrip] }));
+
+    const result = await loadConfig(root, '');
+
+    expect(result.ok && result.config.instrumentState).toEqual({
+      type: 'sqlite',
+      path: join(root, 'otra', 'estado.db'),
+    });
+  });
+
+  it('absoluta, la respeta', async () => {
+    const path = join(tmpdir(), 'otra-carpeta', 'estado.db');
+    await writeConfig(JSON.stringify({ instrumentState: { type: 'sqlite', path }, strips: [demoStrip] }));
+
+    const result = await loadConfig(root, '');
+
+    expect(result.ok && result.config.instrumentState).toEqual({ type: 'sqlite', path });
+  });
+
+  it('en memoria, no hay ruta', async () => {
+    await writeConfig(JSON.stringify({ instrumentState: { type: 'memory' }, strips: [demoStrip] }));
+
+    const result = await loadConfig(root, '');
+
+    expect(result.ok && result.config.instrumentState).toEqual({ type: 'memory' });
   });
 });
 

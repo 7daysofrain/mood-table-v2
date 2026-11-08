@@ -1885,7 +1885,44 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El escenario del spec cambia la intensidad entre dos pulsos, y eso pasaría también si el bucle la leyera una vez por tira. El test la cambia a mitad del pulso, desde la salida de la primera tira, y así sí prueba que la segunda lleva la misma.*
 - *`PanelStrips` deja de heredar todo el puerto `Commands`: el servidor recibe la intensidad en un `PanelIntensity` aparte. La ruta existe siempre, porque `pnpm openapi` monta el servidor sin búfer de control; sin `PanelIntensity`, responder sería un fallo del motor.*
 
-#### 6.64 Mover la intensidad desde el panel (`MOO-127`)
+#### 6.64 Volver al último estado tras reiniciar: refinamiento, estimación, exploración y change (`MOO-25`)
+
+**Prompt 1** (en `/refine-story MOO-25`, el caso feliz del humano):
+
+> Quiero como DJ que si ocurre algun problema que me obliga a reiniciar el sistema los settings de las luces queden como estaban y asi no tener que prepararlo otra vez
+
+*Claude Code (`claude-opus-5-5`, 6-nov). La IA lo tradujo a GIVEN/WHEN/THEN con el *estado del instrumento* del glosario: también vuelven los valores de los efectos no activos, marcado *(asumido)*. De los candidatos de `poke-holes`, el humano se quedó con cuatro (el corte justo después de un cambio, el estado que no se puede leer, el maker que cambia las tiras del fichero y lo que dejó el DJ frente al efecto del fichero), y dejó para el explore el margen de pérdida y cómo se entera el DJ. Antes de estimar, pidió crear otra historia para que el motor arranque solo al enchufar la Pi (`MOO-131`), «para no perderle la pista». En `/estimate-story`, el humano dio un 8 («tenemos que generar toda la infra nueva como al base de datos, y el store es store es una pieza nueva tambien importante») y el estimador, otro 8.*
+
+**Prompt 2** (en `/opsx:explore`, ya elegida `node:sqlite`, cuando la IA recomendó agrupar los guardados con un *throttle* de 1 s para no escribir en la SD con cada cambio de un arrastre):
+
+> si, hacemos throttle y además te diria que mientras se arrastra no tiene sentido guardarlo, seria cuando ya ha fijado el valor
+
+*La IA le señaló que lo que describía no era un *throttle* (que guarda también a mitad del arrastre) sino un *debounce*, la opción que ella había descartado, y que con su criterio la pega desaparecía: un arrastre a medias aún no es un valor fijado. Recomendó detectar el final por inactividad en el motor, con 500 ms *(asumido)*, y no con una señal del panel al soltar, que cambiaría la API y no valdría para un encoder (E5). El humano eligió 500 ms. Así, tras un corte, como mucho se pierde eso o un arrastre a medias, y la línea de E6 de los umbrales dejó de decir «siempre el último».*
+
+**Prompt 3** (tras avisar la IA de que una escritura síncrona en la SD comparte hilo con el bucle de frames y recomendar medirla antes en la Pi, con el puerto asíncrono por si había que pasar a un *worker*):
+
+> vamos a lo sencillo, lo hacemos sincrono, dudo que con el planteamiento actual de saltos la verdad. Si ocurriera ya buscaríamos solución, pero lo veo poco probable
+
+*La IA aceptó la escritura síncrona, con el puerto también síncrono y sin medir antes, y propuso dejar en el log cualquier guardado de más de 10 ms, para que un tirón se vea si llega a pasar. En el resto del explore, el humano decidió una a una: el DJ se entera de un estado dañado por el log y no por el panel, se quita `schema_version` (los valores se validan con el esquema actual al restaurar) y un efecto reactivo guardado sin fuente de audio cede al del fichero. `/opsx:propose` escribió el change `instrument-state-restore`, con una sección por tarea (`MOO-26`, `MOO-129` y `MOO-130`), y el humano aceptó las cuatro decisiones nuevas que traía (sin poder abrir el fichero o con una versión más nueva, arrancar sin guardar; los tipos en el núcleo; sin guardar al recibir `SIGTERM`).*
+
+*Ajustes:*
+- *Al ir a escribir la ficha, la IA vio que la rama local de `MOO-97`, sin subir, ya usaba D99 a D102. Renumeró las del change a D103 y D104, para que no choquen se integre antes la que se integre.*
+- *Después, a petición del humano, actualizó en Linear los criterios de `MOO-25` (el margen de 500 ms y el log) y la descripción de `MOO-26` (los tipos en el núcleo, `node:sqlite` y los casos de apertura).*
+
+#### 6.65 La base de persistencia del estado del instrumento (`MOO-26`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-25
+
+*Claude Code (`claude-opus-5-5`, 7-nov). La IA creó la rama de la tarea desde la de la historia, como en `MOO-122`, e implementó la sección `MOO-26` en TDD, con un commit por paso. Primero comprobó que `node:sqlite` funciona en Vitest sin flags, y subió `engines` a `>=24.15`. El campo `instrumentState` sigue el patrón de `audioSource`. El puerto `StateStore` y sus tipos van en el núcleo, y los tests de contrato corren contra el adaptador en memoria y contra el de SQLite. Este último prueba los cuatro casos de apertura con ficheros temporales: un fichero que no es una base de datos, páginas dañadas que detecta `quick_check`, una carpeta de solo lectura y una migración desconocida. Arrancando el motor de verdad, sin el campo crea `data/instrument-state.db`, y con la carpeta de solo lectura arranca y lo dice en el log. Los E2E declaran `memory` y no crean `data/`.*
+
+*Ajustes:*
+- *El test del fichero dañado falló: el `-wal` apartado desaparecía. La IA comprobó que SQLite borra el `-wal` y el `-shm` al cerrar la conexión que ha fallado. Por eso el adaptador aparta los ficheros antes de cerrarla.*
+- *El `design.md` decía que `load()` devolvía también lo que había pasado al abrir. Pasó a decirlo la apertura del adaptador SQLite, porque el puerto no sabe de ficheros, y se corrigió la frase.*
+- *La comprobación en la Pi (`node:sqlite` sin flag ni aviso) quedó para el humano: desde el Mac, `moodtable.local` no resolvía.*
+
+#### 6.66 Mover la intensidad desde el panel (`MOO-127`)
 
 **Prompt 1** (con la PR de `MOO-126` en verde, antes de aprobarla):
 

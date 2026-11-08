@@ -6,7 +6,8 @@
  * entorno `MOODTABLE_CONFIG` indica otro fichero (matiz de la decisión 3).
  *
  * Todas las rutas relativas se resuelven desde la raíz: la de `MOODTABLE_CONFIG` y la del fichero de
- * audio (decisión 8 del change virtual-strip-audio-file, matiz de D44).
+ * audio (decisión 8 del change virtual-strip-audio-file, matiz de D44) y la del estado del instrumento
+ * (decisión 7 del change instrument-state-restore).
  */
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -30,8 +31,8 @@ export type LoadedConfig =
 
 /**
  * Lee y valida `config/local.json` de `root`, o el fichero de `override` si lo hay (absoluto o
- * relativo a `root`). La ruta del fichero de audio queda absoluta. El error nombra el fichero y dice
- * qué falla.
+ * relativo a `root`). Las rutas del fichero de audio y del estado del instrumento quedan absolutas.
+ * El error nombra el fichero y dice qué falla.
  */
 export async function loadConfig(
   root: string = REPO_ROOT,
@@ -56,6 +57,9 @@ export async function loadConfig(
   const { config } = result;
   if (config.audioSource?.type === 'file') {
     config.audioSource.path = resolve(root, config.audioSource.path);
+  }
+  if (config.instrumentState.type === 'sqlite') {
+    config.instrumentState.path = resolve(root, config.instrumentState.path);
   }
   return { ok: true, config, path, file: override || CONFIG_FILE };
 }
