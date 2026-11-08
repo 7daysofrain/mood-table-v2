@@ -16,7 +16,7 @@ interface ZoneProps {
  * Una zona del panel: una región con nombre (`<section aria-labelledby>`) que las historias y sus
  * tests localizan por su título (specs/panel-layout).
  */
-export function Zone({ title, minHeight, fill = false, children }: ZoneProps) {
+export function Zone({ title, minHeight, fill = false, children }: Readonly<ZoneProps>) {
   const titleId = useId();
 
   return (
