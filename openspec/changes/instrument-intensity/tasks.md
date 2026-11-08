@@ -133,7 +133,7 @@
   lo aplica, vuelve a la intensidad que pinta; lo que envía va redondeado a dos decimales
   (`specs/intensity`, decisiones 7 y 9).
   Verificar: los tests nuevos fallan porque el hook no existe.
-- [ ] 3.5 El hook `useDraftIntensity` en `packages/panel/src/intensity/use-draft-intensity.ts`.
+- [x] 3.5 El hook `useDraftIntensity` en `packages/panel/src/intensity/use-draft-intensity.ts`.
   Verificar: los tests de 3.4 pasan.
 - [ ] 3.6 **(test en rojo)** Tests de la zona y del panel (`IntensityZone.test.tsx`, `App.test.tsx` y
   los de `PanelLayout`), con la conexión y la cola falsas:
