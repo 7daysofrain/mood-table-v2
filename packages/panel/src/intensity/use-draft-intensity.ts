@@ -55,10 +55,16 @@ export function useDraftIntensity(engine: number | undefined, requests: Intensit
   // Sin conexión no hay fader: un valor local de antes no vale para el motor de después.
   if (draft && engine === undefined) setDraft(undefined);
 
-  const local =
-    draft !== undefined &&
-    engine !== undefined &&
-    (draft.dragging || draft.applied === undefined || draft.applied.over === engine);
+  // Ya aplicado y soltado, el valor local se retira en cuanto el motor pinta otra intensidad que la
+  // de cuando se vació la cola (su eco, o la de otro mando) o ya pinta la del DJ. Se retira para
+  // siempre: comparar por igualdad con la de antes lo resucitaría si el motor vuelve a ella.
+  const settled =
+    draft?.applied !== undefined &&
+    !draft.dragging &&
+    (engine !== draft.applied.over || engine === draft.value);
+  if (settled) setDraft(undefined);
+
+  const local = draft !== undefined && engine !== undefined && !settled;
   const intensity = local ? draft.value : engine;
 
   /** El DJ mueve el fader: se ve al momento y sale hacia el motor. */
