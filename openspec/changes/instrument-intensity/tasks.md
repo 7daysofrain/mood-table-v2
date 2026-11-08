@@ -61,7 +61,7 @@
 - [x] 2.2 `applyIntensity` en `packages/engine/src/core/intensity.ts`: escala el frame en su sitio,
   sin crear nada, y a 1 sale sin tocarlo.
   Verificar: los tests de 2.1 pasan.
-- [ ] 2.3 El contrato de `Effect` en `packages/engine/src/core/effects/effect.ts` dice que un efecto
+- [x] 2.3 El contrato de `Effect` en `packages/engine/src/core/effects/effect.ts` dice que un efecto
   escribe todo `out` en cada `render` y nunca lee lo que había. Con un test en `registry.test.ts`:
   para cada efecto del registro, pintar sobre un búfer lleno de `0xAB` da el mismo frame que sobre
   uno a cero, con y sin audio (decisión 2).

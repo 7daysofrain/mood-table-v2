@@ -34,6 +34,11 @@ export interface Effect<P, M> {
   /**
    * Escribe el frame en `out` (RGB, 3 bytes por LED). Se llama en cada frame: no debe crear
    * objetos, para no provocar pausas del recolector de basura.
+   *
+   * Escribe **todo** `out` en cada llamada y **nunca lee** lo que había: el bucle lo escala en su
+   * sitio con la intensidad antes de las salidas (decisión 2 del change instrument-intensity). Si
+   * un efecto necesita su frame anterior, lo guarda en su memoria. Un test del registro lo comprueba
+   * para todos los efectos.
    */
   render(ctx: FrameContext, params: P, memory: M, out: Uint8Array): void;
 }
