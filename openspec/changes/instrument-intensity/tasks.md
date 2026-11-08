@@ -54,7 +54,7 @@
 
 ## 2. MOO-126 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests de `applyIntensity` en `packages/engine/src/core/intensity.test.ts`:
+- [x] 2.1 **(test en rojo)** Tests de `applyIntensity` en `packages/engine/src/core/intensity.test.ts`:
   a 1, el frame no cambia; a 0,5, `255, 169, 87` pasa a `128, 85, 44` (redondeado, no truncado); a 0,
   todos los canales a 0; con varios LEDs, cada canal por separado (decisiones 2 y 3).
   Verificar: los tests nuevos fallan porque la función no existe.
