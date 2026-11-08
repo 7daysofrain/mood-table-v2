@@ -202,22 +202,27 @@ function sqliteStore(db: DatabaseSync, now: () => Date): StateStore {
 
   return {
     load() {
-      const values = new Map<string, Record<string, unknown>>();
+      // Con `Object.fromEntries` y no asignando a un objeto: un id como `__proto__` queda como
+      // propiedad propia, en lugar de pasar por el setter del prototipo y perderse.
+      const values = new Map<string, [string, unknown][]>();
       for (const row of effects.all()) {
         const stripId = String(row.strip_id);
-        const of = values.get(stripId) ?? {};
-        of[String(row.effect_id)] = JSON.parse(String(row.values_json));
+        const of = values.get(stripId) ?? [];
+        of.push([String(row.effect_id), JSON.parse(String(row.values_json))]);
         values.set(stripId, of);
       }
-      const state: Record<string, SavedStrip> = {};
-      for (const row of strips.all()) {
-        const stripId = String(row.strip_id);
-        state[stripId] = {
-          activeEffect: String(row.active_effect_id),
-          values: values.get(stripId) ?? {},
-        };
-      }
-      return state;
+      return Object.fromEntries(
+        strips.all().map((row): [string, SavedStrip] => {
+          const stripId = String(row.strip_id);
+          return [
+            stripId,
+            {
+              activeEffect: String(row.active_effect_id),
+              values: Object.fromEntries(values.get(stripId) ?? []),
+            },
+          ];
+        }),
+      );
     },
     save(state: InstrumentState) {
       const at = now().toISOString();

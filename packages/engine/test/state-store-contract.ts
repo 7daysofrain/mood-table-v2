@@ -72,5 +72,21 @@ export function describeStateStoreContract(name: string, create: () => StateStor
 
       expect(store.load()).toEqual(mesa);
     });
+
+    it('conserva una tira cuyo id coincide con una propiedad de Object, como __proto__', () => {
+      const store = create();
+      // Con JSON.parse, `__proto__` es una propiedad propia, como la que daría el fichero.
+      const state = JSON.parse(
+        '{"__proto__": {"activeEffect": "breathing", "values": {"breathing": {"period": 4}}}}',
+      ) as InstrumentState;
+      store.save(state);
+      const loaded = store.load();
+
+      expect(Object.keys(loaded)).toEqual(['__proto__']);
+      expect(Object.getOwnPropertyDescriptor(loaded, '__proto__')?.value).toEqual({
+        activeEffect: 'breathing',
+        values: { breathing: { period: 4 } },
+      });
+    });
   });
 }
