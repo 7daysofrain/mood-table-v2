@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   decodeFrame,
+  decodeIntensity,
   decodeLevel,
   decodePosition,
   decodeSource,
@@ -82,6 +83,7 @@ interface Received {
   positions: PositionMessage[];
   statuses: SourceStatus[];
   strips: StripsMessage[];
+  intensities: number[];
   /** El tipo de cada mensaje (su primer byte), en el orden en que llega. */
   types: number[];
 }
@@ -95,6 +97,7 @@ async function connectAll(url: string): Promise<Received> {
     positions: [],
     statuses: [],
     strips: [],
+    intensities: [],
     types: [],
   };
   const client = new WebSocket(`${url.replace('http', 'ws')}/ws`);
@@ -114,6 +117,8 @@ async function connectAll(url: string): Promise<Received> {
     if (status) received.statuses.push(status);
     const strips = decodeStrips(message);
     if (strips) received.strips.push(strips);
+    const intensity = decodeIntensity(message);
+    if (intensity !== undefined) received.intensities.push(intensity);
   });
   clients.push(client);
   await new Promise((resolve, reject) => {
@@ -787,6 +792,7 @@ describe('el OpenAPI de la API', () => {
     expect(Object.keys(document.paths)).toEqual([
       '/api/strips/{stripId}/effect',
       '/api/strips/{stripId}/values',
+      '/api/intensity',
     ]);
   });
 
@@ -800,6 +806,20 @@ describe('el OpenAPI de la API', () => {
 
     expect(JSON.stringify(route?.requestBody)).toContain('"period":{"type":"number","minimum":1,"maximum":20');
     expect(Object.keys(route?.responses ?? {}).sort()).toEqual(['200', '400', '404']);
+  });
+
+  it('describe la ruta de la intensidad con su cuerpo, el rango de 0 a 1 y sus respuestas', async () => {
+    const { app } = await apiWith(demo, true);
+
+    const document = (await app.inject({ method: 'GET', url: '/api/openapi.json' })).json<{
+      paths: Record<string, Record<string, { requestBody?: unknown; responses: object }>>;
+    }>();
+    const route = document.paths['/api/intensity']?.put;
+
+    expect(JSON.stringify(route?.requestBody)).toContain(
+      '"intensity":{"type":"number","minimum":0,"maximum":1}',
+    );
+    expect(Object.keys(route?.responses ?? {}).sort()).toEqual(['200', '400']);
   });
 });
 
@@ -938,6 +958,165 @@ describe('las tiras que recibe cada panel', () => {
         watch: (listener) => {
           watching++;
           const unwatch = control.watch(listener);
+          return () => {
+            watching--;
+            unwatch();
+          };
+        },
+      },
+    });
+    expect(watching).toBe(1);
+
+    await closing.close();
+
+    expect(watching).toBe(0);
+  });
+});
+
+/** La app del motor, sin escuchar, con un búfer de control real que da la intensidad. */
+async function intensityApi() {
+  const control = createControl({ strips: [demo], hasAudioSource: true });
+  const built = await buildServer({
+    panelDir,
+    strips: panelStripsOf([demo], control),
+    intensity: control,
+  });
+  apps.push(built);
+  return { app: built.app, control };
+}
+
+/** `PUT /api/intensity` con `body` tal cual, como texto JSON. */
+function putIntensity(app: EngineApp['app'], body: string) {
+  return app.inject({
+    method: 'PUT',
+    url: '/api/intensity',
+    headers: { 'content-type': 'application/json' },
+    payload: body,
+  });
+}
+
+// specs/intensity; decisión 4 del change instrument-intensity.
+describe('la API: cambiar la intensidad', () => {
+  it('responde 200 con la intensidad aplicada, y el búfer la tiene', async () => {
+    const { app, control } = await intensityApi();
+
+    const response = await putIntensity(app, '{"intensity":0.4}');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ intensity: 0.4 });
+    expect(control.intensity()).toBe(0.4);
+  });
+
+  it('responde 200 también si ya era la intensidad', async () => {
+    const { app } = await intensityApi();
+
+    const response = await putIntensity(app, '{"intensity":1}');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ intensity: 1 });
+  });
+
+  it.each([
+    ['por encima de 1', '{"intensity":1.5}'],
+    ['por debajo de 0', '{"intensity":-0.1}'],
+    ['que no es un número', '{"intensity":"alta"}'],
+    ['sin intensidad', '{}'],
+    ['con un campo de más', '{"intensity":0.5,"strip":"demo"}'],
+    ['que no es JSON', '{"intensity":'],
+    ['que no es un objeto', '0.5'],
+  ])('con un cuerpo %s, responde 400 con { message } y no la cambia', async (_name, body) => {
+    const { app, control } = await intensityApi();
+    control.setIntensity(0.4);
+
+    const response = await putIntensity(app, body);
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      message: 'el cuerpo debe ser un objeto JSON con el campo `intensity`, un número de 0 a 1, y ninguno más',
+    });
+    expect(control.intensity()).toBe(0.4);
+  });
+});
+
+// specs/intensity; decisión 5 del change instrument-intensity.
+describe('la intensidad que recibe cada panel', () => {
+  async function startWithIntensity() {
+    const control = createControl({ strips: [demo], hasAudioSource: true });
+    server = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      strips: panelStripsOf([demo], control),
+      intensity: control,
+    });
+    return { url: server.url, control };
+  }
+
+  it('al conectarse, un panel recibe la intensidad actual, después de las tiras', async () => {
+    const { url, control } = await startWithIntensity();
+    control.setIntensity(0.4);
+
+    const received = await connectAll(url);
+    await until(() => received.intensities.length === 1);
+
+    expect(received.types).toEqual([2, 6, 7]);
+    expect(received.intensities).toEqual([0.4]);
+  });
+
+  it('un cambio llega a todos los paneles conectados, sin volver a enviar las tiras', async () => {
+    const { url, control } = await startWithIntensity();
+    const first = await connectAll(url);
+    const other = await connectAll(url);
+    await until(() => first.intensities.length === 1 && other.intensities.length === 1);
+
+    control.setIntensity(0.25);
+    await until(() => first.intensities.length === 2 && other.intensities.length === 2);
+
+    for (const received of [first, other]) {
+      expect(received.intensities).toEqual([1, 0.25]);
+      expect(received.strips).toHaveLength(1);
+    }
+  });
+
+  it('un cambio por la API también llega a los paneles', async () => {
+    const { url } = await startWithIntensity();
+    const received = await connectAll(url);
+    await until(() => received.intensities.length === 1);
+
+    await fetch(`${url}/api/intensity`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: '{"intensity":0.07}',
+    });
+    await until(() => received.intensities.length === 2);
+
+    expect(received.intensities).toEqual([1, 0.07]);
+  });
+
+  it('una intensidad que no cambia no envía nada', async () => {
+    const { url, control } = await startWithIntensity();
+    const received = await connectAll(url);
+    await until(() => received.intensities.length === 1);
+
+    control.setIntensity(1);
+    control.setIntensity(0.3);
+    await until(() => received.intensities.length === 2);
+
+    expect(received.intensities).toEqual([1, 0.3]);
+  });
+
+  it('al cerrar el servidor, deja de escuchar los cambios de la intensidad', async () => {
+    const control = createControl({ strips: [demo], hasAudioSource: true });
+    let watching = 0;
+    const closing = await startServer({
+      host: '127.0.0.1',
+      port: 0,
+      panelDir,
+      intensity: {
+        ...control,
+        watchIntensity: (listener) => {
+          watching++;
+          const unwatch = control.watchIntensity(listener);
           return () => {
             watching--;
             unwatch();

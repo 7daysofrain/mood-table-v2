@@ -87,7 +87,7 @@
   y la aplica entre el `render` y las salidas, con un comentario que fija el orden: efecto,
   intensidad, límite de potencia (H4) y salidas.
   Verificar: los tests de 2.6 pasan y los frames dorados siguen en verde.
-- [ ] 2.8 **(test en rojo)** Tests de la ruta y del mensaje en
+- [x] 2.8 **(test en rojo)** Tests de la ruta y del mensaje en
   `packages/engine/src/adapters/server.test.ts`, con `inject` y un búfer real:
   `PUT /api/intensity` responde `200` con la intensidad aplicada; `400` con `{ message }` para `1.5`,
   `"alta"`, `{}` y un campo de más, sin cambiar la intensidad; un panel que se conecta recibe el `7`
