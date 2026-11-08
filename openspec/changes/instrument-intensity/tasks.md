@@ -135,7 +135,7 @@
   Verificar: los tests nuevos fallan porque el hook no existe.
 - [x] 3.5 El hook `useDraftIntensity` en `packages/panel/src/intensity/use-draft-intensity.ts`.
   Verificar: los tests de 3.4 pasan.
-- [ ] 3.6 **(test en rojo)** Tests de la zona y del panel (`IntensityZone.test.tsx`, `App.test.tsx` y
+- [x] 3.6 **(test en rojo)** Tests de la zona y del panel (`IntensityZone.test.tsx`, `App.test.tsx` y
   los de `PanelLayout`), con la conexión y la cola falsas:
   - el panel tiene seis zonas, se encuentran por su nombre («Intensidad» incluida) y la intensidad
     es la última en el orden de lectura;

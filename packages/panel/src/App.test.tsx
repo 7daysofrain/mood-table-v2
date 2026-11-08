@@ -4,7 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FakeContext } from '../test/fake-audio-context.ts';
 import { render } from '../test/render.tsx';
-import { App, type PanelConnection, type PanelEffectRequests, type PanelValueRequests } from './App.tsx';
+import {
+  App,
+  type PanelConnection,
+  type PanelEffectRequests,
+  type PanelIntensityRequests,
+  type PanelValueRequests,
+} from './App.tsx';
 import { AudioPlayer } from './audio/player.ts';
 import type { ConnectionStatus, PositionListener } from './engine/connection.ts';
 
@@ -19,6 +25,7 @@ function fakeConnection() {
     level: undefined as number | undefined,
     sourceLost: false as boolean,
     strips: undefined as readonly StripState[] | undefined,
+    intensity: undefined as number | undefined,
     start: vi.fn(),
     stop: vi.fn(),
     subscribe: (listener: () => void) => {
@@ -52,11 +59,16 @@ function fakeConnection() {
     connection.strips = strips;
     notify();
   };
+  /** La intensidad del motor (mensaje `7`), que llega en su propio aviso. */
+  const setIntensity = (intensity: number | undefined) => {
+    connection.intensity = intensity;
+    notify();
+  };
   /** Una posición del fichero que llega del motor en el instante `arrivedAt` (ms). */
   const sendPosition = (position: number, arrivedAt: number) => {
     for (const listener of positionListeners) listener({ seq: 0, position }, arrivedAt);
   };
-  return { connection, setStatus, setSource, setSourceLost, setStrips, sendPosition };
+  return { connection, setStatus, setSource, setSourceLost, setStrips, setIntensity, sendPosition };
 }
 
 describe('App', () => {
@@ -290,21 +302,34 @@ function panelWithStrips(source: SourceMessage = { kind: 'file', name: 'golpes.w
     busy: () => false,
     subscribe: () => () => false,
   } satisfies PanelValueRequests;
-  render(<App connection={fake.connection} requests={requests} valueRequests={valueRequests} />);
+  const intensityRequests = {
+    send: vi.fn(),
+    busy: () => false,
+    subscribe: () => () => false,
+  } satisfies PanelIntensityRequests;
+  render(
+    <App
+      connection={fake.connection}
+      requests={requests}
+      valueRequests={valueRequests}
+      intensityRequests={intensityRequests}
+    />,
+  );
   act(() => {
     fake.setStatus('connected');
     fake.setSource(source);
     fake.setStrips([BARRA, CABINA]);
   });
-  /** Se pierde la conexión: como la conexión real, olvida la fuente y las tiras. */
+  /** Se pierde la conexión: como la conexión real, olvida la fuente, las tiras y la intensidad. */
   const disconnect = () => {
     act(() => {
       fake.connection.source = undefined;
       fake.connection.strips = undefined;
+      fake.connection.intensity = undefined;
       fake.setStatus('disconnected');
     });
   };
-  return { ...fake, requests, valueRequests, disconnect };
+  return { ...fake, requests, valueRequests, intensityRequests, disconnect };
 }
 
 const zone = (name: string) => screen.getByRole('region', { name });
@@ -508,5 +533,75 @@ describe('la zona Controles', () => {
     });
     expect(color()).toHaveTextContent('#2040FF');
     expect(period()).toHaveAttribute('aria-valuetext', '7,0');
+  });
+});
+
+// specs/intensity y specs/panel-layout.
+describe('la zona Intensidad', () => {
+  const fader = () => within(zone('Intensidad')).getByRole('slider', { name: 'Intensidad' });
+
+  it('muestra el fader con la intensidad con que pinta el motor', () => {
+    const panel = panelWithStrips();
+
+    act(() => {
+      panel.setIntensity(0.4);
+    });
+
+    expect(zone('Intensidad')).toHaveTextContent('40 %');
+    expect(fader()).toHaveAttribute('aria-valuetext', '40 %');
+  });
+
+  it('mover el fader envía la intensidad', () => {
+    const panel = panelWithStrips();
+    act(() => {
+      panel.setIntensity(1);
+    });
+
+    fireEvent.keyDown(fader(), { key: 'ArrowDown' });
+
+    expect(panel.intensityRequests.send).toHaveBeenCalledWith('intensity', 0.99);
+  });
+
+  it('seleccionar otra tira no cambia lo que muestra', () => {
+    const panel = panelWithStrips();
+    act(() => {
+      panel.setIntensity(0.4);
+    });
+
+    fireEvent.click(strip('Cabina'));
+
+    expect(zone('Intensidad')).toHaveTextContent('40 %');
+  });
+
+  it('antes del primer mensaje de intensidad, solo tiene su título', () => {
+    panelWithStrips();
+
+    expect(zone('Intensidad')).toHaveTextContent(/^Intensidad$/);
+  });
+
+  it('sin conexión, solo tiene su título, y al volver muestra la del motor', () => {
+    const panel = panelWithStrips();
+    act(() => {
+      panel.setIntensity(0.4);
+    });
+
+    panel.disconnect();
+    expect(zone('Intensidad')).toHaveTextContent(/^Intensidad$/);
+
+    act(() => {
+      panel.setStatus('connected');
+      panel.setIntensity(0.4);
+    });
+    expect(zone('Intensidad')).toHaveTextContent('40 %');
+  });
+
+  it('sin motor, se ven las seis zonas, vacías', () => {
+    render(<App connection={fakeConnection().connection} />);
+
+    for (const name of ['Tiras', 'Efectos', 'Controles', 'Intensidad']) {
+      expect(zone(name)).toHaveTextContent(new RegExp(`^${name}$`));
+    }
+    expect(zone('Visor')).toBeInTheDocument();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
   });
 });
