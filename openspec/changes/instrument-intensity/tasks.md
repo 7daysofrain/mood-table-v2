@@ -163,7 +163,7 @@
   `e2e/panel.spec.ts` pasa a esperar seis zonas (`specs/intensity`, `specs/panel-layout`, criterios
   de `MOO-97`).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 3.9 Documentación:
+- [x] 3.9 Documentación:
   - **D102** (decisiones 6 y 7) en `docs/idea-mood-table.md` §10;
   - README §1.3: la zona *Intensidad* (qué hace, que no depende de la tira seleccionada y que sin
     conexión queda vacía, como las demás), y el recorrido de H2 suma la intensidad;

@@ -1885,6 +1885,27 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El escenario del spec cambia la intensidad entre dos pulsos, y eso pasaría también si el bucle la leyera una vez por tira. El test la cambia a mitad del pulso, desde la salida de la primera tira, y así sí prueba que la segunda lleva la misma.*
 - *`PanelStrips` deja de heredar todo el puerto `Commands`: el servidor recibe la intensidad en un `PanelIntensity` aparte. La ruta existe siempre, porque `pnpm openapi` monta el servidor sin búfer de control; sin `PanelIntensity`, responder sería un fallo del motor.*
 
+#### 6.64 Mover la intensidad desde el panel (`MOO-127`)
+
+**Prompt 1** (con la PR de `MOO-126` en verde, antes de aprobarla):
+
+> Está todo verde. ¿Ouedo ver su funcionamiento antes de aprobarlo? A ser posible en la PI
+
+**Prompt 2** (cuando la IA le recordó que el fader no llega hasta `MOO-127`, así que en la Pi se vería con `curl`):
+
+> Entonces no, espero a que esté el fader. Mergeo
+
+*Claude Code (`claude-opus-5-5`, 8-nov). La IA solo había mirado el estado de la Pi, sin tocar nada. La prueba en la mesa quedó para el paso 3.10 de esta tarea, con el fader. Tras integrar la PR, implementó la sección `MOO-127` en TDD, con un commit por paso:*
+- *`StripRequests` pasa a ser `RequestQueue`, que recibe la URL de cada clave; sus tests se mueven sin tocar ninguna aserción;*
+- *la cola de la intensidad, con una sola clave, y el mensaje `7` en la conexión;*
+- *`useDraftIntensity`, la regla de `useDraftValues` con el eco comparado por igualdad;*
+- *la zona «Intensidad», con el `Slider` vertical de Mantine en un `AppShell.Aside`;*
+- *el E2E del caso feliz, con dos tiras y el panel ya usado (D98): tres pasadas seguidas en verde, con el peor tiempo de movimiento a luz en 18, 20 y 50 ms.*
+
+*Ajustes:*
+- *Al mirar la zona en el navegador, la IA vio que a unos 100 px, como decía el `design.md`, el título «Intensidad» se cortaba y «100 %» se partía en dos líneas. La columna pasó a 140 px, y queda en D102.*
+- *El E2E no pudo arrancar a la primera: el puerto de su servidor lo ocupaban los E2E de otra sesión, en otro worktree. La IA no paró ese proceso: esperó a que lo liberara.*
+
 ---
 
 ### 7. Pull Requests
