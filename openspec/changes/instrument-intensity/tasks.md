@@ -72,7 +72,7 @@
   cambian; `watchIntensity` recibe un aviso por cada `changed`; un cambio de intensidad no avisa al
   `watch` de las tiras ni toca el efecto ni los valores de ninguna tira (decisiones 4 y 8).
   Verificar: los tests nuevos fallan porque `setIntensity` no existe.
-- [ ] 2.5 `setIntensity` en el puerto `Commands`, con `intensity()` y `watchIntensity` en
+- [x] 2.5 `setIntensity` en el puerto `Commands`, con `intensity()` y `watchIntensity` en
   `ControlBuffer` (`packages/engine/src/core/control.ts`).
   Verificar: los tests de 2.4 pasan y `pnpm lint` no da errores de fronteras.
 - [ ] 2.6 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
