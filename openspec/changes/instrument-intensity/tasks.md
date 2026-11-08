@@ -118,7 +118,7 @@
   colas de efectos y de valores siguen con la tira como clave y las mismas rutas. Sus tests se mueven
   con ella, sin cambiar lo que comprueban (decisión 9).
   Verificar: `pnpm test` en verde sin tocar ninguna aserción, y `pnpm typecheck` en verde.
-- [ ] 3.2 **(test en rojo)** Tests en `packages/panel/src/engine/`, con un `fetch` y un socket
+- [x] 3.2 **(test en rojo)** Tests en `packages/panel/src/engine/`, con un `fetch` y un socket
   falsos: la cola de la intensidad envía `PUT /api/intensity` con `{ "intensity": … }`; con uno en
   camino, solo se envía el último; la conexión decodifica el mensaje `7` y da la intensidad del
   motor, que vuelve a no conocerse al perder la conexión.

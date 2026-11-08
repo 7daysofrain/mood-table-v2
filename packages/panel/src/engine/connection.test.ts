@@ -1,5 +1,6 @@
 import {
   encodeFrame,
+  encodeIntensity,
   encodeLevel,
   encodePosition,
   encodeSource,
@@ -623,5 +624,101 @@ describe('las tiras del motor', () => {
     closed.receive(encodeStrips(STRIPS));
 
     expect(connection.strips).toBeUndefined();
+  });
+});
+
+// Decisión 5 del change instrument-intensity: el mensaje `7`.
+describe('la intensidad del motor', () => {
+  it('guarda la intensidad que llega y avisa', () => {
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    connection.start();
+    lastSocket().open();
+    listener.mockClear();
+
+    lastSocket().receive(encodeIntensity(0.4));
+
+    expect(connection.intensity).toBe(0.4);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('antes del primer mensaje de intensidad, no la sabe', () => {
+    connection.start();
+    lastSocket().open();
+
+    expect(connection.intensity).toBeUndefined();
+  });
+
+  it('cada mensaje nuevo la sustituye, exacta', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeIntensity(1));
+
+    lastSocket().receive(encodeIntensity(0.07));
+
+    expect(connection.intensity).toBe(0.07);
+  });
+
+  it('ignora un mensaje de intensidad mal formado, sin avisar', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeIntensity(0.4));
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    const outOfRange = new Uint8Array(9);
+    outOfRange[0] = 7;
+    new DataView(outOfRange.buffer).setFloat64(1, 1.5);
+
+    lastSocket().receive(outOfRange);
+    lastSocket().receive(Uint8Array.of(7, 0x3f, 0xe0));
+
+    expect(connection.intensity).toBe(0.4);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('al perder la conexión con el motor, vuelve a no saberla', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeIntensity(0.4));
+
+    lastSocket().drop();
+
+    expect(connection.intensity).toBeUndefined();
+  });
+
+  it('al pararla, también la olvida', () => {
+    connection.start();
+    lastSocket().open();
+    lastSocket().receive(encodeIntensity(0.4));
+
+    connection.stop();
+
+    expect(connection.intensity).toBeUndefined();
+  });
+
+  it('una intensidad que llega tarde por una conexión ya cerrada no cuenta', () => {
+    connection.start();
+    const closed = lastSocket();
+    closed.open();
+    closed.drop();
+    vi.advanceTimersByTime(1000);
+    lastSocket().open();
+
+    closed.receive(encodeIntensity(0.4));
+
+    expect(connection.intensity).toBeUndefined();
+  });
+
+  it('los frames y el nivel siguen llegando igual entre los mensajes de intensidad', () => {
+    connection.start();
+    lastSocket().open();
+
+    lastSocket().receive(encodeIntensity(0.4));
+    lastSocket().receive(encodeLevel(1, 0.5));
+    lastSocket().receive(encodeFrame(1, 0, Uint8Array.of(1, 2, 3)));
+
+    expect(connection.level).toBe(0.5);
+    expect(Array.from(connection.frames.get(0) ?? [])).toEqual([1, 2, 3]);
+    expect(connection.intensity).toBe(0.4);
   });
 });
