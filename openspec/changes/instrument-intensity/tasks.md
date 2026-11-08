@@ -95,7 +95,7 @@
   no envía nada; `/api/openapi.json` describe la ruta con su cuerpo, el rango de 0 a 1 y las
   respuestas `200` y `400` (`specs/intensity`, decisiones 4 y 5).
   Verificar: los tests nuevos fallan porque la ruta no existe.
-- [ ] 2.9 La ruta y el mensaje `7` en `packages/engine/src/adapters/server.ts`, con un
+- [x] 2.9 La ruta y el mensaje `7` en `packages/engine/src/adapters/server.ts`, con un
   `PanelIntensity` aparte del `PanelStrips`; su conexión en `packages/engine/src/main.ts` con el
   mismo búfer; y `docs/openapi.yaml` regenerado con `pnpm openapi`.
   Verificar: los tests de 2.8 pasan, el test del fichero del OpenAPI sigue en verde, y con
