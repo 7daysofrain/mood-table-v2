@@ -1828,7 +1828,44 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La D# del diseño pasó de D96 a D97, porque `MOO-123` ya había tomado la D96.*
 - *Con el fichero de golpes, el espectro sale tenue, a un 4 % del máximo: no tiene ganancia propia, y la ganancia común arranca en 0,1 y baja muy despacio, así que unos golpes cortos y flojos se quedan por debajo. Es la v1 tal cual; con música a un volumen normal, la ganancia común sube al momento.*
 
-#### 6.61 Volver al último estado tras reiniciar: refinamiento, estimación, exploración y change (`MOO-25`)
+#### 6.61 Subir y bajar la intensidad de todas las tiras: refinamiento, estimación, exploración y change (`MOO-97`)
+
+**Prompt 1** (en `/refine-story MOO-97`, cuando la IA recomendaba cancelar la historia, que entonces solo cambiaba cuánto responden los efectos reactivos):
+
+> Es que si que, a modo de performance, si tienes 3 tiras, vas a querer actuar sobre los 3 para apoyar un drop por ejemplo. De hecho hasta le veo sentido que lo haga sobre las de ambiente. Es un tema de performance
+
+*Claude Code (`claude-opus-5-5`, 5-nov). Antes, el humano había dicho que tenía serias dudas: cada efecto debería interpretar la intensidad a su manera. La IA le dio la razón en el fondo, matizó lo del «amplio impacto» (es poco código, pero obliga a cada efecto a leer el valor, contra E9) y recomendó cancelarla y atar sus cabos: Q7, una D# que matizara D49 y las frases del README. Con este prompt, la IA vio que lo que describía era otra cosa, un máster de brillo como el *grand master* de una mesa de iluminación, que se aplica sobre el frame ya pintado. Así ningún efecto tiene que conocerlo, y la objeción desaparece. La historia se redefinió: nuevo título, la *intensidad* como término del glosario, el máximo es el efecto tal cual (sin añadir brillo, porque satura y vira los tonos) y a cero se apaga todo. Q7 y la sensibilidad de cada efecto (Q2) quedaron fuera.*
+
+**Prompt 2** (en `/estimate-story MOO-97`):
+
+> Le doy un 2, yo creo que es simplemente transformar los pixeles antes de pasarselos a las tiras y poner un control en la pantalla
+
+*El estimador, que no vio la carta, sacó un 3. Coincidían en el núcleo; la diferencia estaba alrededor: la orden con su OpenAPI, la intensidad en el WebSocket, la documentación y la curva del control, que subiría a 5 si la tira física obligaba a iterar a bajo brillo. El humano se quedó con el 2.*
+
+**Prompt 3** (en `/opsx:explore`, cuando la IA proponía aplicar la intensidad entre el efecto y las salidas):
+
+> Viendo donde quieres poner la intensidad, no sería mejor ahi abrir una capa de extensibilidad, de transformers, en la que haya un stack de posibles transformaciones y ahora implementamos la de intensidad?
+
+*La IA dibujó las cuatro transformaciones que ya pasan o pasarán por el frame (intensidad, límite de potencia, gamma y orden de color) y enseñó que no son del mismo tipo: una es del instrumento, otra va por tira y otras dos viven en el adaptador. Recomendó no abrir la capa: con un solo caso, la interfaz sería una suposición, y el límite de potencia tiene que ir siempre el último, así que el orden no puede ser libre. Se vuelve a mirar con H4, cuando haya dos casos reales. El humano aceptó y pidió ir decisión por decisión: una zona nueva, «Intensidad», con un fader vertical a toda la altura; un fader lineal, porque la gamma 2,0 de la salida ya hace que la luz baje como el cuadrado; y el valor en porcentaje entero. `/opsx:propose` escribió el change `instrument-intensity`, con una sección por tarea: `MOO-125` (shared), `MOO-126` (engine) y `MOO-127` (panel). El commit lleva también el glosario, D99 (que matiza D49) y las frases del README.*
+
+*Ajustes:*
+- *En la revisión del change se quitaron el escenario del reinicio y la frase «MUST NOT guardar»: que la intensidad no vuelva tras reiniciar es un non-goal, no un requisito.*
+- *A mitad de la revisión, el humano preguntó si alguna decisión tenía «impacto de calado»; si no, irían las recomendadas. La IA contestó que no y siguió con las recomendadas. Desde entonces solo se le preguntan los escenarios asumidos con impacto real.*
+- *El mensaje `7` lleva la intensidad en 64 bits y no en 32 como el nivel, para que el eco sea exactamente el valor que envió el panel y el fader pueda compararlo por igualdad.*
+
+#### 6.62 El contrato de la intensidad (`MOO-125`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-97,
+
+*Claude Code (`claude-opus-5-5`, 7-nov). La IA vio que la historia seguía en *Todo* aunque el change ya estaba subido, y la pasó a *Spec*. Sacó la rama de la tarea de la de la historia, para que el change y los documentos del refinamiento lleguen a `main` con esta PR. Implementó la sección `MOO-125` en TDD, con un commit por paso: los esquemas cerrados del cuerpo y la respuesta de `PUT /api/intensity`, y el mensaje `7`, con su sección en `viewer-protocol.md`.*
+
+*Ajustes:*
+- *El mensaje `7` mide 9 bytes, igual que el nivel y que un frame de un LED. Los tests comprueban que ningún decodificador lo confunde con los otros.*
+- *El codificador también rechaza una intensidad fuera de 0 a 1, como los del nivel y la posición. El `tasks.md` solo pedía el rechazo al decodificar.*
+
+#### 6.63 Volver al último estado tras reiniciar: refinamiento, estimación, exploración y change (`MOO-25`)
 
 **Prompt 1** (en `/refine-story MOO-25`, el caso feliz del humano):
 
@@ -1852,7 +1889,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Al ir a escribir la ficha, la IA vio que la rama local de `MOO-97`, sin subir, ya usaba D99 a D102. Renumeró las del change a D103 y D104, para que no choquen se integre antes la que se integre.*
 - *Después, a petición del humano, actualizó en Linear los criterios de `MOO-25` (el margen de 500 ms y el log) y la descripción de `MOO-26` (los tipos en el núcleo, `node:sqlite` y los casos de apertura).*
 
-#### 6.62 La base de persistencia del estado del instrumento (`MOO-26`)
+#### 6.64 La base de persistencia del estado del instrumento (`MOO-26`)
 
 **Prompt 1:**
 

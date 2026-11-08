@@ -11,17 +11,18 @@
 > de la fuente: change `soundcard-reconnect`, `design.md` decisión 3 (`MOO-63`). El de las tiras:
 > change `strip-effect-switch`, `design.md` decisión 3 (`MOO-101`). Sus valores: change
 > `strip-effect-values`, `design.md` decisión 6 (`MOO-105`). La salida Adalight con su puerto: change
-> `adalight-strip-output`, `design.md` decisión 7 (`MOO-113`).
+> `adalight-strip-output`, `design.md` decisión 7 (`MOO-113`). El de la intensidad: change
+> `instrument-intensity`, `design.md` decisión 5 (`MOO-125`).
 
 ## Conexión
 
 - **Una sola conexión WebSocket por navegador**, en la ruta `/ws` del motor (la misma dirección que
   sirve el panel). Por ella viajan los frames de todas las tiras, la fuente de audio, su nivel, la
-  posición del fichero de audio, el estado de la tarjeta de sonido y las tiras con su efecto activo
-  y sus valores.
+  posición del fichero de audio, el estado de la tarjeta de sonido, las tiras con su efecto activo
+  y sus valores, y la intensidad.
 - Los mensajes van en **binario**. El primer byte dice de qué tipo es el mensaje.
 - Solo van del motor al panel: el panel no envía nada por esta conexión. Lo que el panel pide hacer
-  (cambiar el efecto de una tira) va por la API HTTP (decisión 2 del change `strip-effect-switch`).
+  (cambiar el efecto de una tira, sus valores o la intensidad) va por la API HTTP (decisión 2 del change `strip-effect-switch`).
 - El panel no necesita saber nada de antemano: cada mensaje dice de qué tira es y cuántos LEDs tiene.
 
 ## Mensaje de frame (tipo `1`)
@@ -178,6 +179,29 @@ Ejemplo: la tira física de la mesa, de 173 LEDs, con la *energía*:
   Adalight sale el puerto, que el panel muestra, pero **no los baudios** (`baudRate`): el panel no
   los muestra.
 
+## Mensaje de la intensidad (tipo `7`)
+
+La intensidad con que pinta el motor: de 0 (todas las tiras apagadas) a 1 (cada tira pinta su efecto
+tal cual). Lo recibe cada panel al conectarse, después del mensaje de las tiras, y todos los paneles
+conectados cada vez que cambia, venga el cambio de donde venga.
+
+| Byte | Tamaño | Campo | Valor |
+|---|---|---|---|
+| 0 | 1 | Tipo de mensaje | `7` (intensidad) |
+| 1-8 | 8 | Intensidad | Número en coma flotante de 64 bits (IEEE 754), **big-endian**, de 0 a 1 |
+
+Ejemplo: la intensidad 0,5:
+
+```
+07  3f e0 00 00 00 00 00 00
+```
+
+- **Un tipo aparte, no un campo del `6`:** la intensidad no es de ninguna tira, y el `6` se rehace
+  entero en cada cambio. Mientras el DJ arrastra el fader, mandar todas las tiras con cada paso sería
+  ruido.
+- **64 bits, no 32 como el nivel**, para que el panel reciba exactamente el valor que envió por la
+  API: con 32, 0,4 volvería como 0,4000000059604645. Un panel que no conoce el tipo `7` lo ignora.
+
 ## Qué hace el panel con un mensaje que no entiende
 
 Lo ignora, también si es de un tipo que todavía no conoce. Se rechaza:
@@ -192,4 +216,5 @@ Lo ignora, también si es de un tipo que todavía no conoce. Se rechaza:
 - un mensaje de estado de la fuente que no mide 2 bytes o cuyo estado no es `0` ni `1`;
 - un mensaje de las tiras que no es UTF-8 válido, que no es JSON o que no cumple su esquema
   (`StripsMessageSchema`): le falta un campo, tiene uno que no está en la tabla, el efecto no está en el
-  catálogo, los valores no cumplen el esquema de su efecto o el nº de LEDs no es un entero de 1 o más.
+  catálogo, los valores no cumplen el esquema de su efecto o el nº de LEDs no es un entero de 1 o más;
+- un mensaje de la intensidad que no mide 9 bytes o cuya intensidad no es un número de 0 a 1.

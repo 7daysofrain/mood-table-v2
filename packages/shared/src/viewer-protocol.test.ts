@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   decodeFrame,
+  decodeIntensity,
   decodeLevel,
   decodePosition,
   decodeSource,
   decodeSourceStatus,
   decodeStrips,
   encodeFrame,
+  encodeIntensity,
   encodeLevel,
   encodePosition,
   encodeSource,
@@ -343,5 +345,57 @@ describe('el mensaje de las tiras', () => {
     ],
   ])('%s, se rechaza', (_name, message) => {
     expect(decodeStrips(message)).toBeUndefined();
+  });
+});
+
+describe('el mensaje de la intensidad', () => {
+  it('da los bytes del ejemplo de docs/instructions/viewer-protocol.md: el tipo 7 y 0,5 en float64', () => {
+    expect(hexOf(encodeIntensity(0.5))).toBe('07 3f e0 00 00 00 00 00 00');
+  });
+
+  it('ocupa 9 bytes', () => {
+    expect(encodeIntensity(1)).toHaveLength(9);
+  });
+
+  it.each([0, 0.07, 0.4, 1])('%s, vuelve exacto al decodificar', (intensity) => {
+    expect(decodeIntensity(encodeIntensity(intensity))).toBe(intensity);
+  });
+
+  it('no admite una intensidad fuera de 0 a 1 o que no es un número', () => {
+    expect(() => encodeIntensity(1.5)).toThrow(RangeError);
+    expect(() => encodeIntensity(-0.1)).toThrow(RangeError);
+    expect(() => encodeIntensity(Number.NaN)).toThrow(RangeError);
+  });
+
+  it('decodifica un mensaje que es una vista sobre un búfer más grande', () => {
+    const buffer = new Uint8Array(20);
+    buffer.set(encodeIntensity(0.4), 3);
+
+    expect(decodeIntensity(buffer.subarray(3, 3 + 9))).toBe(0.4);
+  });
+
+  it.each([
+    ['corto', [7, 0x3f, 0xe0, 0, 0, 0, 0, 0]],
+    ['largo', [7, 0x3f, 0xe0, 0, 0, 0, 0, 0, 0, 0]],
+    ['de otro tipo', [3, 0x3f, 0xe0, 0, 0, 0, 0, 0, 0]],
+    ['con una intensidad por encima de 1 (1,5)', [7, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0]],
+    ['con una intensidad negativa (−0,1)', [7, 0xbf, 0xb9, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a]],
+    ['con una intensidad que no es un número', [7, 0x7f, 0xf8, 0, 0, 0, 0, 0, 0]],
+  ])('%s, se rechaza', (_name, bytes) => {
+    expect(decodeIntensity(Uint8Array.from(bytes))).toBeUndefined();
+  });
+
+  it('no lo decodifican como frame, nivel, fuente ni estado de la fuente', () => {
+    // 9 bytes, como el nivel y como un frame de un LED.
+    const message = encodeIntensity(0.5);
+
+    expect(decodeFrame(message)).toBeUndefined();
+    expect(decodeLevel(message)).toBeUndefined();
+    expect(decodeSource(message)).toBeUndefined();
+    expect(decodeSourceStatus(message)).toBeUndefined();
+  });
+
+  it('decodeIntensity no decodifica un mensaje de nivel, que también mide 9 bytes', () => {
+    expect(decodeIntensity(encodeLevel(1, 0.5))).toBeUndefined();
   });
 });
