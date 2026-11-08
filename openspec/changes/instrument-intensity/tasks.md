@@ -83,7 +83,7 @@
   intensidad de 1 a 0 y de vuelta a 1, pinta el mismo frame que si no se hubiera tocado; la salida
   del nivel recibe el mismo nivel a cualquier intensidad (`specs/intensity`, criterios de `MOO-97`).
   Verificar: los tests nuevos fallan porque el bucle no aplica la intensidad.
-- [ ] 2.7 El bucle (`packages/engine/src/core/frame-loop.ts`) lee la intensidad al empezar cada pulso
+- [x] 2.7 El bucle (`packages/engine/src/core/frame-loop.ts`) lee la intensidad al empezar cada pulso
   y la aplica entre el `render` y las salidas, con un comentario que fija el orden: efecto,
   intensidad, límite de potencia (H4) y salidas.
   Verificar: los tests de 2.6 pasan y los frames dorados siguen en verde.
