@@ -4,7 +4,8 @@
  * cada efecto de cada tira, también de los no activos, para devolverlos al volver a él (change
  * strip-effect-recall); cualquier mando escribe en él por el puerto `Commands`, y el bucle lee la
  * ranura de cada tira al empezar cada pulso. Lo crea la raíz de composición antes que el servidor y
- * el bucle, que dependen de él.
+ * el bucle, que dependen de él, con el estado del instrumento ya restaurado, y da la foto de ese
+ * estado para guardarlo (decisión 6 del change instrument-state-restore).
  *
  * Todo lo que crea objetos (la memoria y los valores del efecto) pasa en `setEffect` y en
  * `setValues`, fuera del bucle, que solo lee referencias: el cambio entra entero en el pulso
@@ -108,7 +109,11 @@ export interface ControlOptions {
   effects?: readonly AnyEffect[];
   /** Si el instrumento tiene fuente de audio: sin ella, una tira no puede pasar a un reactivo. */
   hasAudioSource: boolean;
-  /** El estado restaurado con que arranca cada tira (`restore`). Pendiente. */
+  /**
+   * El estado con que arranca cada tira, por su `id`, ya restaurado (`restore`): su efecto activo y
+   * los valores de cada efecto, que ya cumplen su esquema. Una tira que no está, o sin `initial`,
+   * arranca con el efecto del fichero y sus valores por defecto.
+   */
   initial?: InstrumentState;
 }
 
@@ -179,10 +184,25 @@ export function createControl({
   strips,
   effects = EFFECTS,
   hasAudioSource,
+  initial = {},
 }: ControlOptions): ControlBuffer {
+  // El estado con que arranca cada tira. `Object.hasOwn`: un id como `__proto__` no debe leer las
+  // propiedades de Object.
+  const restored = strips.map((strip) =>
+    Object.hasOwn(initial, strip.id) ? initial[strip.id] : undefined,
+  );
   // Los valores de cada efecto de cada tira, en el orden del fichero, también los de los efectos no
-  // activos: los mismos que `strip_effects` (README §3.2). Siempre tiene los del efecto activo.
-  const saved = strips.map(() => new Map<EffectId, unknown>());
+  // activos: los mismos que `strip_effects` (README §3.2). Siempre tiene los del efecto activo. Con
+  // copias: lo que haga después quien dio el estado no cambia lo que pinta la tira.
+  const saved = restored.map(
+    (each) =>
+      new Map<EffectId, unknown>(
+        Object.entries(each?.values ?? {}).map(([id, values]) => [
+          id as EffectId,
+          Value.Clone(values),
+        ]),
+      ),
+  );
 
   // El fichero ya valida el id contra el catálogo, y un test comprueba que el registro tiene los
   // mismos: un efecto que falta es un fallo del motor, no del que manda.
@@ -197,7 +217,9 @@ export function createControl({
     return createSlot(strip, effect, values);
   }
 
-  const slots = strips.map((strip, index) => slotFor(index, strip, strip.effect));
+  const slots = strips.map((strip, index) =>
+    slotFor(index, strip, (restored[index]?.activeEffect ?? strip.effect) as EffectId),
+  );
   const listeners = new Set<() => void>();
   // Al arrancar, al máximo: cada tira pinta su efecto tal cual (specs/intensity).
   let intensity = 1;
@@ -253,8 +275,19 @@ export function createControl({
       intensityListeners.add(listener);
       return () => intensityListeners.delete(listener);
     },
+    // Con copias: lo que haga después el guardador no cambia lo que pinta ninguna tira.
     snapshot() {
-      throw new Error('pendiente');
+      return Object.fromEntries(
+        strips.map((strip, index) => [
+          strip.id,
+          {
+            activeEffect: slots[index]?.effect ?? strip.effect,
+            values: Object.fromEntries(
+              [...(saved[index] ?? [])].map(([id, values]) => [id, Value.Clone(values)]),
+            ),
+          },
+        ]),
+      );
     },
   };
 }

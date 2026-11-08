@@ -72,7 +72,7 @@
   primer `render` ya los lleva) y su foto del estado devuelve lo que tiene, también tras
   `setEffect` y `setValues`. Los tests de arranque desde el fichero siguen igual.
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 2.4 `createControl` acepta el estado inicial y da su foto (`packages/engine/src/core/control.ts`).
+- [x] 2.4 `createControl` acepta el estado inicial y da su foto (`packages/engine/src/core/control.ts`).
   Verificar: los tests de 2.3 pasan, y los del bucle y del servidor siguen en verde.
 - [ ] 2.5 La raíz de composición carga el estado del adaptador, lo restaura con las tiras del
   fichero, escribe los avisos en el log y crea el búfer con él.
