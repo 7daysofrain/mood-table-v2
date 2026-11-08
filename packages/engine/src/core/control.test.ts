@@ -513,13 +513,13 @@ describe('el búfer de control', () => {
     });
 
     it('la foto devuelve el estado con que arrancó', () => {
-      expect(fromState().snapshot()).toEqual(initial);
+      expect(fromState().instrumentState()).toEqual(initial);
     });
 
     it('sin estado, la foto tiene el efecto del fichero de cada tira con sus valores por defecto', () => {
       const { control } = twoStrips();
 
-      expect(control.snapshot()).toEqual({
+      expect(control.instrumentState()).toEqual({
         a: { activeEffect: 'energy', values: { energy: {} } },
         b: { activeEffect: 'breathing', values: { breathing: defaultParams(breathing) } },
       });
@@ -531,7 +531,7 @@ describe('el búfer de control', () => {
       control.setValues('a', { color: '#FF2020', period: 3 });
       control.setEffect('b', PULSE);
 
-      expect(control.snapshot()).toEqual({
+      expect(control.instrumentState()).toEqual({
         a: {
           activeEffect: 'breathing',
           values: { breathing: { color: '#FF2020', period: 3 }, pulse: { speed: 5 } },
@@ -542,10 +542,10 @@ describe('el búfer de control', () => {
 
     it('lo que haga después quien recibe la foto no cambia el búfer', () => {
       const control = fromState();
-      const photo = control.snapshot() as Record<string, { values: Record<string, unknown> }>;
+      const photo = control.instrumentState() as Record<string, { values: Record<string, unknown> }>;
       photo.a!.values.pulse = { speed: 9 };
 
-      expect(control.snapshot()).toEqual(initial);
+      expect(control.instrumentState()).toEqual(initial);
       expect(control.slot(0).values).toEqual({ speed: 5 });
     });
 

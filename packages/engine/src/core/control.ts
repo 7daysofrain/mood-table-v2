@@ -99,7 +99,7 @@ export interface ControlBuffer extends Commands {
    */
   watchIntensity(listener: () => void): () => void;
   /** La foto del estado del instrumento: el efecto activo y los valores de cada efecto de cada tira. */
-  snapshot(): InstrumentState;
+  instrumentState(): InstrumentState;
 }
 
 export interface ControlOptions {
@@ -276,7 +276,7 @@ export function createControl({
       return () => intensityListeners.delete(listener);
     },
     // Con copias: lo que haga después el guardador no cambia lo que pinta ninguna tira.
-    snapshot() {
+    instrumentState() {
       return Object.fromEntries(
         strips.map((strip, index) => [
           strip.id,
