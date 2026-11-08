@@ -98,7 +98,7 @@
   inyectados (design.md, decisiones 2 y 3), y su montaje en la raíz de composición sobre `watch()`.
   Verificar: los tests de 3.1 pasan; con `pnpm dev`, cambiar el color en el panel y esperar 1 s deja
   ese color en `SELECT * FROM strip_effects;`.
-- [ ] 3.3 E2E de arranque tras corte en `e2e/` (nuevo `restart.spec.ts`), con un motor propio con
+- [x] 3.3 E2E de arranque tras corte en `e2e/` (nuevo `restart.spec.ts`), con un motor propio con
   `instrumentState` en una ruta temporal: el DJ pone la respiración en azul con otro periodo en una
   tira y la energía en otra; pasado 1 s, el motor se mata con `SIGKILL` y se vuelve a arrancar; el
   panel muestra los dos efectos y esos valores, y el visor pinta la respiración en azul. Otro caso:
