@@ -75,7 +75,7 @@
 - [x] 2.5 `setIntensity` en el puerto `Commands`, con `intensity()` y `watchIntensity` en
   `ControlBuffer` (`packages/engine/src/core/control.ts`).
   Verificar: los tests de 2.4 pasan y `pnpm lint` no da errores de fronteras.
-- [ ] 2.6 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
+- [x] 2.6 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
   salidas en memoria: con dos tiras y la intensidad a 0,5, cada frame vale el del efecto a la mitad,
   redondeado; las dos tiras de un pulso llevan la misma intensidad cuando cambia entre dos pulsos; a
   0, todos los LEDs apagados; a 1, el mismo frame que sin intensidad; una tira con salida `adalight`
