@@ -4,19 +4,16 @@
  * vengan, y guarda el estado entero 500 ms después del último (*debounce*): mientras el DJ arrastra
  * un control no escribe, y tras un corte como mucho se pierden esos 500 ms o un arrastre a medias.
  *
- * El guardado es síncrono y corre en el hilo del bucle. Si tarda más de 10 ms (más de medio frame a
- * 60 fps, con margen), lo dice en el log con lo que ha tardado, para que un tirón se vea si llega a
- * pasar. Si falla, también lo dice, y el motor sigue: el siguiente cambio vuelve a intentarlo.
+ * `save()` del puerto vuelve enseguida: el adaptador SQLite escribe en un *worker* y dice en el log
+ * las escrituras lentas (D105). Si un `save()` lanza, el guardador lo dice en el log y el motor sigue:
+ * el siguiente cambio vuelve a intentarlo.
  *
- * El temporizador y el reloj se inyectan, como los del bucle, para probarlo con un reloj falso.
+ * El temporizador se inyecta, como el del bucle, para probarlo con un reloj falso.
  */
 import type { InstrumentState, StateStore } from './state-store.ts';
 
 /** 500 ms sin cambios: el DJ ha dejado de tocar (D103). */
 const DEBOUNCE_MS = 500;
-
-/** Un guardado más lento queda en el log (D103). */
-const SLOW_SAVE_MS = 10;
 
 /** Un temporizador de un disparo: `setTimeout` en el motor, uno falso en los tests. */
 export interface SaverTimer {
@@ -29,8 +26,6 @@ export interface StateSaverOptions {
   control: { watch(listener: () => void): () => void; instrumentState(): InstrumentState };
   store: StateStore;
   timer: SaverTimer;
-  /** En milisegundos, para medir cuánto tarda un guardado. */
-  clock: () => number;
   log: (line: string) => void;
 }
 
@@ -43,7 +38,6 @@ export function startStateSaver({
   control,
   store,
   timer,
-  clock,
   log,
 }: StateSaverOptions): StateSaver {
   let pending: unknown;
@@ -51,7 +45,6 @@ export function startStateSaver({
 
   function save(): void {
     scheduled = false;
-    const startedAt = clock();
     try {
       store.save(control.instrumentState());
     } catch (error) {
@@ -59,11 +52,6 @@ export function startStateSaver({
         `No se ha podido guardar el estado del instrumento (${error instanceof Error ? error.message : String(error)}); ` +
           'se vuelve a intentar con el próximo cambio.',
       );
-      return;
-    }
-    const took = clock() - startedAt;
-    if (took > SLOW_SAVE_MS) {
-      log(`El guardado del estado del instrumento ha tardado ${Math.round(took)} ms.`);
     }
   }
 

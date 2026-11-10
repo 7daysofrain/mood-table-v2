@@ -8,11 +8,18 @@
  * nueva del motor, se arranca sin guardar. Nunca impide arrancar: un instrumento que no arranca es
  * peor que uno que no recuerda. Lo que ha pasado vuelve como un aviso para el log.
  *
+ * Los guardados se escriben en un *worker thread* (D105): `save()` entrega el estado y vuelve, y el
+ * bucle de frames no espera nunca a la tarjeta SD, que a veces tarda segundos en confirmar. Como mucho
+ * hay una escritura en curso, y de los estados que llegan mientras tanto solo se escribe el último.
+ * El *worker* mide cada escritura, y aquí se escriben en el log las de más de 10 ms y las que fallan.
+ * La apertura, las migraciones y la lectura al arrancar se quedan en el hilo del motor.
+ *
  * No es `*.hardware.ts`: se prueba con ficheros temporales.
  */
 import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { Worker } from 'node:worker_threads';
 
 import type { InstrumentState, SavedStrip, StateStore } from '../core/state-store.ts';
 import { createMemoryStateStore } from './memory-state-store.ts';
@@ -28,20 +35,33 @@ export interface OpenedStateStore {
 /** Lo que el *worker* cuenta de cada escritura (D105). */
 export type WriteReport = { ok: true; tookMs: number } | { ok: false; error: string };
 
-/** El *worker* que escribe, visto desde el adaptador. Uno falso en los tests. Pendiente. */
+/** Lo que el adaptador manda al *worker*. */
+export type WriterMessage = { type: 'write'; state: InstrumentState } | { type: 'close' };
+
+/** El *worker* que escribe, visto desde el adaptador. Uno falso en los tests. */
 export interface StateWriter {
+  /** Le manda un estado entero para escribirlo. No espera. */
   write(state: InstrumentState): void;
+  /** `listener` oye cómo ha ido cada escritura, en el orden en que se mandaron. */
   onReport(listener: (report: WriteReport) => void): void;
+  /** Termina lo que tenga en cola, cierra el fichero y acaba. */
   close(): void;
 }
 
 export interface SqliteStateStoreOptions {
   /** El reloj de `updated_at` y del nombre del fichero dañado que se aparta. */
   now?: () => Date;
-  /** Dónde se escribe: en un *worker* o en el hilo que llama (`'thread'`). Pendiente. */
+  /**
+   * Dónde se escriben los guardados: en un *worker* (por defecto, el de `sqlite-writer.worker.ts`) o,
+   * para los tests que leen justo después de guardar, en el hilo que llama (`'thread'`).
+   */
   writer?: 'thread' | ((path: string) => StateWriter);
+  /** Dónde van las escrituras lentas y las que fallan. Por defecto, la salida de errores. */
   log?: (line: string) => void;
 }
+
+/** Una escritura más lenta queda en el log (D103): más de medio frame a 60 fps, con margen. */
+const SLOW_WRITE_MS = 10;
 
 /**
  * Las migraciones, en orden: la de la posición `i` es la versión `i + 1`. La tabla de control
@@ -73,7 +93,11 @@ class DamagedError extends Error {}
 
 export function openSqliteStateStore(
   path: string,
-  { now = () => new Date(), writer }: SqliteStateStoreOptions = {},
+  {
+    now = () => new Date(),
+    writer = spawnWriterWorker,
+    log = (line) => console.error(line),
+  }: SqliteStateStoreOptions = {},
 ): OpenedStateStore {
   try {
     mkdirSync(dirname(path), { recursive: true });
@@ -132,21 +156,101 @@ export function openSqliteStateStore(
   }
 
   const store = sqliteStore(db, now);
+  const closeDb = () => {
+    if (db.isOpen) db.close();
+  };
+  if (writer === 'thread') return { store, notice, close: closeDb };
+
+  const background = writer(path);
   return {
-    store:
-      writer === 'thread' || writer === undefined
-        ? store
-        : {
-            load: () => store.load(),
-            save: () => {
-              throw new Error('pendiente');
-            },
-          },
+    store: { load: () => store.load(), save: inBackground(background, log) },
     notice,
     close: () => {
-      if (db.isOpen) db.close();
+      background.close();
+      closeDb();
     },
   };
+}
+
+/**
+ * El `save` que manda cada estado al *worker* sin esperar. Como mucho hay una escritura en curso: de
+ * los estados que llegan mientras tanto solo se guarda el último, que es el estado entero y deja a los
+ * de en medio sin nada que aportar.
+ */
+function inBackground(writer: StateWriter, log: (line: string) => void): (state: InstrumentState) => void {
+  let writing = false;
+  let next: InstrumentState | undefined;
+
+  writer.onReport((report) => {
+    if (!report.ok) {
+      log(
+        `No se ha podido guardar el estado del instrumento (${report.error}); ` +
+          'se vuelve a intentar con el próximo cambio.',
+      );
+    } else if (report.tookMs > SLOW_WRITE_MS) {
+      log(`El guardado del estado del instrumento ha tardado ${Math.round(report.tookMs)} ms.`);
+    }
+    if (next === undefined) {
+      writing = false;
+      return;
+    }
+    const state = next;
+    next = undefined;
+    writer.write(state);
+  });
+
+  return (state) => {
+    // Una copia: lo que haga después quien guarda no cambia lo que se escribe.
+    const copy = structuredClone(state);
+    if (writing) {
+      next = copy;
+      return;
+    }
+    writing = true;
+    writer.write(copy);
+  };
+}
+
+/**
+ * El *worker* de verdad (`sqlite-writer.worker.ts`), sobre el fichero ya abierto y migrado. Si el
+ * *worker* falla o ha terminado, cada escritura vuelve como fallida, con el motivo.
+ */
+function spawnWriterWorker(path: string): StateWriter {
+  const worker = new Worker(new URL('./sqlite-writer.worker.ts', import.meta.url), {
+    workerData: { path },
+  });
+  let listener: ((report: WriteReport) => void) | undefined;
+  let alive = true;
+  worker.on('message', (report: WriteReport) => listener?.(report));
+  worker.on('error', (error: unknown) => listener?.({ ok: false, error: reasonOf(error) }));
+  worker.on('exit', () => {
+    alive = false;
+  });
+  return {
+    write(state) {
+      if (alive) {
+        worker.postMessage({ type: 'write', state } satisfies WriterMessage);
+        return;
+      }
+      queueMicrotask(() => listener?.({ ok: false, error: 'el worker que escribe ha terminado' }));
+    },
+    onReport(each) {
+      listener = each;
+    },
+    close() {
+      if (alive) worker.postMessage({ type: 'close' } satisfies WriterMessage);
+    },
+  };
+}
+
+/**
+ * Abre para escribir un fichero que la apertura ya ha comprobado y migrado: lo usa el *worker*. El
+ * modo WAL ya está guardado en el fichero; `synchronous` y `foreign_keys` son de cada conexión.
+ */
+export function connectForWriting(path: string): DatabaseSync {
+  const db = new DatabaseSync(path);
+  db.exec('PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON;');
+  return db;
 }
 
 /** El fichero abierto y comprobado, o por qué no; si no, `close` cierra lo que llegó a abrir. */
@@ -208,7 +312,8 @@ function migrate(db: DatabaseSync, now: () => Date): void {
   });
 }
 
-function sqliteStore(db: DatabaseSync, now: () => Date): StateStore {
+/** El almacén sobre una conexión abierta: lo usan el hilo del motor (para leer) y el *worker*. */
+export function sqliteStore(db: DatabaseSync, now: () => Date): StateStore {
   const strips = db.prepare('SELECT strip_id, active_effect_id FROM strip_state');
   const effects = db.prepare('SELECT strip_id, effect_id, values_json FROM strip_effects');
   const upsertEffect = db.prepare(

@@ -47,7 +47,7 @@ function openInstrumentState(config: InstrumentStateConfig): OpenedStateStore {
   if (config.type === 'memory') {
     return { store: createMemoryStateStore(), close: () => undefined };
   }
-  return openSqliteStateStore(config.path);
+  return openSqliteStateStore(config.path, { log: (line) => console.error(line) });
 }
 
 /**
@@ -142,8 +142,9 @@ async function main(): Promise<string | undefined> {
   }
 
   // El guardador, sobre los avisos del búfer: guarda el estado entero 500 ms después del último
-  // cambio, venga del mando que venga (decisiones 2 y 3, D103). Después del servidor: antes no
-  // llega ningún cambio.
+  // cambio, venga del mando que venga (decisión 2, D103). El adaptador SQLite lo escribe en un
+  // *worker*, así que la luz no espera a la tarjeta (D105). Después del servidor: antes no llega
+  // ningún cambio.
   startStateSaver({
     control,
     store: instrumentState.store,
@@ -151,7 +152,6 @@ async function main(): Promise<string | undefined> {
       set: (callback, ms) => setTimeout(callback, ms),
       clear: (handle) => clearTimeout(handle as NodeJS.Timeout),
     },
-    clock: () => performance.now(),
     log: (line) => console.error(line),
   });
 

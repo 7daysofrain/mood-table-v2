@@ -4,14 +4,13 @@ import { type SaverTimer, startStateSaver } from './state-saver.ts';
 import type { InstrumentState, StateStore } from './state-store.ts';
 
 /**
- * Un temporizador y un reloj falsos, que solo avanzan cuando el test lo dice. El núcleo no puede
- * usar el adaptador en memoria (regla de fronteras), así que el almacén también es de prueba: apunta
- * cada guardado y puede tardar lo que diga el test, en el reloj falso.
+ * Un temporizador falso, que solo avanza cuando el test lo dice. El núcleo no puede usar el adaptador
+ * en memoria (regla de fronteras), así que el almacén también es de prueba: apunta cada guardado. Lo
+ * que tarda una escritura lo mide el adaptador SQLite, que escribe en un *worker* (D105).
  */
 let now: number;
 let pending: { at: number; callback: () => void } | undefined;
 let saves: InstrumentState[];
-let saveTakesMs: number;
 /** Si no es `undefined`, el guardado falla con este mensaje. */
 let saveFails: string | undefined;
 let logLines: string[];
@@ -32,7 +31,6 @@ const store: StateStore = {
   load: () => ({}),
   save(saved) {
     if (saveFails !== undefined) throw new Error(saveFails);
-    now += saveTakesMs;
     saves.push(structuredClone(saved));
   },
 };
@@ -66,7 +64,6 @@ beforeEach(() => {
   now = 0;
   pending = undefined;
   saves = [];
-  saveTakesMs = 1;
   saveFails = undefined;
   logLines = [];
   state = {};
@@ -84,7 +81,6 @@ function start() {
     },
     store,
     timer,
-    clock: () => now,
     log: (line) => logLines.push(line),
   });
 }
@@ -148,27 +144,7 @@ describe('el guardador del estado del instrumento', () => {
     expect(saves).toEqual([azul, rojo]);
   });
 
-  it('un guardado de más de 10 ms deja una línea en el log con lo que ha tardado', () => {
-    start();
-    saveTakesMs = 25;
-    change(azul);
 
-    advance(500);
-
-    expect(logLines).toHaveLength(1);
-    expect(logLines[0]).toContain('25 ms');
-  });
-
-  it('un guardado de 10 ms o menos no escribe nada en el log', () => {
-    start();
-    saveTakesMs = 10;
-    change(azul);
-
-    advance(500);
-
-    expect(saves).toEqual([azul]);
-    expect(logLines).toEqual([]);
-  });
 
   it('si el guardado falla, lo dice en el log y sigue guardando los cambios siguientes', () => {
     start();
