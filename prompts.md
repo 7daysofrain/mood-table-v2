@@ -2016,6 +2016,17 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 ---
 
+#### 6.67 Verificar y archivar el change de `MOO-98`
+
+**Prompt 1** (con la #119 integrada):
+
+> Integrado, verify, sync y archive
+
+*Claude Code (`claude-opus-5-5`, 6-nov y 10-nov). La IA comprobó en Linear que `MOO-122`, la única tarea de `MOO-98`, estaba en Done, y la historia cerrada con ella. Después sacó la rama del archivado desde `main`. `/opsx:verify` cotejó con el código y los tests las 8 tareas, los 7 requisitos de las dos specs y las 6 decisiones del diseño, sin problemas críticos, avisos ni sugerencias. Antes de sincronizar, la IA comprobó que los PRs integrados después de escribir el change (#120-#125) no habían tocado `openspec/specs`, para que el sync no pisara nada. Al sincronizar, `effects` ganó los tres requisitos del espectro, y los cuatro modificados sustituyeron a los de `effects` e `instrument-control` sin perder ningún escenario. La IA comprobó que cada bloque quedaba igual que en el delta.*
+
+*Ajustes:*
+- *Los avisos de `openspec validate --specs` por requisitos de más de 500 caracteres son los de siempre: las trazas cuentan como texto. Los 13 specs validan.*
+
 ### 7. Pull Requests
 
 *Se registrará con la entrega final.*
