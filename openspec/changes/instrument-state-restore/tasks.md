@@ -121,7 +121,7 @@
   cobertura). El guardador del núcleo deja de medir: la medida es del *worker*.
   Verificar: los tests de 3.5 pasan, y los E2E de arranque tras corte siguen en verde; en la Pi, al
   cambiar efectos con la tira física, la luz no se congela aunque el log diga guardados lentos.
-- [ ] 3.7 Documentación: README §2.2 (el guardado, en un *worker*) y §3, y `prompts.md` (la prueba en
+- [x] 3.7 Documentación: README §2.2 (el guardado, en un *worker*) y §3, y `prompts.md` (la prueba en
   la mesa y este cambio, en la entrada de `MOO-130`).
   Verificar: lo que describe el README coincide con lo que hace el motor.
 

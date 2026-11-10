@@ -1991,6 +1991,29 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Para ver que el E2E prueba el guardado, la IA subió el retardo a 5 s: los dos casos fallaron, y lo devolvió a 500 ms. Después pasó la suite entera tres veces seguidas, en verde.*
 - *Al añadir esta entrada, la IA vio que `main` tenía dos 6.66: la de `MOO-127` (#124) y la de `MOO-129` (#125), que entró después sin conflicto porque estaban en sitios distintos del fichero. Por el orden en que se integraron, `MOO-129` pasa a 6.67 y esta a 6.68.*
 
+**Prompt 2** (con la PR abierta, antes de integrarla):
+
+> podemos probar esto en la PI?
+
+*La IA pasó la Pi a la rama de la PR y arrancó el motor; a petición del humano, con un WAV. El humano cambió efectos, desenchufó la Pi y la volvió a enchufar. El estado guardado sobrevivió al corte y volvió en el motor y en el panel. Pero en el log del motor había un guardado de 492 ms, y la IA avisó de que en ese tiempo el bucle de la luz se quedaba parado.*
+
+**Prompt 3:**
+
+> Estoy probando a ir cambiando los efectos con la tira fisica y la realidad es que no veo ningun corte visible la mayoria de las veces, pero si que ha tenido alguno. Es raro porque entiendo que o ocurre siempre o no ocurre, o como dices, la primera vez, pero esto parece algo aleatorio
+
+*La IA leyó el log: seis guardados de 494 a 2.032 ms. Explicó por qué es aleatorio: el motor escribe siempre lo mismo, pero lo que tarda la SD en confirmar depende de la tarjeta (que además tiene errores EXT4) y de lo que el sistema tenga pendiente. Concluyó que la escritura síncrona en el hilo del bucle, decidida en el explore (D103), no aguantaba en ese hardware, y recomendó llevarla a un* worker *del adaptador, en esta misma PR. Descartó `synchronous = NORMAL`, que rompe E6.*
+
+**Prompt 4:**
+
+> ok, adelante
+
+*La IA escribió primero la decisión: D105, D103 tachada solo en esa parte, la decisión 3 del `design.md` revisada, el requisito «Guardar no congela la luz» y los pasos 3.5 a 3.7. Después hizo los tests en rojo con un* worker *falso y la implementación. La probó en la Pi antes de subir nada, con un `git bundle`. Midió los huecos entre frames con 56 guardados forzados: ninguno pasó de 46 ms, pero la SD tampoco tardó ninguna vez, así que no lo dio por probado. Lo dio cuando el humano cambió efectos con la tira física sin ver cortes mientras el log apuntaba guardados de 978 y 3.205 ms.*
+
+*Ajustes:*
+- *En el rojo, sin `writer` el esqueleto seguía escribiendo en el hilo, para que el motor no dejara de guardar en ese commit; por eso el test del* worker *de verdad pasaba ya.*
+- *El fichero del* worker *solo conecta mensajes con el adaptador, así que queda fuera de la cobertura, en Vitest y en SonarQube, como las raíces de composición.*
+- *No se supo por qué la SD tardó seis veces en los primeros minutos tras arrancar la Pi y ninguna en 56 guardados después. Queda como hipótesis el trabajo de Ext4 en segundo plano tras el arranque, que no explica el guardado de 492 ms de antes del corte.*
+
 ---
 
 ### 7. Pull Requests
