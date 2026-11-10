@@ -109,6 +109,21 @@
   500 ms, y el log de las escrituras lentas), §2.4 (servicio `systemd` + estado guardado) y §2.6 (el
   E2E de arranque tras corte). `prompts.md`: la entrada de esta tarea.
   Verificar: lo que describe el README coincide con lo que hace el motor.
+- [ ] 3.5 **(test en rojo)** Tests del escritor en segundo plano del adaptador SQLite, en
+  `packages/engine/src/adapters/sqlite-state-store.test.ts`, con un *worker* falso: `save()` vuelve
+  sin esperar a la escritura; como mucho hay una en curso, y de los estados que llegan mientras tanto
+  solo se escribe el último; una escritura de más de 10 ms deja en el log lo que ha tardado, una más
+  rápida nada, y una que falla, su motivo. Con el *worker* de verdad, lo guardado se lee al reabrir
+  (`specs/instrument-state`, *Guardar no congela la luz* y *Una escritura lenta queda en el log*;
+  `design.md`, decisión 3 revisada, D105).
+  Verificar: los tests nuevos fallan; el resto sigue en verde.
+- [ ] 3.6 El escritor en segundo plano y su *worker* (`sqlite-writer.worker.ts`, fuera de la
+  cobertura). El guardador del núcleo deja de medir: la medida es del *worker*.
+  Verificar: los tests de 3.5 pasan, y los E2E de arranque tras corte siguen en verde; en la Pi, al
+  cambiar efectos con la tira física, la luz no se congela aunque el log diga guardados lentos.
+- [ ] 3.7 Documentación: README §2.2 (el guardado, en un *worker*) y §3, y `prompts.md` (la prueba en
+  la mesa y este cambio, en la entrada de `MOO-130`).
+  Verificar: lo que describe el README coincide con lo que hace el motor.
 
 ## Workflow follow-up
 
