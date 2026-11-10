@@ -25,9 +25,22 @@ export interface OpenedStateStore {
   close(): void;
 }
 
+/** Lo que el *worker* cuenta de cada escritura (D105). */
+export type WriteReport = { ok: true; tookMs: number } | { ok: false; error: string };
+
+/** El *worker* que escribe, visto desde el adaptador. Uno falso en los tests. Pendiente. */
+export interface StateWriter {
+  write(state: InstrumentState): void;
+  onReport(listener: (report: WriteReport) => void): void;
+  close(): void;
+}
+
 export interface SqliteStateStoreOptions {
   /** El reloj de `updated_at` y del nombre del fichero dañado que se aparta. */
   now?: () => Date;
+  /** Dónde se escribe: en un *worker* o en el hilo que llama (`'thread'`). Pendiente. */
+  writer?: 'thread' | ((path: string) => StateWriter);
+  log?: (line: string) => void;
 }
 
 /**
@@ -60,7 +73,7 @@ class DamagedError extends Error {}
 
 export function openSqliteStateStore(
   path: string,
-  { now = () => new Date() }: SqliteStateStoreOptions = {},
+  { now = () => new Date(), writer }: SqliteStateStoreOptions = {},
 ): OpenedStateStore {
   try {
     mkdirSync(dirname(path), { recursive: true });
@@ -118,8 +131,17 @@ export function openSqliteStateStore(
     return withoutSaving(path, error);
   }
 
+  const store = sqliteStore(db, now);
   return {
-    store: sqliteStore(db, now),
+    store:
+      writer === 'thread' || writer === undefined
+        ? store
+        : {
+            load: () => store.load(),
+            save: () => {
+              throw new Error('pendiente');
+            },
+          },
     notice,
     close: () => {
       if (db.isOpen) db.close();

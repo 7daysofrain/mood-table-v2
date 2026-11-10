@@ -4,11 +4,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { describeStateStoreContract } from '../../test/state-store-contract.ts';
 import type { InstrumentState } from '../core/state-store.ts';
-import { openSqliteStateStore, type OpenedStateStore } from './sqlite-state-store.ts';
+import {
+  openSqliteStateStore,
+  type OpenedStateStore,
+  type SqliteStateStoreOptions,
+  type StateWriter,
+  type WriteReport,
+} from './sqlite-state-store.ts';
 
 const azul = { color: '#0000ff', period: 8 };
 const mesa: InstrumentState = {
@@ -20,9 +26,12 @@ const NOW = new Date('2026-11-07T12:00:00.000Z');
 let dir: string;
 const opened: OpenedStateStore[] = [];
 
-/** Abre el estado en `path` y lo cierra al acabar el test. */
-function open(path: string): OpenedStateStore {
-  const result = openSqliteStateStore(path, { now: () => NOW });
+/**
+ * Abre el estado en `path` y lo cierra al acabar el test. Escribe en el hilo del test, para poder
+ * leer justo después; el *worker* se prueba aparte.
+ */
+function open(path: string, options: SqliteStateStoreOptions = { writer: 'thread' }): OpenedStateStore {
+  const result = openSqliteStateStore(path, { now: () => NOW, ...options });
   opened.push(result);
   return result;
 }
@@ -216,5 +225,153 @@ describe('al abrir el estado guardado', () => {
     expect(result.notice).toContain('versión más nueva del motor');
     expect(await readFile(path)).toEqual(before);
     expect(existsSync(`${path}-wal`)).toBe(false);
+  });
+});
+
+/** Un *worker* falso: apunta lo que se le manda escribir y cuenta lo que diga el test. */
+function fakeWriter() {
+  const writes: InstrumentState[] = [];
+  let report: ((report: WriteReport) => void) | undefined;
+  let closed = false;
+  const writer: StateWriter = {
+    write: (state) => writes.push(structuredClone(state)),
+    onReport: (listener) => {
+      report = listener;
+    },
+    close: () => {
+      closed = true;
+    },
+  };
+  return {
+    writes,
+    /** El *worker* termina la escritura en curso y lo cuenta. */
+    finish: (done: WriteReport = { ok: true, tookMs: 2 }) => report?.(done),
+    closed: () => closed,
+    spawn: () => writer,
+  };
+}
+
+const rojo: InstrumentState = {
+  mesa: { activeEffect: 'breathing', values: { breathing: { color: '#ff0000', period: 8 } } },
+};
+const verde: InstrumentState = {
+  mesa: { activeEffect: 'breathing', values: { breathing: { color: '#00ff00', period: 8 } } },
+};
+
+describe('escribir en segundo plano (D105)', () => {
+  function openWith(worker: ReturnType<typeof fakeWriter>, log: string[] = []) {
+    return open(join(dir, 'estado.db'), { writer: worker.spawn, log: (line) => log.push(line) });
+  }
+
+  it('save vuelve sin esperar a que termine la escritura', () => {
+    const worker = fakeWriter();
+    const { store } = openWith(worker);
+
+    store.save(mesa);
+
+    expect(worker.writes).toEqual([mesa]);
+  });
+
+  it('como mucho hay una escritura en curso, y de las que llegan mientras tanto solo va la última', () => {
+    const worker = fakeWriter();
+    const { store } = openWith(worker);
+
+    store.save(mesa);
+    store.save(rojo);
+    store.save(verde);
+    expect(worker.writes).toEqual([mesa]);
+
+    worker.finish();
+    expect(worker.writes).toEqual([mesa, verde]);
+
+    worker.finish();
+    store.save(rojo);
+    expect(worker.writes).toEqual([mesa, verde, rojo]);
+  });
+
+  it('lo que haga después quien guarda no cambia lo que se escribe', () => {
+    const worker = fakeWriter();
+    const { store } = openWith(worker);
+    store.save(mesa);
+    const later = structuredClone(rojo) as Record<string, { activeEffect: string }>;
+    store.save(later as InstrumentState);
+    later.mesa!.activeEffect = 'energy';
+
+    worker.finish();
+
+    expect(worker.writes).toEqual([mesa, rojo]);
+  });
+
+  it('una escritura de más de 10 ms deja en el log lo que ha tardado', () => {
+    const worker = fakeWriter();
+    const log: string[] = [];
+    openWith(worker, log).store.save(mesa);
+
+    worker.finish({ ok: true, tookMs: 492.4 });
+
+    expect(log).toEqual(['El guardado del estado del instrumento ha tardado 492 ms.']);
+  });
+
+  it('una escritura de 10 ms o menos no escribe nada en el log', () => {
+    const worker = fakeWriter();
+    const log: string[] = [];
+    openWith(worker, log).store.save(mesa);
+
+    worker.finish({ ok: true, tookMs: 10 });
+
+    expect(log).toEqual([]);
+  });
+
+  it('una escritura que falla deja su motivo en el log, y la siguiente se manda igual', () => {
+    const worker = fakeWriter();
+    const log: string[] = [];
+    const { store } = openWith(worker, log);
+    store.save(mesa);
+    store.save(rojo);
+
+    worker.finish({ ok: false, error: 'disk I/O error' });
+
+    expect(log).toHaveLength(1);
+    expect(log[0]).toContain('disk I/O error');
+    expect(worker.writes).toEqual([mesa, rojo]);
+  });
+
+  it('al cerrar, cierra también el worker', () => {
+    const worker = fakeWriter();
+
+    openWith(worker).close();
+
+    expect(worker.closed()).toBe(true);
+  });
+
+  it('la lectura al arrancar sigue en el hilo del motor', () => {
+    const path = join(dir, 'estado.db');
+    const first = open(path);
+    first.store.save(mesa);
+    first.close();
+
+    expect(open(path, { writer: fakeWriter().spawn }).store.load()).toEqual(mesa);
+  });
+
+  it('con el worker de verdad, lo guardado se lee al volver a abrir', async () => {
+    const path = join(dir, 'estado.db');
+    const log: string[] = [];
+    const { store } = open(path, { log: (line) => log.push(line) });
+
+    store.save(mesa);
+
+    await vi.waitFor(
+      () => {
+        const db = new DatabaseSync(path, { readOnly: true });
+        try {
+          const rows = db.prepare('SELECT strip_id, active_effect_id FROM strip_state').all();
+          expect(rows).toEqual([{ strip_id: 'mesa', active_effect_id: 'breathing' }]);
+        } finally {
+          db.close();
+        }
+      },
+      { timeout: 5000 },
+    );
+    expect(log.filter((line) => line.startsWith('No se ha podido'))).toEqual([]);
   });
 });

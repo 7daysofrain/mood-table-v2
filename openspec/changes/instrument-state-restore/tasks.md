@@ -109,7 +109,7 @@
   500 ms, y el log de las escrituras lentas), §2.4 (servicio `systemd` + estado guardado) y §2.6 (el
   E2E de arranque tras corte). `prompts.md`: la entrada de esta tarea.
   Verificar: lo que describe el README coincide con lo que hace el motor.
-- [ ] 3.5 **(test en rojo)** Tests del escritor en segundo plano del adaptador SQLite, en
+- [x] 3.5 **(test en rojo)** Tests del escritor en segundo plano del adaptador SQLite, en
   `packages/engine/src/adapters/sqlite-state-store.test.ts`, con un *worker* falso: `save()` vuelve
   sin esperar a la escritura; como mucho hay una en curso, y de los estados que llegan mientras tanto
   solo se escribe el último; una escritura de más de 10 ms deja en el log lo que ha tardado, una más
