@@ -117,7 +117,7 @@
   (`specs/instrument-state`, *Guardar no congela la luz* y *Una escritura lenta queda en el log*;
   `design.md`, decisión 3 revisada, D105).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 3.6 El escritor en segundo plano y su *worker* (`sqlite-writer.worker.ts`, fuera de la
+- [x] 3.6 El escritor en segundo plano y su *worker* (`sqlite-writer.worker.ts`, fuera de la
   cobertura). El guardador del núcleo deja de medir: la medida es del *worker*.
   Verificar: los tests de 3.5 pasan, y los E2E de arranque tras corte siguen en verde; en la Pi, al
   cambiar efectos con la tira física, la luz no se congela aunque el log diga guardados lentos.
