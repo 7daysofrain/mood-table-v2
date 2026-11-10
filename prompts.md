@@ -1976,7 +1976,18 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Añadió que, si el estado guardado no se puede leer, el motor arranque como la primera vez y lo diga en el log: lo pide el requisito de que un estado dañado no impida arrancar, aunque el `tasks.md` no lo nombraba.*
 - *La primera comprobación a mano falló porque el fichero declaraba el scroll, que es reactivo: la respiración es el único efecto de ambiente.*
 
-#### 6.68 Guardar cada cambio del instrumento, agrupando los seguidos (`MOO-130`)
+#### 6.68 Verificar y archivar el change de `MOO-98`
+
+**Prompt 1** (con la #119 integrada):
+
+> Integrado, verify, sync y archive
+
+*Claude Code (`claude-opus-5-5`, 6-nov y 10-nov). La IA comprobó en Linear que `MOO-122`, la única tarea de `MOO-98`, estaba en Done, y la historia cerrada con ella. Después sacó la rama del archivado desde `main`. `/opsx:verify` cotejó con el código y los tests las 8 tareas, los 7 requisitos de las dos specs y las 6 decisiones del diseño, sin problemas críticos, avisos ni sugerencias. Antes de sincronizar, la IA comprobó que los PRs integrados después de escribir el change (#120-#125) no habían tocado `openspec/specs`, para que el sync no pisara nada. Al sincronizar, `effects` ganó los tres requisitos del espectro, y los cuatro modificados sustituyeron a los de `effects` e `instrument-control` sin perder ningún escenario. La IA comprobó que cada bloque quedaba igual que en el delta.*
+
+*Ajustes:*
+- *Los avisos de `openspec validate --specs` por requisitos de más de 500 caracteres son los de siempre: las trazas cuentan como texto. Los 13 specs validan.*
+
+#### 6.69 Guardar cada cambio del instrumento, agrupando los seguidos (`MOO-130`)
 
 **Prompt 1** (tras integrar el humano la PR de `MOO-129`):
 
@@ -1989,7 +2000,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La IA añadió dos casos que el `tasks.md` no nombraba. Si un guardado falla, lo dice en el log y el motor sigue, porque un error en el temporizador habría tirado el proceso. Al pararlo, el guardador no guarda lo pendiente: guardar al apagar es un non-goal del change.*
 - *En el E2E, el color no se puede escribir en hexadecimal: el test usa el que sale de arrastrar el selector, como el de `MOO-96`. En el caso del arrastre, la IA mata el motor nada más acabar el último paso, y comprueba después que el motor seguía el arrastre: esperar antes a confirmarlo podía acercarse a los 500 ms.*
 - *Para ver que el E2E prueba el guardado, la IA subió el retardo a 5 s: los dos casos fallaron, y lo devolvió a 500 ms. Después pasó la suite entera tres veces seguidas, en verde.*
-- *Al añadir esta entrada, la IA vio que `main` tenía dos 6.66: la de `MOO-127` (#124) y la de `MOO-129` (#125), que entró después sin conflicto porque estaban en sitios distintos del fichero. Por el orden en que se integraron, `MOO-129` pasa a 6.67 y esta a 6.68.*
+- *Al añadir esta entrada, la IA vio que `main` tenía dos 6.66: la de `MOO-127` (#124) y la de `MOO-129` (#125), que entró después sin conflicto porque estaban en sitios distintos del fichero. Por el orden en que se integraron, `MOO-129` pasa a 6.67. Después entró con la #128 una 6.67 más, el archivo del change de `MOO-98`, que pasa a 6.68, y esta queda como 6.69.*
 
 **Prompt 2** (con la PR abierta, antes de integrarla):
 
@@ -2015,17 +2026,6 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *No se supo por qué la SD tardó seis veces en los primeros minutos tras arrancar la Pi y ninguna en 56 guardados después. Queda como hipótesis el trabajo de Ext4 en segundo plano tras el arranque, que no explica el guardado de 492 ms de antes del corte.*
 
 ---
-
-#### 6.67 Verificar y archivar el change de `MOO-98`
-
-**Prompt 1** (con la #119 integrada):
-
-> Integrado, verify, sync y archive
-
-*Claude Code (`claude-opus-5-5`, 6-nov y 10-nov). La IA comprobó en Linear que `MOO-122`, la única tarea de `MOO-98`, estaba en Done, y la historia cerrada con ella. Después sacó la rama del archivado desde `main`. `/opsx:verify` cotejó con el código y los tests las 8 tareas, los 7 requisitos de las dos specs y las 6 decisiones del diseño, sin problemas críticos, avisos ni sugerencias. Antes de sincronizar, la IA comprobó que los PRs integrados después de escribir el change (#120-#125) no habían tocado `openspec/specs`, para que el sync no pisara nada. Al sincronizar, `effects` ganó los tres requisitos del espectro, y los cuatro modificados sustituyeron a los de `effects` e `instrument-control` sin perder ningún escenario. La IA comprobó que cada bloque quedaba igual que en el delta.*
-
-*Ajustes:*
-- *Los avisos de `openspec validate --specs` por requisitos de más de 500 caracteres son los de siempre: las trazas cuentan como texto. Los 13 specs validan.*
 
 ### 7. Pull Requests
 
