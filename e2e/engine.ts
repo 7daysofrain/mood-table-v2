@@ -20,6 +20,8 @@ export interface TestEngine {
   start(): Promise<void>;
   /** Para el motor y espera a que termine. */
   stop(): Promise<void>;
+  /** Mata el motor con `SIGKILL`, sin dejarle cerrar nada, como un corte de luz, y espera. */
+  kill(): Promise<void>;
 }
 
 /** Un puerto libre de la máquina: se abre un servidor en el puerto 0 y se cierra. */
@@ -39,18 +41,24 @@ export interface TestEngineOptions {
   effect?: 'breathing' | 'energy';
   /** Varias tiras, una por efecto y en este orden, en lugar de la única de `effect`. */
   effects?: readonly ('breathing' | 'energy')[];
+  /**
+   * Guarda el estado del instrumento en SQLite, en la carpeta de resultados del test, en lugar de en
+   * memoria: para los E2E que reinician el motor y esperan que vuelva como estaba.
+   */
+  persistState?: boolean;
 }
 
 /**
  * Prepara un motor con una tira virtual de 60 LEDs (o una por efecto de `effects`) en un puerto
  * libre, sin arrancarlo, con la fuente de audio y el efecto que pida el test. Su fichero de
  * configuración va en la carpeta de resultados del test, que Playwright vacía en cada ejecución. El
- * estado del instrumento va en memoria.
+ * estado del instrumento va en memoria, salvo con `persistState`.
  */
 export async function createTestEngine({
   audioFile,
   effect = 'breathing',
   effects = [effect],
+  persistState = false,
 }: TestEngineOptions = {}): Promise<TestEngine> {
   const port = await freePort();
   const config = test.info().outputPath('config.json');
@@ -59,8 +67,11 @@ export async function createTestEngine({
     JSON.stringify({
       server: { host: '127.0.0.1', port },
       ...(audioFile ? { audioSource: { type: 'file', path: audioFile } } : {}),
-      // En memoria: los E2E no escriben en `data/` ni se pisan entre ejecuciones.
-      instrumentState: { type: 'memory' },
+      // En memoria, o en la carpeta del test: los E2E no escriben en `data/` ni se pisan entre
+      // ejecuciones.
+      instrumentState: persistState
+        ? { type: 'sqlite', path: test.info().outputPath('instrument-state.db') }
+        : { type: 'memory' },
       strips: effects.map((each, index) => ({
         id: index === 0 ? 'e2e' : `e2e-${index + 1}`,
         name: index === 0 ? 'Tira de los E2E' : `Tira ${index + 1} de los E2E`,
@@ -72,6 +83,16 @@ export async function createTestEngine({
   );
 
   let engine: ChildProcess | undefined;
+
+  /** Manda `signal` al motor, si está vivo, y espera a que termine. */
+  async function end(signal: NodeJS.Signals): Promise<void> {
+    const child = engine;
+    engine = undefined;
+    if (!child || child.exitCode !== null) return;
+    const exited = new Promise((resolve) => child.once('exit', resolve));
+    child.kill(signal);
+    await exited;
+  }
 
   return {
     url: `http://127.0.0.1:${port}`,
@@ -97,13 +118,7 @@ export async function createTestEngine({
       });
     },
 
-    async stop() {
-      const child = engine;
-      engine = undefined;
-      if (!child || child.exitCode !== null) return;
-      const exited = new Promise((resolve) => child.once('exit', resolve));
-      child.kill();
-      await exited;
-    },
+    stop: () => end('SIGTERM'),
+    kill: () => end('SIGKILL'),
   };
 }

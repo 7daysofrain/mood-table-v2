@@ -31,6 +31,8 @@ export default defineConfig({
         '.claude/hooks/validate-ac.ts',
         // E/S real de los adaptadores de hardware: se prueba a mano (README §2.6).
         '**/*.hardware.ts',
+        // El worker que escribe el estado: solo conecta mensajes; su lógica está en el adaptador (D105).
+        'packages/engine/src/adapters/sqlite-writer.worker.ts',
         // E/S de la comprobación de incidencias de Sonar; su lógica está en `sonar-issues.ts`.
         'tooling/ci/check-sonar-issues.ts',
         // Entrada de `pnpm dev`: resuelve la raíz y avisa; la lógica está en `local-config.ts`.

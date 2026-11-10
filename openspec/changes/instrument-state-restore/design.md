@@ -3,7 +3,8 @@
 > Decisiones tomadas con el DJ al explorar `MOO-25` (6-nov), salvo la 7, en su segunda mitad, y la 8,
 > que se proponen aquí. Dos pasan a D# en el commit de este change: **D103** (cómo y cuándo se
 > guarda: decisiones 1-3) y **D104** (sin `schema_version`: decisión 5). Las demás son detalle de este
-> change. D99-D102 los reserva el change `instrument-intensity` (`MOO-97`), aún sin integrar.
+> change. D99-D102 los reserva el change `instrument-intensity` (`MOO-97`), aún sin integrar. La
+> decisión 3 se revisó el 10-nov, tras la prueba en la mesa: **D105** (la escritura, en un *worker*).
 
 ## Context
 
@@ -79,18 +80,35 @@ Alternativas descartadas:
 - **Que el panel marque el último cambio al soltar**: cambia la API y el panel, y no vale para un
   encoder, que no se suelta (E5).
 
-### 3. Escritura síncrona, en el hilo del motor; la lenta, al log
+### 3. La escritura, en un *worker* del adaptador; la lenta, al log (revisada el 10-nov, D105)
 
-`save()` es síncrono y corre en el hilo del bucle. Con el debounce se escribe poco y solo cuando el
-DJ ha dejado de tocar. Si un guardado tarda más de 10 ms (más de medio frame con margen), el motor lo
-dice en el log, con lo que ha tardado: si algún día da tirones, se verá.
+**Primero fue síncrona, en el hilo del bucle** (D103): con el debounce se escribe poco y solo cuando
+el DJ ha dejado de tocar, y si algún día daba tirones, el log lo diría. Se descartó un *worker* por ser
+más piezas para un problema que no se había visto. **La prueba en la mesa del 10-nov lo vio:** al
+cambiar efectos, seis guardados tardaron de 494 a 2.032 ms, y la luz se quedó congelada ese tiempo, de
+forma aleatoria. Lo que tarda la SD en confirmar una escritura no depende del motor, y esta SD además
+tiene errores EXT4.
+
+**Ahora el adaptador SQLite escribe en un *worker thread*:**
+
+- `save()` entrega el estado y vuelve: el puerto no cambia, ni el núcleo, y el bucle no espera nunca a
+  la tarjeta.
+- Como mucho hay una escritura en curso. Si llegan más estados mientras tanto, solo se escribe el
+  último: cada guardado es el estado entero, así que los de en medio no aportan nada.
+- El *worker* sigue esperando a que la SD confirme (`synchronous = FULL`), mide cada escritura y avisa
+  al hilo del motor, que escribe en el log las de más de 10 ms y las que fallan, con su motivo.
+- La apertura (decisión 4), las migraciones y la lectura al arrancar siguen en el hilo del motor: pasan
+  una vez, antes de que haya luz que congelar.
+
+La garantía de E6 no cambia: tras un corte se pierde lo cambiado en los últimos 500 ms, más lo que esté
+escribiéndose en ese momento, igual que con la escritura síncrona.
 
 Alternativas descartadas:
 
-- **Un *worker thread*** que escriba aparte: más piezas para un problema que no se ha visto (decisión
-  del DJ).
 - **`synchronous = NORMAL`**: la transacción no espera al disco, pero tras un corte se puede perder lo
   que Linux no haya escrito aún (hasta ~30 s), y se rompe el margen de 500 ms.
+- **Confiar en una SD nueva**: con una tarjeta sana los picos serían menores, pero también los hay de
+  cientos de ms. Revisar o cambiar la tarjeta va aparte (`MOO-121`).
 
 ### 4. Sin fichero, primer arranque; dañado, se aparta
 
@@ -166,7 +184,8 @@ packages/engine
     state-saver.ts   decisión 2 (temporizador inyectado)
     control.ts       arranca desde un estado y da su foto
   adapters/
-    sqlite-state-store.ts   node:sqlite, migraciones, decisión 4
+    sqlite-state-store.ts   node:sqlite, migraciones, decisión 4; manda los guardados al worker
+    sqlite-writer.worker.ts el worker que escribe (decisión 3)
     memory-state-store.ts   demo y tests
   main.ts            elige el adaptador, restaura, crea el búfer y engancha el guardador
 ```
@@ -174,16 +193,20 @@ packages/engine
 - **Los tipos del estado van en el núcleo, no en `shared`**: solo los usa el motor. La descripción de
   `MOO-26` decía `shared`; no hace falta ensanchar su API.
 - **El puerto es síncrono**: `load()` devuelve el estado guardado (vacío si no hay nada), y
-  `save(estado)` lo escribe entero. Lo que ha pasado al abrir (decisión 4) lo dice la apertura del
+  `save(estado)` lo entrega entero y vuelve; el adaptador SQLite lo escribe en su *worker*
+  (decisión 3). Lo que ha pasado al abrir (decisión 4) lo dice la apertura del
   adaptador SQLite, con el aviso para el log: el puerto no sabe de ficheros.
 - **Las migraciones** son una lista numerada en el adaptador; una tabla de control guarda las
   aplicadas. La 1 crea `strip_state` y `strip_effects` (README §3, sin `schema_version`).
 - **El adaptador SQLite no es `*.hardware.ts`**: se prueba con ficheros temporales, sin hardware.
+  Sus tests escriben en el hilo del test, para leer justo después; el *worker* se prueba aparte, con
+  uno falso y con el de verdad. El fichero del *worker* solo conecta mensajes con el adaptador, así
+  que queda fuera de la cobertura, como las raíces de composición.
 
 ## Risks / Trade-offs
 
-- [Una escritura en una SD lenta retrasa un frame] → se ve en el log (decisión 3); la salida, si
-  hace falta, es un *worker*, solo en el adaptador.
+- [Una escritura en una SD lenta retrasa un frame] → pasó en la mesa (hasta 2 s): la escritura va en
+  un *worker* del adaptador, y el log sigue diciendo las lentas (decisión 3, D105).
 - [La SD de la mesa ya da errores EXT4] → SQLite deja el dato anterior o el nuevo, y si el fichero se
   daña igualmente, el motor arranca (decisión 4). Que el sistema sobreviva es `MOO-121`.
 - [Un `systemctl restart` justo después de un cambio pierde esos 500 ms] → aceptado, como un corte. Si

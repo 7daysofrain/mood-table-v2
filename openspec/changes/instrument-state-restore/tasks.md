@@ -87,27 +87,42 @@
 
 ## 3. MOO-130 · engine
 
-- [ ] 3.1 **(test en rojo)** Tests del guardador en `packages/engine/src/core/state-saver.test.ts`,
+- [x] 3.1 **(test en rojo)** Tests del guardador en `packages/engine/src/core/state-saver.test.ts`,
   con un reloj falso y el adaptador en memoria: un cambio suelto se guarda a los 500 ms y no antes;
   cambios seguidos, uno cada 100 ms, solo se guardan 500 ms después del último; cada guardado lleva
   el estado entero; un guardado de más de 10 ms deja una línea en el log con lo que ha tardado, y uno
   más rápido, ninguna (`specs/instrument-state`, *El estado se guarda cuando el DJ deja de tocar* y
   *Una escritura lenta queda en el log*).
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 3.2 El guardador en `packages/engine/src/core/state-saver.ts`, con el temporizador y el reloj
+- [x] 3.2 El guardador en `packages/engine/src/core/state-saver.ts`, con el temporizador y el reloj
   inyectados (design.md, decisiones 2 y 3), y su montaje en la raíz de composición sobre `watch()`.
   Verificar: los tests de 3.1 pasan; con `pnpm dev`, cambiar el color en el panel y esperar 1 s deja
   ese color en `SELECT * FROM strip_effects;`.
-- [ ] 3.3 E2E de arranque tras corte en `e2e/` (nuevo `restart.spec.ts`), con un motor propio con
+- [x] 3.3 E2E de arranque tras corte en `e2e/` (nuevo `restart.spec.ts`), con un motor propio con
   `instrumentState` en una ruta temporal: el DJ pone la respiración en azul con otro periodo en una
   tira y la energía en otra; pasado 1 s, el motor se mata con `SIGKILL` y se vuelve a arrancar; el
   panel muestra los dos efectos y esos valores, y el visor pinta la respiración en azul. Otro caso:
   el DJ arrastra el periodo y el motor se mata antes de soltar; al volver, el periodo es el de antes
   (`specs/instrument-state`, *Tras reiniciar…* y *El estado se guarda cuando el DJ deja de tocar*).
   Verificar: `pnpm test:e2e` en verde tres veces seguidas.
-- [ ] 3.4 Documentación: README §2.2 (el guardado con su retardo, que ya no es «pequeño» sino de
+- [x] 3.4 Documentación: README §2.2 (el guardado con su retardo, que ya no es «pequeño» sino de
   500 ms, y el log de las escrituras lentas), §2.4 (servicio `systemd` + estado guardado) y §2.6 (el
   E2E de arranque tras corte). `prompts.md`: la entrada de esta tarea.
+  Verificar: lo que describe el README coincide con lo que hace el motor.
+- [x] 3.5 **(test en rojo)** Tests del escritor en segundo plano del adaptador SQLite, en
+  `packages/engine/src/adapters/sqlite-state-store.test.ts`, con un *worker* falso: `save()` vuelve
+  sin esperar a la escritura; como mucho hay una en curso, y de los estados que llegan mientras tanto
+  solo se escribe el último; una escritura de más de 10 ms deja en el log lo que ha tardado, una más
+  rápida nada, y una que falla, su motivo. Con el *worker* de verdad, lo guardado se lee al reabrir
+  (`specs/instrument-state`, *Guardar no congela la luz* y *Una escritura lenta queda en el log*;
+  `design.md`, decisión 3 revisada, D105).
+  Verificar: los tests nuevos fallan; el resto sigue en verde.
+- [x] 3.6 El escritor en segundo plano y su *worker* (`sqlite-writer.worker.ts`, fuera de la
+  cobertura). El guardador del núcleo deja de medir: la medida es del *worker*.
+  Verificar: los tests de 3.5 pasan, y los E2E de arranque tras corte siguen en verde; en la Pi, al
+  cambiar efectos con la tira física, la luz no se congela aunque el log diga guardados lentos.
+- [x] 3.7 Documentación: README §2.2 (el guardado, en un *worker*) y §3, y `prompts.md` (la prueba en
+  la mesa y este cambio, en la entrada de `MOO-130`).
   Verificar: lo que describe el README coincide con lo que hace el motor.
 
 ## Workflow follow-up

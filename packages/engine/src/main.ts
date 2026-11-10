@@ -4,11 +4,11 @@
  * de las tiras físicas, abre y restaura el estado del instrumento, crea desde él el búfer de
  * control, arranca el servidor del panel (que anuncia la fuente, el estado de la tarjeta, las tiras
  * y la intensidad, envía su nivel y la posición del fichero, sirve el fichero y recibe los mandos de
- * la API) y el motor, y da a cada tira sus salidas: el visor siempre (D43) y, a las tiras físicas,
- * también su salida Adalight. Si la configuración no sirve, el fichero de audio no se puede leer o
- * su formato no vale, la tarjeta de sonido o el puerto de una tira física no se pueden abrir, o el
- * servidor no puede escuchar, el motor no arranca: dice qué falla y termina con código 1. El estado
- * del instrumento, en cambio, nunca impide arrancar.
+ * la API), el guardador del estado y el motor, y da a cada tira sus salidas: el visor siempre (D43)
+ * y, a las tiras físicas, también su salida Adalight. Si la configuración no sirve, el fichero de
+ * audio no se puede leer o su formato no vale, la tarjeta de sonido o el puerto de una tira física
+ * no se pueden abrir, o el servidor no puede escuchar, el motor no arranca: dice qué falla y termina
+ * con código 1. El estado del instrumento, en cambio, nunca impide arrancar.
  */
 import { join } from 'node:path';
 
@@ -25,6 +25,7 @@ import { spawnCapture } from './adapters/soundcard.hardware.ts';
 import { type OpenedStateStore, openSqliteStateStore } from './adapters/sqlite-state-store.ts';
 import { createControl } from './core/control.ts';
 import { restore } from './core/restore.ts';
+import { startStateSaver } from './core/state-saver.ts';
 import type { InstrumentState } from './core/state-store.ts';
 import {
   sourceMessage,
@@ -46,7 +47,7 @@ function openInstrumentState(config: InstrumentStateConfig): OpenedStateStore {
   if (config.type === 'memory') {
     return { store: createMemoryStateStore(), close: () => undefined };
   }
-  return openSqliteStateStore(config.path);
+  return openSqliteStateStore(config.path, { log: (line) => console.error(line) });
 }
 
 /**
@@ -139,6 +140,20 @@ async function main(): Promise<string | undefined> {
     instrumentState.close();
     return `No puede escuchar en ${host}:${port} (${(error as Error).message})`;
   }
+
+  // El guardador, sobre los avisos del búfer: guarda el estado entero 500 ms después del último
+  // cambio, venga del mando que venga (decisión 2, D103). El adaptador SQLite lo escribe en un
+  // *worker*, así que la luz no espera a la tarjeta (D105). Después del servidor: antes no llega
+  // ningún cambio.
+  startStateSaver({
+    control,
+    store: instrumentState.store,
+    timer: {
+      set: (callback, ms) => setTimeout(callback, ms),
+      clear: (handle) => clearTimeout(handle as NodeJS.Timeout),
+    },
+    log: (line) => console.error(line),
+  });
 
   console.log(startupMessage(loaded.file, loaded.config, server.url));
   startEngine({

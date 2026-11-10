@@ -175,13 +175,26 @@ volver a los de por defecto solo los de ese efecto. Un efecto que ya no existe s
 - **WHEN** el motor arranca
 - **THEN** la tira respira, con los valores guardados de la respiración si los había
 
+### Requirement: Guardar no congela la luz
+Mientras se guarda el estado del instrumento, el motor MUST seguir pintando cada tira a su ritmo,
+aunque la escritura tarde: la luz SHALL NOT esperar a la tarjeta.
+
+> Traza: prueba en la mesa del 10-nov, con la escritura en el hilo del bucle: algunos guardados
+> tardaron de 0,5 a 2 s y la luz se quedó congelada ese tiempo. Decisión del DJ: escribir en un
+> *worker* (`design.md`, decisión 3 revisada; D105).
+
+#### Scenario: Un guardado que tarda no para la tira
+- **GIVEN** una tira con la respiración
+- **AND** un guardado del estado que tarda 2 s en escribirse
+- **WHEN** el motor guarda
+- **THEN** la tira sigue respirando durante esos 2 s, sin quedarse fija
+
 ### Requirement: Una escritura lenta queda en el log
 Si un guardado del estado tarda más de 10 ms, el motor MUST decirlo en el log, con lo que ha
 tardado. Por debajo de ese tiempo, MUST NOT escribir nada en el log al guardar.
 
-> Traza: *(asumido)*, decisión al explorar `MOO-25` (`design.md`, decisión 3): la escritura puede
-> retrasar un frame, y así se ve si pasa. Los 10 ms: presupuesto de un frame a 60 fps (16,6 ms, A1)
-> con margen.
+> Traza: *(asumido)*, al explorar `MOO-25` (`design.md`, decisión 3). Con el *worker* (D105) ya no
+> retrasa ningún frame, pero dice cómo responde la tarjeta. 10 ms: un frame a 60 fps, con margen.
 
 #### Scenario: Un guardado que tarda (asumido)
 - **GIVEN** un guardado del estado que tarda 25 ms
