@@ -61,7 +61,7 @@
   `packages/engine/src/core/led-response.test.ts`: la tabla da `round(255 · (v/255)²)` para los 256
   valores; 11 da 0 y 12 da 1 (decisión 1).
   Verificar: los tests nuevos fallan porque el módulo no existe.
-- [ ] 2.2 La respuesta del LED en `packages/engine/src/core/led-response.ts`, y la salida Adalight
+- [x] 2.2 La respuesta del LED en `packages/engine/src/core/led-response.ts`, y la salida Adalight
   (`adapters/adalight.ts`) codifica con ella en lugar de con su `gamma` propia.
   Verificar: los tests de 2.1 pasan, y los de `adalight.test.ts` (*Un color tenue sale más tenue
   hacia la tira*) siguen en verde sin tocarlos.
