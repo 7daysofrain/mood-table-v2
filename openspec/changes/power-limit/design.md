@@ -74,10 +74,16 @@ la tira.
 - **Hacia abajo** (`floor`): cada canal queda en `v' ≤ v · √k`, así que `Σ v'² ≤ k · S = B`. Con
   `round`, algún canal podría subir y pasarse.
 - **Suelo de 12:** un canal que valía 12 o más no baja de 12, el valor más bajo que la gamma no
-  apaga. Lo que añade el suelo está acotado: como mucho `mA_canal / 255` (unos 0,08 mA) por canal.
-  Con los 519 canales de la mesa son menos de 41 mA, dentro de los 1,6 A que quedan entre el 80 % y
-  los 8 A. Puede cambiar algo el tono de un LED tenue, el mismo efecto de los colores tenues que
+  apaga. Lo que añade el suelo está acotado: como mucho `mA_canal · (12/255)²` (unos 0,044 mA) por
+  canal. Con los 519 canales de la mesa son unos 23 mA, dentro de los 1,6 A que quedan entre el 80 %
+  y los 8 A. Puede cambiar algo el tono de un LED tenue, el mismo efecto de los colores tenues que
   `MOO-132` deja fuera.
+- **El suelo, solo si la fuente lo aguanta** (decidido con el maker al implementar `MOO-140`): con
+  una fuente muy pequeña, ese margen no cubre el suelo. Con 0,06 A, un frame de 37 canales a 255 y
+  el resto a 12 pedía 68 mA tras el límite. Así que, al arrancar, el límite de cada tira comprueba
+  si el 80 % más todos sus canales a 12 cabe en la fuente (`B + 3 · ledCount · 12² ≤ B / 0,8`). Si
+  no cabe, esa tira baja sin suelo: proteger la fuente va antes (D14). En la mesa hace falta una
+  fuente de unos 0,115 A para tener suelo. No cuesta nada por frame.
 
 *Alternativa descartada:* un suelo por LED que conserve las proporciones entre canales. Mantiene mejor
 el tono, pero sube los otros canales, consume más y es más difícil de razonar.

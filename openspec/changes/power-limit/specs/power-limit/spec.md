@@ -62,17 +62,23 @@ MUST NOT cambiar el frame.
 - **AND** un LED con poco brillo, como (15, 0, 0), sale igual
 
 ### Requirement: El límite no apaga un LED que se veía
-Al bajar un frame, el motor MUST NOT dejar por debajo de 12 un canal que valía 12 o más: es el valor
-más bajo que enciende el LED tras la gamma. Un canal por debajo de 12 ya estaba apagado en la tira.
+Al bajar un frame, el motor MUST NOT dejar por debajo de 12 un canal que valía 12 o más, salvo si la
+fuente de la tira no aguanta ese suelo: entonces baja sin suelo, porque proteger la fuente va antes
+(D14).
 
-> Traza: criterio *Un frame que se pasa tiene LEDs con poco brillo* de `MOO-135`. El suelo por canal:
-> `design.md`, decisión 2.
+> Traza: criterio *Un frame que se pasa tiene LEDs con poco brillo* de `MOO-135`. El suelo y su
+> excepción: `design.md`, decisión 2.
 
 #### Scenario: Un frame que se pasa tiene LEDs con poco brillo
 - **GIVEN** una tira física de 173 LEDs con chip `WS2812B` y una fuente de 8 A
 - **WHEN** el efecto pinta 172 LEDs en blanco y uno a (15, 40, 0)
 - **THEN** los LEDs blancos salen a 200
 - **AND** el LED tenue sale a (12, 31, 0): su rojo se sigue viendo
+
+#### Scenario: Una fuente que no aguanta el suelo
+- **GIVEN** una tira física de 173 LEDs con chip `WS2812B` y una fuente de 0,06 A
+- **WHEN** el efecto pinta 37 canales a 255 y el resto a 12
+- **THEN** el consumo estimado del frame no pasa de los 0,06 A de la fuente
 
 ### Requirement: El límite va después de la intensidad
 El motor SHALL estimar y bajar el frame de cada tira con la intensidad ya aplicada, como último paso
