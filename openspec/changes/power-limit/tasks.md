@@ -65,7 +65,7 @@
   (`adapters/adalight.ts`) codifica con ella en lugar de con su `gamma` propia.
   Verificar: los tests de 2.1 pasan, y los de `adalight.test.ts` (*Un color tenue sale más tenue
   hacia la tira*) siguen en verde sin tocarlos.
-- [ ] 2.3 **(test en rojo)** Tests del límite en `packages/engine/src/core/power-limit.test.ts`, con
+- [x] 2.3 **(test en rojo)** Tests del límite en `packages/engine/src/core/power-limit.test.ts`, con
   una tira de 173 LEDs `WS2812B` (`specs/power-limit`, decisiones 2 y 3):
   - todo a 255 se estima en 10,38 A y todo a 128 en unos 2,6 A;
   - con 8 A, todo blanco sale a 200 y su consumo estimado queda en unos 6,39 A, por debajo de los
@@ -74,12 +74,15 @@
   - con 8 A, 172 LEDs blancos y uno a (15, 40, 0): los blancos a 200 y el tenue a (12, 31, 0);
   - un canal por debajo de 12 baja sin suelo;
   - con 18 A, todo blanco sale sin tocar;
+  - con 0,06 A, 37 canales a 255 y el resto a 12 bajan sin suelo y no pasan de la fuente; la mesa
+    tiene suelo con 0,12 A y no con 0,11 A (decisión 2, el suelo solo si la fuente lo aguanta);
   - para frames al azar, el consumo estimado tras el límite nunca pasa de los amperios de la fuente.
 
   Verificar: los tests nuevos fallan porque el límite no existe.
 - [ ] 2.4 El límite en `packages/engine/src/core/power-limit.ts`: el presupuesto de una tira, calculado
-  una vez desde sus amperios y su chip, y la función que estima y, si hace falta, escala el frame en
-  su sitio, hacia abajo y con el suelo de 12, sin crear nada.
+  una vez desde sus amperios, su chip y sus LEDs (que deciden si tiene suelo), y la función que
+  estima y, si hace falta, escala el frame en su sitio, hacia abajo y con el suelo de 12, sin crear
+  nada.
   Verificar: los tests de 2.3 pasan.
 - [ ] 2.5 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
   salidas en memoria:
