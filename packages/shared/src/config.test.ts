@@ -246,6 +246,95 @@ describe('la salida Adalight de una tira', () => {
   });
 });
 
+describe('el chip y la fuente de una tira física', () => {
+  /** La tira de la mesa con su chip y su fuente de 8 A (specs/engine-config). */
+  const tableOutput = {
+    type: 'adalight',
+    port: '/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0',
+    baudRate: 500000,
+    chip: 'WS2812B',
+    power: { supplyAmps: 8 },
+  };
+  const tableStrip = {
+    id: 'mesa',
+    name: 'Mesa',
+    output: tableOutput,
+    ledCount: 173,
+    effect: 'breathing',
+  };
+
+  /** La salida de la mesa sin uno de sus campos. */
+  function tableOutputWithout(field: keyof typeof tableOutput): Record<string, unknown> {
+    const output: Record<string, unknown> = { ...tableOutput };
+    delete output[field];
+    return output;
+  }
+
+  it('acepta la tira de la mesa con su chip y los amperios de su fuente', () => {
+    const result = parseConfig(text({ strips: [tableStrip] }));
+
+    expect(result.ok && result.config.strips).toEqual([tableStrip]);
+  });
+
+  it('acepta unos amperios con decimales', () => {
+    const output = { ...tableOutput, power: { supplyAmps: 7.5 } };
+
+    expect(parseConfig(text({ strips: [{ ...tableStrip, output }] })).ok).toBe(true);
+  });
+
+  it.each([
+    [tableOutputWithout('chip'), 'la tira «mesa», campo `output.chip`: falta y es obligatorio'],
+    [tableOutputWithout('power'), 'la tira «mesa», campo `output.power`: falta y es obligatorio'],
+    [
+      { ...tableOutput, power: {} },
+      'la tira «mesa», campo `output.power.supplyAmps`: falta y es obligatorio',
+    ],
+    [
+      { ...tableOutput, chip: 'SK6812' },
+      'la tira «mesa», campo `output.chip`: «SK6812» no es un chip que conozca el motor (hay: `WS2812B`)',
+    ],
+    [
+      { ...tableOutput, power: { supplyAmps: 0 } },
+      'la tira «mesa», campo `output.power.supplyAmps`: debe ser mayor que 0',
+    ],
+    [
+      { ...tableOutput, power: { supplyAmps: -8 } },
+      'la tira «mesa», campo `output.power.supplyAmps`: debe ser mayor que 0',
+    ],
+    [
+      { ...tableOutput, power: { supplyAmps: '8' } },
+      'la tira «mesa», campo `output.power.supplyAmps`: debe ser un número',
+    ],
+    [
+      { ...tableOutput, power: { supplyAmps: 0.008 } },
+      'la tira «mesa», campo `output.power.supplyAmps`: 0,008 A no llega a los 0,06 A de un LED ' +
+        '`WS2812B` a todo brillo',
+    ],
+    [
+      { ...tableOutput, power: { supplyAmps: 8, volts: 5 } },
+      'la tira «mesa», campo `output.power.volts`: no existe (¿está bien escrito?)',
+    ],
+  ])('con la salida %j, no arranca: nombra la tira y el campo y dice qué falla', (output, message) => {
+    expect(errorOf(text({ strips: [demoStrip, { ...tableStrip, output }] }))).toBe(message);
+  });
+
+  it('acepta unos amperios justos para un LED a todo brillo', () => {
+    const output = { ...tableOutput, power: { supplyAmps: 0.06 } };
+
+    expect(parseConfig(text({ strips: [{ ...tableStrip, output }] })).ok).toBe(true);
+  });
+
+  it.each([
+    [{ type: 'virtual', chip: 'WS2812B' }, 'la tira «demo», campo `output.chip`: no existe (¿está bien escrito?)'],
+    [
+      { type: 'virtual', power: { supplyAmps: 8 } },
+      'la tira «demo», campo `output.power`: no existe (¿está bien escrito?)',
+    ],
+  ])('con la salida virtual %j, no arranca: el campo no existe', (output, message) => {
+    expect(errorOf(text({ strips: [{ ...demoStrip, output }] }))).toBe(message);
+  });
+});
+
 describe('el efecto de cada tira', () => {
   it('acepta una tira con la respiración', () => {
     const result = parseConfig(text({ strips: [demoStrip] }));

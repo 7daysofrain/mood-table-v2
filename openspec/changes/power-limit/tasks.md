@@ -25,7 +25,7 @@
 
 ## 1. MOO-139 · shared
 
-- [ ] 1.1 **(test en rojo)** Tests del catálogo de chips y de la salida `adalight` en
+- [x] 1.1 **(test en rojo)** Tests del catálogo de chips y de la salida `adalight` en
   `packages/shared/src/config.test.ts` (`specs/engine-config`, *Una tira física declara su chip y la
   fuente que la alimenta*):
   - acepta la tira de la mesa con `"chip": "WS2812B"` y `"power": { "supplyAmps": 8 }`, y también
