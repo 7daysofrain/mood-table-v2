@@ -79,7 +79,7 @@
   - para frames al azar, el consumo estimado tras el límite nunca pasa de los amperios de la fuente.
 
   Verificar: los tests nuevos fallan porque el límite no existe.
-- [ ] 2.4 El límite en `packages/engine/src/core/power-limit.ts`: el presupuesto de una tira, calculado
+- [x] 2.4 El límite en `packages/engine/src/core/power-limit.ts`: el presupuesto de una tira, calculado
   una vez desde sus amperios, su chip y sus LEDs (que deciden si tiene suelo), y la función que
   estima y, si hace falta, escala el frame en su sitio, hacia abajo y con el suelo de 12, sin crear
   nada.
