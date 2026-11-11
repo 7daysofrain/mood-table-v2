@@ -3,8 +3,8 @@
 > Decisiones tomadas con el maker al refinar y explorar `MOO-135` (11-nov): el 80 % de margen, que se
 > estime después de la gamma (1), el suelo por canal (2), sin tope superior (4) y dónde y cómo se
 > declara (5). El resto son propuestas de diseño para revisar aquí. Por tarea: `MOO-139` (shared) 5 ·
-> `MOO-140` (engine) 1 a 4 y 6 · `MOO-141` (firmware) 7. Los D# nuevos empiezan en **D106**, tras la
-> D105 de `MOO-25`; si otra rama coge ese número antes de integrar, se renumeran.
+> `MOO-140` (engine) 1 a 4 y 6 · `MOO-141` (firmware) 7. Los D# nuevos empiezan en **D108**, tras la
+> D107 de S3 (PR #131); si otra rama coge ese número antes de integrar, se renumeran.
 
 ## Context
 
@@ -48,7 +48,7 @@ Motivación y alcance: `proposal.md`. Requisitos: `specs/power-limit`, `specs/en
 
 ## Decisions
 
-### 1. Se estima con la respuesta del LED, que pasa al núcleo (D106)
+### 1. Se estima con la respuesta del LED, que pasa al núcleo (D108)
 
 Un LED consume en proporción a su ciclo de PWM, que es el valor **después** de la gamma. El límite
 estima el consumo de un frame como `mA_canal · Σ (v/255)²`, con `v` el valor de pantalla de cada
@@ -64,7 +64,7 @@ de luz. Además, en los tonos medios recortaría frames que caben.
 Adalight, después de la gamma, que estima igual de bien pero deja al visor sin el recorte y va contra
 D100.
 
-### 2. Se baja en valores de pantalla con `√k`, hacia abajo, con un suelo de 12 por canal (D106)
+### 2. Se baja en valores de pantalla con `√k`, hacia abajo, con un suelo de 12 por canal (D108)
 
 Con `S = Σ v²` (la suma del frame) y `B` el presupuesto en esas mismas unidades (decisión 3), si
 `S > B` el factor de corriente es `k = B / S`. Como la gamma es `v²`, bajar la corriente a `k` es
@@ -104,7 +104,7 @@ Tira «Mesa»: fuente de 8 A, usará como mucho 6,4 A; en blanco total pide 10,3
 No hay tope superior para `supplyAmps`: un valor alto no es un error (una fuente de 18 A con la mesa
 nunca recorta), y un `8000` por error lo delata esta línea («nunca bajará frames»).
 
-### 5. `chip` y `power.supplyAmps` dentro de la salida `adalight`; los chips, en `@moodtable/shared` (D107)
+### 5. `chip` y `power.supplyAmps` dentro de la salida `adalight`; los chips, en `@moodtable/shared` (D109)
 
 ```json
 "output": { "type": "adalight", "port": "…", "baudRate": 500000,

@@ -96,7 +96,7 @@ Fuera también, decidido al explorar el change:
 - **Documentación:**
   - `docs/PRD.md`, en el commit de este change: «Chip de la tira» entra en el glosario (§8), «Límite
     de potencia» se ajusta (el maker declara los amperios de la fuente y el motor usa como mucho el
-    80 %), y Q10 entra en §7 (¿E8 cubre lo que no pasa por el motor?).
+    80 %), y Q11 entra en §7 (¿E8 cubre lo que no pasa por el motor?).
   - `docs/umbrales-para-specs.md`, en el commit de este change: el margen del 80 % en E8.
   - `docs/idea-mood-table.md`: las D# de `design.md`, cada una en la tarea que la implementa.
   - `HARDWARE_SETUP.md` §3 y §4.1, en `MOO-141`: sin tope en el sketch, copiar la cifra de OUTPUT y no

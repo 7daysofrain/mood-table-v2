@@ -14,7 +14,7 @@
 >   física, del que el motor sabe cuánto consume cada LED); *Límite de potencia* se ajusta (el maker
 >   declara los amperios de salida de la fuente y el motor usa como mucho el 80 %); *Tira* deja de
 >   decir que declara el «límite de potencia» y dice que una física declara su chip y su fuente.
-> - `docs/PRD.md` §7: **Q10**, «¿E8 cubre solo lo que pinta el motor o todo lo que llega a la tira (la
+> - `docs/PRD.md` §7: **Q11**, «¿E8 cubre solo lo que pinta el motor o todo lo que llega a la tira (la
 >   SD de la v1 con Hyperion, o lo que pinte el sketch al reiniciarse) una vez quitado el tope del
 >   sketch?», que resuelve el maker.
 > - `docs/umbrales-para-specs.md`, E8: el motor usa como mucho el **80 %** de los amperios declarados
@@ -44,7 +44,7 @@
   `viewer-protocol.test.ts`) declaran los campos nuevos.
   Verificar: los tests de 1.1 pasan, y `pnpm typecheck` y `pnpm test` en verde.
 - [ ] 1.3 Documentación:
-  - **D107** (decisión 5) en `docs/idea-mood-table.md` §10;
+  - **D109** (decisión 5) en `docs/idea-mood-table.md` §10;
   - README §3.2: la tabla de la tira declarada pierde `maxCurrentMa` y `ledMaxMa`, la salida
     `adalight` suma `chip` y `power.supplyAmps` (los amperios de OUTPUT de la etiqueta), y el JSON de
     la mesa los lleva;
@@ -103,7 +103,7 @@
   Verificar: los tests de 2.7 pasan, y con una tira física declarada en el fichero, el log del
   arranque muestra su línea.
 - [ ] 2.9 Documentación:
-  - **D106** (decisiones 1 a 3) en `docs/idea-mood-table.md` §10, y una nota en D96 que apunta a
+  - **D108** (decisiones 1 a 3) en `docs/idea-mood-table.md` §10, y una nota en D96 que apunta a
     ella (la gamma pasa al núcleo, sin borrarla);
   - README §2.1 y §2.2: el plano de tiempo real ya tiene el límite; el bloque *Límite de potencia*
     dice cómo estima (con la respuesta del LED), cuánto usa (el 80 %) y cómo baja el frame (`√k`,

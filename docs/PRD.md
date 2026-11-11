@@ -76,7 +76,7 @@ tiras en un fichero.
 | E3 | **Varios efectos para elegir.** | Se cambia de efecto en caliente, sin que la luz se pare, entre efectos reactivos y de ambiente. Al volver a un efecto, la tira recupera los valores con que lo dejó (decisión del DJ al refinar MOO-96). | MVP |
 | E4 | **Cada tira, su efecto.** | Varias tiras a la vez, cada una con su efecto y sus valores. | MVP (la segunda tira física, *should*) |
 | E5 | **Se controla con el hardware que elijas.** | El mismo instrumento se toca desde el panel web y, en el futuro, desde una pantalla táctil, una Traktor F1 o un mando propio. | MVP: panel · Visión: el resto |
-| E6 | **Autónomo.** | Se enchufa y vuelve como estaba, sin portátil ni internet, incluso tras un corte de luz. | MVP |
+| E6 | **Autónomo.** | Se enchufa y vuelve como estaba, sin portátil ni internet, incluso tras un corte de luz. | MVP (que un corte de luz no estropee la mesa, *should*: S3) |
 | E7 | **Se prueba sin hardware.** | Con un ordenador y un fichero de audio se ve y se oye el instrumento funcionar. | MVP |
 | E8 | **Cuida el hardware.** | Nunca pide más corriente de la que aguanta la fuente declarada. | MVP |
 | E9 | **Fácil de ampliar.** | Añadir un efecto nuevo es escribir una pieza pequeña, sin tocar el resto. | MVP |
@@ -107,6 +107,10 @@ tiras en un fichero.
 - **S2 · Firmware propio.** Como **maker**, quiero conectar las tiras a un microcontrolador barato
   (ESP8266/ESP32) con firmware propio, para usar más LEDs con más fluidez y abrir el camino al WiFi.
   *(E1, E4)*
+- **S3 · Sobrevivir a los cortes de luz.** Como **DJ**, quiero desenchufar la mesa de golpe al terminar
+  la sesión, sin apagarla antes, y que al volver a enchufarla arranque como siempre, sin que se haya
+  estropeado nada ni se haya perdido su configuración, para no tener que traer un portátil a
+  arreglarla. *(E6)*
 
 ## 5. Alcance
 
@@ -120,7 +124,7 @@ tiras en un fichero.
 
 ### 5.2 Should-have
 
-- **S1** Tira de ambiente · **S2** Firmware propio.
+- **S1** Tira de ambiente · **S2** Firmware propio · **S3** Sobrevivir a los cortes de luz.
 
 ### 5.3 Visión (fuera del MVP, por orden de deseo)
 
@@ -179,7 +183,8 @@ tiras en un fichero.
 | Q7 | ¿El instrumento se adapta solo al volumen de la entrada (una señal muy baja o saturada), o eso lo resuelve el DJ con un control de sensibilidad (H2, Q2)? | Decisión del DJ. |
 | Q8 | Si un cambio de efecto o de valor no llega al motor (el motor se ha caído o lo rechaza), ¿qué ve el DJ en el panel? | Decisión del DJ. Mientras tanto, el panel solo marca el efecto que pinta el motor (MOO-94), y al soltar un control este vuelve al valor que pinta el motor (MOO-95). |
 | Q9 | ¿El brillo general de todas las tiras (la intensidad de MOO-97) vuelve tras reiniciar, como el estado del instrumento, o arranca siempre al máximo? | Decisión del DJ. Mientras tanto, no se guarda: MOO-25 guarda el efecto activo y los valores de cada tira, y la intensidad arranca al máximo (MOO-97). |
-| Q10 | Una vez quitado el tope de brillo del sketch (D46), ¿E8 cubre solo lo que pinta el motor o todo lo que llega a la tira, como la SD de la v1 con Hyperion o lo que pinte el sketch al reiniciarse? | Decisión del maker (surgió al refinar MOO-135). |
+| Q10 | Si el motor no llega a arrancar al enchufar la mesa (un fichero de configuración mal escrito, una tarjeta de sonido que falta), ¿cómo lo sabe el DJ sin portátil, y qué muestra la tira mientras tanto? | Decisión del DJ. Mientras tanto, la tira queda apagada y el motivo solo está en el registro del arranque (MOO-131). |
+| Q11 | Una vez quitado el tope de brillo del sketch (D46), ¿E8 cubre solo lo que pinta el motor o todo lo que llega a la tira, como la SD de la v1 con Hyperion o lo que pinte el sketch al reiniciarse? | Decisión del maker (surgió al refinar MOO-135). |
 
 ## 8. Glosario
 
