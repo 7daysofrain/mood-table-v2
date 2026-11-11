@@ -106,7 +106,7 @@
   arrancar.
   Verificar: los tests de 2.7 pasan, y con una tira física declarada en el fichero, el log del
   arranque muestra su línea.
-- [ ] 2.9 Documentación:
+- [x] 2.9 Documentación:
   - **D108** (decisiones 1 a 3) en `docs/idea-mood-table.md` §10, y una nota en D96 que apunta a
     ella (la gamma pasa al núcleo, sin borrarla);
   - README §2.1 y §2.2: el plano de tiempo real ya tiene el límite; el bloque *Límite de potencia*
