@@ -43,7 +43,7 @@
   (`engine.test.ts`, `frame-loop.test.ts`, `restore.test.ts`, `adalight.test.ts`,
   `viewer-protocol.test.ts`) declaran los campos nuevos.
   Verificar: los tests de 1.1 pasan, y `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 1.3 Documentación:
+- [x] 1.3 Documentación:
   - **D109** (decisión 5) en `docs/idea-mood-table.md` §10;
   - README §3.2: la tabla de la tira declarada pierde `maxCurrentMa` y `ledMaxMa`, la salida
     `adalight` suma `chip` y `power.supplyAmps` (los amperios de OUTPUT de la etiqueta), y el JSON de

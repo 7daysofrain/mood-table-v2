@@ -2087,6 +2087,43 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El paso 1.5 pedía `systemctl kill`, que manda SIGTERM. La IA vio que systemd da esa salida por limpia (`Result=success`), así que ni `Restart=on-failure` habría relanzado el motor: la prueba no distinguía. Se repitió con SIGKILL (`Result=signal`, `failed`, sin rearranques) y se corrigió la orden en `tasks.md`.*
 - *En la PR, la IA había atribuido a `MOO-121` el hallazgo de la dirección `127.0.0.1` en el registro. Al revisarlo vio que `MOO-121` es la protección contra cortes de luz (D107), y lo dejó como hallazgo sin historia.*
 
+#### 6.73 Dar a cada tira todo el brillo que aguanta su fuente: refinamiento, estimación, exploración y change (`MOO-135`)
+
+**Prompt 1** (en `/refine-story MOO-135`, el caso feliz del humano):
+
+> Lo que quiero es poder declarar en la configuracion de la tira fisica las características de la fuente de energia para optimizar el uso de la misma pero manteniendo la protección
+
+*Claude Code (`claude-opus-5-5`, 11-nov). La IA preguntó qué datos hacían falta además del amperaje (el humano pensaba en voltaje y amperaje; el voltaje no se usa) y cómo describir el comportamiento. Hoy la única protección es el tope del 25 % del sketch (D46), así que la mesa brilla poco.*
+
+**Prompt 2** (cuando la IA planteó si el maker declara también lo que consume cada LED):
+
+> Vale, vamos de uno en uno mejor, para el punto 1: Declaramos el amperaje. En cuanto el consumo de cada LED, que depende del modelo la verdad es que si que me interesa que sea configurable porque tengo varias tiras aqui en casa que quiero probar. Aqui el tema es si nos mete mucha complejidad en la US. Una opción sería meter los mA como comentas y otra por ejemplo sería meter el modelo y nosotros mantener una tabla interna. Solo aceptariamos los modelos conocidos
+
+*La IA recomendó la tabla: las dos cuestan lo mismo, pero con los mA el maker puede copiar los 20 mA por canal del datasheet en lugar de los 60 por LED, y el límite dejaría pasar el triple. Con la foto de la etiqueta de una tira del humano, la tabla pasó a ir por chip (`WS2812B`) y no por modelo comercial, y entró en el glosario como «Chip de la tira». Solo había un chip, y el humano la quiso igual.*
+
+**Prompt 3** (antes de buscar huecos con `poke-holes`):
+
+> Antes de seguir con los poke holes te quiero mandar unas fotos de unas fuentes que tengo para alimentar los leds
+
+*Las dos etiquetas daban los amperios en A, así que el dato pasó a amperios con decimales (el `maxCurrentMa` del README se cae). Cada etiqueta trae dos corrientes, INPUT y OUTPUT, y el maker puede copiar la que no es. Copiar la de entrada es un error del lado seguro, y cambiar de fuente sin cambiar el fichero es el peligroso; los dos van a `HARDWARE_SETUP.md`, no son criterios. El humano fijó el margen en el 80 %. En `/estimate-story`, el humano y el estimador dieron un 5 los dos (tres áreas y la prueba en la mesa). Al explorar, el humano eligió estimar el consumo después de la gamma (antes, la mesa perdería un 38 % de luz a blanco total), y aceptó el suelo de 12 por canal para no apagar los LEDs tenues, `chip` y `power.supplyAmps` dentro de la salida `adalight` y que no haya tope superior para los amperios. El change `power-limit` trae la capacidad `power-limit`, D108, D109 y Q11.*
+
+*Ajustes:*
+- *Mientras se exploraba, `main` cogió D106, D107 y Q10, así que el change pasó a D108, D109 y Q11 al integrar `main` en la rama.*
+- *La historia decía que el visor no mostraría el recorte hasta `MOO-132`. Con D100 el visor recibe el frame ya bajado: el non-goal se cae.*
+
+#### 6.74 Declarar el amperaje de la fuente y el chip de cada tira física (`MOO-139`)
+
+**Prompt 1:**
+
+> /opsx:apply MOD-135
+
+*Claude Code (`claude-opus-5-5`, 11-nov). La IA leyó «MOD» como `MOO-135`, encontró el change `power-limit` en el worktree de la historia y sacó de su rama la de la tarea, para que el change y los documentos del refinamiento lleguen a `main` con esta PR. Implementó la sección `MOO-139` en TDD, con un commit por paso: el catálogo de chips en `@moodtable/shared`, `chip` y `power.supplyAmps` en la salida `adalight`, y la comprobación aparte de que la fuente llegue a un LED a todo brillo. Los mensajes nombran la tira y el campo, y el de un chip desconocido dice cuáles hay.*
+
+*Ajustes:*
+- *El JSON de la mesa en `HARDWARE_SETUP.md` §7 dejaba de arrancar con este cambio y ninguna tarea lo tocaba: se actualizó aquí, y se comprobó con `parseConfig`, igual que el del README.*
+- *Los tests del catálogo van en su propio fichero, `chips.test.ts`, como los de efectos, y no en `config.test.ts`.*
+- *D108 es de `MOO-140`, así que la ficha salta de D107 a D109 hasta que se integre.*
+
 ---
 
 ### 7. Pull Requests
