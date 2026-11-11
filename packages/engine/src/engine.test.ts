@@ -87,7 +87,13 @@ describe('las salidas de cada tira', () => {
   const table: StripConfig = {
     ...demoStrip,
     id: 'mesa',
-    output: { type: 'adalight', port: '/dev/ttyUSB0', baudRate: 115200 },
+    output: {
+      type: 'adalight',
+      port: '/dev/ttyUSB0',
+      baudRate: 115200,
+      chip: 'WS2812B',
+      power: { supplyAmps: 8 },
+    },
   };
 
   /** Arranca el motor con `strips` durante un segundo y devuelve lo que ha recibido cada salida. */
@@ -211,11 +217,17 @@ describe('las tiras que se anuncian a los paneles', () => {
     });
   });
 
-  it('de una salida Adalight, llevan el tipo y el puerto serie, pero no los baudios', () => {
+  it('de una salida Adalight, llevan el tipo y el puerto serie, pero no los baudios, el chip ni la fuente', () => {
     const table: StripConfig = {
       ...demoStrip,
       id: 'mesa',
-      output: { type: 'adalight', port: '/dev/ttyUSB0', baudRate: 115200 },
+      output: {
+      type: 'adalight',
+      port: '/dev/ttyUSB0',
+      baudRate: 115200,
+      chip: 'WS2812B',
+      power: { supplyAmps: 8 },
+    },
     };
     const control = createControl({ strips: [table], hasAudioSource: false });
 

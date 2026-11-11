@@ -189,7 +189,7 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
    pnpm --filter @moodtable/panel build
    ```
 
-2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Declara también la tarjeta de sonido como fuente de audio (`audioSource`, §3), con la cadena que da `arecord -l` (`HARDWARE_SETUP.md` §7). Para abrir el panel desde la red, declara `"server": { "host": "0.0.0.0" }`: por defecto el motor solo escucha en `127.0.0.1`, la propia Pi. Si algo está mal, el motor no arranca y dice qué campo falla, o qué tarjeta no puede abrir.
+2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color, y el chip de la tira y los amperios de salida (OUTPUT) de su fuente, tal como los pone su etiqueta (§3). Declara también la tarjeta de sonido como fuente de audio (`audioSource`, §3), con la cadena que da `arecord -l` (`HARDWARE_SETUP.md` §7). Para abrir el panel desde la red, declara `"server": { "host": "0.0.0.0" }`: por defecto el motor solo escucha en `127.0.0.1`, la propia Pi. Si algo está mal, el motor no arranca y dice qué campo falla, o qué tarjeta no puede abrir.
 3. Registra el servicio `systemd` del motor (§2.4). Se hace una vez y sobrevive a los reinicios; si la unidad cambia en el repositorio, hay que volver a copiarla. Si el motor está corriendo a mano, páralo antes: el del servicio no podría abrir la tarjeta de sonido.
 
    ```bash
@@ -791,15 +791,15 @@ Se documenta aquí porque es la otra mitad del modelo. Su esquema TypeBox vive e
 | `ledCount` | entero | > 0 | Número de LEDs. El máximo práctico con Adalight es ≈ 200-300 por tira. |
 | `effect` | enum | Obligatorio; un id del catálogo de efectos (`breathing`…) | Efecto con el que arranca la tira (D52). Si hay estado guardado de la tira, manda sobre él, salvo que ya no se pueda pintar (§2.2). |
 | `colorOrder` | enum | RGB, RBG, GRB, GBR, BRG, BGR | Orden de los canales que espera la tira. |
-| `maxCurrentMa` | entero | > 0 | Consumo máximo permitido (mA) según su fuente de alimentación. Lo usa el límite de potencia. |
-| `ledMaxMa` | entero | > 0, por defecto 60 | Consumo de un LED en blanco a máximo brillo (mA), para estimar el consumo de cada frame. |
 
-La salida `adalight` declara dónde está el controlador Adalight y a qué velocidad habla:
+La salida `adalight` declara dónde está el controlador Adalight, a qué velocidad habla, el chip de sus LEDs y la fuente que la alimenta. Lo físico va en la salida física: una tira virtual no puede declarar chip ni fuente (D109).
 
 | Campo | Tipo | Restricciones | Descripción |
 |---|---|---|---|
 | `port` | string | Obligatorio, no vacío | Puerto serie del controlador. Mejor la ruta de `/dev/serial/by-id/`, que no cambia al reiniciar ni al enchufar otro dispositivo serie (`HARDWARE_SETUP.md` §7). El panel la muestra entera. |
 | `baudRate` | entero | Obligatorio; 9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000, 576000, 921600, 1000000, 1500000 o 2000000 | Baudios: los mismos que el sketch del controlador, que el motor no puede comprobar. Solo velocidades estándar, para que una errata (`11520`) no deje arrancar. No salen al panel. |
+| `chip` | enum | Obligatorio; un chip del catálogo (hoy solo `WS2812B`) | Chip de la tira. El motor sabe lo que consume cada canal de ese chip a todo brillo (`WS2812B`: 20 mA) y lo usa para estimar el consumo de cada frame. Se declara el chip y no los miliamperios porque los datasheets mezclan la corriente por canal y por LED. No sale al panel. |
+| `power.supplyAmps` | número | Obligatorio; > 0, con decimales, y al menos lo que pide un LED del chip a todo brillo (0,06 A en una `WS2812B`) | Amperios de **salida** (OUTPUT) que pone la etiqueta de la fuente que alimenta la tira, no los de entrada. Lo usa el límite de potencia. Sin tope superior: la línea del log del arranque delata un valor desproporcionado. No sale al panel. |
 
 La tira de la mesa:
 
@@ -810,7 +810,9 @@ La tira de la mesa:
   "output": {
     "type": "adalight",
     "port": "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0",
-    "baudRate": 500000
+    "baudRate": 500000,
+    "chip": "WS2812B",
+    "power": { "supplyAmps": 8 }
   },
   "ledCount": 173,
   "effect": "breathing"

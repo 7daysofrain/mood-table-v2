@@ -184,6 +184,7 @@ tiras en un fichero.
 | Q8 | Si un cambio de efecto o de valor no llega al motor (el motor se ha caído o lo rechaza), ¿qué ve el DJ en el panel? | Decisión del DJ. Mientras tanto, el panel solo marca el efecto que pinta el motor (MOO-94), y al soltar un control este vuelve al valor que pinta el motor (MOO-95). |
 | Q9 | ¿El brillo general de todas las tiras (la intensidad de MOO-97) vuelve tras reiniciar, como el estado del instrumento, o arranca siempre al máximo? | Decisión del DJ. Mientras tanto, no se guarda: MOO-25 guarda el efecto activo y los valores de cada tira, y la intensidad arranca al máximo (MOO-97). |
 | Q10 | Si el motor no llega a arrancar al enchufar la mesa (un fichero de configuración mal escrito, una tarjeta de sonido que falta), ¿cómo lo sabe el DJ sin portátil, y qué muestra la tira mientras tanto? | Decisión del DJ. Mientras tanto, la tira queda apagada y el motivo solo está en el registro del arranque (MOO-131). |
+| Q11 | Una vez quitado el tope de brillo del sketch (D46), ¿E8 cubre solo lo que pinta el motor o todo lo que llega a la tira, como la SD de la v1 con Hyperion o lo que pinte el sketch al reiniciarse? | Decisión del maker (surgió al refinar MOO-135). |
 
 ## 8. Glosario
 
@@ -192,7 +193,7 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 
 | Término | En código | Definición |
 |---|---|---|
-| **Tira** | `strip` | Tira LED declarada en el fichero de configuración: nombre, salida, nº de LEDs, orden de color y límite de potencia. Existe porque está cableada (o declarada como virtual). |
+| **Tira** | `strip` | Tira LED declarada en el fichero de configuración: nombre, salida, nº de LEDs y orden de color; una física declara además su chip y la fuente que la alimenta. Existe porque está cableada (o declarada como virtual). |
 | **Identificador de la tira** | `id` | Lo que distingue a una tira en el fichero de configuración, y con lo que el motor encuentra su estado guardado (H5). Lo elige el maker. Cambiar el nombre, el nº de LEDs o la salida no la hace otra tira; cambiar el identificador, sí. |
 | **Tira virtual** | `strip` con salida `virtual` | Tira cuya salida es virtual: no tiene hardware y solo se ve en el visor. |
 | **Visor** | `viewer` | Vista del navegador que dibuja **todas** las tiras (físicas y virtuales), LED a LED y en tiempo real. |
@@ -200,6 +201,7 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | **Salida** | `output` | A dónde van los colores de una tira: **Adalight** (serie, tira física) o **virtual**. |
 | **Puerto serie** | `port` | Dispositivo del sistema por el que el motor habla con el controlador Adalight de una tira (p. ej. `/dev/ttyUSB0`). Se declara en la salida. |
 | **Baudios** | `baudRate` | Bits por segundo a los que va el puerto serie; tienen que coincidir con los del sketch. Limitan los frames por segundo que llegan a la tira física. |
+| **Chip de la tira** | `chip` | Modelo del chip de los LEDs de una tira física (p. ej. `WS2812B`). El maker lo copia de la tira, y el motor sabe por él cuánto consume cada LED. Solo se admiten los chips que conoce el motor (MOO-135). |
 | **Controlador Adalight** | *(no aparece en el código)* | El aparato entre la Pi y la tira física que entiende el protocolo Adalight: hoy un Arduino Uno con su sketch (D46), antes el Light Box. |
 | **Fuente de audio** | `audioSource` | De dónde sale la música: **tarjeta de sonido** o **fichero**. Opcional: sin fuente solo funcionan los efectos de ambiente. |
 | **Nivel** | `level` | Cuánta señal llega de la fuente de audio en cada instante, antes de que el motor la ajuste. El panel lo muestra en tiempo real. |
@@ -215,5 +217,5 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | **Fichero de configuración** | `config` | Fichero JSON donde se declaran las tiras (nombre, número de LEDs, salida) y la fuente de audio. Las tiras solo se cambian aquí, no desde el panel (p. ej. `config/demo.json`). |
 | **Panel** | `panel` | Interfaz web desde la que se toca el instrumento: elegir tira y efecto y mover controles. Incluye el visor. En el MVP es el único mando. |
 | **Mando** | `commands` | Cualquier superficie desde la que se toca el instrumento: hoy el panel; en el futuro una pantalla táctil, la F1 o un mando propio. Todos dan las mismas órdenes (cambiar efecto, cambiar un valor, cambiar la intensidad). |
-| **Límite de potencia** | `powerLimit` | Corriente máxima que admite la fuente de una tira. El instrumento baja el brillo de cada frame para no superarla (E8). |
+| **Límite de potencia** | `powerLimit` | Corriente máxima que el instrumento pide a la fuente de una tira física: el 80 % de los amperios de salida que el maker copia de su etiqueta. El motor baja el brillo de cada frame para no superarla (E8, MOO-135). |
 | **Mesa** | *(no aparece en el código)* | La instalación física: la mesa de DJ con su Raspberry, sus tiras y su tarjeta de sonido. Donde se usa el instrumento de verdad. |

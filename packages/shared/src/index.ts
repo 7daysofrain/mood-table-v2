@@ -21,6 +21,16 @@ export {
 } from './commands.ts';
 
 export {
+  CHANNELS_PER_LED,
+  type Chip,
+  CHIP_CATALOG,
+  type ChipId,
+  ChipIdSchema,
+  chipOf,
+  ledAmpsAtFullBrightness,
+} from './chips.ts';
+
+export {
   AudioSourceConfigSchema,
   ConfigFileSchema,
   InstrumentStateConfigSchema,

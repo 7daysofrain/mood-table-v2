@@ -364,7 +364,9 @@ la mesa:
   "output": {
     "type": "adalight",
     "port": "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0",
-    "baudRate": 500000
+    "baudRate": 500000,
+    "chip": "WS2812B",
+    "power": { "supplyAmps": 8 }
   },
   "ledCount": 173,
   "effect": "breathing"
