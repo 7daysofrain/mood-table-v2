@@ -2063,6 +2063,30 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La pregunta nueva del PRD iba a ser la Q9, pero en `main` ya había una Q9 (la intensidad): pasó a Q10, también en Linear.*
 - *El motor escucha en `127.0.0.1` por defecto. El `config/local.json` de la Pi ya declaraba `server.host` en `0.0.0.0`, pero el README no lo pedía: ahora lo pide en los pasos de la mesa.*
 
+#### 6.72 Probar en la mesa, verificar y archivar el change de `MOO-131`
+
+**Prompt 1** (en `/opsx:apply MOO-131`, con los pasos 1.1 a 1.4 ya en la #130 y la IA pidiendo que el humano registrara la unidad con `sudo`):
+
+> puedes lanzarme una consola conectada a la pi?
+
+*Claude Code (`claude-opus-5-5`, 11-nov). La IA abrió una pestaña de terminal con SSH a la Pi, en el clon y en la rama de `MOO-134`. El humano ejecutaba los pasos con `sudo` y apagaba y encendía la mesa. Después de cada arranque, y antes del siguiente apagado (el* journal *de la Pi se borra), la IA leía el registro en tiempo monotónico. Así se vio que el `settle` acababa después del puerto serie y de la tarjeta, y antes de lanzar el motor; que el motor escuchaba antes de que hubiera red; y que, sin la tarjeta, el servicio quedaba en `failed` diciendo cuál no había podido abrir. Para la reactividad, el humano pidió cargar el WAV. La IA señaló que con el WAV el motor deja de leer la tarjeta, que es justo lo que pide el escenario, y el humano metió música por la tarjeta.*
+
+**Prompt 2** (cuando la IA pidió arrancar la mesa sin red, con el cable fuera y el router apagado):
+
+> He desenchufado el cable, pero apagar la wifi no es una opción, como podemos probar esto si no?
+
+*La IA propuso tres salidas: bloquear la WiFi dos minutos con una unidad temporal, usar teclado y monitor, o usar lo que ya había. En los dos arranques anteriores, el motor dijo «panel en `http://127.0.0.1:8080`», y el código solo da esa dirección cuando no hay ninguna IPv4 de red. Es decir, ya escuchaba antes de que llegara la red, y el panel abrió después sin tocarlo. El humano eligió esta última, y en la PR quedó apuntado su límite: un hueco sin red de segundos.*
+
+**Prompt 3** (con la #130 integrada):
+
+> Sí, archívalo
+
+*La IA comprobó en Linear que `MOO-134` estaba en Done y `MOO-133` cancelada, sacó la rama del archivado desde `main` y lanzó `/opsx:verify`: 5 de 5 tareas, 4 requisitos con sus 6 escenarios y las 6 decisiones del diseño. No encontró problemas críticos ni avisos. Dejó dos sugerencias: el escenario sin red solo se probó con un hueco corto, y el diagrama del README §2.4 aún dice «usuario moodtable», que es de la historia de instalación. Archivó con el CLI, y `table-service` quedó como spec nueva con 4 requisitos.*
+
+*Ajustes:*
+- *El paso 1.5 pedía `systemctl kill`, que manda SIGTERM. La IA vio que systemd da esa salida por limpia (`Result=success`), así que ni `Restart=on-failure` habría relanzado el motor: la prueba no distinguía. Se repitió con SIGKILL (`Result=signal`, `failed`, sin rearranques) y se corrigió la orden en `tasks.md`.*
+- *En la PR, la IA había atribuido a `MOO-121` el hallazgo de la dirección `127.0.0.1` en el registro. Al revisarlo vio que `MOO-121` es la protección contra cortes de luz (D107), y lo dejó como hallazgo sin historia.*
+
 ---
 
 ### 7. Pull Requests
