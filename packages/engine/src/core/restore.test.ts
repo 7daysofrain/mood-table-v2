@@ -108,7 +108,13 @@ describe('restaurar el estado del instrumento', () => {
           strip('a', 'breathing', {
             name: 'Cabina',
             ledCount: 60,
-            output: { type: 'adalight', port: '/dev/ttyACM0', baudRate: 500_000 },
+            output: {
+          type: 'adalight',
+          port: '/dev/ttyACM0',
+          baudRate: 500_000,
+          chip: 'WS2812B',
+          power: { supplyAmps: 8 },
+        },
           }),
         ],
         effects: EFFECTS,

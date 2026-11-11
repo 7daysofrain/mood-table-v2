@@ -198,6 +198,8 @@ describe('la salida Adalight de una tira', () => {
     type: 'adalight',
     port: '/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0',
     baudRate: 115200,
+    chip: 'WS2812B',
+    power: { supplyAmps: 8 },
   };
   const tableStrip = { id: 'mesa', name: 'Mesa', output: adalight, ledCount: 173, effect: 'breathing' };
 
@@ -325,7 +327,10 @@ describe('el chip y la fuente de una tira física', () => {
   });
 
   it.each([
-    [{ type: 'virtual', chip: 'WS2812B' }, 'la tira «demo», campo `output.chip`: no existe (¿está bien escrito?)'],
+    [
+      { type: 'virtual', chip: 'WS2812B' },
+      'la tira «demo», campo `output.chip`: no existe (¿está bien escrito?)',
+    ],
     [
       { type: 'virtual', power: { supplyAmps: 8 } },
       'la tira «demo», campo `output.power`: no existe (¿está bien escrito?)',

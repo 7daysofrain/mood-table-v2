@@ -36,7 +36,7 @@
   - el catálogo da 20 mA por canal a la `WS2812B`.
 
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 1.2 El catálogo de chips en `packages/shared/src/chips.ts` (nuevo) y los campos `chip` y `power`
+- [x] 1.2 El catálogo de chips en `packages/shared/src/chips.ts` (nuevo) y los campos `chip` y `power`
   de la salida `adalight` en `packages/shared/src/config.ts`: `supplyAmps` como número mayor que 0, y
   el mínimo de un LED como comprobación aparte en `parseConfig`, como la de la fuente de audio
   (decisión 5). Se exportan desde el punto de entrada del paquete. Las tiras físicas de los tests

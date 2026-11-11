@@ -606,7 +606,13 @@ describe('el bucle con la intensidad', () => {
       const viewer = recorder();
       const config: StripConfig = {
         ...strip('mesa', 4),
-        output: { type: 'adalight', port: '/dev/ttyACM0', baudRate: 500_000 },
+        output: {
+          type: 'adalight',
+          port: '/dev/ttyACM0',
+          baudRate: 500_000,
+          chip: 'WS2812B',
+          power: { supplyAmps: 8 },
+        },
       };
       const loop = createLoop([{ config, outputs: [adalight.output, viewer.output] }], 60);
       loop.control.setIntensity(intensity);

@@ -319,7 +319,13 @@ describe('abrir los puertos de todas las tiras físicas', () => {
     ...virtual,
     id,
     name: id,
-    output: { type: 'adalight' as const, port, baudRate: 115200 as const },
+    output: {
+      type: 'adalight' as const,
+      port,
+      baudRate: 115200 as const,
+      chip: 'WS2812B' as const,
+      power: { supplyAmps: 8 },
+    },
   });
 
   it('da la salida de cada tira física por su id, y ninguna de las virtuales', async () => {

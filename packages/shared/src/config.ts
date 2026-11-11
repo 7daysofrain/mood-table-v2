@@ -6,6 +6,7 @@
 import Type, { type Static } from 'typebox';
 import Value from 'typebox/value';
 
+import { CHIP_CATALOG, ChipIdSchema, chipOf, ledAmpsAtFullBrightness } from './chips.ts';
 import { EffectIdSchema, needsAudioSource } from './effects.ts';
 import { findJsonError } from './json-error.ts';
 import { MAX_STRIPS } from './viewer-protocol.ts';
@@ -32,8 +33,17 @@ const BaudRateSchema = Type.Unsafe<(typeof BAUD_RATES)[number]>(
 );
 
 /**
+ * La fuente que alimenta una tira física: los amperios de salida (OUTPUT) de su etiqueta, con
+ * decimales. Es un objeto para dejar sitio a lo que venga, como una fuente compartida (decisión 5 del
+ * change power-limit). Sin tope superior: un valor alto no es un error en sí (decisión 4).
+ */
+const PowerSchema = Type.Object({ supplyAmps: Type.Number({ exclusiveMinimum: 0 }) }, CLOSED);
+
+/**
  * Salida de una tira, discriminada por `type`: `virtual`, solo el visor, o `adalight`, la tira física
- * en un puerto serie (`port`, mejor la ruta de `/dev/serial/by-id/`) a unos baudios.
+ * en un puerto serie (`port`, mejor la ruta de `/dev/serial/by-id/`) a unos baudios, con el chip de
+ * sus LEDs y la fuente que la alimenta. Lo físico va en la salida física: así una tira virtual no
+ * puede declarar fuente sin validarlo a mano (decisión 5 del change power-limit).
  */
 const OutputSchema = Type.Union([
   Type.Object({ type: Type.Literal('virtual') }, CLOSED),
@@ -42,6 +52,8 @@ const OutputSchema = Type.Union([
       type: Type.Literal('adalight'),
       port: Type.String({ minLength: 1 }),
       baudRate: BaudRateSchema,
+      chip: ChipIdSchema,
+      power: PowerSchema,
     },
     CLOSED,
   ),
@@ -181,7 +193,27 @@ export function parseConfig(text: string): ConfigResult {
     );
   }
 
+  // El mínimo depende del chip, así que el esquema no lo puede expresar (decisión 5 del change
+  // power-limit): una fuente que no llega a un LED solo puede ser una errata, como `0.008` por `8`.
+  const starved = config.strips.find(
+    (strip) =>
+      strip.output.type === 'adalight' &&
+      strip.output.power.supplyAmps < ledAmpsAtFullBrightness(chipOf(strip.output.chip)),
+  );
+  if (starved?.output.type === 'adalight') {
+    const { chip, power } = starved.output;
+    return fail(
+      `la tira «${starved.id}», campo \`output.power.supplyAmps\`: ${amps(power.supplyAmps)} A no ` +
+        `llega a los ${amps(ledAmpsAtFullBrightness(chipOf(chip)))} A de un LED \`${chip}\` a todo brillo`,
+    );
+  }
+
   return { ok: true, config };
+}
+
+/** Los amperios como los escribe el maker en español: `0,008`. */
+function amps(value: number): string {
+  return value.toLocaleString('es-ES', { maximumFractionDigits: 6 });
 }
 
 function fail(error: string): ConfigResult {
@@ -319,7 +351,10 @@ function describeError(
  * Los valores admitidos salen de los errores, uno por literal, pero TypeBox da como mucho 8 errores
  * (`maxErrors`, un ajuste global que comparte con Fastify): las listas más largas se toman del esquema.
  */
-const LISTED_VALUES: Partial<Record<string, readonly unknown[]>> = { 'output.baudRate': BAUD_RATES };
+const LISTED_VALUES: Partial<Record<string, readonly unknown[]>> = {
+  'output.baudRate': BAUD_RATES,
+  'output.chip': CHIP_CATALOG.map((chip) => chip.id),
+};
 
 const TYPE_NAMES: Record<string, string> = {
   array: 'una lista',
@@ -371,6 +406,8 @@ function describeProblem(
       return `debe ser ${TYPE_NAMES[String(params.type)] ?? String(params.type)}`;
     case 'minimum':
       return `debe ser ${String(params.limit)} o más`;
+    case 'exclusiveMinimum':
+      return `debe ser mayor que ${String(params.limit)}`;
     case 'maximum':
       return `debe ser ${String(params.limit)} o menos`;
     case 'maxItems':
@@ -382,6 +419,9 @@ function describeProblem(
       const value = quoted(String(received));
       if (field === 'effect') {
         return `${value} no es un efecto (hay: ${allowed.map(asCode).join(', ')})`;
+      }
+      if (field === 'output.chip') {
+        return `${value} no es un chip que conozca el motor (hay: ${allowed.map(asCode).join(', ')})`;
       }
       return `${value} no es un valor válido (se admite ${orList(allowed.map(quoted))})`;
     }
