@@ -180,9 +180,24 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 
 > **Montaje del hardware:** el cableado de la tira, su alimentación, el controlador Adalight (un Arduino con el sketch Adalight; el Light Box de la mesa se averió) y la tarjeta de sonido están paso a paso en [`HARDWARE_SETUP.md`](HARDWARE_SETUP.md), en la raíz del repositorio, con las comprobaciones con polímetro y cómo diagnosticar una tira que no enciende. Los pasos siguientes dan por hecho que el hardware ya está montado.
 
-1. En la Pi, instala `git` (Raspberry Pi OS Lite no lo trae: `sudo apt install -y git`), clona el repositorio y ejecuta `sudo deploy/install.sh`. Crea el usuario `moodtable`, instala Node.js y deja el motor como servicio `systemd` (§2.4).
-2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Declara también la tarjeta de sonido como fuente de audio (`audioSource`, §3), con la cadena que da `arecord -l` (`HARDWARE_SETUP.md` §7). Si algo está mal, el motor no arranca y dice qué campo falla, o qué tarjeta no puede abrir.
-3. `sudo systemctl start moodtable`.
+1. En la Pi, instala a mano lo que hace falta (`deploy/install.sh` llegará con la historia de instalación): `git` (Raspberry Pi OS Lite no lo trae: `sudo apt install -y git`), Node.js 24.15 o posterior de la serie 24 en `/usr/bin/node` (el paquete de NodeSource) y pnpm (`sudo corepack enable`). Después, como el usuario `pi`, clona el repositorio en `/home/pi/mood-table-v2`, la ruta que espera el servicio, instala las dependencias y construye el panel:
+
+   ```bash
+   git clone https://github.com/7daysofrain/mood-table-v2.git /home/pi/mood-table-v2
+   cd /home/pi/mood-table-v2
+   pnpm install
+   pnpm --filter @moodtable/panel build
+   ```
+
+2. Copia `deploy/config/mesa.example.json` a `config/local.json` (en la raíz del repositorio) y declara tus tiras (**H4**): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color y límites de potencia de tu fuente. Declara también la tarjeta de sonido como fuente de audio (`audioSource`, §3), con la cadena que da `arecord -l` (`HARDWARE_SETUP.md` §7). Para abrir el panel desde la red, declara `"server": { "host": "0.0.0.0" }`: por defecto el motor solo escucha en `127.0.0.1`, la propia Pi. Si algo está mal, el motor no arranca y dice qué campo falla, o qué tarjeta no puede abrir.
+3. Registra el servicio `systemd` del motor (§2.4). Se hace una vez y sobrevive a los reinicios; si la unidad cambia en el repositorio, hay que volver a copiarla. Si el motor está corriendo a mano, páralo antes: el del servicio no podría abrir la tarjeta de sonido.
+
+   ```bash
+   sudo cp deploy/moodtable.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now moodtable
+   ```
+
 4. Desde cualquier dispositivo de la red local, abre `http://<ip-de-la-pi>:8080`. Lo que ves en el visor lo pinta la tira real (**H3**).
 5. Desenchufa la Pi y vuelve a enchufarla: arranca sola y vuelve al último estado (**H5**).
 
@@ -335,7 +350,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 - **Cambiar el hardware exige reiniciar.** La configuración de las tiras se lee al arrancar. Es aceptable en un aparato que se cablea una vez.
 - **Sin clave foránea hacia las tiras.** Como las tiras viven en el fichero, la base de datos no puede apuntar a ellas. Al arrancar, el motor **concilia** el estado guardado con las tiras del fichero, por su `id`: las nuevas arrancan como la primera vez y el estado de las que ya no se declaran se conserva, sin usarse (§3).
 - **Montaje manual.** Sin contenedor, `main.ts` crece con cada adaptador nuevo. Aceptable con el número de piezas previsto.
-- **Proceso único = punto único de fallo.** Si el proceso cae, se apaga todo. `systemd` lo reinicia y vuelve al último estado guardado.
+- **Proceso único = punto único de fallo.** Si el proceso cae, se apaga todo, y `systemd` **no** lo reinicia: el DJ apaga y enciende la mesa, y vuelve al último estado guardado (D106).
 
 ### **2.2. Descripción de componentes principales:**
 
@@ -553,7 +568,7 @@ flowchart LR
 
 1. **Integración continua (en cada PR).** GitHub Actions ejecuta lint (incluida la regla "el núcleo no importa de los adaptadores", §2.3), comprobación de tipos, tests unitarios y de integración, el E2E con Playwright (§2.6) y el análisis de SonarQube Cloud, con una comprobación propia que falla si el PR añade incidencias nuevas (el *quality gate* gratuito no las cuenta). Además, Codex revisa cada PR (D62) y no se integra con hilos de revisión sin resolver. Si algo falla o no se supera el *quality gate*, el PR no se integra. Los PR van contra `main`; la rama de cada entrega es una foto de `main` (D41).
 2. **Release (al integrar en `main`).** Se construye el panel (build estático de Vite) y el motor, y se publica un paquete versionado como release de GitHub.
-3. **Instalación inicial (una vez por máquina).** `deploy/install.sh` es idempotente: crea el usuario de sistema `moodtable` (en la Pi, con el grupo `dialout` para los puertos serie), instala Node.js LTS, copia el fichero de configuración del entorno e instala la unidad `systemd`. En la demo instala además Caddy.
+3. **Instalación inicial (una vez por máquina).** Llegará con la historia de instalación; hasta entonces, la mesa se instala a mano y se registra su servicio (§1.4). `deploy/install.sh` será idempotente: crea el usuario de sistema `moodtable` (en la Pi, con el grupo `dialout` para los puertos serie), instala Node.js LTS, copia el fichero de configuración del entorno e instala la unidad `systemd`. En la demo instala además Caddy.
 4. **Despliegue continuo de la demo (al integrar en `main`).** Tras publicar la release, el mismo workflow de GitHub Actions la despliega en la EC2. Como Actions corre en servidores de GitHub, llega a la máquina por **AWS Systems Manager** (SSM), con un rol temporal (OIDC): no hay claves de AWS guardadas en GitHub ni puerto SSH abierto. Lo que ejecuta dentro de la máquina es `deploy/update.sh <versión>`.
 5. **Despliegue de la mesa (manual).** Se lanza el **mismo** `deploy/update.sh` desde la red local. GitHub no puede llegar a la Pi, y es preferible no actualizar el instrumento en mitad de una sesión.
 
@@ -561,7 +576,7 @@ flowchart LR
 
 **Por qué los pasos viven en un script y no en el YAML del workflow.** GitHub Actions **decide y lanza** el despliegue; el script es **lo que se hace dentro de la máquina**. Tenerlo en un script da un único procedimiento para la mesa y la demo (en el YAML habría dos versiones que acabarían divergiendo), se puede probar sin GitHub en la Pi de desarrollo y deja el workflow corto y legible: construir, publicar y pedir por SSM que se ejecute `update.sh`.
 
-**Servicio `systemd`.** Arranca el motor al encender la máquina, lo reinicia si cae (`Restart=on-failure`) y le pasa la ruta del fichero de configuración. Junto con el guardado del estado en SQLite, es lo que permite que la mesa "vuelva como estaba" (H5) tras un corte de luz. El estado va, si el fichero de configuración no dice otra cosa (`instrumentState`, §3), en `data/instrument-state.db` dentro del repositorio, así que el usuario del servicio tiene que poder escribir ahí. Si no puede, el motor arranca igual, sin guardar, y lo dice en el log. El servicio aún no existe: es `MOO-131`; hasta entonces el motor se arranca a mano, y vuelve igual con el estado guardado.
+**Servicio `systemd`** (`deploy/moodtable.service`, D106). Arranca el motor al encender la máquina, como el usuario `pi`, desde el clon de `/home/pi/mood-table-v2` y con su `config/local.json`. Antes de lanzarlo espera a que `udev` termine con los dispositivos enchufados al encender (`udevadm settle`), para que el puerto serie del controlador Adalight y la tarjeta de sonido ya estén cuando el motor los abre; si la espera se agota, lo lanza igualmente. No espera a la red: las tiras pintan aunque no la haya, y como la mesa escucha en `0.0.0.0`, el panel se abre en cuanto llega. **No lo reinicia** si termina o se cae: queda en `failed`, con el motivo en el registro (`journalctl -u moodtable -b`), y el DJ lo recupera apagando y encendiendo la mesa. Junto con el guardado del estado en SQLite, es lo que permite que la mesa "vuelva como estaba" (H5) tras un corte de luz. El estado va, si el fichero de configuración no dice otra cosa (`instrumentState`, §3), en `data/instrument-state.db` dentro del repositorio, así que el usuario del servicio tiene que poder escribir ahí. Si no puede, el motor arranca igual, sin guardar, y lo dice en el log.
 
 #### Detalles de la demo pública
 
@@ -615,7 +630,7 @@ La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la 
 
 - **Sin autenticación, por decisión explícita.** Es una red doméstica de confianza, el sistema no guarda datos personales y el peor caso es que alguien de la casa cambie las luces. Queda fuera del MVP.
 - **La API no puede tocar el hardware.** Las tiras (puertos, número de LEDs, límites de potencia) se declaran en el fichero de configuración, no en la base de datos (§3). Desde la red solo se puede cambiar el efecto y sus parámetros, nunca a qué puerto se escribe ni cuánta corriente se permite.
-- **El proceso no corre como root.** Se ejecuta con un usuario propio que solo tiene acceso a los puertos serie (grupo `dialout`). Es una de las razones para descartar la conexión por GPIO, que exige root.
+- **El proceso no corre como root.** Es una de las razones para descartar la conexión por GPIO, que exige root. Por ahora se ejecuta como `pi`, el usuario con el que está instalada la mesa, que tiene los grupos de los puertos serie (`dialout`) y de la tarjeta de sonido (`audio`). **Sacrificio:** `pi` también puede usar `sudo`, así que quien comprometiera el motor desde la red local podría hacerse root. Se asume por la red de confianza y sin datos personales, hasta la historia de instalación, que trae un usuario propio con solo esos permisos (D106).
 
 #### En la demo pública (internet)
 

@@ -2039,6 +2039,30 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Antes de sincronizar, la IA comparó el requisito modificado de `effects` con su spec principal. Vio que el delta quitaba la frase «el fichero no vuelve a mandar hasta que el motor se reinicia», que estaba desde la #86. Comprobó que no la había añadido otro change después y que quitarla era lo correcto: con el estado guardado, tras reiniciar tampoco manda el fichero si hay estado de esa tira. Archivó con el CLI: `instrument-state` como spec nueva, con 9 requisitos; `engine-config`, 2 nuevos; y `effects`, 1 modificado.*
 
+#### 6.71 Enchufar la mesa y que el instrumento arranque solo: refinamiento, estimación, exploración y change (`MOO-131`)
+
+**Prompt 1** (en `/refine-story MOO-131`, el caso feliz del humano):
+
+> Quiero que al arrancar el instrumento empieze a funcionar automáticamente sin que tenga que hacer nada mas que enchufarlo
+
+*Claude Code (`claude-opus-5-5`, 10 y 11-nov). La IA lo tradujo a GIVEN/WHEN/THEN, y `poke-holes` buscó huecos. Ante el motor colgado, el humano dijo que lo recuperaría apagando y encendiendo, porque «me parece mas sencillo apagar y encender que introducir la complejidad de un rearranque automatico»: sin rearranque automático, aunque el README prometía `Restart=on-failure`. De las tareas salieron una de motor (`MOO-133`, esperar a la tarjeta de sonido) y una de infra (`MOO-134`). En `/estimate-story`, el humano dio un 2 («Es añadir un script de arranque») y el estimador, un 5, porque contaba la tarea de motor; acordaron un 3.*
+
+**Prompt 2** (en `/opsx:explore`, cuando la IA planteaba cómo avisaría el motor de una tarjeta de sonido que falta al arrancar, si con `MOO-133` arrancaba sin ella y la esperaba):
+
+> Yo es que quitaría el requerimiento, la tarjeta de sonido, si está conectada, siempre se va a inicializar mucho antes que la aplicación, durante el boot del sistema. Me parece que no aporta nada esta verificación y nos estropea la que ya teniamos para la mala configuracion
+
+*La IA le dio la razón: conectada, la tarjeta se reconoce mucho antes de que arranque el servicio, y esperarla quitaba el error claro de una configuración mal escrita. Señaló el precio (con la tarjeta rota, la mesa queda a oscuras, y cómo lo sabe el DJ pasó a ser una pregunta del PRD) y propuso ordenar el servicio tras la tarjeta y el puerto serie, por si alguna llegaba tarde. Se canceló `MOO-133`, la historia quedó solo de infra y se reestimó a 2. Antes, a propuesta de la IA, arrancar sin el controlador Adalight había salido a `MOO-112`. Al diseñar, la IA midió un arranque de la Pi: el puerto serie a los 38,6 s, la tarjeta a los 39,5 s y el punto desde el que arranca un servicio, a los 43,3 s. Como es lo medido y no una garantía, y sin rearranque perder la carrera deja la mesa a oscuras, el servicio espera antes con `udevadm settle`.*
+
+**Prompt 3** (en `/opsx:propose`, cuando la IA preguntó con qué usuario correría el servicio que dejaría instalado `deploy/install.sh`):
+
+> antes de esto, hay una cosa que no entiendo, hablas de install.sh, pero yo entiendo que esto es un rearrancar, que la aplicacion ya está instalada. Es decir, una cosa es el proceso de instalación, que solo se hace una vez y sobrevive a reinicios y otro es el autoarranque de la aplicacion
+
+*La IA le dio la razón: el change mezclaba dos historias. Lo dejó en una unidad de `systemd` que lanza el motor como `pi` desde el clon ya instalado, más el paso único de registrarla, y la instalación completa quedó fuera, para una historia que el humano creó después con `/create-story`. `MOO-134` se retituló. El change `table-autostart` trae la capacidad `table-service`, la D106 y la Q10 del PRD (cómo se entera el DJ, sin portátil, de que el motor no arrancó).*
+
+*Ajustes:*
+- *La pregunta nueva del PRD iba a ser la Q9, pero en `main` ya había una Q9 (la intensidad): pasó a Q10, también en Linear.*
+- *El motor escucha en `127.0.0.1` por defecto. El `config/local.json` de la Pi ya declaraba `server.host` en `0.0.0.0`, pero el README no lo pedía: ahora lo pide en los pasos de la mesa.*
+
 ---
 
 ### 7. Pull Requests

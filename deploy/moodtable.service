@@ -1,0 +1,31 @@
+# Arranca el motor de la mesa al encender la Pi (D106, change `table-autostart`).
+# Se registra una vez, copiándola (README §1.4):
+#   sudo cp deploy/moodtable.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now moodtable
+# Si cambia aquí, hay que volver a copiarla. El registro: journalctl -u moodtable -b
+
+[Unit]
+Description=Mood Table: motor del instrumento
+# Sin After= ni Wants= de la red: las tiras pintan aunque no la haya, y el panel se abre en cuanto
+# llega porque la mesa escucha en 0.0.0.0 (server.host en config/local.json).
+
+[Service]
+Type=simple
+# Como pi, desde el clon instalado a mano: así está hoy la mesa. El usuario propio y las rutas
+# generadas son de la historia de instalación.
+User=pi
+WorkingDirectory=/home/pi/mood-table-v2
+# Espera a que udev termine con los dispositivos enchufados al encender: así el puerto serie del
+# controlador Adalight y la tarjeta de sonido ya tienen driver cuando el motor los abre.
+# El prefijo - hace que, si la espera se agota, el motor arranque igualmente y, si le falta algo,
+# falle diciendo qué no ha podido abrir.
+ExecStartPre=-/usr/bin/udevadm settle --timeout=30
+# Node ejecuta el TypeScript directamente; la configuración es config/local.json, la de por defecto.
+ExecStart=/usr/bin/node packages/engine/src/main.ts
+# Es el valor por defecto, pero se escribe para que se vea: si el motor termina o falla, se queda
+# parado. El DJ lo recupera apagando y encendiendo la mesa.
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
