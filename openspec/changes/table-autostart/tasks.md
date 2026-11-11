@@ -22,7 +22,7 @@
     `packages/engine/src/main.ts` con `/usr/bin/node`.
 
   Verificar: el test nuevo falla porque la unidad no existe, y el resto sigue en verde.
-- [ ] 1.2 `deploy/moodtable.service` según las decisiones 1 a 4 de `design.md`, con un comentario
+- [x] 1.2 `deploy/moodtable.service` según las decisiones 1 a 4 de `design.md`, con un comentario
   por cada línea que no se explica sola: por qué el `settle` y su `-`, por qué `Restart=no` y por qué
   no espera a la red.
   Verificar: el test de 1.1 pasa, y `pnpm lint` y `pnpm typecheck` van en verde.
