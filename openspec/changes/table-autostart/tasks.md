@@ -46,7 +46,7 @@
   Verificar: `grep -n "on-failure" readme.md` no devuelve nada; las tres órdenes de registro del
   README coinciden con las de la decisión 6; ningún término nuevo pide entrada en el glosario del PRD
   (§8).
-- [ ] 1.4 La **D106** en `docs/idea-mood-table.md`, con el texto que propone `design.md` («Nueva
+- [x] 1.4 La **D106** en `docs/idea-mood-table.md`, con el texto que propone `design.md` («Nueva
   D#»), su origen (`MOO-131`, change `table-autostart`) y lo descartado (decisiones 1 a 4). Se
   apunta en `prompts.md` el hito del change (formato de `course.md` §5).
   Verificar: la D106 está en la tabla de decisiones después de la D105 y no renumera ninguna.
