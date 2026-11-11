@@ -92,7 +92,7 @@
   - una tira virtual en blanco total sale a 255.
 
   Verificar: los tests nuevos fallan porque el bucle no aplica el límite.
-- [ ] 2.6 `LoopStrip` gana el límite opcional de la tira; el bucle lo aplica después de la
+- [x] 2.6 `LoopStrip` gana el límite opcional de la tira; el bucle lo aplica después de la
   intensidad, y su comentario fija el orden sin el «todavía no existe». La raíz de composición
   (`engine.ts`) construye el límite de cada tira física desde su configuración y el catálogo
   (decisión 6).

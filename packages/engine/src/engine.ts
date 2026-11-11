@@ -5,12 +5,13 @@
  */
 import { basename } from 'node:path';
 
-import type {
-  Config,
-  SourceMessage,
-  StripConfig,
-  StripsMessage,
-  StripState,
+import {
+  chipOf,
+  type Config,
+  type SourceMessage,
+  type StripConfig,
+  type StripsMessage,
+  type StripState,
 } from '@moodtable/shared';
 
 import { startTicker, type Ticker } from './adapters/ticker.ts';
@@ -22,6 +23,7 @@ import {
   type LightOutput,
   type PositionOutput,
 } from './core/frame-loop.ts';
+import { createPowerLimit, type PowerLimit } from './core/power-limit.ts';
 
 export interface EngineOptions {
   config: Config;
@@ -67,7 +69,11 @@ export function startEngine({
   clock,
 }: EngineOptions): Ticker {
   const loop = createFrameLoop(
-    config.strips.map((strip, index) => ({ config: strip, outputs: createOutputs(strip, index) })),
+    config.strips.map((strip, index) => ({
+      config: strip,
+      outputs: createOutputs(strip, index),
+      powerLimit: stripPowerLimit(strip),
+    })),
     control,
     config.fps,
     { audioSource, levelOutputs, positionOutputs },
@@ -79,6 +85,15 @@ export function startEngine({
     },
     clock,
   );
+}
+
+/**
+ * El límite de potencia de una tira física, desde su fuente, su chip y sus LEDs (decisión 6 del
+ * change power-limit). Una tira virtual no tiene: no tiene fuente.
+ */
+export function stripPowerLimit({ output, ledCount }: StripConfig): PowerLimit | undefined {
+  if (output.type !== 'adalight') return undefined;
+  return createPowerLimit(output.power.supplyAmps, chipOf(output.chip), ledCount);
 }
 
 /**

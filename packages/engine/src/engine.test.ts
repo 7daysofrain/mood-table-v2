@@ -1,15 +1,17 @@
-import type { Config, StripConfig } from '@moodtable/shared';
+import { chipOf, type Config, type StripConfig } from '@moodtable/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MemoryOutput } from './adapters/memory-output.ts';
 import { createControl } from './core/control.ts';
 import { breathing } from './core/effects/breathing.ts';
 import { defaultParams } from './core/effects/effect.ts';
+import { estimateAmps } from './core/power-limit.ts';
 import {
   sourceMessage,
   startEngine,
   startupMessage,
   stripOutputs,
+  stripPowerLimit,
   stripsMessage,
 } from './engine.ts';
 
@@ -127,6 +129,34 @@ describe('las salidas de cada tira', () => {
 
     expect(outputs(demoStrip, 0)).toHaveLength(1);
     expect(outputs(table, 1)).toHaveLength(2);
+  });
+
+  it('una tira física tiene el límite de su fuente; una virtual, ninguno', () => {
+    expect(stripPowerLimit(table)).toMatchObject({ maxAmps: 6.4, floor: 12 });
+    expect(stripPowerLimit(demoStrip)).toBeUndefined();
+  });
+
+  it('el bucle aplica el límite de la tira física: con 0,06 A, ningún frame pasa de la fuente', () => {
+    const tiny: StripConfig = {
+      ...table,
+      output: {
+        type: 'adalight',
+        port: '/dev/ttyUSB0',
+        baudRate: 115200,
+        chip: 'WS2812B',
+        power: { supplyAmps: 0.06 },
+      },
+    };
+    const adalight = new MemoryOutput();
+
+    const { viewers } = runWith([tiny, demoStrip], new Map([['mesa', adalight]]));
+
+    const amps = (frames: MemoryOutput['frames']) =>
+      Math.max(...frames.map(({ colors }) => estimateAmps(colors, chipOf('WS2812B'))));
+    // La misma respiración sin límite, en la tira virtual, pide más de lo que da la fuente.
+    expect(amps(viewers[1]?.frames ?? [])).toBeGreaterThan(0.06);
+    expect(amps(adalight.frames)).toBeLessThanOrEqual(0.06);
+    expect(adalight.frames).toEqual(viewers[0]?.frames);
   });
 
   it('la salida Adalight recibe el frame de cada pulso aunque no haya ningún panel', () => {
