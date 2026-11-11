@@ -1,4 +1,4 @@
-import type { EffectId, StripConfig } from '@moodtable/shared';
+import { chipOf, type EffectId, type StripConfig } from '@moodtable/shared';
 import Type from 'typebox';
 import { describe, expect, it } from 'vitest';
 
@@ -18,6 +18,7 @@ import {
   type PositionOutput,
   type Tick,
 } from './frame-loop.ts';
+import { createPowerLimit } from './power-limit.ts';
 
 interface LoopOptions extends FrameLoopOptions {
   /** Los efectos del búfer de control. Por defecto, el registro del motor. */
@@ -655,5 +656,88 @@ describe('el bucle con la intensidad', () => {
     runPulses(dimmed.loop, 6, 10);
 
     expect(dimmed.levels).toEqual(reference.levels);
+  });
+});
+
+/** Un efecto de prueba, que no está en el catálogo: pinta toda la tira en blanco total. */
+const white: Effect<Record<string, never>, null> = {
+  id: 'white',
+  usesAudio: false,
+  paramsSchema: Type.Object({}),
+  createMemory: () => null,
+  render(_ctx, _params, _memory, out) {
+    out.fill(255);
+  },
+};
+
+/** La tira de la mesa, en blanco total: 173 LEDs `WS2812B` con una fuente de 8 A. */
+function whiteTable(): StripConfig {
+  return {
+    ...strip('mesa', 173),
+    effect: white.id as EffectId,
+    output: {
+      type: 'adalight',
+      port: '/dev/ttyACM0',
+      baudRate: 500_000,
+      chip: 'WS2812B',
+      power: { supplyAmps: 8 },
+    },
+  };
+}
+
+// specs/power-limit: el límite va después de la intensidad y solo en las tiras físicas (D100).
+describe('el bucle con el límite de potencia', () => {
+  it('una tira física en blanco total da al visor y a su salida el mismo frame, a 200', () => {
+    const adalight = recorder();
+    const viewer = recorder();
+    const loop = createLoop(
+      [
+        {
+          config: whiteTable(),
+          outputs: [viewer.output, adalight.output],
+          powerLimit: createPowerLimit(8, chipOf('WS2812B'), 173),
+        },
+      ],
+      60,
+      { effects: [white] },
+    );
+
+    runPulses(loop, 0, 3);
+
+    expect(adalight.frames).toEqual(viewer.frames);
+    expect(viewer.frames.every(({ colors }) => colors.every((value) => value === 200))).toBe(true);
+  });
+
+  it('con la intensidad al 50 %, el blanco total cabe y sale a 128, sin bajar más', () => {
+    const { output, frames } = recorder();
+    const loop = createLoop(
+      [
+        {
+          config: whiteTable(),
+          outputs: [output],
+          powerLimit: createPowerLimit(8, chipOf('WS2812B'), 173),
+        },
+      ],
+      60,
+      { effects: [white] },
+    );
+    loop.control.setIntensity(0.5);
+
+    runPulses(loop, 0, 3);
+
+    expect(frames.every(({ colors }) => colors.every((value) => value === 128))).toBe(true);
+  });
+
+  it('una tira virtual en blanco total sale a 255: no tiene límite', () => {
+    const { output, frames } = recorder();
+    const loop = createLoop(
+      [{ config: { ...strip('virtual', 173), effect: white.id as EffectId }, outputs: [output] }],
+      60,
+      { effects: [white] },
+    );
+
+    runPulses(loop, 0, 3);
+
+    expect(frames.every(({ colors }) => colors.every((value) => value === 255))).toBe(true);
   });
 });

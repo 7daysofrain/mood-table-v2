@@ -84,7 +84,7 @@
   estima y, si hace falta, escala el frame en su sitio, hacia abajo y con el suelo de 12, sin crear
   nada.
   Verificar: los tests de 2.3 pasan.
-- [ ] 2.5 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
+- [x] 2.5 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
   salidas en memoria:
   - una tira física de 173 LEDs con 8 A, en blanco total: el visor y su salida Adalight reciben el
     mismo frame, con todos los canales a 200;
