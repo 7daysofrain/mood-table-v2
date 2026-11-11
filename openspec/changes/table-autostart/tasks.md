@@ -50,7 +50,7 @@
   D#»), su origen (`MOO-131`, change `table-autostart`) y lo descartado (decisiones 1 a 4). Se
   apunta en `prompts.md` el hito del change (formato de `course.md` §5).
   Verificar: la D106 está en la tabla de decisiones después de la D105 y no renumera ninguna.
-- [ ] 1.5 Prueba en la mesa, a mano, con la PR abierta y la rama en la Pi. Los pasos con `sudo` los
+- [x] 1.5 Prueba en la mesa, a mano, con la PR abierta y la rama en la Pi. Los pasos con `sudo` los
   ejecuta el DJ. Hay que leer el registro de cada arranque antes de volver a apagar, porque el
   *journal* es volátil:
   - parar el motor que corra a mano, registrar la unidad (decisión 6) y pasar
@@ -66,8 +66,10 @@
   - *Sin la tarjeta de sonido, el motor no arranca y dice por qué*: arrancar con la tarjeta
     desenchufada. `systemctl status moodtable` queda en `failed`, y el registro dice qué tarjeta no
     ha podido abrir;
-  - *El motor se cae y el servicio no lo relanza*: `sudo systemctl kill moodtable`. El servicio queda
-    parado y no vuelve; al apagar y encender, arranca solo.
+  - *El motor se cae y el servicio no lo relanza*: `sudo systemctl kill -s SIGKILL moodtable`. El
+    servicio queda en `failed` y no vuelve; al apagar y encender, arranca solo. Con el SIGTERM por
+    defecto de `systemctl kill`, systemd da la salida por limpia, y ni `Restart=on-failure` lo
+    relanzaría: la prueba no distinguiría.
 
   Verificar: cada escenario, con su resultado y lo que dijo el registro, apuntado en la descripción de
   la PR.
