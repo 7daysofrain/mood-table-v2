@@ -26,7 +26,7 @@
   por cada línea que no se explica sola: por qué el `settle` y su `-`, por qué `Restart=no` y por qué
   no espera a la red.
   Verificar: el test de 1.1 pasa, y `pnpm lint` y `pnpm typecheck` van en verde.
-- [ ] 1.3 El README deja de prometer lo que no se hace y explica cómo se registra el servicio:
+- [x] 1.3 El README deja de prometer lo que no se hace y explica cómo se registra el servicio:
   - **§1.4, «3. En la mesa»:**
     - el paso 1 instala a mano lo que hoy hace falta (Node.js 24 y el clon en
       `/home/pi/mood-table-v2`, con dependencias y build del panel), y dice que `deploy/install.sh`
