@@ -8,6 +8,7 @@ import { basename } from 'node:path';
 import {
   chipOf,
   type Config,
+  ledAmpsAtFullBrightness,
   type SourceMessage,
   type StripConfig,
   type StripsMessage,
@@ -94,6 +95,33 @@ export function startEngine({
 export function stripPowerLimit({ output, ledCount }: StripConfig): PowerLimit | undefined {
   if (output.type !== 'adalight') return undefined;
   return createPowerLimit(output.power.supplyAmps, chipOf(output.chip), ledCount);
+}
+
+/**
+ * La línea de log del límite de una tira física, al arrancar (decisión 4 del change power-limit): su
+ * fuente, lo que usará como mucho, lo que pide en blanco total y si bajará frames. Un `8000` puesto
+ * por error se delata aquí («nunca bajará frames»), y una fuente demasiado pequeña para el suelo de
+ * 12, también. Una tira virtual no tiene línea.
+ */
+export function powerLimitMessage(strip: StripConfig): string | undefined {
+  const { name, ledCount, output } = strip;
+  const limit = stripPowerLimit(strip);
+  if (output.type !== 'adalight' || !limit) return undefined;
+  const fullWhite = ledCount * ledAmpsAtFullBrightness(chipOf(output.chip));
+  const lowers = fullWhite > limit.maxAmps;
+  const floorless =
+    limit.floor === 0 ? ', y la fuente es tan pequeña que los LEDs tenues pueden apagarse' : '';
+  return (
+    `Tira «${name}»: fuente de ${amps(output.power.supplyAmps)} A, ` +
+    `usará como mucho ${amps(limit.maxAmps)} A; en blanco total pide ${amps(fullWhite)} A: ` +
+    (lowers ? 'bajará los frames que se pasen' : 'nunca bajará frames') +
+    floorless
+  );
+}
+
+/** Unos amperios para el log: con coma y como mucho tres decimales (10,38; 0,048). */
+function amps(value: number): string {
+  return value.toLocaleString('es-ES', { maximumFractionDigits: 3 });
 }
 
 /**

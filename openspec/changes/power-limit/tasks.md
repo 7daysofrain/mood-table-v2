@@ -102,7 +102,7 @@
   que se pasen; con 18 A, los 14,4 A y que nunca bajará frames (decisión 4); con 0,06 A, además, que
   los LEDs tenues pueden apagarse (la tira no tiene suelo, decisión 2).
   Verificar: los tests nuevos fallan porque la función no existe.
-- [ ] 2.8 La función de la línea en `engine.ts` y su llamada en `main.ts`, una vez por tira física al
+- [x] 2.8 La función de la línea en `engine.ts` y su llamada en `main.ts`, una vez por tira física al
   arrancar.
   Verificar: los tests de 2.7 pasan, y con una tira física declarada en el fichero, el log del
   arranque muestra su línea.
