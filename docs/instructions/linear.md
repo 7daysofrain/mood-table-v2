@@ -10,8 +10,9 @@
 - **Épica = issue padre**, una por historia del PRD, con su mismo título:
   `H1 · Probar el instrumento en el simulador` · `H2 · Tocar los parámetros en vivo` ·
   `H3 · Pintar la tira física` · `H4 · Declarar mis tiras` · `H5 · Arrancar en el último estado` ·
-  `S1 · Tira de ambiente` · `S2 · Firmware propio`. Su descripción enlaza la historia del PRD (§4) y
-  sus expectativas (E#); no las copia. Las épicas no llevan etiqueta de tipo.
+  `S1 · Tira de ambiente` · `S2 · Firmware propio` · `S3 · Sobrevivir a los cortes de luz`. Su
+  descripción enlaza la historia del PRD (§4) y sus expectativas (E#); no las copia. Las épicas no
+  llevan etiqueta de tipo.
 - **Épica técnica** (*enabler*): la excepción. `EN · Base técnica (enablers)` agrupa lo que necesitan las
   historias para empezar (monorepo, CI, layout del panel) y no sale de ninguna historia del PRD, así que
   **cuelga tareas directamente, sin historia**. Esas tareas llevan etiqueta de tipo (`Chore`) además de la
