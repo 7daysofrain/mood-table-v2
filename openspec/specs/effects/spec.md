@@ -98,30 +98,33 @@ fuente de audio.
 - **THEN** la tira se anima
 
 ### Requirement: Cada tira arranca con el efecto que declara el fichero
-Al arrancar, cada tira SHALL animarse con el efecto que declara su campo `effect` en el fichero de
-configuración, con los valores por defecto de sus parámetros. Es solo el efecto de arranque: con el
-motor en marcha, el DJ lo puede cambiar (`specs/instrument-control`), y el fichero no vuelve a mandar
-hasta que el motor se reinicia.
+Al arrancar sin estado guardado de una tira, la tira SHALL animarse con el efecto que declara su campo
+`effect` en el fichero de configuración, con los valores por defecto de sus parámetros. Con estado
+guardado, manda lo que dejó el DJ (`specs/instrument-state`). Es solo el efecto de arranque: con el
+motor en marcha, el DJ lo puede cambiar (`specs/instrument-control`).
 
 > Traza: caso feliz de `MOO-14` (*el fichero de configuración indica el efecto "energía" para la tira
-> virtual*, asumido en la historia). Con H5, el estado guardado mandará sobre el fichero (README §2.2,
-> reconciliación). Que sea solo el de arranque: contexto técnico de `MOO-94` (*el efecto del fichero
-> de configuración es solo el de arranque*).
+> virtual*, asumido en la historia). Que sea solo el de arranque: contexto técnico de `MOO-94` (*el
+> efecto del fichero de configuración es solo el de arranque*). Que el estado guardado mande: criterio
+> *Lo que dejó el DJ manda sobre el efecto del fichero* de `MOO-25`.
 
 #### Scenario: Una tira con energía
 - **GIVEN** un fichero de configuración con un fichero de audio como fuente y una tira con
   `"effect": "energy"`
+- **AND** ningún estado guardado de esa tira
 - **WHEN** el motor arranca
 - **THEN** la tira reacciona al audio con *energía*
 
 #### Scenario: Una tira con la respiración (asumido)
 - **GIVEN** un fichero de configuración con una tira con `"effect": "breathing"`
+- **AND** ningún estado guardado de esa tira
 - **WHEN** el motor arranca
 - **THEN** la tira se anima con la respiración
 
 #### Scenario: Dos tiras con efectos distintos (asumido)
 - **GIVEN** un fichero de configuración con un fichero de audio como fuente, una tira con *energía* y
   otra con la respiración
+- **AND** ningún estado guardado de esas tiras
 - **WHEN** el fichero llega a un tramo en silencio
 - **THEN** la tira con *energía* se apaga y la de la respiración sigue animándose
 
@@ -293,6 +296,7 @@ fps del motor, y la longitud del rastro en LEDs no depende de ellos.
 - **GIVEN** *scroll* con un solo golpe como audio, una vez a 30 fps y otra a 60 fps
 - **WHEN** pasan 0,2 s desde que la luz del golpe entra por el centro
 - **THEN** la luz del golpe está a 6 LEDs del centro a 30 fps y a 12 LEDs a 60 fps
+
 ### Requirement: El espectro pinta cada banda en su zona, con los graves en el centro
 El *espectro* SHALL repartir las bandas de frecuencia por la tira, de los graves en el centro a los
 agudos en los dos extremos, con las dos mitades iguales. Es reactivo y no tiene parámetros.

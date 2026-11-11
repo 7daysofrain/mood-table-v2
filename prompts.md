@@ -2025,6 +2025,20 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El fichero del* worker *solo conecta mensajes con el adaptador, así que queda fuera de la cobertura, en Vitest y en SonarQube, como las raíces de composición.*
 - *No se supo por qué la SD tardó seis veces en los primeros minutos tras arrancar la Pi y ninguna en 56 guardados después. Queda como hipótesis el trabajo de Ext4 en segundo plano tras el arranque, que no explica el guardado de 492 ms de antes del corte.*
 
+#### 6.70 Verificar y archivar el change de `MOO-25`
+
+**Prompt 1** (con la #126 integrada):
+
+> merged
+
+*Claude Code (`claude-opus-5-5`, 10-nov). La IA comprobó en Linear que las tres tareas de `MOO-25` (`MOO-26`, `MOO-129` y `MOO-130`) estaban en Done, sacó la rama del archivado desde `main` y lanzó `/opsx:verify`. Cotejó las 21 tareas, los 12 requisitos de las tres specs y las 8 decisiones del diseño, con la 3 revisada (D105). No encontró problemas críticos ni avisos. Dejó dos sugerencias: el escenario «Se va la luz justo después de un cambio», con un cambio de efecto, solo se prueba en unitario y a mano, y el caso del* worker *muerto no tiene test. Preguntó antes de archivar.*
+
+**Prompt 2:**
+
+> Sí, archívalo
+
+*Antes de sincronizar, la IA comparó el requisito modificado de `effects` con su spec principal. Vio que el delta quitaba la frase «el fichero no vuelve a mandar hasta que el motor se reinicia», que estaba desde la #86. Comprobó que no la había añadido otro change después y que quitarla era lo correcto: con el estado guardado, tras reiniciar tampoco manda el fichero si hay estado de esa tira. Archivó con el CLI: `instrument-state` como spec nueva, con 9 requisitos; `engine-config`, 2 nuevos; y `effects`, 1 modificado.*
+
 ---
 
 ### 7. Pull Requests
