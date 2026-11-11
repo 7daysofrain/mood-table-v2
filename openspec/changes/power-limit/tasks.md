@@ -97,9 +97,10 @@
   (`engine.ts`) construye el límite de cada tira física desde su configuración y el catálogo
   (decisión 6).
   Verificar: los tests de 2.5 pasan, y los frames dorados y los de la intensidad siguen en verde.
-- [ ] 2.7 **(test en rojo)** Tests de la línea del log en `packages/engine/src/engine.test.ts`: la
+- [x] 2.7 **(test en rojo)** Tests de la línea del log en `packages/engine/src/engine.test.ts`: la
   tira «Mesa» con 8 A dice la fuente, los 6,4 A, los 10,38 A en blanco total y que bajará los frames
-  que se pasen; con 18 A, los 14,4 A y que nunca bajará frames (decisión 4).
+  que se pasen; con 18 A, los 14,4 A y que nunca bajará frames (decisión 4); con 0,06 A, además, que
+  los LEDs tenues pueden apagarse (la tira no tiene suelo, decisión 2).
   Verificar: los tests nuevos fallan porque la función no existe.
 - [ ] 2.8 La función de la línea en `engine.ts` y su llamada en `main.ts`, una vez por tira física al
   arrancar.
