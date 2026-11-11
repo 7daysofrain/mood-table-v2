@@ -12,7 +12,7 @@
 
 ## 1. MOO-134 · infra
 
-- [ ] 1.1 **(test en rojo)** `tooling/moodtable-service.test.ts` lee `deploy/moodtable.service` y
+- [x] 1.1 **(test en rojo)** `tooling/moodtable-service.test.ts` lee `deploy/moodtable.service` y
   comprueba lo que exige `specs/table-service` (`design.md`, decisión 5):
   - `WantedBy=multi-user.target`;
   - un `ExecStartPre=-/usr/bin/udevadm settle …`, con el prefijo `-`;
