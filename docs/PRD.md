@@ -179,6 +179,7 @@ tiras en un fichero.
 | Q7 | ¿El instrumento se adapta solo al volumen de la entrada (una señal muy baja o saturada), o eso lo resuelve el DJ con un control de sensibilidad (H2, Q2)? | Decisión del DJ. |
 | Q8 | Si un cambio de efecto o de valor no llega al motor (el motor se ha caído o lo rechaza), ¿qué ve el DJ en el panel? | Decisión del DJ. Mientras tanto, el panel solo marca el efecto que pinta el motor (MOO-94), y al soltar un control este vuelve al valor que pinta el motor (MOO-95). |
 | Q9 | ¿El brillo general de todas las tiras (la intensidad de MOO-97) vuelve tras reiniciar, como el estado del instrumento, o arranca siempre al máximo? | Decisión del DJ. Mientras tanto, no se guarda: MOO-25 guarda el efecto activo y los valores de cada tira, y la intensidad arranca al máximo (MOO-97). |
+| Q10 | Si el motor no llega a arrancar al enchufar la mesa (un fichero de configuración mal escrito, una tarjeta de sonido que falta), ¿cómo lo sabe el DJ sin portátil, y qué muestra la tira mientras tanto? | Decisión del DJ. Mientras tanto, la tira queda apagada y el motivo solo está en el registro del arranque (MOO-131). |
 
 ## 8. Glosario
 
