@@ -91,7 +91,7 @@
   y que el estado del instrumento empieza de cero) y que el clon anterior de la mesa se queda donde
   está.
   Verificar: lo que dice coincide con `specs/table-install`, requisitos de reinstalar.
-- [ ] 2.4 Prueba en la mesa, a mano, con la PR abierta:
+- [x] 2.4 Prueba en la mesa, a mano, con la PR abierta:
   - *Pregunta qué hacer con la configuración al reinstalar* (la del script): con la SD de la
     sección 1, relanzar el script de la rama de la PR. Pregunta antes de hacer nada;
   - *Sin respuesta, no cambia nada*: responder otra cosa, y lanzarlo sin terminal
