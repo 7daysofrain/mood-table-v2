@@ -22,6 +22,9 @@
 > Excepción a la cadena: las *chores* que no tocan requisitos van de la tarea a la PR sin OpenSpec
 > change (§6).
 
+> Antes de la cadena: lo que aparece a mitad de otro trabajo se apunta como **captura** con
+> `/capture` y entra en la cadena cuando se clasifica, a mano (`linear.md` §2 y §5).
+
 ## 2. Granularidad: tarea → PR, paso → commit
 
 | | Tarea (sub-issue de Linear) | Paso del `tasks.md` (OpenSpec) |
