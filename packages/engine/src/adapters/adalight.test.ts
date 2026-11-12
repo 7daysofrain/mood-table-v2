@@ -4,6 +4,7 @@ import type { LightOutput } from '../core/frame-loop.ts';
 import {
   adalightBuffer,
   AdalightOutput,
+  channelSources,
   encodeAdalight,
   openAdalight,
   openAdalightStrips,
@@ -54,8 +55,17 @@ class FakeLink implements SerialLink {
   }
 }
 
-/** La tira de la mesa (D46). */
-const table = { name: 'Mesa', ledCount: 173, port: '/dev/ttyUSB0', baudRate: 115200 };
+/** La tira de la mesa (D46), con el orden de color de su chip, la `WS2812B`. */
+const table = {
+  name: 'Mesa',
+  ledCount: 173,
+  port: '/dev/ttyUSB0',
+  baudRate: 115200,
+  colorOrder: 'GRB' as const,
+};
+
+/** El orden RGB, que deja cada canal en su sitio: para medir solo la gamma. */
+const AS_IS = [0, 1, 2] as const;
 
 /**
  * Los valores de un canal que la gamma no junta (del 128 al 255), y de qué valor sale cada byte
@@ -64,22 +74,25 @@ const table = { name: 'Mesa', ledCount: 173, port: '/dev/ttyUSB0', baudRate: 115
 const DIGIT = 128;
 const digitOf = new Map(
   Array.from({ length: DIGIT }, (_, digit) => [
-    encodeAdalight(adalightBuffer(1), Uint8Array.of(DIGIT + digit, 0, 0))[6],
+    encodeAdalight(adalightBuffer(1), Uint8Array.of(DIGIT + digit, 0, 0), AS_IS)[6],
     digit,
   ]),
 );
 
-/** Un frame de la mesa que lleva `seq` en el primer LED, para saber de qué pulso es lo escrito. */
+/**
+ * Un frame de la mesa que lleva `seq` en el azul de los dos primeros LEDs, para saber de qué pulso es
+ * lo escrito. El azul, porque el orden GRB no lo mueve.
+ */
 function frameOf(seq: number, frame: Uint8Array = new Uint8Array(table.ledCount * 3)): Uint8Array {
-  frame[0] = DIGIT + (seq % DIGIT);
-  frame[1] = DIGIT + Math.floor(seq / DIGIT);
+  frame[2] = DIGIT + (seq % DIGIT);
+  frame[5] = DIGIT + Math.floor(seq / DIGIT);
   return frame;
 }
 
 /** El pulso que lleva un frame escrito en el puerto (tras los 6 bytes de la cabecera). */
 function seqOf(written: Uint8Array): number {
-  const low = digitOf.get(written[6] ?? 0);
-  const high = digitOf.get(written[7] ?? 0);
+  const low = digitOf.get(written[8] ?? 0);
+  const high = digitOf.get(written[11] ?? 0);
   if (low === undefined || high === undefined) throw new Error('El frame escrito no lleva un pulso');
   return low + high * DIGIT;
 }
@@ -99,14 +112,14 @@ function hex(bytes: Uint8Array): string {
 }
 
 describe('la codificación Adalight', () => {
-  it('el frame de 173 LEDs con el primero en rojo puro son 525 bytes con su cabecera', () => {
+  it('el frame de 173 LEDs de una WS2812B con el primero en rojo puro son 525 bytes con su cabecera', () => {
     const frame = new Uint8Array(173 * 3);
     frame[0] = 0xff;
 
-    const encoded = encodeAdalight(adalightBuffer(173), frame);
+    const encoded = encodeAdalight(adalightBuffer(173), frame, channelSources('GRB'));
 
     expect(encoded).toHaveLength(525);
-    expect(hex(encoded.subarray(0, 9))).toBe('41 64 61 00 AC F9 FF 00 00');
+    expect(hex(encoded.subarray(0, 9))).toBe('41 64 61 00 AC F9 00 FF 00');
     expect(encoded.subarray(9).every((byte) => byte === 0)).toBe(true);
   });
 
@@ -117,11 +130,11 @@ describe('la codificación Adalight', () => {
     expect(hex(adalightBuffer(ledCount).subarray(0, 6))).toBe(header);
   });
 
-  it('copia los colores en el orden de la tira, sin reordenarlos', () => {
+  it('copia los LEDs en el orden de la tira', () => {
     // 0 y 255 no cambian con la gamma: aquí solo cuenta el orden.
     const frame = Uint8Array.of(255, 0, 0, 0, 0, 255);
 
-    expect(Array.from(encodeAdalight(adalightBuffer(2), frame).subarray(6))).toEqual([
+    expect(Array.from(encodeAdalight(adalightBuffer(2), frame, AS_IS).subarray(6))).toEqual([
       255, 0, 0, 0, 0, 255,
     ]);
   });
@@ -129,7 +142,33 @@ describe('la codificación Adalight', () => {
   it('corrige cada canal con la gamma 2,0 de los LEDs: un color tenue sale más tenue', () => {
     const frame = Uint8Array.of(128, 30, 255);
 
-    expect(Array.from(encodeAdalight(adalightBuffer(1), frame).subarray(6))).toEqual([64, 4, 255]);
+    expect(Array.from(encodeAdalight(adalightBuffer(1), frame, AS_IS).subarray(6))).toEqual([
+      64, 4, 255,
+    ]);
+  });
+
+  it('con el orden GRB, un color tenue sale más tenue y con el verde primero', () => {
+    const frame = Uint8Array.of(128, 30, 255);
+
+    expect(hex(encodeAdalight(adalightBuffer(1), frame, channelSources('GRB')).subarray(6))).toBe(
+      '04 40 FF',
+    );
+  });
+
+  // Un LED a (255, 128, 30), que la gamma deja en (255, 64, 4): tres valores distintos que se ven.
+  it.each([
+    ['RGB', [255, 64, 4]],
+    ['RBG', [255, 4, 64]],
+    ['GRB', [64, 255, 4]],
+    ['GBR', [64, 4, 255]],
+    ['BRG', [4, 255, 64]],
+    ['BGR', [4, 64, 255]],
+  ] as const)('con el orden %s, escribe los canales de cada LED en ese orden: %j', (order, bytes) => {
+    const frame = Uint8Array.of(255, 128, 30, 255, 128, 30);
+
+    expect(Array.from(encodeAdalight(adalightBuffer(2), frame, channelSources(order)).subarray(6))).toEqual(
+      [...bytes, ...bytes],
+    );
   });
 
   it.each([
@@ -138,17 +177,27 @@ describe('la codificación Adalight', () => {
     [12, 1],
     [255, 255],
   ])('con la gamma, un %d sale como %d', (value, encoded) => {
-    expect(encodeAdalight(adalightBuffer(1), Uint8Array.of(value, 0, 0))[6]).toBe(encoded);
+    expect(encodeAdalight(adalightBuffer(1), Uint8Array.of(value, 0, 0), AS_IS)[6]).toBe(encoded);
   });
 
   it('escribe en el búfer de la salida, sin crear otro', () => {
     const buffer = adalightBuffer(2);
 
-    expect(encodeAdalight(buffer, new Uint8Array(6))).toBe(buffer);
+    expect(encodeAdalight(buffer, new Uint8Array(6), AS_IS)).toBe(buffer);
   });
 });
 
 describe('la salida Adalight', () => {
+  it('escribe los canales en el orden de color de su tira', () => {
+    const link = new FakeLink();
+    const frame = new Uint8Array(table.ledCount * 3);
+    frame[0] = 0xff;
+
+    outputWith(link).write(frame, tick(1));
+
+    expect(hex((link.copies[0] ?? new Uint8Array()).subarray(6, 9))).toBe('00 FF 00');
+  });
+
   it('escribe el frame del primer pulso y descarta los siguientes mientras no ha salido', () => {
     const link = new FakeLink();
     const output = outputWith(link);
@@ -336,6 +385,21 @@ describe('abrir los puertos de todas las tiras físicas', () => {
     );
 
     expect(result.ok && [...result.outputs.keys()]).toEqual(['mesa', 'barra']);
+  });
+
+  it('a una tira WS2812B le da una salida que escribe en orden GRB', async () => {
+    const link = new FakeLink();
+    const frame = new Uint8Array(60 * 3);
+    frame[0] = 0xff;
+
+    const result = await openAdalightStrips(
+      [physical('mesa', '/dev/ttyUSB0')],
+      () => Promise.resolve(link),
+      options,
+    );
+    result.ok && result.outputs.get('mesa')?.write(frame, tick(1));
+
+    expect(hex((link.copies[0] ?? new Uint8Array()).subarray(6, 9))).toBe('00 FF 00');
   });
 
   it('si un puerto no se abre, cierra los que ya había abierto y da su mensaje', async () => {

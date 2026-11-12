@@ -45,7 +45,7 @@
 
 ## 2. MOO-146 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests en `packages/engine/src/adapters/adalight.test.ts`
+- [x] 2.1 **(test en rojo)** Tests en `packages/engine/src/adapters/adalight.test.ts`
   (`specs/physical-strip`):
   - con el orden `GRB`, un LED en rojo puro sale como `00 FF 00`, y el frame de 173 LEDs empieza por
     `41 64 61 00 AC F9 00 FF 00` (*El frame de una tira de 173 LEDs*);
