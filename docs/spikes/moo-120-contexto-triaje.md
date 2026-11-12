@@ -111,8 +111,32 @@ p media de 5 repeticiones: la probabilidad de que haya que arreglarlo en la PR. 
   el modelo no trata como defecto que una comprobación exigida no pase.
 - **Lo que vio producción cuadra en la #112** (2.839 tokens y p = 0,47, igual que en la traza), **pero
   no en la #116:** allí dio p = 0,83 en el `e2e` y 0,70 en `sonar-issues`, frente a 0,63 y 0,78 aquí.
-  En producción, los hallazgos de un push van juntos en una petición. Que se influyan entre sí es la
-  explicación probable, pero no está comprobada.
+  La causa es la siguiente sección.
+
+### Los hallazgos de un push se influyen entre sí (12-nov)
+
+En producción, todos los hallazgos de un push van en **una** petición: el `state` lleva todos, y hay
+una pregunta por cada uno. El push `b4a4734` de la #116 tuvo dos, `e2e` y `sonar-issues`, y ningún
+comentario de Codex. Se repitió con los adaptadores de producción (`createFindings`,
+`createDecisionModel`) y el corte de hoy, 5 veces cada caso:
+
+| Petición | p del `e2e` (relanzar) | p de `sonar-issues` (real) |
+|---|---|---|
+| Cada uno solo | 0,637 | 0,779 |
+| Juntos, `e2e` primero | 0,704 | 0,716 |
+| Juntos, `sonar-issues` primero | **0,833** | 0,701 |
+| *Producción (traza del 5-nov)* | *0,83* | *0,70* |
+
+- **Juntos, la p de cada hallazgo se acerca a la del otro:** el `e2e` sube y `sonar-issues` baja.
+  Además, **el orden importa:** con `sonar-issues` primero, el `e2e` pasa de 0,70 a 0,83.
+- **El caso de producción se reproduce:** 0,83 y 0,70. Ese `e2e` cruzó el umbral y salió *real* por
+  ir junto a un defecto real en la misma petición, no por su contexto. Solo, se habría quedado en
+  *exige criterio*.
+- **El efecto es mayor que el de cualquier variante de contexto:** hasta 0,20, frente a menos de
+  0,15. Hasta que esto se resuelva, medir el contexto de un hallazgo solo tiene sentido con un hallazgo
+  por petición, como en la tabla anterior.
+- **Coste de separarlos:** cada petición repite el título y la descripción de la PR. En la #116, dos
+  peticiones de unos 2.170 tokens frente a una de 2.594: alrededor de 0,0004 $ más por push.
 
 ### Permisos del PAT
 
