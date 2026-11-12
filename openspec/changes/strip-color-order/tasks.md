@@ -45,7 +45,7 @@
 
 ## 2. MOO-146 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests en `packages/engine/src/adapters/adalight.test.ts`
+- [x] 2.1 **(test en rojo)** Tests en `packages/engine/src/adapters/adalight.test.ts`
   (`specs/physical-strip`):
   - con el orden `GRB`, un LED en rojo puro sale como `00 FF 00`, y el frame de 173 LEDs empieza por
     `41 64 61 00 AC F9 00 FF 00` (*El frame de una tira de 173 LEDs*);
@@ -58,14 +58,14 @@
   Los tests de la gamma que ya existen pasan a dar el orden de forma explícita (`RGB`), para seguir
   midiendo solo la gamma.
   Verificar: los tests nuevos fallan; el resto sigue en verde.
-- [ ] 2.2 `AdalightStrip` gana `colorOrder`, y `openAdalightStrips` lo resuelve con
+- [x] 2.2 `AdalightStrip` gana `colorOrder`, y `openAdalightStrips` lo resuelve con
   `chipOf(output.chip).colorOrder` (decisión 3). `AdalightOutput` traduce el orden una vez a los
   índices de origen de cada byte, y `encodeAdalight` escribe los canales de cada LED en ese orden, con
   la gamma. El comentario de cabecera de `adalight.ts` deja de decir que el orden lo pone el sketch.
   En `engine.test.ts`, el test *no llevan el resto de la tira* deja de usar `colorOrder` como ejemplo
   de un campo que H4 añadirá a la tira.
   Verificar: los tests de 2.1 pasan, y `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 2.3 Documentación:
+- [x] 2.3 Documentación:
   - README §2.2, adaptador *Adalight serie*: reordena los canales según el chip de la tira, después de
     la gamma, en lugar de «el orden de color lo pone por ahora el sketch»;
   - `prompts.md`: la entrada de esta tarea.

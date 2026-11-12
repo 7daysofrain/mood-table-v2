@@ -2315,6 +2315,19 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *Los non-goals de `MOO-13` en el README §5 («orden de color… van en H4») se dejan como están: son la historia tal como se escribió.*
 
+#### 6.85 Enviar los canales en el orden de color del chip de cada tira (`MOO-146`)
+
+**Prompt 1** (con la PR de `MOO-145` integrada):
+
+> mergeada
+
+*Claude Code (`claude-opus-5-5`, 12-nov). La IA sacó de `main` la rama de la tarea e implementó la sección `MOO-146` en TDD. `openAdalightStrips` resuelve el orden de color del chip de cada tira, la salida lo traduce una vez al byte de destino de cada canal, y `encodeAdalight` escribe cada LED en ese orden, junto con la gamma. El visor sigue recibiendo el frame en RGB.*
+
+*Ajustes:*
+- *El paso 2.1 probaba las seis permutaciones con un LED a (1, 2, 3), que la gamma deja en (0, 0, 0): con ese color, todas las permutaciones darían lo mismo. La IA usó (255, 128, 30), que sale como (255, 64, 4).*
+- *Los tests de la salida guardaban el pulso de cada frame en el rojo y el verde del primer LED, que el orden GRB intercambia: pasaron al azul de los dos primeros LEDs, que no se mueve.*
+- *SonarQube paró la PR con un 76 % de cobertura: leer cada byte de su canal de origen dejaba seis `?? 0` que nunca se cumplen. La IA lo cambió por escribir cada canal en su byte de destino, con un solo `?? 0`, como antes del change.*
+
 ---
 
 ### 7. Pull Requests

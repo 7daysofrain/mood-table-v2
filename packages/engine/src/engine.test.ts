@@ -336,8 +336,8 @@ describe('las tiras que se anuncian a los paneles', () => {
   });
 
   it('no llevan el resto de la tira, aunque el fichero gane campos', () => {
-    // Lo que H3 y H4 añadan a la tira (orden de color, puerto…) no sale al panel sin decidirlo.
-    const withMore = { ...demoStrip, colorOrder: 'GRB' } as StripConfig;
+    // Un campo que gane la tira en el fichero no sale al panel sin decidirlo.
+    const withMore = { ...demoStrip, newField: 'nuevo' } as StripConfig;
     const control = createControl({ strips: [withMore], hasAudioSource: false });
 
     const [strip] = stripsMessage({ ...config, strips: [withMore] }, control).strips;
