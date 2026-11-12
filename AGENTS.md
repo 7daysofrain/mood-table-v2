@@ -24,7 +24,7 @@ CI runs these same scripts, so a green run locally predicts a green PR.
 | Command | Does |
 |---|---|
 | `pnpm install` | Installs everything; fails on a Node version other than 24 (`engineStrict`) |
-| `pnpm lint` | ESLint with type information, including the **boundary rule** (`specs/module-boundaries`) |
+| `pnpm lint` | ESLint with type information, including the **boundary rule** (`specs/module-boundaries`), then ShellCheck on `deploy/*.sh` |
 | `pnpm typecheck` | `tsc --noEmit` in the root and in every package |
 | `pnpm test` / `pnpm test:coverage` | Vitest across all packages; coverage goes to a single `coverage/lcov.info` |
 | `pnpm test:e2e` | Playwright E2E in Chromium against the panel build (not counted in coverage). First run `pnpm --filter @moodtable/e2e exec playwright install chromium` |

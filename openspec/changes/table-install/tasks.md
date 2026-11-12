@@ -34,7 +34,7 @@
   Hasta la sección 2, si detecta una instalación existente (decisión 6, paso 1), termina sin tocar
   nada y dice que todavía no sabe reinstalar.
   Verificar: `bash -n deploy/install.sh` no da errores.
-- [ ] 1.4 ShellCheck dentro de `pnpm lint` (`design.md`, decisión 8): el paquete `shellcheck` en el
+- [x] 1.4 ShellCheck dentro de `pnpm lint` (`design.md`, decisión 8): el paquete `shellcheck` en el
   catálogo de `pnpm-workspace.yaml` y en la raíz, y el script `lint` ejecuta ESLint y luego
   ShellCheck sobre `deploy/*.sh`. Se corrige lo que encuentre en el script.
   Verificar: `pnpm lint` va en verde en local y en la CI; con un error a propósito en el script
