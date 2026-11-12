@@ -2346,7 +2346,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 > Sí, todo igual
 
-*La tira física pinta los mismos colores que el visor. El sketch no hace ningún destello al arrancar: lo dice su código (`CLEAR_ON_START` solo apaga la tira), y el maker no vio ninguno.*
+*La tira física pinta los mismos colores que el visor. El sketch no hace ningún destello al arrancar: lo dice su código (`CLEAR_ON_START` solo apaga la tira), y el maker no señaló ninguno.*
 
 *Ajustes:*
 - *El comando de SSH para el maker no llevaba `-i ~/.ssh/id_ed25519`, que la IA sí usaba en sus conexiones: sin él, la Pi rechaza la clave.*
