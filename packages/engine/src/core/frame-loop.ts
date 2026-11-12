@@ -13,8 +13,9 @@
  * punto está, entrega esa posición en cada pulso (decisión 9 del change panel-audio-playback).
  *
  * El plano de tiempo real de cada tira va en un orden fijo (README §2.1; decisión 1 del change
- * instrument-intensity): efecto → intensidad → límite de potencia (H4, todavía no existe) → salidas.
- * El límite de potencia irá siempre el último, porque protege la fuente (D14).
+ * instrument-intensity, D100): efecto → intensidad → límite de potencia → salidas. El límite va
+ * siempre el último, porque protege la fuente (D14), y solo en las tiras que lo tienen: las físicas
+ * (decisión 6 del change power-limit).
  */
 import type { StripConfig } from '@moodtable/shared';
 
@@ -23,6 +24,7 @@ import type { AudioSource } from './audio/audio-source.ts';
 import type { ControlBuffer } from './control.ts';
 import type { FrameContext } from './effects/effect.ts';
 import { applyIntensity } from './intensity.ts';
+import { applyPowerLimit, type PowerLimit } from './power-limit.ts';
 
 /** El pulso al que pertenece un frame. Es el mismo objeto en todos los frames. */
 export interface Tick {
@@ -41,10 +43,14 @@ export interface LightOutput {
   write(frame: Uint8Array, tick: Tick): void;
 }
 
-/** Una tira declarada y sus salidas. Quién recibe qué lo decide la raíz de composición. */
+/**
+ * Una tira declarada, sus salidas y, si es física, su límite de potencia. Quién recibe qué y qué
+ * límite tiene cada una lo decide la raíz de composición.
+ */
 export interface LoopStrip {
   config: StripConfig;
   outputs: LightOutput[];
+  powerLimit?: PowerLimit;
 }
 
 /**
@@ -82,10 +88,11 @@ export interface FrameLoop {
   tick(now: number): void;
 }
 
-/** Lo que el bucle guarda de cada tira: su búfer preasignado y sus salidas. */
+/** Lo que el bucle guarda de cada tira: su búfer preasignado, sus salidas y su límite. */
 interface StripFrame {
   frame: Uint8Array;
   outputs: LightOutput[];
+  powerLimit: PowerLimit | undefined;
 }
 
 /** Lo que el bucle necesita para escuchar la fuente de audio en cada pulso. */
@@ -127,6 +134,7 @@ export function createFrameLoop(
   const frames: StripFrame[] = strips.map((strip) => ({
     frame: new Uint8Array(strip.config.ledCount * 3),
     outputs: strip.outputs,
+    powerLimit: strip.powerLimit,
   }));
   // Sin fuente, ni nivel ni bandas: `ctx.audio` se queda en `null`.
   const listener: Listener | undefined = audioSource && {
@@ -160,10 +168,11 @@ export function createFrameLoop(
       // instrument-intensity).
       const intensity = control.intensity();
       let index = 0;
-      for (const { frame, outputs } of frames) {
-        // El orden del plano de tiempo real: efecto, intensidad, límite de potencia (H4) y salidas.
+      for (const { frame, outputs, powerLimit } of frames) {
+        // El orden del plano de tiempo real: efecto, intensidad, límite de potencia y salidas.
         control.slot(index++).render(ctx, frame);
         applyIntensity(frame, intensity);
+        if (powerLimit) applyPowerLimit(frame, powerLimit);
         for (const output of outputs) output.write(frame, tick);
       }
     },

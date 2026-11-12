@@ -7,9 +7,9 @@
  * (el alto primero) y su checksum (los dos en XOR con `0x55`), seguida de 3 bytes por LED (rojo,
  * verde y azul), en el orden de la tira. El orden de color lo pone el sketch del controlador (D46).
  *
- * Cada canal sale corregido con la gamma 2,0 de la v1 (decisión 6 del change scroll-effect): un LED da
- * una luz proporcional al valor y una pantalla no, así que sin ella los colores tenues que en el visor
- * casi no se ven brillan en la tira. El visor recibe los valores sin corregir.
+ * Cada canal sale corregido con la gamma 2,0 de la v1 (decisión 6 del change scroll-effect): la
+ * respuesta del LED, que vive en el núcleo porque el límite de potencia también la usa (D108). El
+ * visor recibe los valores sin corregir.
  *
  * Nunca hay cola (decisión 2 del change adalight-strip-output): desde que escribe un frame hasta que
  * ha salido por el cable, la salida está ocupada y descarta los que le llegan; al quedar libre,
@@ -23,6 +23,7 @@
 import type { StripConfig } from '@moodtable/shared';
 
 import type { LightOutput } from '../core/frame-loop.ts';
+import { LED_RESPONSE } from '../core/led-response.ts';
 
 /** Los bytes de la cabecera Adalight. */
 const HEADER_LENGTH = 6;
@@ -179,20 +180,12 @@ export function adalightBuffer(ledCount: number): Uint8Array {
 }
 
 /**
- * Copia los colores de `frame` (RGB, 3 bytes por LED) detrás de la cabecera, corregidos con la gamma,
- * y devuelve `buffer`.
+ * Copia los colores de `frame` (RGB, 3 bytes por LED) detrás de la cabecera, cada canal pasado por
+ * la respuesta del LED del núcleo, y devuelve `buffer`.
  */
 export function encodeAdalight(buffer: Uint8Array, frame: Uint8Array): Uint8Array {
   frame.forEach((value, index) => {
-    buffer[HEADER_LENGTH + index] = gamma(value);
+    buffer[HEADER_LENGTH + index] = LED_RESPONSE[value] ?? 0;
   });
   return buffer;
-}
-
-/**
- * La gamma de los LEDs: `round(255 · (v/255)²)`. Da lo mismo que la `gamma_table.npy` de la v1
- * (dancyPi, `0906e77`), valor a valor. Por debajo de 12 sale 0.
- */
-function gamma(value: number): number {
-  return Math.round(255 * (value / 255) ** 2);
 }

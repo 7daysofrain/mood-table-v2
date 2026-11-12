@@ -57,15 +57,15 @@
 
 ## 2. MOO-140 · engine
 
-- [ ] 2.1 **(test en rojo)** Tests de la respuesta del LED en
+- [x] 2.1 **(test en rojo)** Tests de la respuesta del LED en
   `packages/engine/src/core/led-response.test.ts`: la tabla da `round(255 · (v/255)²)` para los 256
   valores; 11 da 0 y 12 da 1 (decisión 1).
   Verificar: los tests nuevos fallan porque el módulo no existe.
-- [ ] 2.2 La respuesta del LED en `packages/engine/src/core/led-response.ts`, y la salida Adalight
+- [x] 2.2 La respuesta del LED en `packages/engine/src/core/led-response.ts`, y la salida Adalight
   (`adapters/adalight.ts`) codifica con ella en lugar de con su `gamma` propia.
   Verificar: los tests de 2.1 pasan, y los de `adalight.test.ts` (*Un color tenue sale más tenue
   hacia la tira*) siguen en verde sin tocarlos.
-- [ ] 2.3 **(test en rojo)** Tests del límite en `packages/engine/src/core/power-limit.test.ts`, con
+- [x] 2.3 **(test en rojo)** Tests del límite en `packages/engine/src/core/power-limit.test.ts`, con
   una tira de 173 LEDs `WS2812B` (`specs/power-limit`, decisiones 2 y 3):
   - todo a 255 se estima en 10,38 A y todo a 128 en unos 2,6 A;
   - con 8 A, todo blanco sale a 200 y su consumo estimado queda en unos 6,39 A, por debajo de los
@@ -74,14 +74,17 @@
   - con 8 A, 172 LEDs blancos y uno a (15, 40, 0): los blancos a 200 y el tenue a (12, 31, 0);
   - un canal por debajo de 12 baja sin suelo;
   - con 18 A, todo blanco sale sin tocar;
+  - con 0,06 A, 37 canales a 255 y el resto a 12 bajan sin suelo y no pasan de la fuente; la mesa
+    tiene suelo con 0,12 A y no con 0,11 A (decisión 2, el suelo solo si la fuente lo aguanta);
   - para frames al azar, el consumo estimado tras el límite nunca pasa de los amperios de la fuente.
 
   Verificar: los tests nuevos fallan porque el límite no existe.
-- [ ] 2.4 El límite en `packages/engine/src/core/power-limit.ts`: el presupuesto de una tira, calculado
-  una vez desde sus amperios y su chip, y la función que estima y, si hace falta, escala el frame en
-  su sitio, hacia abajo y con el suelo de 12, sin crear nada.
+- [x] 2.4 El límite en `packages/engine/src/core/power-limit.ts`: el presupuesto de una tira, calculado
+  una vez desde sus amperios, su chip y sus LEDs (que deciden si tiene suelo), y la función que
+  estima y, si hace falta, escala el frame en su sitio, hacia abajo y con el suelo de 12, sin crear
+  nada.
   Verificar: los tests de 2.3 pasan.
-- [ ] 2.5 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
+- [x] 2.5 **(test en rojo)** Tests del bucle en `packages/engine/src/core/frame-loop.test.ts`, con
   salidas en memoria:
   - una tira física de 173 LEDs con 8 A, en blanco total: el visor y su salida Adalight reciben el
     mismo frame, con todos los canales a 200;
@@ -89,20 +92,21 @@
   - una tira virtual en blanco total sale a 255.
 
   Verificar: los tests nuevos fallan porque el bucle no aplica el límite.
-- [ ] 2.6 `LoopStrip` gana el límite opcional de la tira; el bucle lo aplica después de la
+- [x] 2.6 `LoopStrip` gana el límite opcional de la tira; el bucle lo aplica después de la
   intensidad, y su comentario fija el orden sin el «todavía no existe». La raíz de composición
   (`engine.ts`) construye el límite de cada tira física desde su configuración y el catálogo
   (decisión 6).
   Verificar: los tests de 2.5 pasan, y los frames dorados y los de la intensidad siguen en verde.
-- [ ] 2.7 **(test en rojo)** Tests de la línea del log en `packages/engine/src/engine.test.ts`: la
+- [x] 2.7 **(test en rojo)** Tests de la línea del log en `packages/engine/src/engine.test.ts`: la
   tira «Mesa» con 8 A dice la fuente, los 6,4 A, los 10,38 A en blanco total y que bajará los frames
-  que se pasen; con 18 A, los 14,4 A y que nunca bajará frames (decisión 4).
+  que se pasen; con 18 A, los 14,4 A y que nunca bajará frames (decisión 4); con 0,06 A, además, que
+  los LEDs tenues pueden apagarse (la tira no tiene suelo, decisión 2).
   Verificar: los tests nuevos fallan porque la función no existe.
-- [ ] 2.8 La función de la línea en `engine.ts` y su llamada en `main.ts`, una vez por tira física al
+- [x] 2.8 La función de la línea en `engine.ts` y su llamada en `main.ts`, una vez por tira física al
   arrancar.
   Verificar: los tests de 2.7 pasan, y con una tira física declarada en el fichero, el log del
   arranque muestra su línea.
-- [ ] 2.9 Documentación:
+- [x] 2.9 Documentación:
   - **D108** (decisiones 1 a 3) en `docs/idea-mood-table.md` §10, y una nota en D96 que apunta a
     ella (la gamma pasa al núcleo, sin borrarla);
   - README §2.1 y §2.2: el plano de tiempo real ya tiene el límite; el bloque *Límite de potencia*
@@ -112,6 +116,17 @@
   - `prompts.md`: la entrada de esta tarea.
 
   Verificar: lo que dice el README coincide con el código y los D# cuadran con `design.md`.
+
+- [x] 2.10 **(test en rojo)** Tras la revisión de la #134 (decisiones 1 y 2): los tests del límite
+  miden con el PWM que se envía (la tabla de la respuesta del LED), no con la fórmula sin redondear:
+  - todo a 128 se estima en 2,605 A;
+  - con 0,12 A, 53 canales a 255 y el resto a 12 no pasan de la fuente;
+  - la línea del log avisa de que los LEDs tenues pueden apagarse con 0,2 A y no con 0,21 A.
+
+  Verificar: los tests nuevos fallan con el límite de 2.4.
+- [x] 2.11 El límite estima con la tabla, y si el frame bajado aún se pasa de la fuente, lo vuelve a
+  bajar sin suelo hasta que cabe.
+  Verificar: los tests de 2.3 y 2.10 pasan.
 
 ## 3. MOO-141 · firmware
 

@@ -2124,6 +2124,38 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Los tests del catálogo van en su propio fichero, `chips.test.ts`, como los de efectos, y no en `config.test.ts`.*
 - *D108 es de `MOO-140`, así que la ficha salta de D107 a D109 hasta que se integre.*
 
+#### 6.75 Bajar cada frame al consumo que permite la fuente (`MOO-140`)
+
+**Prompt 1:**
+
+> mergeado, puedes dejar la PI preparada para recibir esto?
+
+*Claude Code (`claude-opus-5-5`, 11-nov). Antes de tocar nada, la IA vio que la Pi corría el código de `MOO-134`, que rechaza cualquier campo de más en la salida `adalight`: añadir `chip` y `power` sin más habría dejado la mesa sin arrancar en el siguiente reinicio. Así que la pasó a `main` a la vez que añadía los dos campos a sus cinco ficheros de configuración, con copias `*.antes-moo-139`. Los comprobó con el `parseConfig` de `main`; la copia antigua da el error esperado. El reinicio del servicio, que necesita `sudo`, lo hizo el maker.*
+
+**Prompt 2:**
+
+> seguimos entonces?
+
+*La IA implementó la sección `MOO-140` en TDD, con un commit por paso: la respuesta del LED pasa al núcleo, el límite en `core/power-limit.ts`, el bucle lo aplica después de la intensidad y el log dice el límite de cada tira física al arrancar.*
+
+*Ajustes:*
+- *Al escribir el test de frames al azar, la IA probó a propósito el peor caso del suelo de 12: unos canales a 255 y el resto a 12. Con una fuente de 0,06 A (el mínimo que acepta la configuración), el frame bajado pedía 68 mA: el diseño no cumplía el «nunca pasa de la fuente» de la spec. Paró y propuso tres salidas. El maker eligió la recomendada: la tira decide al arrancar si su fuente aguanta el suelo, y si no, baja sin él. Se cambiaron la decisión 2 del design y la spec, con un escenario nuevo, y se corrigió la cota del suelo (unos 23 mA en la mesa, no 41).*
+- *Por esa misma decisión, la línea del log avisa cuando la fuente es tan pequeña que los LEDs tenues pueden apagarse.*
+- *El paso 2.8 se comprobó con el motor de verdad: una tira física sobre un pseudoterminal del Mac, a 115.200 baudios, porque el de macOS no admite 500.000.*
+- *El README §2.2 decía que la carga de configuración lee los «límites de potencia» de la tira, un resto de antes de `MOO-139`: ahora dice el chip y la fuente.*
+
+**Prompt 3:**
+
+> ok, ha habido problemas, vamos a examinar cuales son y que ha dicho el triador
+
+*La IA reprodujo el P1 de Codex en la #134: el límite estimaba con `(v/255)²` sin redondear, pero a la tira le llega el PWM redondeado de la tabla. Con 0,12 A, enviaba 132 mA, un 110 % de la fuente; en la mesa, un 80,2 %. Los tests no lo veían porque medían con el mismo estimador. El triador del PR Babysitter, en modo sombra, dejó el P1 y la comprobación `sonar-issues` como «exige criterio» (p = 0,69 y 0,76). El maker vio que había juntado los dos issues de Sonar en un solo hallazgo, uno mecánico (S4138) y otro de criterio (S3776), y pidió añadir el caso al spike `MOO-120`: la IA comprobó que el triaje crea un hallazgo por comprobación, no por error.*
+
+**Prompt 4:**
+
+> ok lo veo. Sigamos adelante con esta tarea entonces. Arreglamos las 3 cosas
+
+*La IA cambió primero la spec y el design: el límite suma la tabla de la respuesta del LED y, si el frame bajado aún se pasa de la fuente, lo vuelve a bajar sin suelo. Dedujo la cota (el redondeo y el suelo suman como mucho una unidad de PWM por canal), y con ella el aviso del log salta con menos de unos 0,2 A en la mesa. Luego, tests en rojo y el arreglo; S3776 se resolvió sacando de `main` las líneas del límite. La IA dejó la segunda pasada para que la escribiera el maker, y él lo corrigió: el código lo escribe la IA.*
+
 ---
 
 ### 7. Pull Requests

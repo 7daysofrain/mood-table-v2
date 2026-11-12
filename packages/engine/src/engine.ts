@@ -5,12 +5,14 @@
  */
 import { basename } from 'node:path';
 
-import type {
-  Config,
-  SourceMessage,
-  StripConfig,
-  StripsMessage,
-  StripState,
+import {
+  chipOf,
+  type Config,
+  ledAmpsAtFullBrightness,
+  type SourceMessage,
+  type StripConfig,
+  type StripsMessage,
+  type StripState,
 } from '@moodtable/shared';
 
 import { startTicker, type Ticker } from './adapters/ticker.ts';
@@ -22,6 +24,7 @@ import {
   type LightOutput,
   type PositionOutput,
 } from './core/frame-loop.ts';
+import { createPowerLimit, type PowerLimit } from './core/power-limit.ts';
 
 export interface EngineOptions {
   config: Config;
@@ -67,7 +70,11 @@ export function startEngine({
   clock,
 }: EngineOptions): Ticker {
   const loop = createFrameLoop(
-    config.strips.map((strip, index) => ({ config: strip, outputs: createOutputs(strip, index) })),
+    config.strips.map((strip, index) => ({
+      config: strip,
+      outputs: createOutputs(strip, index),
+      powerLimit: stripPowerLimit(strip),
+    })),
     control,
     config.fps,
     { audioSource, levelOutputs, positionOutputs },
@@ -79,6 +86,48 @@ export function startEngine({
     },
     clock,
   );
+}
+
+/**
+ * El límite de potencia de una tira física, desde su fuente, su chip y sus LEDs (decisión 6 del
+ * change power-limit). Una tira virtual no tiene: no tiene fuente.
+ */
+export function stripPowerLimit({ output, ledCount }: StripConfig): PowerLimit | undefined {
+  if (output.type !== 'adalight') return undefined;
+  return createPowerLimit(output.power.supplyAmps, chipOf(output.chip), ledCount);
+}
+
+/**
+ * La línea de log del límite de una tira física, al arrancar (decisión 4 del change power-limit): su
+ * fuente, lo que usará como mucho, lo que pide en blanco total y si bajará frames. Un `8000` puesto
+ * por error se delata aquí («nunca bajará frames»), y una fuente demasiado pequeña para el suelo de
+ * 12, también. Una tira virtual no tiene línea.
+ */
+export function powerLimitMessage(strip: StripConfig): string | undefined {
+  const { name, ledCount, output } = strip;
+  const limit = stripPowerLimit(strip);
+  if (output.type !== 'adalight' || !limit) return undefined;
+  const fullWhite = ledCount * ledAmpsAtFullBrightness(chipOf(output.chip));
+  const lowers = fullWhite > limit.maxAmps;
+  const floorless = limit.floorAlwaysHolds
+    ? ''
+    : ', y la fuente es tan pequeña que los LEDs tenues pueden apagarse';
+  return (
+    `Tira «${name}»: fuente de ${amps(output.power.supplyAmps)} A, ` +
+    `usará como mucho ${amps(limit.maxAmps)} A; en blanco total pide ${amps(fullWhite)} A: ` +
+    (lowers ? 'bajará los frames que se pasen' : 'nunca bajará frames') +
+    floorless
+  );
+}
+
+/** Las líneas del límite de las tiras físicas de `config`, en el orden del fichero. */
+export function powerLimitMessages(config: Config): string[] {
+  return config.strips.flatMap((strip) => powerLimitMessage(strip) ?? []);
+}
+
+/** Unos amperios para el log: con coma y como mucho tres decimales (10,38; 0,048). */
+function amps(value: number): string {
+  return value.toLocaleString('es-ES', { maximumFractionDigits: 3 });
 }
 
 /**
