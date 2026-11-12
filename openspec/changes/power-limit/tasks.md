@@ -136,7 +136,7 @@
   cambiar el fichero de configuración; y se recomienda un fusible o una fuente con protección contra
   sobrecorriente.
   Verificar: §3 y §4.1 cuadran con `specs/power-limit` y con el README §3.2.
-- [ ] 3.2 En la Pi: el `config/local.json` de la mesa declara `"chip": "WS2812B"` y
+- [x] 3.2 En la Pi: el `config/local.json` de la mesa declara `"chip": "WS2812B"` y
   `"power": { "supplyAmps": 8 }`, y el motor arranca con `main`.
   Verificar: el log del arranque dice la fuente de 8 A, los 6,4 A y que bajará los frames que se
   pasen.
