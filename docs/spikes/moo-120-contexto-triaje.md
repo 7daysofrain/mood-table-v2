@@ -52,6 +52,12 @@
   siempre (23 de 24) y va a defectos, no a detalles menores, mientras que el triador, sin el código,
   solo acierta 2 de 8. Quien arregla (BH3) tiene el repo y comprueba cada hallazgo antes de tocar nada.
   Si cambia el revisor, esto se revisa.
+- **Un hallazgo por petición al modelo de decisión** (12-nov). Matiza D91, que descartó esta opción a
+  la espera de `MOO-76`. El protocolo está pensado para varias preguntas sobre una misma cosa. Con
+  varios hallazgos en el mismo `state`, cada respuesta parte de todos a la vez, y se contaminan: en la
+  #116, el `e2e` pasó de 0,64 a 0,83 por ir junto a `sonar-issues`, y el orden mueve la p hasta 0,13.
+  Cada petición repite el título y la descripción de la PR, unos 0,0004 $ por hallazgo. De paso,
+  desaparece `batches()` y con él el límite de tamaño que no cuenta las preguntas (#101.3).
 
 ## Resultados
 
