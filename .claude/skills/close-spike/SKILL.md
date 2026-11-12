@@ -1,6 +1,6 @@
 ---
 name: close-spike
-description: Close a Mood Table spike that is in progress: write its verdict (the spike document in docs/spikes/, a new decision in the ficha, the source document's assumptions and open questions, prompts.md), note the time spent against the timebox, delete the prototype and link it from the PR, and mark the spike's PR ready for review. Exit of the spike lane that /create-spike opens.
+description: Close a Mood Table spike that is in progress. Writes its verdict (the spike document in docs/spikes/, a new decision in the ficha, the source document's assumptions and open questions, prompts.md), notes the time spent against the timebox, deletes the prototype and links it from the PR, and marks the spike's PR ready for review. Exit of the spike lane that /create-spike opens.
 argument-hint: <spike-id>
 disable-model-invocation: true
 ---
