@@ -94,7 +94,7 @@
 
   Se anota en la PR. No es documentación hasta que el maker lo confirme.
   Verificar: el maker da el visto bueno en la PR.
-- [ ] 3.4 `prompts.md`: la entrada de esta tarea.
+- [x] 3.4 `prompts.md`: la entrada de esta tarea.
   Verificar: sigue el formato de `docs/instructions/course.md` §5.
 
 ## Workflow follow-up

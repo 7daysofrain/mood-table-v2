@@ -2328,6 +2328,29 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Los tests de la salida guardaban el pulso de cada frame en el rojo y el verde del primer LED, que el orden GRB intercambia: pasaron al azul de los dos primeros LEDs, que no se mueve.*
 - *SonarQube paró la PR con un 76 % de cobertura: leer cada byte de su canal de origen dejaba seis `?? 0` que nunca se cumplen. La IA lo cambió por escribir cada canal en su byte de destino, con un solo `?? 0`, como antes del change.*
 
+#### 6.86 Recargar el sketch sin reordenar y probar los colores en la mesa (`MOO-147`)
+
+**Prompt 1** (con la PR de `MOO-146` integrada):
+
+> todo verde, mergeado
+
+*Claude Code (`claude-opus-5-5`, 12-nov). La IA actualizó `HARDWARE_SETUP.md` §4.1: `COLOR_ORDER` en `RGB`, el porqué, y el procedimiento para contar LEDs, que ahora se ve en verde con un rojo cada 10. Al leer el estado de la Pi vio que la reinstalación de `MOO-137` se había llevado arduino-cli y el sketch, y pidió permiso para prepararlos.*
+
+**Prompt 2:**
+
+> Sí, prepáralo
+
+*La IA instaló arduino-cli y sus librerías en la Pi, sin `sudo`, y compiló el sketch con los valores de la copia de `/home/pi` en el Mac y `COLOR_ORDER` en `RGB`, sin cargarlo. Le pasó al maker tres comandos para hacerlo en un solo paso (decisión 4): parar el servicio, cargar el sketch y reinstalar `main` conservando la configuración. Al primer «hecho», la IA comprobó la Pi y vio que nada había cambiado: el servicio no se había parado, y el comando de SSH que le había dado no llevaba la clave.*
+
+**Prompt 3** (tras probar en el panel la *respiración* en rojo, verde y azul puros, y un efecto reactivo con música):
+
+> Sí, todo igual
+
+*La tira física pinta los mismos colores que el visor. El sketch no hace ningún destello al arrancar: lo dice su código (`CLEAR_ON_START` solo apaga la tira), y el maker no vio ninguno.*
+
+*Ajustes:*
+- *El comando de SSH para el maker no llevaba `-i ~/.ssh/id_ed25519`, que la IA sí usaba en sus conexiones: sin él, la Pi rechaza la clave.*
+
 ---
 
 ### 7. Pull Requests
