@@ -130,20 +130,20 @@
 
 ## 3. MOO-141 · firmware
 
-- [ ] 3.1 `HARDWARE_SETUP.md` §3 y §4.1 (decisión 7): `Brightness` pasa a `255`, porque el límite
+- [x] 3.1 `HARDWARE_SETUP.md` §3 y §4.1 (decisión 7): `Brightness` pasa a `255`, porque el límite
   del motor protege la fuente; §3 explica que Mood Table baja cada frame al 80 % de la fuente
   declarada; se copia la cifra en amperios de **OUTPUT**, no la de INPUT; al cambiar de fuente hay que
   cambiar el fichero de configuración; y se recomienda un fusible o una fuente con protección contra
   sobrecorriente.
   Verificar: §3 y §4.1 cuadran con `specs/power-limit` y con el README §3.2.
-- [ ] 3.2 En la Pi: el `config/local.json` de la mesa declara `"chip": "WS2812B"` y
+- [x] 3.2 En la Pi: el `config/local.json` de la mesa declara `"chip": "WS2812B"` y
   `"power": { "supplyAmps": 8 }`, y el motor arranca con `main`.
   Verificar: el log del arranque dice la fuente de 8 A, los 6,4 A y que bajará los frames que se
   pasen.
-- [ ] 3.3 Cargar el sketch con `Brightness = 255` en el Arduino de la mesa (`arduino-cli`,
+- [x] 3.3 Cargar el sketch con `Brightness = 255` en el Arduino de la mesa (`arduino-cli`,
   `HARDWARE_SETUP.md` §4.1).
   Verificar: el Arduino responde y la tira pinta lo mismo que el visor.
-- [ ] 3.4 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-135`):
+- [x] 3.4 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-135`):
   - **caso peor**: todo blanco con la intensidad al máximo, durante un par de minutos; la fuente no
     corta, la tira no parpadea y el controlador Adalight no se reinicia; con el polímetro, la tensión
     al final de la tira (`HARDWARE_SETUP.md` §5);
@@ -154,7 +154,7 @@
 
   Se anota en la PR. No es documentación hasta que el maker lo confirme.
   Verificar: el maker da el visto bueno en la PR.
-- [ ] 3.5 `prompts.md`: la entrada de esta tarea.
+- [x] 3.5 `prompts.md`: la entrada de esta tarea.
   Verificar: sigue el formato de `docs/instructions/course.md` §5.
 
 ## Workflow follow-up

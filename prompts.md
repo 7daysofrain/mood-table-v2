@@ -2156,6 +2156,26 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *La IA cambió primero la spec y el design: el límite suma la tabla de la respuesta del LED y, si el frame bajado aún se pasa de la fuente, lo vuelve a bajar sin suelo. Dedujo la cota (el redondeo y el suelo suman como mucho una unidad de PWM por canal), y con ella el aviso del log salta con menos de unos 0,2 A en la mesa. Luego, tests en rojo y el arreglo; S3776 se resolvió sacando de `main` las líneas del límite. La IA dejó la segunda pasada para que la escribiera el maker, y él lo corrigió: el código lo escribe la IA.*
 
+#### 6.76 Quitar el tope de brillo del sketch y probarlo en la mesa (`MOO-141`)
+
+**Prompt 1:**
+
+> Sí, seguimos
+
+*Claude Code (`claude-opus-5-5`, 12-nov). La IA reescribió `HARDWARE_SETUP.md` §3 y §4.1: el motor protege la fuente, se copian los amperios de OUTPUT, al cambiar de fuente cambia el fichero y se recomienda un fusible. Añadió un aviso que no estaba en las tareas: Mood Table solo limita lo que pinta él, así que con Hyperion o la SD de la v1 hay que volver a cargar el sketch con `64`; lo dejó como descripción, sin decidir la Q11 del PRD. En D46 tachó el tope del 25 %. La Pi la pasó a `main` el maker, porque el modo automático no dejó a la IA escribir en ella.*
+
+**Prompt 2:**
+
+> No podemos meter el arduino-cli en la PI para no tener que estar haciendo esto?
+
+*La IA lo vio viable (hay versión arm64 y se instala sin `sudo`), señaló el coste (unos 520 MB en una SD con errores de EXT4) y que se salía de las tareas, y propuso documentarlo en esta misma PR; el maker aceptó. Lo instaló con el checksum verificado y las mismas versiones que el Mac, compiló y cargó el sketch con el servicio parado por el maker, y lo documentó en §4.1 solo después de que la carga funcionara.*
+
+**Prompt 3:**
+
+> Respiración blanca
+
+*Para el caso peor no hay un efecto de blanco fijo. La IA propuso dos pruebas, la respiración en blanco desde el panel o un script provisional con blanco sostenido, y explicó qué cubría cada una. El maker eligió la primera y confirmó a ojo que la tira brilla más, que no hay cortes ni parpadeos y que los LEDs tenues no se apagan con el espectro. La IA lo contrastó con el log del motor y el del kernel: ni reinicios ni desconexiones del USB.*
+
 ---
 
 ### 7. Pull Requests
