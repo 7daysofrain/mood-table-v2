@@ -74,7 +74,7 @@
 
 ## 3. MOO-147 · firmware
 
-- [ ] 3.1 `HARDWARE_SETUP.md` §4.1 (decisión 4): `COLOR_ORDER` pasa a `RGB`, porque el motor ya
+- [x] 3.1 `HARDWARE_SETUP.md` §4.1 (decisión 4): `COLOR_ORDER` pasa a `RGB`, porque el motor ya
   reordena según el chip de la tira, y se explica qué pasa con el sketch antiguo (el rojo y el verde
   salen cambiados). Se quita «la tira se declara como `rgb`». El procedimiento para contar LEDs se
   revisa: los frames que se mandan directamente al sketch ya no se reordenan, así que en una
