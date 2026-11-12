@@ -80,7 +80,7 @@
   revisa: los frames que se mandan directamente al sketch ya no se reordenan, así que en una
   `WS2812B` el rojo y el verde salen cambiados (el blanco no cambia).
   Verificar: §4.1 cuadra con `specs/physical-strip` y con el README §2.2.
-- [ ] 3.2 En la Pi, en un solo paso y a mano (lo hace el maker: `sudo` pide contraseña): actualizar a
+- [x] 3.2 En la Pi, en un solo paso y a mano (lo hace el maker: `sudo` pide contraseña): actualizar a
   `main` con `MOO-146` integrada, cargar el sketch con `COLOR_ORDER` en `RGB` (`arduino-cli`,
   `HARDWARE_SETUP.md` §4.1) y reiniciar el servicio `moodtable`.
   Verificar: el motor arranca y la tira pinta.
