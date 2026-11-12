@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
-    "@fission-ai/openspec": "1.15.0",
+    "@fission-ai/openspec": "1.17.0",
     "@skill-map/cli": "1.12.7",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
