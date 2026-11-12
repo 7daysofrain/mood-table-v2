@@ -83,6 +83,24 @@ contexto.
   no entra, hay que cambiar los criterios de la pregunta, que hoy dicen *"judge the finding against the
   diff"*.
 
+### Permisos del PAT
+
+Probado el 12-nov con el PAT del sistema (*fine-grained*, con *Metadata* en lectura e *Issues* y
+*Pull requests* en escritura):
+
+| Llamada | Permiso que pide GitHub | Con el PAT |
+|---|---|---|
+| `GET /commits/{sha}/check-runs` | `checks=read` | 200 |
+| `GET /check-runs/{id}/annotations` | `checks=read` | 200 |
+| `GET /actions/jobs/{id}/logs` | (no lo dice) | 302 a la descarga |
+| `GET /actions/jobs/{id}` (los pasos) | `actions=read` | 200 |
+
+- **Leer las anotaciones no pide ningún permiso nuevo.** Funciona por lo mismo que ya funcionan hoy
+  los *check runs* y el log: el repo es público, y con eso basta cualquier token.
+- **El riesgo ya existe hoy y no lo trae este cambio:** si el repo pasara a privado, el triaje se
+  quedaría sin *check runs* y sin logs, no solo sin anotaciones. Para no depender de eso, el PAT
+  tendría que declarar *Checks* y *Actions* en lectura. Se decide en la D#.
+
 ## Cómo se hizo
 
 Datos crudos de las 5 filas con `gh api`, en [`.spikes/moo-120/data/`](../../.spikes/moo-120/data):
@@ -98,8 +116,8 @@ el *check run*, sus anotaciones y, si es de Actions, el log del *job*.
 
 - 5 filas, de 3 comprobaciones: `e2e`, `sonar-issues` y `SonarCloud Code Analysis`. `lint`,
   `typecheck` y `test` no tienen ninguna fila etiquetada.
-- Las llamadas se han hecho con el token de `gh` del usuario, no con el PAT del sistema. Falta ver qué
-  permiso le pide al PAT leer las anotaciones.
+- Los datos crudos se bajaron con el token de `gh` del usuario. Que el PAT del sistema lee lo mismo se
+  comprobó aparte (ver *Permisos del PAT*).
 
 ## Qué sale
 
