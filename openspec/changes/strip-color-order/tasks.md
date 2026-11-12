@@ -84,7 +84,7 @@
   `main` con `MOO-146` integrada, cargar el sketch con `COLOR_ORDER` en `RGB` (`arduino-cli`,
   `HARDWARE_SETUP.md` §4.1) y reiniciar el servicio `moodtable`.
   Verificar: el motor arranca y la tira pinta.
-- [ ] 3.3 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-136`):
+- [x] 3.3 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-136`):
   - **colores puros**: la *respiración* con su color en rojo puro, luego en verde puro y luego en azul
     puro; la tira física se ve del mismo color que el visor;
   - **un efecto reactivo** (el *espectro* o el *scroll*) con música: la tira física pinta los mismos
