@@ -2184,6 +2184,26 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Claude Code (`claude-opus-5-5`, 12-nov). Antes de archivar, la IA comprobó en Linear que las tres tareas hijas de `MOO-135` (`MOO-139`, `MOO-140`, `MOO-141`) estaban en *Done*, y que el `tasks.md` tenía las 19 tareas completas. Al sincronizar, `engine-config` y `physical-strip` cambian y `power-limit` pasa a ser una spec principal. Con `--strict`, 11 specs dan avisos por requisitos de más de 500 caracteres, las mismas que en `main` antes de archivar: no los trae este change.*
 
+#### 6.78 Capturar necesidades a mitad de trabajo con `/capture` (`MOO-149`)
+
+**Prompt 1:**
+
+> Lo que me preocupa de este planteamiento es que muchas veces una spike va a salir mientras esté haciendo otra cosa y me va a obligar a centrarme en un protocolo intermedio. Igual no sería interesante primero hacer algo que simplemente capturase el requerimiento con un protocolo rápido, usando un subagente para no contaminar el contexto y que me permita seguir. Esta sería incluso algo mas abstracto que un spike, una captura de necesidad. Que luego puede traducirse a un spike, corregir un bug o incluso una feature nueva
+
+*Claude Code (`claude-opus-5-5`, 12-nov). Al proponer una vía ágil para los *spikes*, la IA había planteado una skill para plantearlos de una sentada; el maker vio que lo caro es la interrupción y propuso separar apuntar de plantear. La IA lo convirtió en dos capas (captura y clasificación), propuso el estado nativo *Triage* de Linear, que el equipo no tenía activado, y señaló el choque con «triaje» del glosario de PB. El maker abrió un fork de la sesión para esta parte; la vía del *spike* sigue en la otra.*
+
+**Prompt 2:**
+
+> Lo de buscar duplicados no me encaja, seguramente sea muy propenso a errores, y requiera de bastante esfuerzo. Que lo cree y ya está, si está duplicado se detectará durante el triaje. Lo que si que igual tiene sentido es estandarizar el formato de lo que entra y sale del agente no?
+
+*La IA había dado al subagente la búsqueda de duplicados y la elección del tipo al hilo principal, con una entrada de siete campos. El maker recortó las dos cosas (Prompt 3): la entrada quedó en un texto libre y la sugerencia de tipo y épica, en el subagente; la salida sí quedó fija. También rechazó una skill para clasificar y un aviso («estás intentando cubrir un problema que aun no tenemos»). Al pedir que la skill solo se lanzara a mano, la IA comprobó en la documentación de Claude Code que `context: fork` no pasa la conversación al subagente, y por eso la skill corre en el hilo principal.*
+
+**Prompt 3:**
+
+> porque el suggested_type viene del principal? A mi esto si que me parece trabajo del subagente. La entrada debería manterse a algo minimo ahora me parece que tiene demasiados campos ya estructurados
+
+*Hecho con skill-creator, a petición del maker. Tres evals del subagente sobre casos reales (el corte del log de `MOO-120`, el visor que no coincide con la mesa y una idea sin evidencia), con Haiku, Sonnet y sin la skill: 97 %, 97 % y 48 %. Fallos: Haiku pasó `relatedTo` como texto y Sonnet tituló una idea en infinitivo; corregido, Haiku pasa el 100 %. La ejecución sin skill vio que el PRD excluye las escenas (§5.4) y las dos con skill no; el maker decidió no añadir ese aviso. Error de la IA: escribió las aserciones mientras corrían las ejecuciones y el baseline de un caso las leyó; en la segunda iteración, a ciegas.*
+
 ---
 
 ### 7. Pull Requests
