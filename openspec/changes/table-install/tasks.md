@@ -81,7 +81,7 @@
   La pregunta se lee de `/dev/tty`; solo valen conservar o sobrescribir, y cualquier otra cosa (o no
   poder leer) termina sin tocar nada, diciendo por qué. Sustituye la salida provisional de 1.3.
   Verificar: `pnpm lint` en verde.
-- [ ] 2.2 Reinstalar según la respuesta (`design.md`, decisión 6, pasos 5 y 6): con conservar, el
+- [x] 2.2 Reinstalar según la respuesta (`design.md`, decisión 6, pasos 5 y 6): con conservar, el
   `config/local.json` de la instalación existente pasa a la nueva; con sobrescribir, el fichero base,
   y el anterior queda como `/opt/moodtable/config/local.json.bck`. `data/` no se copia. Se para el
   servicio, se retira la instalación del script y se cambia a la nueva; el clon anterior no se toca y

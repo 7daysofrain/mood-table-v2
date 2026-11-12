@@ -8,11 +8,13 @@
 # Qué hace, en orden (design.md del change, decisión 6):
 #   1. busca una instalación existente: la del script o la anterior de la mesa;
 #   2. si la hay, pregunta si conservar o sobrescribir su fichero de configuración, y sin una de las
-#      dos respuestas termina sin tocar nada (todavía no sabe reinstalar: termina igualmente);
+#      dos respuestas termina sin tocar nada;
 #   3. instala Node 24 de NodeSource, git y pnpm (corepack), y crea el usuario propio `moodtable`;
 #   4. clona la rama en /opt/moodtable.new, instala las dependencias y construye el panel;
-#   5. deja el fichero de configuración base: la demo, escuchando en todas las interfaces;
-#   6. le da la instalación a `moodtable` y la mueve a /opt/moodtable;
+#   5. deja el fichero de configuración: el conservado, o el base (la demo, escuchando en todas las
+#      interfaces) con una copia .bck del anterior;
+#   6. para el servicio, retira la instalación del script si la había (el clon anterior de la mesa
+#      se queda), le da la nueva a `moodtable` y la mueve a /opt/moodtable;
 #   7. registra la unidad de systemd, la arranca y dice la dirección del panel.
 # Todo lo que puede fallar por la red o el disco (3 a 5) pasa antes de tocar /opt/moodtable.
 # -E: la trampa de ERR también salta dentro de las funciones.
@@ -21,6 +23,7 @@ set -Eeuo pipefail
 readonly REPO_URL='https://github.com/7daysofrain/mood-table-v2.git'
 readonly INSTALL_DIR='/opt/moodtable'
 readonly STAGING_DIR="${INSTALL_DIR}.new"
+readonly RETIRED_DIR="${INSTALL_DIR}.old"
 readonly SERVICE='moodtable'
 readonly SERVICE_USER='moodtable'
 readonly UNIT_PATH="/etc/systemd/system/${SERVICE}.service"
@@ -61,7 +64,7 @@ config_choice=''
 detect_existing() {
   if [[ -e $INSTALL_DIR ]]; then
     existing_dir=$INSTALL_DIR
-  elif [[ $(systemctl show --property=LoadState --value "${SERVICE}.service") == 'loaded' ]]; then
+  elif service_is_registered; then
     existing_dir=$(systemctl show --property=WorkingDirectory --value "${SERVICE}.service")
   fi
 }
@@ -92,6 +95,18 @@ ask_config_choice() {
     '') fail 'no has elegido conservar ni sobrescribir, así que no ha tocado nada.' ;;
     *) fail "«${answer}» no es conservar ni sobrescribir, así que no ha tocado nada." ;;
   esac
+
+  if [[ $config_choice == 'conservar' && ! -f $(existing_config) ]]; then
+    fail "no hay un fichero de configuración que conservar en $(existing_config), así que no ha tocado nada."
+  fi
+}
+
+existing_config() {
+  printf '%s/config/local.json' "$existing_dir"
+}
+
+service_is_registered() {
+  [[ $(systemctl show --property=LoadState --value "${SERVICE}.service") == 'loaded' ]]
 }
 
 # Si /usr/bin/node es una 24 a partir de la 24.15. Una 24 anterior no vale: `pnpm install` la
@@ -167,18 +182,46 @@ write_base_config() {
   " </dev/null)
 }
 
-# Paso 6. Toda la instalación es del usuario propio; las dependencias y el build se han hecho como
-# root. El cambio es lo único que no se puede interrumpir sin consecuencias, y dura segundos.
-switch_install() {
-  info "Moviendo la instalación a ${INSTALL_DIR}"
-  chown -R "${SERVICE_USER}:${SERVICE_USER}" "$STAGING_DIR"
-  mv "$STAGING_DIR" "$INSTALL_DIR"
+# Paso 5, al reinstalar. Con conservar, el fichero de la instalación existente pasa tal cual; con
+# sobrescribir, el base, y el anterior se guarda al lado como .bck. data/ (el estado del
+# instrumento) no se copia: empieza de cero.
+write_config() {
+  if [[ $config_choice == 'conservar' ]]; then
+    info "Conservando el fichero de configuración de ${existing_dir}"
+    cp "$(existing_config)" "${STAGING_DIR}/config/local.json"
+    return
+  fi
+  write_base_config
+  if [[ $config_choice == 'sobrescribir' && -f $(existing_config) ]]; then
+    info "Guardando el fichero de configuración anterior como ${INSTALL_DIR}/config/local.json.bck"
+    cp "$(existing_config)" "${STAGING_DIR}/config/local.json.bck"
+  fi
 }
 
-# Paso 7. Si el servicio ya estaba registrado, `restart` lo arranca con la instalación nueva.
+# Paso 6. Toda la instalación es del usuario propio; las dependencias y el build se han hecho como
+# root. El cambio es lo único que no se puede interrumpir sin consecuencias, y dura segundos: se
+# para el servicio, la instalación del script se aparta a .old, la nueva ocupa su sitio y la
+# apartada se borra. La anterior de la mesa (el clon) no se toca.
+switch_install() {
+  chown -R "${SERVICE_USER}:${SERVICE_USER}" "$STAGING_DIR"
+  if service_is_registered; then
+    info 'Parando el servicio'
+    systemctl stop "$SERVICE"
+  fi
+  if [[ $existing_dir == "$INSTALL_DIR" ]]; then
+    rm -rf "$RETIRED_DIR"
+    mv "$INSTALL_DIR" "$RETIRED_DIR"
+  fi
+  info "Moviendo la instalación a ${INSTALL_DIR}"
+  mv "$STAGING_DIR" "$INSTALL_DIR"
+  rm -rf "$RETIRED_DIR"
+}
+
+# Paso 7. Si el servicio ya estaba registrado, `restart` lo arranca con la instalación nueva. La
+# unidad se sustituye sin escribir a través de ella, por si fuera un enlace a la del clon.
 register_service() {
   info 'Registrando el servicio para que arranque al encender la Pi'
-  cp "${INSTALL_DIR}/deploy/${SERVICE}.service" "$UNIT_PATH"
+  cp --remove-destination "${INSTALL_DIR}/deploy/${SERVICE}.service" "$UNIT_PATH"
   systemctl daemon-reload
   systemctl enable "$SERVICE"
   systemctl restart "$SERVICE"
@@ -199,6 +242,18 @@ print_panel_address() {
   printf 'El registro del motor: journalctl -u %s -b\n' "$SERVICE"
 }
 
+print_reinstall_notes() {
+  [[ -n $existing_dir ]] || return 0
+  printf '\nEl estado del instrumento empieza de cero.\n'
+  if [[ -f "${INSTALL_DIR}/config/local.json.bck" ]]; then
+    printf 'El fichero de configuración anterior quedó en %s/config/local.json.bck\n' "$INSTALL_DIR"
+  fi
+  if [[ $existing_dir != "$INSTALL_DIR" ]]; then
+    printf 'La instalación anterior sigue en %s, pero el servicio ya no la usa.\n' "$existing_dir"
+    printf 'Para lanzar el motor desde ella, para antes el servicio: sudo systemctl stop %s\n' "$SERVICE"
+  fi
+}
+
 # El commit instalado, para el mensaje final.
 installed_commit=''
 
@@ -212,15 +267,15 @@ main() {
   detect_existing
   if [[ -n $existing_dir ]]; then
     ask_config_choice
-    fail "has elegido ${config_choice}, pero este script todavía no sabe reinstalar, así que no ha tocado nada."
   fi
   install_system_packages
   ensure_service_user
   build_staging "$ref"
-  write_base_config
+  write_config
   switch_install
   register_service
   print_panel_address
+  print_reinstall_notes
 }
 
 main "$@"
