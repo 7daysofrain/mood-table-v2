@@ -140,7 +140,7 @@
   `"power": { "supplyAmps": 8 }`, y el motor arranca con `main`.
   Verificar: el log del arranque dice la fuente de 8 A, los 6,4 A y que bajará los frames que se
   pasen.
-- [ ] 3.3 Cargar el sketch con `Brightness = 255` en el Arduino de la mesa (`arduino-cli`,
+- [x] 3.3 Cargar el sketch con `Brightness = 255` en el Arduino de la mesa (`arduino-cli`,
   `HARDWARE_SETUP.md` §4.1).
   Verificar: el Arduino responde y la tira pinta lo mismo que el visor.
 - [ ] 3.4 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-135`):
