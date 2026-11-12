@@ -62,7 +62,7 @@ https://github.com/7daysofrain/mood-table-v2
 - **Autonomía**: se enciende la Pi y vuelve como estaba, sin portátil ni internet.
 - **Desarrollo y demo sin hardware** gracias al simulador (audio desde fichero + tiras virtuales en el visor).
 
-**Para quién.** DJs y makers con una Raspberry Pi y una tira LED que quieren una iluminación reactiva que puedan tocar y ampliar. El caso de referencia es la mesa del autor, pero nada está atado a ella: el número de LEDs, el orden de color y el límite de potencia se configuran, y los efectos se añaden como módulos de código.
+**Para quién.** DJs y makers con una Raspberry Pi y una tira LED que quieren una iluminación reactiva que puedan tocar y ampliar. El caso de referencia es la mesa del autor, pero nada está atado a ella: el número de LEDs, el chip de cada tira (que fija su orden de color) y el límite de potencia se configuran, y los efectos se añaden como módulos de código.
 
 ### **1.2. Características y funcionalidades principales:**
 
@@ -73,7 +73,7 @@ https://github.com/7daysofrain/mood-table-v2
 - **H1 · Probar el instrumento en el simulador.** Sin hardware, con un fichero de audio o la tarjeta de sonido como fuente, las tiras virtuales reaccionan a la música en el visor del navegador, en tiempo real, y si la fuente es un fichero, se oye en el panel.
 - **H2 · Tocar los parámetros en vivo.** Mientras suena la música, eliges el efecto de cada tira y mueves sus controles, que el panel genera a partir del esquema que declara cada efecto; la luz responde al instante.
 - **H3 · Pintar la tira física.** Lo que muestra el visor se reproduce en la tira real de la mesa, conectada a un Arduino con el sketch Adalight por protocolo Adalight (serie). Cualquier controlador Adalight sirve igual (D46).
-- **H4 · Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, orden de color y límites de potencia), y el motor, el límite de potencia y el visor lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
+- **H4 · Declarar mis tiras.** Las tiras se declaran en un fichero de configuración (salida, número de LEDs, chip y límites de potencia), y el motor, el límite de potencia y el visor lo respetan. El sistema admite varias tiras, cada una con su propio efecto.
 - **H5 · Arrancar en el último estado.** Enciendes la Pi sin portátil y vuelve como estaba: el efecto de cada tira y sus valores.
 
 **Efectos incluidos.** Los tres efectos reactivos de la v1, reescritos en el motor propio, y uno de ambiente. Así se demuestra que la nueva arquitectura cubre lo que hacía la anterior y que un efecto puede no usar el audio:
@@ -192,7 +192,7 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
    - **`sobrescribir`**: la nueva usa el fichero base, y el anterior queda como copia en `/opt/moodtable/config/local.json.bck`.
 
    En los dos casos, el **estado del instrumento empieza de cero**: el efecto activo de cada tira y los valores de sus efectos que tenía no pasan a la instalación nueva. Cualquier otra respuesta, o lanzarlo sin terminal (`ssh` sin `-t`), termina sin tocar nada y dice por qué. El clon anterior de la mesa **se queda donde está**, con su estado, para seguir desarrollando en él; el script lo dice al terminar, porque el servicio ya no lo usa.
-2. Declara tus tiras (**H4**) editando con `sudo` el fichero de configuración de la instalación, `/opt/moodtable/config/local.json` (`sudo nano /opt/moodtable/config/local.json`): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, orden de color, y el chip de la tira y los amperios de salida (OUTPUT) de su fuente, tal como los pone su etiqueta (§3). Declara también la tarjeta de sonido como fuente de audio (`audioSource`, §3), en lugar del fichero de ejemplo, con la cadena que da `arecord -l` (`HARDWARE_SETUP.md` §7). Deja `"server": { "host": "0.0.0.0" }`: sin él, el motor solo escucha en `127.0.0.1`, la propia Pi.
+2. Declara tus tiras (**H4**) editando con `sudo` el fichero de configuración de la instalación, `/opt/moodtable/config/local.json` (`sudo nano /opt/moodtable/config/local.json`): puerto serie (`ls /dev/ttyUSB*`), número de LEDs, y el chip de la tira y los amperios de salida (OUTPUT) de su fuente, tal como los pone su etiqueta (§3). El orden de color no se declara: lo fija el chip. Declara también la tarjeta de sonido como fuente de audio (`audioSource`, §3), en lugar del fichero de ejemplo, con la cadena que da `arecord -l` (`HARDWARE_SETUP.md` §7). Deja `"server": { "host": "0.0.0.0" }`: sin él, el motor solo escucha en `127.0.0.1`, la propia Pi.
 3. Reinicia el servicio para que el motor lea el fichero. Si algo está mal, el motor no arranca y dice en el registro qué campo falla, o qué tarjeta no puede abrir:
 
    ```bash
@@ -320,7 +320,7 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 
 - **Los puertos los pide el hardware, no la teoría.** Cada puerto tiene al menos dos implementaciones reales (tarjeta o fichero; Adalight o navegador; panel o F1). Sin la separación, el motor quedaría acoplado a ALSA, a los puertos serie y al navegador.
 - **La tira es una entidad desde el principio.** La mesa real tiene dos tiras (una reactiva y otra de ambiente). Diseñar el bucle, los datos y la API para N tiras cuesta ahora lo mismo que para una, y evita rehacerlos cuando llegue la segunda.
-- **Cada dato donde le corresponde.** Lo que sale de la hoja de características del hardware y no cambia (salida, número de LEDs, orden de color, límites de potencia) se **declara en un fichero de configuración** versionado y validado al arrancar. Lo que cambia mientras se toca (efecto activo y valores de cada tira) va en la **base de datos**. Una tira existe porque está cableada, así que no se da de alta desde el panel.
+- **Cada dato donde le corresponde.** Lo que sale de la hoja de características del hardware y no cambia (salida, número de LEDs, chip, límites de potencia) se **declara en un fichero de configuración** versionado y validado al arrancar. Lo que cambia mientras se toca (efecto activo y valores de cada tira) va en la **base de datos**. Una tira existe porque está cableada, así que no se da de alta desde el panel.
 - **El simulador no es una pieza aparte.** Es el mismo motor con otros adaptadores (fichero WAV + tiras virtuales). Lo que se ve en la demo pública es exactamente el código que corre en la mesa.
 - **El motor funciona sin audio.** Sin fuente de audio, el análisis no se calcula y la mesa puede quedarse en modo ambiente sin música. Con fuente se calcula siempre, aunque ninguna tira lo use, para que cualquiera pueda pasar a un efecto reactivo en cualquier momento (D79).
 - **Librería en el borde, no framework en el centro.** El servidor HTTP (Fastify) es un adaptador más. Se descartaron frameworks *full-stack* como AdonisJS porque imponen su estructura y su ciclo de vida alrededor de una aplicación web, y aquí el centro es un bucle de tiempo real. Se descartó también un contenedor de DI: son pocas dependencias elegidas una vez al arrancar, y no justifica la "magia" de decoradores y metadatos.
@@ -398,7 +398,7 @@ Guarda lo que el bucle necesita **de cada tira**: su efecto activo, con sus valo
 #### Configuración de las tiras
 
 **Carga de configuración** — TypeScript + TypeBox.
-Al arrancar, lee el fichero de configuración del despliegue, que declara las tiras (identificador, nombre, salida y puerto, número de LEDs, orden de color y, si es física, su chip y su fuente) y la fuente de audio. Lo valida contra su esquema TypeBox: si algo está mal, **el motor no arranca** y dice exactamente qué campo falla.
+Al arrancar, lee el fichero de configuración del despliegue, que declara las tiras (identificador, nombre, salida y puerto, número de LEDs y, si es física, su chip y su fuente) y la fuente de audio. El orden de color de una tira física no se declara: lo fija su chip (D111). Lo valida contra su esquema TypeBox: si algo está mal, **el motor no arranca** y dice exactamente qué campo falla.
 
 **Restauración del estado** — TypeScript + TypeBox, función pura del núcleo (`restore.ts`).
 Después, `main.ts` lee el estado guardado y lo concilia con las tiras del fichero, por su `id`: cambiar el nombre, los LEDs o la salida de una tira no la hace otra. Una tira sin estado guardado arranca como la primera vez, con el efecto que declara (`effect`) y los valores por defecto. Con estado, **manda lo que dejó el DJ**: su efecto activo y los valores de cada efecto. El efecto del fichero hace de **reserva** si el guardado ya no existe o necesita una fuente de audio que el fichero ya no declara; en este caso, el log lo dice. La reserva siempre se puede pintar, porque el fichero no deja declarar un efecto reactivo sin fuente. Los valores guardados de cada efecto se validan con su **esquema actual** (D104): los campos que faltan toman su valor por defecto y los que sobran se quitan, y si aun así no lo cumplen, solo ese efecto vuelve a sus valores por defecto. Los de un efecto que ya no existe se ignoran. Si el estado guardado no se puede leer, el motor arranca como la primera vez y lo dice en el log.
@@ -722,7 +722,7 @@ Todos los niveles automáticos se ejecutan en cada PR (§2.4).
 
 | Dato | Ejemplos | Dónde vive | Quién lo cambia |
 |---|---|---|---|
-| **Declaración de las tiras** | salida y puerto, nº de LEDs, orden de color, límites de potencia | Fichero de configuración del despliegue (versionado, validado con TypeBox al arrancar) | El maker, al cablear; se aplica al reiniciar |
+| **Declaración de las tiras** | salida y puerto, nº de LEDs, chip, límites de potencia | Fichero de configuración del despliegue (versionado, validado con TypeBox al arrancar) | El maker, al cablear; se aplica al reiniciar |
 | **Estado del instrumento** | efecto activo de cada tira y valores de sus parámetros | Base de datos SQLite | El DJ, desde el panel, mientras toca |
 | **Definición de los efectos** | parámetros, tipos, rangos, `render` | Código (§2.2) | El desarrollador |
 
@@ -794,7 +794,6 @@ Se documenta aquí porque es la otra mitad del modelo. Su esquema TypeBox vive e
 | `output` | objeto | Obligatorio | Salida de la tira, discriminada por `type`: `virtual` (solo el visor, sin más campos) o `adalight` (la tira física, por su puerto serie; sus campos, abajo). |
 | `ledCount` | entero | > 0 | Número de LEDs. El máximo práctico con Adalight es ≈ 200-300 por tira. |
 | `effect` | enum | Obligatorio; un id del catálogo de efectos (`breathing`…) | Efecto con el que arranca la tira (D52). Si hay estado guardado de la tira, manda sobre él, salvo que ya no se pueda pintar (§2.2). |
-| `colorOrder` | enum | RGB, RBG, GRB, GBR, BRG, BGR | Orden de los canales que espera la tira. |
 
 La salida `adalight` declara dónde está el controlador Adalight, a qué velocidad habla, el chip de sus LEDs y la fuente que la alimenta. Lo físico va en la salida física: una tira virtual no puede declarar chip ni fuente (D109).
 
@@ -802,7 +801,7 @@ La salida `adalight` declara dónde está el controlador Adalight, a qué veloci
 |---|---|---|---|
 | `port` | string | Obligatorio, no vacío | Puerto serie del controlador. Mejor la ruta de `/dev/serial/by-id/`, que no cambia al reiniciar ni al enchufar otro dispositivo serie (`HARDWARE_SETUP.md` §7). El panel la muestra entera. |
 | `baudRate` | entero | Obligatorio; 9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000, 576000, 921600, 1000000, 1500000 o 2000000 | Baudios: los mismos que el sketch del controlador, que el motor no puede comprobar. Solo velocidades estándar, para que una errata (`11520`) no deje arrancar. No salen al panel. |
-| `chip` | enum | Obligatorio; un chip del catálogo (hoy solo `WS2812B`) | Chip de la tira. El motor sabe lo que consume cada canal de ese chip a todo brillo (`WS2812B`: 20 mA) y lo usa para estimar el consumo de cada frame. Se declara el chip y no los miliamperios porque los datasheets mezclan la corriente por canal y por LED. No sale al panel. |
+| `chip` | enum | Obligatorio; un chip del catálogo (hoy solo `WS2812B`) | Chip de la tira. Por él, el motor sabe lo que consume cada canal a todo brillo (`WS2812B`: 20 mA), con lo que estima el consumo de cada frame, y su orden de color (`WS2812B`: GRB), con el que la salida Adalight reordena los canales (D111). Se declara el chip y no los miliamperios porque los datasheets mezclan la corriente por canal y por LED. No sale al panel. |
 | `power.supplyAmps` | número | Obligatorio; > 0, con decimales, y al menos lo que pide un LED del chip a todo brillo (0,06 A en una `WS2812B`) | Amperios de **salida** (OUTPUT) que pone la etiqueta de la fuente que alimenta la tira, no los de entrada. Lo usa el límite de potencia. Sin tope superior: la línea del log del arranque delata un valor desproporcionado. No sale al panel. |
 
 La tira de la mesa:

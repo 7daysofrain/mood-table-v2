@@ -33,7 +33,7 @@
   verde y azul (decisión 2), y `colorOrder: 'GRB'` en la entrada `WS2812B` del catálogo. Se exporta
   desde el punto de entrada del paquete.
   Verificar: los tests de 1.1 pasan, y `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 1.3 Documentación:
+- [x] 1.3 Documentación:
   - README §1.1, §1.2 (H4), §1.4 paso 2, §2.1 «Justificación», §2.2 «Configuración de las tiras» y la
     tabla del §3: el orden de color deja de estar entre lo que se declara, y donde haga falta se dice
     que lo fija el chip de la tira;
