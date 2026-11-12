@@ -153,9 +153,10 @@ En `Adalight-FastLED/Arduino/LEDstream_FastLED/LEDstream_FastLED.ino`, cambia es
 | `Brightness` | `255` | Sin tope: protege la fuente el límite de Mood Table (§3). Con otro programa sin límite propio, `64` (el 25 %) |
 | `PIN_DATA` | `6` | El pin donde va el rojo de datos |
 | `SerialSpeed` | `500000` | A 115.200, Adalight solo da 20 fps con 173 LEDs; a 500.000, 59 (D96). Es exacta para el Uno a 16 MHz. Con Hyperion se usaba 115.200 |
+| `COLOR_ORDER` | `RGB` | El sketch pasa los canales tal como le llegan, porque Mood Table ya los manda en el orden de color del chip de la tira (D111). Con el `GRB` que trae el sketch, el orden se aplica dos veces y el rojo y el verde salen cambiados, sin ningún error. Con otro programa que mande los canales en RGB (Hyperion), `GRB` |
 
-`LED_TYPE` (`WS2812B`) y `COLOR_ORDER` (`GRB`) ya vienen bien para esta tira. Compila y carga (el
-puerto aparece como `/dev/cu.usbserial-…` en macOS):
+`LED_TYPE` (`WS2812B`) ya viene bien para esta tira. Compila y carga (el puerto aparece como
+`/dev/cu.usbserial-…` en macOS):
 
 ```bash
 cd Adalight-FastLED/Arduino/LEDstream_FastLED
@@ -189,14 +190,16 @@ arduino-cli upload --fqbn arduino:avr:uno -p /dev/ttyUSB0 ~/Adalight-FastLED/Ard
 sudo systemctl start moodtable
 ```
 
-**Orden de color en Mood Table:** el sketch ya reordena los canales a GRB, así que en el fichero de
-configuración **la tira se declara como `rgb`**. Si la declaras `grb`, el orden se aplica dos veces y
-el rojo y el verde salen cambiados.
+**Orden de color en Mood Table:** no se declara en el fichero de configuración. Lo fija el chip de la
+tira (`"chip": "WS2812B"`, que es GRB), y el motor reordena los canales antes de mandarlos. Por eso el
+sketch tiene que llevar `COLOR_ORDER` en `RGB`, y el motor y el sketch se actualizan juntos: con un
+motor anterior a `MOO-146` y el sketch en `RGB`, el rojo y el verde también salen cambiados.
 
 **Contar los LEDs sin contarlos uno a uno:** con el sketch cargado con más LEDs de los que hay, manda un
-único frame con todo en rojo, un LED verde cada 10 y uno **blanco** cada 50 (el blanco no depende del
-orden de color). La cuenta sale de lo que se ve al final de la tira: en este montaje, 3 blancos, 2
-verdes y 3 rojos = 173.
+único frame con todo en rojo, un LED verde cada 10 y uno **blanco** cada 50. El frame va directo al
+sketch, sin pasar por el motor, así que nadie reordena los canales: en una `WS2812B`, el rojo y el
+verde salen cambiados y se ve todo en verde, con un LED rojo cada 10 (el blanco no cambia). La cuenta
+sale de lo que se ve al final de la tira: en este montaje, 3 blancos, 2 rojos y 3 verdes = 173.
 
 ### 4.2. Grabar el sistema de la Pi
 
