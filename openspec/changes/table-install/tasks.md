@@ -76,22 +76,22 @@
 
 ## 2. MOO-144 · infra
 
-- [ ] 2.1 Detectar la instalación existente y preguntar (`design.md`, decisión 6, pasos 1 y 2): la
+- [x] 2.1 Detectar la instalación existente y preguntar (`design.md`, decisión 6, pasos 1 y 2): la
   del script por `/opt/moodtable` y la anterior por el `WorkingDirectory` de la unidad registrada.
   La pregunta se lee de `/dev/tty`; solo valen conservar o sobrescribir, y cualquier otra cosa (o no
   poder leer) termina sin tocar nada, diciendo por qué. Sustituye la salida provisional de 1.3.
   Verificar: `pnpm lint` en verde.
-- [ ] 2.2 Reinstalar según la respuesta (`design.md`, decisión 6, pasos 5 y 6): con conservar, el
+- [x] 2.2 Reinstalar según la respuesta (`design.md`, decisión 6, pasos 5 y 6): con conservar, el
   `config/local.json` de la instalación existente pasa a la nueva; con sobrescribir, el fichero base,
   y el anterior queda como `/opt/moodtable/config/local.json.bck`. `data/` no se copia. Se para el
   servicio, se retira la instalación del script y se cambia a la nueva; el clon anterior no se toca y
   el script dice que el servicio ya no lo usa.
   Verificar: `pnpm lint` en verde.
-- [ ] 2.3 El README §1.4 explica qué pasa al volver a lanzar el script (la pregunta, la copia `.bck`
+- [x] 2.3 El README §1.4 explica qué pasa al volver a lanzar el script (la pregunta, la copia `.bck`
   y que el estado del instrumento empieza de cero) y que el clon anterior de la mesa se queda donde
   está.
   Verificar: lo que dice coincide con `specs/table-install`, requisitos de reinstalar.
-- [ ] 2.4 Prueba en la mesa, a mano, con la PR abierta:
+- [x] 2.4 Prueba en la mesa, a mano, con la PR abierta:
   - *Pregunta qué hacer con la configuración al reinstalar* (la del script): con la SD de la
     sección 1, relanzar el script de la rama de la PR. Pregunta antes de hacer nada;
   - *Sin respuesta, no cambia nada*: responder otra cosa, y lanzarlo sin terminal
