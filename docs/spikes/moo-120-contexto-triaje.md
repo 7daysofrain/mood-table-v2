@@ -238,6 +238,33 @@ si se arregló en la PR, *no aplica* si se resolvió sin cambio en ella.
   preguntas al partir las peticiones (`decision-model.ts`). Es el mismo patrón que la nota de la #122
   en `MOO-76`: una revisión que llega tarde se queda sin atender.
 
+### Un revisor más ruidoso: Claude frente a Codex (12-nov)
+
+Dos subagentes de Claude revisaron a ciegas, sin ver los comentarios de Codex, el mismo push que
+revisó Codex en dos PR. La instrucción fue la de una revisión normal: «todos los comentarios que
+dejarías». Después, cada hallazgo pasó solo por el triador de producción, 2 veces.
+
+| PR | Codex | Claude | De Codex que encuentra Claude |
+|---|---|---|---|
+| #122 (`960014c`) | 2 P2 | 1 P2 + 4 P3 | los 2 |
+| #134 (`d6422eb`) | 1 P1 | 2 P2 + 2 P3 + 3 *nit* | el 1, partido en 4 |
+| **Total** | **3** | **12** | **3 de 3** |
+
+- **Claude encuentra todo lo de Codex, pero lo parte.** El P1 de Codex en la #134 (el límite no cuenta
+  el PWM redondeado) le sale a Claude como 4 comentarios: la estimación, el umbral del suelo, las
+  cifras del `design.md` y la documentación que dice que se usa `LED_RESPONSE`. Codex lo arregló todo
+  con un commit.
+- **De los 9 de más, solo 1 es un detalle menor claro** (#134.6: una comprobación redundante). El
+  resto son mejoras discutibles: que el adaptador en memoria rechace lo mismo que SQLite, que un
+  `ROLLBACK` no tape el error original, un fichero de contrato de tests en `src/core`, un generador
+  pseudoaleatorio que se repite y un test que comprueba el modelo y no la salida real.
+- **El triador ordena bien, pero casi no decide.** Los tres *nit* son los más bajos (0,69, 0,36 y
+  **0,15 → no aplica**), y el resto se queda entre 0,60 y 0,85. Uno sale *real* (#134.3, 0,85). Los
+  equivalentes a los de Codex se quedan en *exige criterio* (0,61-0,71).
+- **El riesgo de bucle no son los *nits*, sino el volumen:** 12 hilos que resolver frente a 3, en
+  cada vuelta. Se controla más con el encargo del revisor (solo defectos, un hallazgo por causa) que
+  con el triador, que aquí solo filtraría el *nit* evidente.
+
 ### Permisos del PAT
 
 Probado el 12-nov con el PAT del sistema (*fine-grained*, con *Metadata* en lectura e *Issues* y

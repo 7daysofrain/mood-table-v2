@@ -1,0 +1,24 @@
+{"pr":"122","i":0,"severity":"P2","title":"The adapter changes a newer engine's file before seeing that it is newer, although it says it does not touch it","hunk":true,"rep":1,"p":0.6132,"inputTokens":4131}
+{"pr":"122","i":0,"severity":"P2","title":"The adapter changes a newer engine's file before seeing that it is newer, although it says it does not touch it","hunk":true,"rep":2,"p":0.6179,"inputTokens":4131}
+{"pr":"122","i":1,"severity":"P3","title":"load() loses a strip whose id is `__proto__`, so the SQLite adapter diverges from the memory one","hunk":true,"rep":1,"p":0.6388,"inputTokens":4823}
+{"pr":"122","i":1,"severity":"P3","title":"load() loses a strip whose id is `__proto__`, so the SQLite adapter diverges from the memory one","hunk":true,"rep":2,"p":0.6388,"inputTokens":4823}
+{"pr":"122","i":2,"severity":"P3","title":"The memory adapter accepts states that SQLite rejects (active effect without its values)","hunk":true,"rep":1,"p":0.7846,"inputTokens":2698}
+{"pr":"122","i":2,"severity":"P3","title":"The memory adapter accepts states that SQLite rejects (active effect without its values)","hunk":true,"rep":2,"p":0.7846,"inputTokens":2698}
+{"pr":"122","i":3,"severity":"P3","title":"ROLLBACK can hide the original error when SQLite has already rolled back","hunk":true,"rep":1,"p":0.7746,"inputTokens":5073}
+{"pr":"122","i":3,"severity":"P3","title":"ROLLBACK can hide the original error when SQLite has already rolled back","hunk":true,"rep":2,"p":0.7746,"inputTokens":5073}
+{"pr":"122","i":4,"severity":"P3","title":"Test code inside src/core: it imports vitest and counts as product code","hunk":true,"rep":1,"p":0.6039,"inputTokens":2514}
+{"pr":"122","i":4,"severity":"P3","title":"Test code inside src/core: it imports vitest and counts as product code","hunk":true,"rep":2,"p":0.6039,"inputTokens":2514}
+{"pr":"134","i":0,"severity":"P2","title":"The estimate ignores the rounded PWM the strip receives, so the guarantee 'never above the supply' only holds in the model","hunk":true,"rep":1,"p":0.7058,"inputTokens":3250}
+{"pr":"134","i":0,"severity":"P2","title":"The estimate ignores the rounded PWM the strip receives, so the guarantee 'never above the supply' only holds in the model","hunk":true,"rep":2,"p":0.7154,"inputTokens":3250}
+{"pr":"134","i":1,"severity":"P2","title":"Floor feasibility check uses 12² instead of the real cost of a channel at 12","hunk":true,"rep":1,"p":0.6225,"inputTokens":3028}
+{"pr":"134","i":1,"severity":"P2","title":"Floor feasibility check uses 12² instead of the real cost of a channel at 12","hunk":true,"rep":2,"p":0.6225,"inputTokens":3028}
+{"pr":"134","i":2,"severity":"P3","title":"The '23 mA, not 41' correction goes the wrong way","hunk":true,"rep":1,"p":0.6935,"inputTokens":2534}
+{"pr":"134","i":2,"severity":"P3","title":"The '23 mA, not 41' correction goes the wrong way","hunk":true,"rep":2,"p":0.6935,"inputTokens":2534}
+{"pr":"134","i":3,"severity":"P3","title":"Docs say the power limit uses LED_RESPONSE, but it never imports it","hunk":true,"rep":1,"p":0.8454,"inputTokens":2382}
+{"pr":"134","i":3,"severity":"P3","title":"Docs say the power limit uses LED_RESPONSE, but it never imports it","hunk":true,"rep":2,"p":0.8454,"inputTokens":2382}
+{"pr":"134","i":4,"severity":"nit","title":"Seeded LCG loses precision and cycles after about 10k values","hunk":true,"rep":1,"p":0.6851,"inputTokens":2550}
+{"pr":"134","i":4,"severity":"nit","title":"Seeded LCG loses precision and cycles after about 10k values","hunk":true,"rep":2,"p":0.6851,"inputTokens":2550}
+{"pr":"134","i":5,"severity":"nit","title":"Property test checks the model, not the real output","hunk":true,"rep":1,"p":0.3576,"inputTokens":3502}
+{"pr":"134","i":5,"severity":"nit","title":"Property test checks the model, not the real output","hunk":true,"rep":2,"p":0.3576,"inputTokens":3502}
+{"pr":"134","i":6,"severity":"nit","title":"Redundant `!limit` check and a duplicated limit computation","hunk":true,"rep":1,"p":0.152,"inputTokens":2504}
+{"pr":"134","i":6,"severity":"nit","title":"Redundant `!limit` check and a duplicated limit computation","hunk":true,"rep":2,"p":0.152,"inputTokens":2504}
