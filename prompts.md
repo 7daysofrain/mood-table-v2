@@ -2176,6 +2176,14 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Para el caso peor no hay un efecto de blanco fijo. La IA propuso dos pruebas, la respiración en blanco desde el panel o un script provisional con blanco sostenido, y explicó qué cubría cada una. El maker eligió la primera y confirmó a ojo que la tira brilla más, que no hay cortes ni parpadeos y que los LEDs tenues no se apagan con el espectro. La IA lo contrastó con el log del motor y el del kernel: ni reinicios ni desconexiones del USB.*
 
+#### 6.77 Archivar el change `power-limit` (`MOO-135`)
+
+**Prompt 1:**
+
+> Sí, archívalo
+
+*Claude Code (`claude-opus-5-5`, 12-nov). Antes de archivar, la IA comprobó en Linear que las tres tareas hijas de `MOO-135` (`MOO-139`, `MOO-140`, `MOO-141`) estaban en *Done*, y que el `tasks.md` tenía las 19 tareas completas. Al sincronizar, `engine-config` y `physical-strip` cambian y `power-limit` pasa a ser una spec principal. Con `--strict`, 11 specs dan avisos por requisitos de más de 500 caracteres, las mismas que en `main` antes de archivar: no los trae este change.*
+
 ---
 
 ### 7. Pull Requests
