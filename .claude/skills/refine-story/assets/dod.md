@@ -3,7 +3,8 @@
 > Asset de la skill `refine-story`: copia **tal cual** a la historia el bloque de su tipo (etiqueta
 > **Tipo** de Linear, `linear.md` §3). Está en español porque va directo a Linear. Una vez copiado, el
 > DoD de cada historia vive en Linear; cambiar este fichero no reescribe las ya refinadas. Un solo DoD
-> para todo es un anti-patrón (curso, 04.6).
+> para todo es un anti-patrón (curso, 04.6). El de *Spike* vive en `/create-spike`: los *spikes* no
+> pasan por esta skill.
 
 Común a todos los tipos: **PR con revisión humana** y **`Fixes MOO-n`** con el ID de la tarea.
 
@@ -27,14 +28,6 @@ Común a todos los tipos: **PR con revisión humana** y **`Fixes MOO-n`** con el
 - [ ] Sin cambio de comportamiento observable: la suite pasa **sin tocar** tests de comportamiento
 - [ ] Objetivo del refactor medible y cumplido (p. ej. menos acoplamiento, regla de lint núcleo ↛ adaptadores)
 - [ ] Lint, tipos y quality gate de SonarQube en verde (sin empeorar deuda ni cobertura)
-
-## Spike
-
-- [ ] Pregunta del spike respondida con datos (medidas, prototipo o fuentes)
-- [ ] Hallazgos y decisión registrados en la ficha (`docs/idea-mood-table.md`, nueva D#) y en `prompts.md` si la IA intervino
-- [ ] Tiempo invertido anotado frente al *timebox* acordado
-- [ ] Código del spike descartado o aislado (no llega a `main` como producto)
-- [ ] Historias, supuestos o preguntas del documento fuente (A#, Q#; BA#, BQ#) afectados actualizados
 
 ## Chore
 

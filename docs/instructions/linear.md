@@ -35,19 +35,23 @@
 |---|---|---|
 | Triage | **Captura** sin clasificar: una necesidad apuntada a mitad de trabajo con `/capture` (§5), sin tipo ni épica | La crea el subagente `capturer`; se clasifica a mano |
 | Backlog | Idea o historia sin refinar | Manual |
-| Todo | Refinada (pasa INVEST, tiene criterios, non-goals y estimación) **o en definición**: rama local creada y OpenSpec change en exploración, redacción o revisión, todavía sin commit | Manual; el agente, al crear la rama, si venía de `Backlog` (*enablers*) |
+| Todo | Refinada (pasa INVEST, tiene criterios, non-goals y estimación) **o en definición**: rama local creada y OpenSpec change en exploración, redacción o revisión, todavía sin commit. Un *spike*, planteado: preguntas y *timebox* | Manual; el agente, al crear la rama, si venía de `Backlog` (*enablers*); `/create-spike` |
 | Spec | Su OpenSpec change está **revisado por Joseba, commiteado y subido**: se puede implementar sin más puertas humanas (incluso por un agente autónomo) | El agente, al subir el commit del change |
 | In Progress | Implementándose (PR en borrador) | GitHub (automático) |
 | In Review | PR abierta, esperando revisión y puertas | GitHub (automático) |
 | Done | PR integrada | GitHub (automático) |
+
+Un *spike* no pasa por *Spec*: no tiene change, y de *Todo* va a *In Progress* con su PR en borrador
+(`workflow.md` §7).
 
 **Parent auto-close activado:** al cerrarse la última tarea se cierra la historia, y con la última
 historia, la épica. *Sub-issue auto-close* desactivado.
 
 ## 3. Etiquetas
 
-- **Tipo** (grupo; decide el DoD): `Feature` · `Bug` · `Refactor` · `Spike` (investigación con
-  resultado, p. ej. el de rendimiento) · `Chore` (setup, CI, dependencias).
+- **Tipo** (grupo; decide el DoD): `Feature` · `Bug` · `Refactor` · `Spike` (una pregunta con
+  *timebox*, p. ej. la de rendimiento; tiene su propia vía: `workflow.md` §7) · `Chore` (setup, CI,
+  dependencias).
 - **Las capturas no llevan etiquetas** mientras están en `Triage`: el tipo y el área se ponen al
   clasificarlas (§5).
 - **Área** (etiquetas **sueltas**, sin grupo: el workspace no admite grupos de selección múltiple):
@@ -75,6 +79,10 @@ historia, la épica. *Sub-issue auto-close* desactivado.
   | 13 | Demasiado grande: se divide |
 - **Las historias se crean en `Backlog` sin estimación Fibonacci**; se estiman tras refinarlas (paso a
   `Todo`).
+- **Los *spikes* no se estiman: su *timebox* sustituye a la estimación.** Son ½, 1 o 2 días de
+  dedicación, que **fija el usuario** al plantearlo (la IA no propone un valor: lo anclaría). Va en la
+  descripción, y el campo *estimate* queda vacío. Más de 2 días, se parte, como un 13. Al cerrarlo se
+  anota el tiempo dedicado, sin más consecuencia: sirve para plantear el siguiente.
 
 ## 5. Vida de una historia en Linear
 
@@ -89,6 +97,14 @@ descripción, protocolo, DoD por tipo) vive en la skill; aquí solo el **qué**.
 
 Toda escritura en Linear pasa por la puerta humana de la skill (permisos en §8).
 
+**Vida de un *spike*.** No pasa por las tres skills de arriba: `/refine-story` y `/estimate-story`
+lo mandan a `/create-spike`.
+
+| Paso | Skill | Aporta al *spike* | Estado al terminar |
+|---|---|---|---|
+| Plantear | `/create-spike <épica \| issue>` | Preguntas y lo que alimenta cada una, *timebox*, entregable, non-goals, DoD de Spike; si es nuevo, etiquetas, prioridad y *blocks* | **Todo** |
+| Cerrar | `/close-spike <spike>` | Nada en Linear: escribe el veredicto en el repo y deja la PR lista para revisar | *In Review* (por la PR) |
+
 **Capturas.** Una necesidad que aparece a mitad de otro trabajo (un posible *spike*, bug, historia o
 *chore*) no se plantea en ese momento: se apunta con `/capture <texto>` y se sigue trabajando. La skill
 solo se lanza a mano, no pide confirmación y añade la evidencia que ya hay en la conversación; el
@@ -98,8 +114,8 @@ evidencia, la issue de origen como *related* y un tipo y una épica **sugeridos*
 **Clasificar capturas** se hace a mano, en la bandeja *Triage* de Linear, cuando se elige qué trabajar:
 aceptarla (con su etiqueta de tipo y su épica, pasa a `Backlog`), marcarla como duplicada o
 descartarla. La captura se convierte en la issue: conserva su ID, su historial y sus enlaces. Un
-*spike* sigue desde ella; para una historia, `/create-story` todavía no parte de una captura (se
-adaptará con la primera que lo necesite). En español se dice «clasificar capturas», no «triaje»,
+*spike* sigue desde ella con `/create-spike <id>`; para una historia, `/create-story` todavía no
+parte de una captura (se adaptará con la primera que lo necesite). En español se dice «clasificar capturas», no «triaje»,
 que en el glosario de PB es otra cosa.
 
 ## 6. Tareas (sub-issues)
@@ -107,12 +123,13 @@ que en el glosario de PB es otra cosa.
 **Una tarea = una PR** (ver `workflow.md` §2). Título en imperativo, **una etiqueta de área** y una o
 dos líneas de qué se integra. El detalle paso a paso vive en su sección del `tasks.md` del OpenSpec
 change (**un paso = un commit**), y la tarea lo enlaza; no lo copia. Una *chore* sin change
-(`workflow.md` §6) lleva ese plan en su propia descripción.
+(`workflow.md` §6) lleva ese plan en su propia descripción. Un *spike* no lleva tareas: es una sola PR
+(`workflow.md` §7).
 
 ## 7. Enlace con GitHub
 
 - Integración nativa con `7daysofrain/mood-table-v2`; **sin** sincronización con GitHub Issues.
-- Una rama por tarea, con su ID (Linear la copia con `Cmd+Shift+.`): `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`.
+- Una rama por tarea (o por *spike*), con su ID (Linear la copia con `Cmd+Shift+.`): `7daysofrain/moo-16-arrancar-el-motor-con-una-tira-virtual-y-el-efecto`.
 - **Las tareas se integran en `main`.** Cada rama de tarea sale de `main` y vuelve a `main` por PR; la
   tarea pasa a *Done* al integrarse. Es la única base sobre la que SonarQube Cloud gratis enseña los datos
   de la PR (incidencias y cobertura). La rama `…-archivar-change` también sale de `main`.
@@ -130,7 +147,7 @@ change (**un paso = un commit**), y la tarea lo enlaza; no lo copia. Una *chore*
   - en los ajustes de Codex (*Code review*), no en el *ruleset*, que no tiene regla para él:
     **revisión automática de Codex** (*Automatic review*) en cada PR que no es borrador y en cada push
     (D62). Si no ha revisado el último push, se pide con un comentario `@codex review`.
-- PR: `Fixes MOO-n` con el ID de la **tarea**. Commits: `Refs MOO-n` (nunca `Fixes`).
+- PR: `Fixes MOO-n` con el ID de la **tarea** (o del *spike*). Commits: `Refs MOO-n` (nunca `Fixes`).
 - *Linkbacks* activados también en **repos públicos**, con descripción: la PR muestra la historia de la
   que sale (trazabilidad pública para la evaluación). *Link commits to issues* desactivado (no hace falta).
 - Automatizaciones: PR en borrador → `In Progress` · PR abierta → `In Review` · revisión pedida →

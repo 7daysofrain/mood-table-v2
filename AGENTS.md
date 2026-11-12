@@ -59,7 +59,7 @@ Read a file **when its "When" column applies**, not all of them up front.
 
 | File | Contents | When |
 |---|---|---|
-| [`workflow.md`](docs/instructions/workflow.md) | PRD → epic → story → task → OpenSpec → PR chain; task = PR, step = commit; source of truth for each thing | Before creating or touching epics, stories, tasks or specs, and before opening a PR |
+| [`workflow.md`](docs/instructions/workflow.md) | PRD → epic → story → task → OpenSpec → PR chain; task = PR, step = commit; source of truth for each thing; the spike lane | Before creating or touching epics, stories, tasks, spikes or specs, and before opening a PR |
 | [`linear.md`](docs/instructions/linear.md) | Linear conventions: single project, epic = parent issue, states, labels, estimation, branches and the PR base branch, MCP permissions | Before creating or editing anything in Linear, before creating a branch, and before opening a PR |
 | [`viewer-protocol.md`](docs/instructions/viewer-protocol.md) | Byte-level format of the WebSocket messages from the engine to the panel (frames of each strip, audio source and level, audio file position) | Before touching the viewer output, the panel's connection or `packages/shared/src/viewer-protocol.ts` |
 | [`course.md`](docs/instructions/course.md) | Master's requirements: scope, evaluation axes, deliveries and their mechanics, methodology, `prompts.md` format | When preparing or checking a delivery, deciding scope, or recording prompts |
@@ -77,8 +77,9 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - **What only one skill uses lives in its folder** (`references/` or `assets/`), not in `docs/`.
 - **Third-party skills** live in `.agents/skills/`, symlinked from `.claude/skills/` and recorded in
   `skills-lock.json`. Don't edit them by hand: add, update or remove them with `npx skills`.
-- **The story skills and `/capture` have evals** (`create-story`, `refine-story`, `estimate-story`,
-  and `capture` for the subagent it launches: each in its `evals/`, shared fixtures in `.claude/evals/`). Before changing one of them or its subagent, run its
+- **The story skills, `/create-spike` and `/capture` have evals** (`create-story`, `refine-story`,
+  `estimate-story`, `create-spike`, and `capture` for the subagent it launches: each in its `evals/`,
+  shared fixtures in `.claude/evals/`). Before changing one of them or its subagent, run its
   evals against the current version (skill-creator's improve loop), so a regression shows up before
   the PR. How: [`.claude/evals/README.md`](.claude/evals/README.md).
 - One `AGENTS.md` at the root: no package has rules of its own yet. Add a per-package file only when

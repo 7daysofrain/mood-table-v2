@@ -2229,6 +2229,26 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Claude Code (`claude-opus-5-5`, 12-nov), al revisar la PR ya lista. La IA explicó que Claude Code solo registra subagentes con nombre desde `.claude/agents/` y propuso dejar sus instrucciones en `references/` de la skill, que lanza un subagente genérico con Haiku. Señaló lo que se pierde: el límite de herramientas pasa a ser solo por instrucción y cada captura gasta más contexto. Pesó la prueba real: desde una sesión nueva en el worktree, `/capture` cargó pero no encontró el subagente, porque los subagentes se cargan del checkout principal. La captura real (`MOO-150`) sí se creó bien con el subagente genérico. Evals con skill-creator, a petición del maker: en la primera iteración, 97 % con Haiku y con Sonnet y 48 % sin la skill; tras corregir dos fallos y mover las instrucciones, Haiku pasa los tres casos. Error de la IA: escribió las aserciones mientras corrían las primeras ejecuciones, y el baseline de un caso las leyó; las siguientes iteraciones corrieron a ciegas.*
 
+#### 6.80 Dar a los *spikes* su propia vía con `/create-spike` y `/close-spike` (`MOO-152`)
+
+**Prompt 1:**
+
+> Vamos a modificar el workflow, quiero añadir una via distinta para los spikes. Ahora mismo tal y como los tenemos son demasiado rigidos y se pierde mucho tiempo en algo que es mas de experimentación. Debería ser agil. Dime donde encajan en el workflow que hemos definido y que reglas hemos aplicado a ellos
+
+*Claude Code (`claude-opus-5-5`, 12-nov). La IA localizó dónde caían los *spikes* (las tres skills de historias, tareas, una PR por tarea con todas las puertas, solo un DoD propio) y propuso una vía aparte. El maker vio que el coste real era la interrupción y abrió en un fork la captura de necesidades (6.79, D112); luego se decidieron una a una las seis piezas de la vía, que quedaron en la descripción de `MOO-152` antes de escribir nada (D113).*
+
+**Prompt 2:**
+
+> Sigue sin cuadrarme, estás asumiendo que un spike viene siempre de una captura y no tiene que ser asi. Asi como una history puede venir de una captura o de un PRD lo mismo pasa con un spike
+
+*La IA había diseñado la entrada a la vía como un paso que partía de una captura aceptada. El maker la corrigió: un *spike* también se planifica desde una épica, por un supuesto o una pregunta abierta del documento fuente. De ahí `/create-spike <épica | issue>`, por analogía con `/create-story`, que crea un *spike* nuevo o completa uno que ya existe.*
+
+**Prompt 3:**
+
+> Pero no hace falta meter el pair aqui, lo estimo yo
+
+*La IA había propuesto fijar el *timebox* como el planning poker de las historias, con una carta del usuario y otra de un subagente. El maker lo fija solo, y `/create-spike` lo pregunta sin proponer un valor. También eligió que al agotar el *timebox* solo se anote, sin parar ni pedir una ampliación. Implementación en seis pasos con skill-creator: `/create-spike` pasa sus tres evals con el 97 % (61 % sin la skill), y `/refine-story` y `/estimate-story`, que ahora mandan los *spikes* a `/create-spike`, pasaron una eval reducida que eligió el maker: el caso nuevo con la versión anterior y la nueva; los de siempre, solo con la nueva. Errores de la IA, corregidos en la misma PR: un fixture sintético reutilizó un ID que ya existía (`MOO-904`), y la descripción de `/close-spike` rompía su YAML con «: » sin comillas (lo detectó `sm check`). De las evals salió `MOO-153`: el estimator lee la memoria automática del usuario y ve estimaciones reales.*
+
 ---
 
 ### 7. Pull Requests

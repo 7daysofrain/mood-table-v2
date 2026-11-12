@@ -24,7 +24,10 @@ Spanish**, using the glossary of the epic's source document.
 ## Steps
 
 1. **Load context.**
-   - The story and its epic (`get_issue`).
+   - The story (`get_issue`). If it carries the **`Spike`** label, stop: a spike is a question with a
+     timebox, not a behaviour, and it has its own lane (`workflow.md` §7). Point to
+     `/create-spike <id>` and do nothing else: no happy path, no subagent, nothing written to Linear.
+   - Its epic (`get_issue`).
    - `docs/instructions/workflow.md` §2 (task = PR), §3 (the table of source documents) and §5 (rules
      for agents).
    - The epic's source document: the prefix of the epic's title (`H1`, `PB`…) says which one, and the
