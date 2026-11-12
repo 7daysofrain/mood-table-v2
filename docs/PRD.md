@@ -94,7 +94,7 @@ tiras en un fichero.
 - **H3 · Pintar la tira física.** Como **DJ**, quiero que la tira de mi mesa pinte lo mismo que veo en el
   visor, para tocar la luz real desde el mismo panel. *(E1, E5)*
 - **H4 · Declarar mis tiras.** Como **maker**, quiero declarar mis tiras en un solo sitio (salida, nº de
-  LEDs, orden de color y límite de potencia), para que todo el instrumento las respete y cuide el
+  LEDs, chip y límite de potencia), para que todo el instrumento las respete y cuide el
   hardware. *(E4, E8)*
 - **H5 · Arrancar en el último estado.** Como **DJ**, quiero encender la mesa y que vuelva como la dejé
   (el efecto y los valores de cada tira), sin portátil ni internet, para no tener que prepararla cada
@@ -193,7 +193,7 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 
 | Término | En código | Definición |
 |---|---|---|
-| **Tira** | `strip` | Tira LED declarada en el fichero de configuración: nombre, salida, nº de LEDs y orden de color; una física declara además su chip y la fuente que la alimenta. Existe porque está cableada (o declarada como virtual). |
+| **Tira** | `strip` | Tira LED declarada en el fichero de configuración: nombre, salida y nº de LEDs; una física declara además su chip y la fuente que la alimenta. Su orden de color no se declara: lo fija su chip (MOO-136). Existe porque está cableada (o declarada como virtual). |
 | **Identificador de la tira** | `id` | Lo que distingue a una tira en el fichero de configuración, y con lo que el motor encuentra su estado guardado (H5). Lo elige el maker. Cambiar el nombre, el nº de LEDs o la salida no la hace otra tira; cambiar el identificador, sí. |
 | **Tira virtual** | `strip` con salida `virtual` | Tira cuya salida es virtual: no tiene hardware y solo se ve en el visor. |
 | **Visor** | `viewer` | Vista del navegador que dibuja **todas** las tiras (físicas y virtuales), LED a LED y en tiempo real. |
@@ -201,7 +201,8 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | **Salida** | `output` | A dónde van los colores de una tira: **Adalight** (serie, tira física) o **virtual**. |
 | **Puerto serie** | `port` | Dispositivo del sistema por el que el motor habla con el controlador Adalight de una tira (p. ej. `/dev/ttyUSB0`). Se declara en la salida. |
 | **Baudios** | `baudRate` | Bits por segundo a los que va el puerto serie; tienen que coincidir con los del sketch. Limitan los frames por segundo que llegan a la tira física. |
-| **Chip de la tira** | `chip` | Modelo del chip de los LEDs de una tira física (p. ej. `WS2812B`). El maker lo copia de la tira, y el motor sabe por él cuánto consume cada LED. Solo se admiten los chips que conoce el motor (MOO-135). |
+| **Chip de la tira** | `chip` | Modelo del chip de los LEDs de una tira física (p. ej. `WS2812B`). El maker lo copia de la tira, y el motor sabe por él cuánto consume cada LED y su orden de color. Solo se admiten los chips que conoce el motor (MOO-135). |
+| **Orden de color** | `colorOrder` | Orden en que los LEDs de una tira física esperan los canales rojo, verde y azul. Lo fija su chip (p. ej. GRB en el `WS2812B`), lo aplica la salida Adalight y el visor no lo usa (MOO-136). |
 | **Controlador Adalight** | *(no aparece en el código)* | El aparato entre la Pi y la tira física que entiende el protocolo Adalight: hoy un Arduino Uno con su sketch (D46), antes el Light Box. |
 | **Fuente de audio** | `audioSource` | De dónde sale la música: **tarjeta de sonido** o **fichero**. Opcional: sin fuente solo funcionan los efectos de ambiente. |
 | **Nivel** | `level` | Cuánta señal llega de la fuente de audio en cada instante, antes de que el motor la ajuste. El panel lo muestra en tiempo real. |
