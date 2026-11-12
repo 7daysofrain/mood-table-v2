@@ -23,7 +23,7 @@
 
 ## 1. MOO-145 · shared
 
-- [ ] 1.1 **(test en rojo)** Tests en `packages/shared/src/chips.test.ts`: el catálogo da a la `WS2812B`
+- [x] 1.1 **(test en rojo)** Tests en `packages/shared/src/chips.test.ts`: el catálogo da a la `WS2812B`
   el orden de color `GRB`, y todo chip del catálogo tiene un orden de color.
   Tests en `packages/shared/src/config.test.ts` (`specs/engine-config`, *El fichero de configuración
   declara el orden de color de una tira*): rechaza `"colorOrder": "GRB"` en una tira física y en su
