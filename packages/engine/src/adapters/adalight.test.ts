@@ -397,7 +397,8 @@ describe('abrir los puertos de todas las tiras físicas', () => {
       () => Promise.resolve(link),
       options,
     );
-    result.ok && result.outputs.get('mesa')?.write(frame, tick(1));
+    const output: LightOutput | undefined = result.ok ? result.outputs.get('mesa') : undefined;
+    output?.write(frame, tick(1));
 
     expect(hex((link.copies[0] ?? new Uint8Array()).subarray(6, 9))).toBe('00 FF 00');
   });

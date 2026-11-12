@@ -4,12 +4,13 @@
  * Abrir el puerto de verdad es cosa de `adalight.hardware.ts`, que da el enlace (`SerialLink`).
  *
  * Un frame Adalight es una cabecera de 6 bytes, `A` `d` `a`, el nº de LEDs menos uno en dos bytes
- * (el alto primero) y su checksum (los dos en XOR con `0x55`), seguida de 3 bytes por LED (rojo,
- * verde y azul), en el orden de la tira. El orden de color lo pone el sketch del controlador (D46).
+ * (el alto primero) y su checksum (los dos en XOR con `0x55`), seguida de 3 bytes por LED, en el
+ * orden de la tira y, dentro de cada LED, en el orden de color del chip de la tira (D111): verde,
+ * rojo y azul en una `WS2812B`. El controlador pasa los canales tal como le llegan.
  *
  * Cada canal sale corregido con la gamma 2,0 de la v1 (decisión 6 del change scroll-effect): la
  * respuesta del LED, que vive en el núcleo porque el límite de potencia también la usa (D108). El
- * visor recibe los valores sin corregir.
+ * visor recibe los valores sin corregir y en RGB (D100).
  *
  * Nunca hay cola (decisión 2 del change adalight-strip-output): desde que escribe un frame hasta que
  * ha salido por el cable, la salida está ocupada y descarta los que le llegan; al quedar libre,
@@ -20,7 +21,7 @@
  *                      |  (descarta)
  *                      +--falla--> perdida (descarta siempre; lo dice una vez)
  */
-import type { StripConfig } from '@moodtable/shared';
+import { chipOf, type ColorOrder, type StripConfig } from '@moodtable/shared';
 
 import type { LightOutput } from '../core/frame-loop.ts';
 import { LED_RESPONSE } from '../core/led-response.ts';
@@ -44,13 +45,21 @@ export interface SerialLink {
 /** Abre el puerto serie a unos baudios; rechaza con el motivo del sistema si no puede. */
 export type OpenSerialLink = (port: string, baudRate: number) => Promise<SerialLink>;
 
-/** Lo que la salida necesita saber de su tira: para el búfer y para el log. */
+/** Lo que la salida necesita saber de su tira: para el búfer, para codificar y para el log. */
 export interface AdalightStrip {
   name: string;
   ledCount: number;
   port: string;
   baudRate: number;
+  /** El orden de color del chip de la tira, ya resuelto (decisión 3 del change strip-color-order). */
+  colorOrder: ColorOrder;
 }
+
+/**
+ * De qué canal del frame (0 rojo, 1 verde, 2 azul) sale cada uno de los 3 bytes de un LED: `GRB` es
+ * `[1, 0, 2]`.
+ */
+export type ChannelSources = readonly [number, number, number];
 
 export interface AdalightOptions {
   log: (line: string) => void;
@@ -67,6 +76,8 @@ export class AdalightOutput implements LightOutput {
   private readonly link: SerialLink;
   private readonly options: AdalightOptions;
   private readonly buffer: Uint8Array;
+  /** El orden de color, traducido una vez para no interpretarlo en cada frame. */
+  private readonly sources: ChannelSources;
   private busy = false;
   private lost = false;
   /** Lo que ha tardado cada envío medido, en ms, y cuándo empezó el primero. */
@@ -78,12 +89,13 @@ export class AdalightOutput implements LightOutput {
     this.link = link;
     this.options = options;
     this.buffer = adalightBuffer(strip.ledCount);
+    this.sources = channelSources(strip.colorOrder);
     link.watchLoss((reason) => this.lose(reason));
   }
 
   write(frame: Uint8Array): void {
     if (this.busy || this.lost) return;
-    encodeAdalight(this.buffer, frame);
+    encodeAdalight(this.buffer, frame, this.sources);
     this.busy = true;
     const start = this.options.now();
     this.link.write(this.buffer, (error) => {
@@ -150,7 +162,8 @@ export async function openAdalight(
 
 /**
  * Abre los puertos de todas las tiras físicas, en el orden del fichero, y da la salida de cada una
- * por su id. Si uno no se abre, cierra los que ya había abierto y da su mensaje.
+ * por su id, con el orden de color de su chip. Si uno no se abre, cierra los que ya había abierto y
+ * da su mensaje.
  */
 export async function openAdalightStrips(
   strips: readonly StripConfig[],
@@ -160,7 +173,9 @@ export async function openAdalightStrips(
   const outputs = new Map<string, AdalightOutput>();
   for (const { id, name, ledCount, output } of strips) {
     if (output.type !== 'adalight') continue;
-    const opened = await openAdalight({ name, ledCount, ...output }, open, options);
+    const { port, baudRate, chip } = output;
+    const strip = { name, ledCount, port, baudRate, colorOrder: chipOf(chip).colorOrder };
+    const opened = await openAdalight(strip, open, options);
     if (!opened.ok) {
       for (const each of outputs.values()) each.close();
       return opened;
@@ -179,13 +194,28 @@ export function adalightBuffer(ledCount: number): Uint8Array {
   return buffer;
 }
 
+/** De qué canal del frame sale cada byte de un LED con ese orden de color. */
+export function channelSources(order: ColorOrder): ChannelSources {
+  const sourceOf = (position: number): number => 'RGB'.indexOf(order.charAt(position));
+  return [sourceOf(0), sourceOf(1), sourceOf(2)];
+}
+
 /**
- * Copia los colores de `frame` (RGB, 3 bytes por LED) detrás de la cabecera, cada canal pasado por
- * la respuesta del LED del núcleo, y devuelve `buffer`.
+ * Copia los colores de `frame` (RGB, 3 bytes por LED) detrás de la cabecera, cada LED con sus canales
+ * en el orden de `sources` y cada canal pasado por la respuesta del LED del núcleo, y devuelve
+ * `buffer`. Da igual reordenar antes o después de la gamma: se aplica a cada canal por separado.
  */
-export function encodeAdalight(buffer: Uint8Array, frame: Uint8Array): Uint8Array {
-  frame.forEach((value, index) => {
-    buffer[HEADER_LENGTH + index] = LED_RESPONSE[value] ?? 0;
-  });
+export function encodeAdalight(
+  buffer: Uint8Array,
+  frame: Uint8Array,
+  sources: ChannelSources,
+): Uint8Array {
+  const [first, second, third] = sources;
+  for (let led = 0; led < frame.length; led += 3) {
+    const at = HEADER_LENGTH + led;
+    buffer[at] = LED_RESPONSE[frame[led + first] ?? 0] ?? 0;
+    buffer[at + 1] = LED_RESPONSE[frame[led + second] ?? 0] ?? 0;
+    buffer[at + 2] = LED_RESPONSE[frame[led + third] ?? 0] ?? 0;
+  }
   return buffer;
 }
