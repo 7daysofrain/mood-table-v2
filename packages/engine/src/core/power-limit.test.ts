@@ -29,7 +29,14 @@ describe('la estimación del consumo de un frame', () => {
   });
 
   it('todo a 128 pide unos 2,6 A, una cuarta parte del blanco total y no la mitad', () => {
-    expect(estimateAmps(filled(128, 128, 128), WS2812B)).toBeCloseTo(2.615, 3);
+    // El 128 sale a 64 de PWM: 519 · 20 mA · 64/255.
+    expect(estimateAmps(filled(128, 128, 128), WS2812B)).toBeCloseTo(2.605, 3);
+  });
+
+  it('cuenta el PWM que se envía, ya redondeado: el 12 sale a 1/255', () => {
+    const frame = new Uint8Array(3).fill(12);
+
+    expect(estimateAmps(frame, WS2812B)).toBeCloseTo((3 * 0.02) / 255, 9);
   });
 });
 
@@ -97,6 +104,16 @@ describe('el límite de potencia', () => {
     }
   });
 
+  it('con 0,12 A, el redondeo de los valores bajos no hace pasar de la fuente', () => {
+    // El caso de la revisión de la #134: estimando sin redondear, enviaba 132 mA.
+    const frame = filled(12, 12, 12);
+    frame.fill(255, 0, 53);
+
+    applyPowerLimit(frame, createPowerLimit(0.12, WS2812B, LEDS));
+
+    expect(estimateAmps(frame, WS2812B)).toBeLessThanOrEqual(0.12);
+  });
+
   it('con una fuente que no aguanta el suelo, baja sin suelo y no pasa de la fuente', () => {
     // 37 canales a 255 y el resto a 12: con suelo, pediría 68 mA.
     const frame = filled(12, 12, 12);
@@ -125,12 +142,12 @@ describe('el límite de una tira', () => {
     expect(createPowerLimit(18, WS2812B, LEDS).maxAmps).toBeCloseTo(14.4, 6);
   });
 
-  it('tiene suelo si la fuente aguanta el 80 % más todos los canales a 12', () => {
-    // En la mesa, hace falta una fuente de unos 0,115 A.
-    expect(createPowerLimit(8, WS2812B, LEDS).floor).toBe(12);
-    expect(createPowerLimit(0.12, WS2812B, LEDS).floor).toBe(12);
-    expect(createPowerLimit(0.11, WS2812B, LEDS).floor).toBe(0);
-    expect(createPowerLimit(0.06, WS2812B, LEDS).floor).toBe(0);
+  it('mantiene siempre el suelo si la fuente aguanta el 80 % más una unidad de PWM por canal', () => {
+    // En la mesa, hace falta una fuente de unos 0,2035 A.
+    expect(createPowerLimit(8, WS2812B, LEDS).floorAlwaysHolds).toBe(true);
+    expect(createPowerLimit(0.21, WS2812B, LEDS).floorAlwaysHolds).toBe(true);
+    expect(createPowerLimit(0.2, WS2812B, LEDS).floorAlwaysHolds).toBe(false);
+    expect(createPowerLimit(0.06, WS2812B, LEDS).floorAlwaysHolds).toBe(false);
   });
 });
 

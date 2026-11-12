@@ -117,7 +117,7 @@
 
   Verificar: lo que dice el README coincide con el código y los D# cuadran con `design.md`.
 
-- [ ] 2.10 **(test en rojo)** Tras la revisión de la #134 (decisiones 1 y 2): los tests del límite
+- [x] 2.10 **(test en rojo)** Tras la revisión de la #134 (decisiones 1 y 2): los tests del límite
   miden con el PWM que se envía (la tabla de la respuesta del LED), no con la fórmula sin redondear:
   - todo a 128 se estima en 2,605 A;
   - con 0,12 A, 53 canales a 255 y el resto a 12 no pasan de la fuente;

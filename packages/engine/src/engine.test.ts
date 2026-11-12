@@ -134,7 +134,7 @@ describe('las salidas de cada tira', () => {
   });
 
   it('una tira física tiene el límite de su fuente; una virtual, ninguno', () => {
-    expect(stripPowerLimit(table)).toMatchObject({ maxAmps: 6.4, floor: 12 });
+    expect(stripPowerLimit(table)).toMatchObject({ maxAmps: 6.4, floorAlwaysHolds: true });
     expect(stripPowerLimit(demoStrip)).toBeUndefined();
   });
 
@@ -235,6 +235,18 @@ describe('la línea del límite de potencia de cada tira física', () => {
       'Tira «Mesa»: fuente de 0,06 A, usará como mucho 0,048 A; en blanco total pide 10,38 A: ' +
         'bajará los frames que se pasen, y la fuente es tan pequeña que los LEDs tenues pueden ' +
         'apagarse',
+    );
+  });
+
+  it('con 0,2 A, todavía avisa de los LEDs tenues; con 0,21 A, ya no', () => {
+    expect(powerLimitMessage(mesa(0.2))).toBe(
+      'Tira «Mesa»: fuente de 0,2 A, usará como mucho 0,16 A; en blanco total pide 10,38 A: ' +
+        'bajará los frames que se pasen, y la fuente es tan pequeña que los LEDs tenues pueden ' +
+        'apagarse',
+    );
+    expect(powerLimitMessage(mesa(0.21))).toBe(
+      'Tira «Mesa»: fuente de 0,21 A, usará como mucho 0,168 A; en blanco total pide 10,38 A: ' +
+        'bajará los frames que se pasen',
     );
   });
 
