@@ -87,7 +87,7 @@
   servicio, se retira la instalación del script y se cambia a la nueva; el clon anterior no se toca y
   el script dice que el servicio ya no lo usa.
   Verificar: `pnpm lint` en verde.
-- [ ] 2.3 El README §1.4 explica qué pasa al volver a lanzar el script (la pregunta, la copia `.bck`
+- [x] 2.3 El README §1.4 explica qué pasa al volver a lanzar el script (la pregunta, la copia `.bck`
   y que el estado del instrumento empieza de cero) y que el clon anterior de la mesa se queda donde
   está.
   Verificar: lo que dice coincide con `specs/table-install`, requisitos de reinstalar.
