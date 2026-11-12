@@ -143,7 +143,7 @@
 - [x] 3.3 Cargar el sketch con `Brightness = 255` en el Arduino de la mesa (`arduino-cli`,
   `HARDWARE_SETUP.md` §4.1).
   Verificar: el Arduino responde y la tira pinta lo mismo que el visor.
-- [ ] 3.4 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-135`):
+- [x] 3.4 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-135`):
   - **caso peor**: todo blanco con la intensidad al máximo, durante un par de minutos; la fuente no
     corta, la tira no parpadea y el controlador Adalight no se reinicia; con el polímetro, la tensión
     al final de la tira (`HARDWARE_SETUP.md` §5);

@@ -96,6 +96,10 @@ A blanco total, cada LED WS2812B consume unos **60 mA**, 20 mA por canal (la cif
   motor baja cada frame que pediría más del **80 %** de esos amperios (E8, README §2.2). En la mesa, el
   blanco total sale a 200 de 255, con unos 6,4 A. Al arrancar, el log lo dice:
   `Tira «Mesa»: fuente de 8 A, usará como mucho 6,4 A; en blanco total pide 10,38 A: bajará los frames que se pasen`.
+  ✅ Comprobado en la mesa el 12-nov, con el sketch a `255`: la respiración en blanco con la intensidad
+  al máximo pasa por el blanco total sin que la fuente corte, la tira parpadee ni el Arduino se
+  reinicie, y con el *espectro* y graves fuertes los LEDs tenues no se apagan. ⏳ Falta medir la
+  tensión al final de la tira en un pico (§5).
 - **Copia los amperios de OUTPUT, no los de INPUT.** La etiqueta de la fuente lleva las dos cifras:
   INPUT es lo que toma de la red, y OUTPUT lo que da a la tira (8 A en el YU0508).
 - **Si cambias de fuente, cambia el fichero de configuración.** El motor no puede medir la fuente:
