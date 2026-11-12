@@ -23,7 +23,10 @@ readonly STAGING_DIR="${INSTALL_DIR}.new"
 readonly SERVICE='moodtable'
 readonly SERVICE_USER='moodtable'
 readonly UNIT_PATH="/etc/systemd/system/${SERVICE}.service"
+# El rango de `engines.node` del package.json raíz (>=24.15 <25), que `pnpm install` exige con
+# `engineStrict`. Se copia aquí porque se comprueba antes de clonar; un test vigila que coincidan.
 readonly NODE_MAJOR='24'
+readonly NODE_MIN_MINOR='15'
 
 # Con `curl … | bash`, la entrada estándar es el propio script: nada de lo que se lanza aquí debe
 # leerla, o se comería el resto. Por eso todo está en funciones y `main` se llama en la última línea.
@@ -67,24 +70,31 @@ refuse_reinstall() {
   fi
 }
 
-node_is_24() {
-  [[ -x /usr/bin/node ]] && [[ $(/usr/bin/node --version) == "v${NODE_MAJOR}."* ]]
+# Si /usr/bin/node es una 24 a partir de la 24.15. Una 24 anterior no vale: `pnpm install` la
+# rechazaría después, con la instalación a medias.
+node_is_supported() {
+  local major minor
+  [[ -x /usr/bin/node ]] || return 1
+  IFS=. read -r major minor _ <<<"$(/usr/bin/node --version | sed 's/^v//')"
+  [[ $major == "$NODE_MAJOR" ]] && ((minor >= NODE_MIN_MINOR))
 }
 
 # Paso 3. Node 24 en /usr/bin/node (la ruta de la unidad) del repositorio de NodeSource, que lo
-# parchea con `apt upgrade` sin salir de la 24. Si ya hay una 24, no se toca.
+# parchea con `apt upgrade` sin salir de la 24. Si ya hay una 24 que vale, no se toca; si es
+# anterior a la 24.15, `apt-get install` la actualiza a la última 24.
 install_system_packages() {
   info 'Instalando git'
   apt-get update </dev/null
   apt-get install --yes git ca-certificates curl </dev/null
 
-  if node_is_24; then
+  if node_is_supported; then
     info "Node $(/usr/bin/node --version) ya está instalado"
   else
     info "Instalando Node ${NODE_MAJOR} de NodeSource"
     curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
     apt-get install --yes nodejs </dev/null
-    node_is_24 || fail "Node ${NODE_MAJOR} no ha quedado en /usr/bin/node"
+    node_is_supported ||
+      fail "en /usr/bin/node no ha quedado Node ${NODE_MAJOR}.${NODE_MIN_MINOR} o posterior (dentro de la ${NODE_MAJOR})"
   fi
 
   info 'Activando pnpm (corepack)'
