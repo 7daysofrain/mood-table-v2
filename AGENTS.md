@@ -78,7 +78,7 @@ Thresholds to turn into numbers in the engine spec: [`docs/umbrales-para-specs.m
 - **Third-party skills** live in `.agents/skills/`, symlinked from `.claude/skills/` and recorded in
   `skills-lock.json`. Don't edit them by hand: add, update or remove them with `npx skills`.
 - **The story skills and `/capture` have evals** (`create-story`, `refine-story`, `estimate-story`,
-  and `capture` for its `capturer` subagent: each in its `evals/`, shared fixtures in `.claude/evals/`). Before changing one of them or its subagent, run its
+  and `capture` for the subagent it launches: each in its `evals/`, shared fixtures in `.claude/evals/`). Before changing one of them or its subagent, run its
   evals against the current version (skill-creator's improve loop), so a regression shows up before
   the PR. How: [`.claude/evals/README.md`](.claude/evals/README.md).
 - One `AGENTS.md` at the root: no package has rules of its own yet. Add a per-package file only when
