@@ -83,6 +83,37 @@ contexto.
   no entra, hay que cambiar los criterios de la pregunta, que hoy dicen *"judge the finding against the
   diff"*.
 
+### Lo que responde Clef con cada variante (12-nov)
+
+p media de 5 repeticiones: la probabilidad de que haya que arreglarlo en la PR. Umbral: 0,80 para
+*real* y 0,20 para *no aplica*. Las filas *relanzar* deberían dar una p baja y las *real*, alta.
+
+| Fila | Etiqueta | Actual | Paso entero | Propuesta | + ficheros | + diff |
+|---|---|---|---|---|---|---|
+| #112 `e2e` | relanzar | 0,476 | 0,312 | 0,380 | 0,302 | 0,311 |
+| #116 `e2e` | relanzar | 0,626 | 0,679 | 0,645 | 0,611 | 0,586 |
+| #117 `e2e` | relanzar | 0,432 | 0,354 | 0,321 | 0,313 | 0,242 |
+| #116 `sonar-issues` | real | 0,783 | 0,783 | 0,760 | 0,734 | 0,659 |
+| #117 `SonarCloud` | real | (sin pregunta) | — | 0,416 · con detalle 0,463 | 0,394 | 0,249 |
+| **Tokens por llamada** | | ~2.200 | ~3.200 | ~2.300 | ~2.800 | **~28.000** |
+
+- **El ruido es pequeño:** con el mismo contexto, la p varía como mucho 0,04 entre repeticiones, y casi
+  siempre menos de 0,01. Una diferencia de más de 0,05 entre variantes es efecto del contexto.
+- **Ninguna variante cruza el umbral en ninguna fila:** todas dan *exige criterio*.
+- **`e2e`:** las anotaciones o el paso entero acercan la p a la etiqueta en la #112 y la #117 (de
+  0,48 y 0,43 a 0,30-0,38), pero no en la #116, que se queda en torno a 0,6, del lado equivocado.
+- **El diff no informa, desplaza:** baja la p de **todas** las filas, también las dos *real*, que se
+  alejan de su etiqueta (SonarCloud, de 0,42 a 0,25). La separación media entre las *real* y las
+  *relanzar* baja de 0,14 con la propuesta a 0,07 con el diff, y cada llamada cuesta unas 10 veces
+  más. La lista de ficheros hace lo mismo, pero más suave.
+- **SonarCloud da *no* con el contexto completo.** «71,4 % de cobertura en código nuevo, se exige un
+  80 %» se queda en 0,42, y con el detalle por fichero sube a 0,46. Lo que le falta no parece contexto:
+  el modelo no trata como defecto que una comprobación exigida no pase.
+- **Lo que vio producción cuadra en la #112** (2.839 tokens y p = 0,47, igual que en la traza), **pero
+  no en la #116:** allí dio p = 0,83 en el `e2e` y 0,70 en `sonar-issues`, frente a 0,63 y 0,78 aquí.
+  En producción, los hallazgos de un push van juntos en una petición. Que se influyan entre sí es la
+  explicación probable, pero no está comprobada.
+
 ### Permisos del PAT
 
 Probado el 12-nov con el PAT del sistema (*fine-grained*, con *Metadata* en lectura e *Issues* y
@@ -111,6 +142,16 @@ el *check run*, sus anotaciones y, si es de Actions, el log del *job*.
 - El *job* del `e2e` de la #117 es `127481356654` (run `42094639308`, primer intento).
 - [`failing-step.mjs`](../../.spikes/moo-120/failing-step.mjs) reproduce el corte de `failingStep`. Da
   los 822 bytes de la traza de la #112.
+- [`run.ts`](../../.spikes/moo-120/run.ts) arma una petición por fila y variante, igual que la de
+  producción (mismo `state`, pregunta y criterios), con un solo hallazgo por petición, y la manda 5
+  veces a `clef:27b` en la nube de Ollama. Las 120 llamadas sumaron 941.520 tokens de entrada (unos
+  0,23 $). [`summarize.ts`](../../.spikes/moo-120/summarize.ts) saca la tabla de
+  `out/results.jsonl`.
+- El título y la descripción de cada PR son los de hoy, que pueden haber cambiado desde el push. El
+  diff es el de `main...<sha>` del push.
+- El detalle por fichero de SonarCloud se reconstruye del comentario de MOO-120 del 5-nov: la API de
+  SonarCloud solo da el último análisis de la PR, que ya está en el 100 %. Responde sin token, porque
+  el proyecto es público.
 
 ## Límites del resultado
 
