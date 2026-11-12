@@ -50,11 +50,17 @@ Motivación y alcance: `proposal.md`. Requisitos: `specs/power-limit`, `specs/en
 
 ### 1. Se estima con la respuesta del LED, que pasa al núcleo (D108)
 
-Un LED consume en proporción a su ciclo de PWM, que es el valor **después** de la gamma. El límite
-estima el consumo de un frame como `mA_canal · Σ (v/255)²`, con `v` el valor de pantalla de cada
-canal. Para no repetir la curva, la respuesta del LED se va del adaptador al núcleo
-(`core/led-response.ts`): la tabla de 256 valores con la que la salida Adalight codifica cada canal.
-El adaptador la importa (los adaptadores pueden importar del núcleo; al revés, no).
+Un LED consume en proporción a su ciclo de PWM, que es el valor **después** de la gamma. La respuesta
+del LED se va del adaptador al núcleo (`core/led-response.ts`): la tabla `R` de 256 valores con la
+que la salida Adalight codifica cada canal, `R[v] = round(255 · (v/255)²)`. El adaptador la importa
+(los adaptadores pueden importar del núcleo; al revés, no). El límite estima el consumo de un frame
+con el PWM que se envía de verdad, `mA_canal · Σ R[v] / 255`, con `v` el valor de pantalla de cada
+canal.
+
+**Con la tabla, y no con la fórmula sin redondear** (corregido tras la revisión de la #134): en los
+valores bajos, el redondeo pesa. El 12 sale a 1/255, un 77 % más de lo que da `(12/255)²`. Estimando
+con la fórmula, el límite se pasaba de las fuentes pequeñas: con 0,12 A, 53 canales a 255 y el resto a
+12, enviaba 132 mA. En la mesa apenas cambia nada: el blanco total sigue en 200.
 
 En la mesa, con todo blanco y una fuente de 8 A, el límite deja los canales en 200 y usa unos 6,4 A.
 Estimando antes de la gamma (`mA_canal · Σ v/255`), los dejaría en 157, con unos 3,9 A: un 38 % menos
@@ -66,32 +72,34 @@ D100.
 
 ### 2. Se baja en valores de pantalla con `√k`, hacia abajo, con un suelo de 12 por canal (D108)
 
-Con `S = Σ v²` (la suma del frame) y `B` el presupuesto en esas mismas unidades (decisión 3), si
-`S > B` el factor de corriente es `k = B / S`. Como la gamma es `v²`, bajar la corriente a `k` es
+Con `D = Σ R[v]` (la suma del frame) y `B` el presupuesto en esas mismas unidades (decisión 3), si
+`D > B` el factor de corriente es `k = B / D`. Como la gamma es `v²`, bajar la corriente a `k` es
 multiplicar cada valor de pantalla por `√k`. Así el visor recibe valores coherentes con lo que ve en
 la tira.
 
-- **Hacia abajo** (`floor`): cada canal queda en `v' ≤ v · √k`, así que `Σ v'² ≤ k · S = B`. Con
-  `round`, algún canal podría subir y pasarse.
+- **Hacia abajo** (`floor`): con `round`, algún canal subiría. Aun así, el redondeo de la tabla
+  puede dejar un canal bajado hasta 1 unidad por encima de `k · R[v]`.
 - **Suelo de 12:** un canal que valía 12 o más no baja de 12, el valor más bajo que la gamma no
-  apaga. Lo que añade el suelo está acotado: como mucho `mA_canal · (12/255)²` (unos 0,044 mA) por
-  canal. Con los 519 canales de la mesa son unos 23 mA, dentro de los 1,6 A que quedan entre el 80 %
-  y los 8 A. Puede cambiar algo el tono de un LED tenue, el mismo efecto de los colores tenues que
-  `MOO-132` deja fuera.
-- **El suelo, solo si la fuente lo aguanta** (decidido con el maker al implementar `MOO-140`): con
-  una fuente muy pequeña, ese margen no cubre el suelo. Con 0,06 A, un frame de 37 canales a 255 y
-  el resto a 12 pedía 68 mA tras el límite. Así que, al arrancar, el límite de cada tira comprueba
-  si el 80 % más todos sus canales a 12 cabe en la fuente (`B + 3 · ledCount · 12² ≤ B / 0,8`). Si
-  no cabe, esa tira baja sin suelo: proteger la fuente va antes (D14). En la mesa hace falta una
-  fuente de unos 0,115 A para tener suelo. No cuesta nada por frame.
+  apaga. Como `R[12] = 1`, el suelo también añade como mucho 1 unidad por canal. Así que la suma
+  bajada queda en `B` más, como mucho, una unidad por canal: con los 519 canales de la mesa, unos
+  41 mA, dentro de los 1,6 A que quedan entre el 80 % y los 8 A. Puede cambiar algo el tono de un
+  LED tenue, el mismo efecto de los colores tenues que `MOO-132` deja fuera.
+- **Si aun así se pasa de la fuente, otra pasada sin suelo** (el suelo «solo si la fuente lo
+  aguanta» se decidió con el maker al implementar `MOO-140`; la forma, tras la revisión de la #134):
+  con una fuente muy pequeña, ese margen no cubre la unidad por canal. Entonces el límite vuelve a
+  bajar el frame con `√(B / D)`, ya sin suelo, hasta que cabe en la fuente: proteger la fuente va
+  antes (D14). Cada pasada baja todos los canales encendidos, así que termina. Si `B` más una unidad
+  por canal cabe en la fuente, la segunda pasada no llega nunca: en la mesa, con fuentes de unos
+  0,2 A o más. El límite calcula esa condición al arrancar, para la línea del log (decisión 4).
 
 *Alternativa descartada:* un suelo por LED que conserve las proporciones entre canales. Mantiene mejor
 el tono, pero sube los otros canales, consume más y es más difícil de razonar.
 
 ### 3. El presupuesto se calcula una vez al arrancar, en las unidades de la suma
 
-`B = 0,8 · supplyAmps · 1000 / mA_canal · 255²`. Así, en cada pulso, el límite solo suma cuadrados de
-enteros (una tabla de 256 valores) y compara: sin divisiones ni objetos. Si el frame cabe, no lo
+`B = 0,8 · supplyAmps · 1000 / mA_canal · 255`, y la fuente entera en las mismas unidades. Así, en
+cada pulso, el límite solo suma valores de la tabla de la respuesta del LED y compara: sin divisiones
+ni objetos. Si el frame cabe, no lo
 toca, igual que `applyIntensity` a 1. Si no, una segunda pasada escala en su sitio. Con 519 canales,
 dos pasadas son despreciables frente a los 0,46 ms por frame medidos en la Pi (A1).
 
