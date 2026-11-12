@@ -29,7 +29,7 @@
   declara el orden de color de una tira*): rechaza `"colorOrder": "GRB"` en una tira física y en su
   salida, nombrando la tira y el campo. Estos ya pasan con el esquema cerrado: fijan el comportamiento.
   Verificar: los tests del catálogo fallan; el resto sigue en verde.
-- [ ] 1.2 El tipo `ColorOrder` en `packages/shared/src/chips.ts`, con las seis permutaciones de rojo,
+- [x] 1.2 El tipo `ColorOrder` en `packages/shared/src/chips.ts`, con las seis permutaciones de rojo,
   verde y azul (decisión 2), y `colorOrder: 'GRB'` en la entrada `WS2812B` del catálogo. Se exporta
   desde el punto de entrada del paquete.
   Verificar: los tests de 1.1 pasan, y `pnpm typecheck` y `pnpm test` en verde.
