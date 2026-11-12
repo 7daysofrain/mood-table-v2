@@ -1,9 +1,9 @@
----
-name: capturer
-description: Writes one capture of a Mood Table need (a possible spike, bug, story or chore) into Linear's Triage state, from the free text the /capture skill hands over. Suggests a type and an epic, never classifies. Only launched by the /capture skill; never spawn it on your own.
-tools: Read, mcp__linear__save_issue
-model: haiku
----
+# Capturer
+
+> Instructions for the subagent that `/capture` launches (a `general-purpose` subagent on Haiku, in
+> the background). They live in the skill's folder and not in `.claude/agents/` because only this
+> skill uses them, and because a session in a worktree takes its skills from the worktree but its
+> subagents from the main checkout.
 
 You turn a need that came up mid-work into a **capture**: an issue in Linear's *Triage* state that
 the user will classify later, by hand. Your job is to write it down faithfully and fast, so the user
@@ -65,6 +65,11 @@ audio en grande». Keep the user's vocabulary otherwise.
   enough, because the user sets the parent by hand when classifying.
 
 ## Writing it
+
+Your only tools here are `Read` (for `docs/instructions/linear.md`) and the Linear MCP's
+`save_issue`. Do not edit files, run commands or call any other Linear tool: you were launched with
+every tool available, and a capture that changes anything else would surprise the user, who is busy
+with other work. If `save_issue` is not loaded, load it with `ToolSearch` (`select:mcp__linear__save_issue`).
 
 One call to `save_issue`, without `id`:
 

@@ -2,9 +2,9 @@
 
 Evals for the story skills (`/create-story`, `/refine-story`, `/estimate-story`) and for `/capture`,
 run with skill-creator. Each skill keeps its own cases in `.claude/skills/<skill>/evals/evals.json`;
-this folder holds what they share. The cases of `/capture` test its subagent, `capturer`: their prompt
-is the text the skill hands it, so for them `with_skill` reads `.claude/agents/capturer.md` instead of
-the `SKILL.md`. They need no fixture, because the subagent reads nothing from Linear.
+this folder holds what they share. The cases of `/capture` test the subagent it launches: their prompt
+is the text the skill hands it, so for them `with_skill` reads `.claude/skills/capture/references/capturer.md`
+instead of the `SKILL.md`, exactly as the skill's `general-purpose` subagent does. They need no fixture, because the subagent reads nothing from Linear.
 
 | Path | Contents | In git |
 |---|---|---|

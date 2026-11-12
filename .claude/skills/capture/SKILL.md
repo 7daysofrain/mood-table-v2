@@ -1,6 +1,6 @@
 ---
 name: capture
-description: Capture a Mood Table need that comes up mid-work (a possible spike, bug, story or chore) into Linear's Triage state, in the background, so the user can keep working. Adds the evidence already in the conversation and hands it to the capturer subagent. The user classifies captures later, by hand, in Linear.
+description: Capture a Mood Table need that comes up mid-work (a possible spike, bug, story or chore) into Linear's Triage state, in the background, so the user can keep working. Adds the evidence already in the conversation and hands it to a background subagent that follows references/capturer.md. The user classifies captures later, by hand, in Linear.
 argument-hint: <texto>
 disable-model-invocation: true
 ---
@@ -34,15 +34,21 @@ Spanish by the subagent.
    your opinion: the subagent suggests the type, and the user decides it. If the conversation holds
    nothing relevant, write `Sin evidencia`.
 
-3. **Launch the `capturer` subagent in the background**, with exactly this prompt:
+3. **Launch the capturer in the background**: a `general-purpose` subagent with model `haiku`. Its
+   instructions are [`references/capturer.md`](references/capturer.md), so its prompt is exactly:
 
    ```
+   Read .claude/skills/capture/references/capturer.md and follow it exactly.
+
    Palabras del usuario:
    <$ARGUMENTS, verbatim>
 
    Evidencia de la conversación:
    <the evidence from step 2, or «Sin evidencia»>
    ```
+
+   It is not a named subagent in `.claude/agents/` on purpose: only this skill uses it, and a session
+   in a worktree would not find a named subagent that only exists on the worktree's branch.
 
    Keep the user's words verbatim: the capture quotes them, and they are the one thing the user will
    rely on when classifying.

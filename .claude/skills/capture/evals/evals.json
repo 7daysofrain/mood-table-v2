@@ -1,6 +1,6 @@
 {
   "skill_name": "capture",
-  "notes": "Los casos evalúan el subagente capturer (.claude/agents/capturer.md): la entrada es el texto que la skill /capture le pasa. with_skill sigue capturer.md; without_skill recibe el mismo prompt sin leerlo.",
+  "notes": "Los casos evalúan el subagente que lanza /capture (references/capturer.md): la entrada es el texto que la skill le pasa. with_skill sigue references/capturer.md, como en uso real; without_skill recibe el mismo prompt sin leerlo.",
   "evals": [
     {
       "id": 1,
