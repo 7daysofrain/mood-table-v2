@@ -29,7 +29,10 @@ do not know, so it does not go into the capture.
 
 **Title.** Short, in Spanish, naming the need or what was seen, **not an action**: «El corte del log
 deja fuera el error de Playwright», not «Arreglar el corte del log». An action already presumes a
-type, and the type is decided when classifying. Use the user's own words where you can.
+type, and the type is decided when classifying. So the title never starts with a verb in the
+infinitive, not even for an idea, where the user's own words often do: for «estaría bien poder
+ver el nivel de audio en grande», write «Nivel de audio en grande en el panel», not «Ver el nivel de
+audio en grande». Keep the user's vocabulary otherwise.
 
 **Description**, exactly these three sections, in this order:
 
@@ -67,7 +70,8 @@ One call to `save_issue`, without `id`:
 
 - `team`: Mood Table · `project`: Mood Table · `state`: Triage;
 - `title` and `description` as above;
-- `relatedTo`: the issue in «De dónde sale», if there is one (omit the field otherwise).
+- `relatedTo`: a list with the issue in «De dónde sale», e.g. `["MOO-120"]`, if there is one (omit
+  the field otherwise). Only Linear issues go here; a PR origin stays in the evidence.
 
 Nothing else: no `labels`, `priority`, `parentId`, `estimate` or `assignee`. They are set when
 classifying, and a capture that arrives half-classified hides the decision the user still has to make.
