@@ -39,7 +39,7 @@
   ShellCheck sobre `deploy/*.sh`. Se corrige lo que encuentre en el script.
   Verificar: `pnpm lint` va en verde en local y en la CI; con un error a propósito en el script
   (p. ej. una variable sin comillas), `pnpm lint` falla, y se deshace.
-- [ ] 1.5 El README cuenta la instalación nueva:
+- [x] 1.5 El README cuenta la instalación nueva:
   - **§1.4, «3. En la mesa»:** el paso 1 es el comando de `curl` (con el argumento opcional de la
     rama), el paso 2 declara las tiras y la tarjeta de sonido editando con `sudo`
     `/opt/moodtable/config/local.json` (desaparece `deploy/config/mesa.example.json`, que no existe) y
