@@ -11,13 +11,14 @@ puerto serie, qué hace cuando el puerto va más lento que el motor y cuándo le
 Cada frame que la salida Adalight de una tira escribe en su puerto serie SHALL llevar los colores del
 frame que recibe el visor en ese pulso, LED a LED y en el mismo orden, con cada canal corregido con la
 gamma 2,0 de los LEDs: `round(255 · (v/255)²)`. Así la tira se ve como el visor, que no la necesita
-porque la pantalla ya aplica su curva. El brillo puede ser menor: lo topa el sketch del controlador
-(D46).
+porque la pantalla ya aplica su curva. El controlador no topa el brillo: lo que llega a la tira es
+lo que decide el límite de potencia (specs/power-limit).
 
 > Traza: caso feliz de `MOO-111` (*la tira física pinta lo mismo que esa tira en el visor*) y su
-> esquema del escenario *La tira física responde mientras el DJ toca*. Sin reordenar los colores ni
-> limitar la potencia: non-goal de `MOO-111` (van en H4). La gamma, de `MOO-123`: la prueba en la mesa
-> del 5-nov y la tabla de la v1 (decisión 6 de `scroll-effect`).
+> esquema del escenario *La tira física responde mientras el DJ toca*. Sin reordenar los colores:
+> non-goal de `MOO-111` (va en H4). La gamma, de `MOO-123`: la prueba en la mesa del 5-nov y la tabla
+> de la v1 (decisión 6 de `scroll-effect`). Sin el tope del controlador (D46): `MOO-135`, criterio
+> *Un frame pide menos corriente de la que da la fuente*.
 
 #### Scenario: La tira física pinta lo mismo que el visor
 - **GIVEN** que el controlador Adalight está conectado a la Raspberry de la mesa, con su tira física
@@ -41,6 +42,12 @@ porque la pantalla ya aplica su curva. El brillo puede ser menor: lo topa el ske
 - **GIVEN** una tira de salida Adalight
 - **WHEN** el visor recibe un frame con un LED a (128, 30, 255)
 - **THEN** la salida Adalight escribe ese LED como (64, 4, 255)
+
+#### Scenario: Un color puro se ve con todo su brillo
+- **GIVEN** la tira física de la mesa, con el sketch del controlador sin tope de brillo
+- **WHEN** el efecto pinta toda la tira de un color puro
+- **THEN** la tira física lo pinta a todo brillo, claramente más brillante que con el tope del 25 %
+- **AND** un LED con poco brillo se sigue viendo
 
 ### Requirement: Los frames viajan con el formato Adalight
 La salida Adalight SHALL escribir cada frame como una cabecera de 6 bytes, `A` `d` `a`, el nº de LEDs
