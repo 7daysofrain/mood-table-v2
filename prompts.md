@@ -2351,6 +2351,20 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *El comando de SSH para el maker no llevaba `-i ~/.ssh/id_ed25519`, que la IA sí usaba en sus conexiones: sin él, la Pi rechaza la clave.*
 
+#### 6.87 Verificar y archivar el change `strip-color-order` (`MOO-136`)
+
+**Prompt 1:**
+
+> verify y archive
+
+*Claude Code (`claude-opus-5-5`, 12-nov). Antes de archivar, la IA comprobó en Linear que las tres tareas hijas de `MOO-136` (`MOO-145`, `MOO-146`, `MOO-147`) estaban en *Done*. `/opsx:verify` dio 10 de 10 pasos y los tres requisitos implementados, sin problemas críticos, y un aviso: la decisión 3 del `design.md` hablaba de los índices de origen de cada byte, y el código escribe cada canal en su byte de destino.*
+
+**Prompt 2:**
+
+> Sí, y archiva
+
+*La IA corrigió la decisión 3 con una nota de por qué cambió (la cobertura de SonarQube en la #143) y archivó: los tres requisitos MODIFIED de `physical-strip` y `engine-config` pasan a las specs principales.*
+
 ---
 
 ### 7. Pull Requests
