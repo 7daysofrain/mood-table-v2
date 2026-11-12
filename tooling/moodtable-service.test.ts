@@ -1,7 +1,8 @@
 /**
  * Lo que `specs/table-service` exige de la unidad de `systemd` de la mesa y se puede ver en el
- * fichero (design.md del change `table-autostart`, decisión 5). Los escenarios completos se prueban
- * a mano en la mesa; esto evita que alguien le añada sin querer un `Restart=` o una espera a la red.
+ * fichero (design.md del change `table-autostart`, decisión 5, y del change `table-install`,
+ * decisión 7). Los escenarios completos se prueban a mano en la mesa; esto evita que alguien le
+ * añada sin querer un `Restart=` o una espera a la red.
  */
 import { readFileSync } from 'node:fs';
 
@@ -66,9 +67,9 @@ describe('la unidad de la mesa (deploy/moodtable.service)', () => {
     expect(restarts).toEqual([{ section: 'Service', key: 'Restart', value: 'no' }]);
   });
 
-  it('lanza el motor como pi, desde el clon instalado y con el Node del sistema', () => {
-    expect(values('Service', 'User')).toEqual(['pi']);
-    expect(values('Service', 'WorkingDirectory')).toEqual(['/home/pi/mood-table-v2']);
+  it('lanza el motor con el usuario propio, desde la instalación del script y con el Node del sistema', () => {
+    expect(values('Service', 'User')).toEqual(['moodtable']);
+    expect(values('Service', 'WorkingDirectory')).toEqual(['/opt/moodtable']);
     expect(values('Service', 'ExecStart')).toEqual([
       '/usr/bin/node packages/engine/src/main.ts',
     ]);
