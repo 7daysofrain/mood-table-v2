@@ -1,7 +1,10 @@
-# Evals of the story skills
+# Evals of the harness skills
 
-Evals for `/create-story`, `/refine-story` and `/estimate-story`, run with skill-creator. Each skill
-keeps its own cases in `.claude/skills/<skill>/evals/evals.json`; this folder holds what they share.
+Evals for the story skills (`/create-story`, `/refine-story`, `/estimate-story`) and for `/capture`,
+run with skill-creator. Each skill keeps its own cases in `.claude/skills/<skill>/evals/evals.json`;
+this folder holds what they share. The cases of `/capture` test the subagent it launches: their prompt
+is the text the skill hands it, so for them `with_skill` reads `.claude/skills/capture/references/capturer.md`
+instead of the `SKILL.md`, exactly as the skill's `general-purpose` subagent does. They need no fixture, because the subagent reads nothing from Linear.
 
 | Path | Contents | In git |
 |---|---|---|
@@ -41,6 +44,9 @@ Follow skill-creator's "Running and evaluating test cases", with two adjustments
   `estimator` or `poke-holes` the same session still launches the old one. Run the evals in a new
   session; if that is not possible, have each run launch a `general-purpose` subagent with the
   subagent's `model` that reads its file and follows it, and note it in the results (`MOO-71`).
+  In a worktree under `.claude/worktrees/`, a new session takes its skills from the worktree but its
+  subagents from the main checkout: a subagent that only exists on the worktree's branch is not found
+  (`Agent type '<name>' not found`) until it reaches the main checkout's branch (`MOO-149`).
 
 ## Validating the skills' form
 

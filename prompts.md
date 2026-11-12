@@ -2209,6 +2209,26 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El README §1.4 pedía copiar un `deploy/config/mesa.example.json` que no existe: lo reescribe `MOO-143`.*
 - *La D106 decía «como `pi`» y el registro a mano: se tacha esa parte y apunta a la D110.*
 
+#### 6.79 Capturar necesidades a mitad de trabajo con `/capture` (`MOO-149`)
+
+**Prompt 1:**
+
+> Lo que me preocupa de este planteamiento es que muchas veces una spike va a salir mientras esté haciendo otra cosa y me va a obligar a centrarme en un protocolo intermedio. Igual no sería interesante primero hacer algo que simplemente capturase el requerimiento con un protocolo rápido, usando un subagente para no contaminar el contexto y que me permita seguir. Esta sería incluso algo mas abstracto que un spike, una captura de necesidad. Que luego puede traducirse a un spike, corregir un bug o incluso una feature nueva
+
+*Claude Code (`claude-opus-5-5`, 12-nov). Al proponer una vía ágil para los *spikes*, la IA había planteado una skill para plantearlos de una sentada; el maker vio que lo caro es la interrupción y propuso separar apuntar de plantear. La IA lo convirtió en dos capas (captura y clasificación), propuso el estado nativo *Triage* de Linear, que el equipo no tenía activado, y señaló el choque con «triaje» del glosario de PB. El maker abrió un fork de la sesión para esta parte; la vía del *spike* sigue en la otra.*
+
+**Prompt 2:**
+
+> Lo de buscar duplicados no me encaja, seguramente sea muy propenso a errores, y requiera de bastante esfuerzo. Que lo cree y ya está, si está duplicado se detectará durante el triaje. Lo que si que igual tiene sentido es estandarizar el formato de lo que entra y sale del agente no?
+
+*La IA había dado al subagente la búsqueda de duplicados y la elección del tipo al hilo principal, con una entrada de siete campos. El maker recortó las dos cosas y, en el mensaje siguiente, pidió una entrada mínima («La entrada debería manterse a algo minimo»): quedó un texto libre, la sugerencia de tipo y épica pasó al subagente y la salida sí quedó fija. También rechazó una skill para clasificar y un aviso («estás intentando cubrir un problema que aun no tenemos»). Al pedir que la skill solo se lanzara a mano, la IA comprobó en la documentación de Claude Code que `context: fork` no pasa la conversación al subagente, y por eso la skill corre en el hilo principal.*
+
+**Prompt 3:**
+
+> Estoy revisando. No tendria sentido que el agente de capturer estuviera dentro de la skill de capture?
+
+*Claude Code (`claude-opus-5-5`, 12-nov), al revisar la PR ya lista. La IA explicó que Claude Code solo registra subagentes con nombre desde `.claude/agents/` y propuso dejar sus instrucciones en `references/` de la skill, que lanza un subagente genérico con Haiku. Señaló lo que se pierde: el límite de herramientas pasa a ser solo por instrucción y cada captura gasta más contexto. Pesó la prueba real: desde una sesión nueva en el worktree, `/capture` cargó pero no encontró el subagente, porque los subagentes se cargan del checkout principal. La captura real (`MOO-150`) sí se creó bien con el subagente genérico. Evals con skill-creator, a petición del maker: en la primera iteración, 97 % con Haiku y con Sonnet y 48 % sin la skill; tras corregir dos fallos y mover las instrucciones, Haiku pasa los tres casos. Error de la IA: escribió las aserciones mientras corrían las primeras ejecuciones, y el baseline de un caso las leyó; las siguientes iteraciones corrieron a ciegas.*
+
 ---
 
 ### 7. Pull Requests

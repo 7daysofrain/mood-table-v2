@@ -29,10 +29,11 @@
 
 ## 2. Estados
 
-`Backlog` → `Todo` → `Spec` → `In Progress` → `In Review` → `Done` (+ `Canceled`, `Duplicate`)
+`Triage` → `Backlog` → `Todo` → `Spec` → `In Progress` → `In Review` → `Done` (+ `Canceled`, `Duplicate`)
 
 | Estado | Significa | Quién lo mueve |
 |---|---|---|
+| Triage | **Captura** sin clasificar: una necesidad apuntada a mitad de trabajo con `/capture` (§5), sin tipo ni épica | La crea el subagente `capturer`; se clasifica a mano |
 | Backlog | Idea o historia sin refinar | Manual |
 | Todo | Refinada (pasa INVEST, tiene criterios, non-goals y estimación) **o en definición**: rama local creada y OpenSpec change en exploración, redacción o revisión, todavía sin commit | Manual; el agente, al crear la rama, si venía de `Backlog` (*enablers*) |
 | Spec | Su OpenSpec change está **revisado por Joseba, commiteado y subido**: se puede implementar sin más puertas humanas (incluso por un agente autónomo) | El agente, al subir el commit del change |
@@ -47,6 +48,8 @@ historia, la épica. *Sub-issue auto-close* desactivado.
 
 - **Tipo** (grupo; decide el DoD): `Feature` · `Bug` · `Refactor` · `Spike` (investigación con
   resultado, p. ej. el de rendimiento) · `Chore` (setup, CI, dependencias).
+- **Las capturas no llevan etiquetas** mientras están en `Triage`: el tipo y el área se ponen al
+  clasificarlas (§5).
 - **Área** (etiquetas **sueltas**, sin grupo: el workspace no admite grupos de selección múltiple):
   `engine` (backend) · `panel` (frontend) · `shared` · `db` (base de datos) · `infra` · `firmware`.
   Una tarea lleva **una** área; una historia puede llevar varias.
@@ -85,6 +88,19 @@ descripción, protocolo, DoD por tipo) vive en la skill; aquí solo el **qué**.
 | Estimar | `/estimate-story <historia>` | Estimación Fibonacci por planning poker | **Todo** |
 
 Toda escritura en Linear pasa por la puerta humana de la skill (permisos en §8).
+
+**Capturas.** Una necesidad que aparece a mitad de otro trabajo (un posible *spike*, bug, historia o
+*chore*) no se plantea en ese momento: se apunta con `/capture <texto>` y se sigue trabajando. La skill
+solo se lanza a mano, no pide confirmación y añade la evidencia que ya hay en la conversación; el
+subagente `capturer` crea en segundo plano la captura en `Triage`, con tus palabras citadas, la
+evidencia, la issue de origen como *related* y un tipo y una épica **sugeridos**. No busca duplicados.
+
+**Clasificar capturas** se hace a mano, en la bandeja *Triage* de Linear, cuando se elige qué trabajar:
+aceptarla (con su etiqueta de tipo y su épica, pasa a `Backlog`), marcarla como duplicada o
+descartarla. La captura se convierte en la issue: conserva su ID, su historial y sus enlaces. Un
+*spike* sigue desde ella; para una historia, `/create-story` todavía no parte de una captura (se
+adaptará con la primera que lo necesite). En español se dice «clasificar capturas», no «triaje»,
+que en el glosario de PB es otra cosa.
 
 ## 6. Tareas (sub-issues)
 
