@@ -1,0 +1,66 @@
+{
+  "skill_name": "capture",
+  "notes": "Los casos evalúan el subagente capturer (.claude/agents/capturer.md): la entrada es el texto que la skill /capture le pasa. with_skill sigue capturer.md; without_skill recibe el mismo prompt sin leerlo.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "corte-log-con-origen",
+      "prompt": "Apunta esta necesidad como captura en Linear, para clasificarla después.\n\nPalabras del usuario:\nel corte del log en el triaje se come el error del e2e, en playwright el ##[error] va al principio y nos quedamos sin el Expected/Received\n\nEvidencia de la conversación:\n- PR https://github.com/7daysofrain/mood-table-v2/pull/112: la comprobación e2e falló por 104,7 ms frente a un límite de 100\n- Job 126427896193 (run 41785909988)\n- `packages/pr-babysitter/src/adapters/findings.ts`, función `failingStep`: corta el paso hasta el primer `##[error]`\n- Traza de LangSmith, nodo `triar` 01a1a773-fc95-76e6-a83a-8cb9ae1d1b86: p = 0,47 con 822 bytes de log\n- De dónde sale: MOO-120\n\nEntorno: sigue .claude/evals/environment.md.",
+      "expected_output": "Una sola creación en Triage, sin etiquetas ni épica, con las palabras del usuario citadas tal cual, la evidencia intacta, MOO-120 como relacionada y la épica PB sugerida.",
+      "files": [],
+      "expectations": [
+        "linear-writes.json contiene exactamente una llamada, sin campo id (es una creación)",
+        "La creación tiene state Triage y team y project Mood Table",
+        "La creación no lleva labels, priority, parentId, estimate ni assignee",
+        "La descripción tiene exactamente tres encabezados de nivel 2, en este orden: '## Qué', '## Evidencia', '## Clasificación sugerida'",
+        "La sección Qué es una cita ('> ') con las palabras del usuario sin cambiar ni una palabra",
+        "El título no empieza por un verbo en infinitivo: nombra lo que se ha visto, no una acción",
+        "La sección Evidencia conserva intactos el enlace a la PR 112, el job 126427896193, `findings.ts` con `failingStep` y el identificador de la traza",
+        "relatedTo es exactamente ['MOO-120']",
+        "La línea Tipo propone exactamente uno de Feature, Bug, Refactor, Spike o Chore, con un motivo",
+        "La línea Épica propone la épica PB · PR Babysitter, con un motivo",
+        "La respuesta final es el bloque de salida, con 'status: created' y una línea 'title:'"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "visor-mesa-poca-evidencia",
+      "prompt": "Apunta esta necesidad como captura en Linear, para clasificarla después.\n\nPalabras del usuario:\nlo del visor: con la intensidad baja el visor pinta color y la mesa se ve apagada, no se parece lo que veo en el panel a lo que sale en la tira\n\nEvidencia de la conversación:\n- Prueba en la mesa del paso 3.10 de MOO-127, PR https://github.com/7daysofrain/mood-table-v2/pull/124, con la intensidad al 13 %\n- De dónde sale: MOO-127\n\nEntorno: sigue .claude/evals/environment.md.",
+      "expected_output": "Una sola creación en Triage, con la cita tal cual, solo la evidencia dada (sin explicar la causa) y MOO-127 como relacionada.",
+      "files": [],
+      "expectations": [
+        "linear-writes.json contiene exactamente una llamada, sin campo id (es una creación)",
+        "La creación tiene state Triage y team y project Mood Table",
+        "La creación no lleva labels, priority, parentId, estimate ni assignee",
+        "La descripción tiene exactamente tres encabezados de nivel 2, en este orden: '## Qué', '## Evidencia', '## Clasificación sugerida'",
+        "La sección Qué es una cita ('> ') con las palabras del usuario sin cambiar ni una palabra",
+        "El título no empieza por un verbo en infinitivo: nombra lo que se ha visto, no una acción",
+        "La sección Evidencia no añade hechos que no estén en la entrada (p. ej. la gamma, el tope de brillo del controlador o una causa del problema)",
+        "relatedTo es exactamente ['MOO-127']",
+        "La línea Tipo propone exactamente uno de Feature, Bug, Refactor, Spike o Chore, con un motivo",
+        "La línea Épica propone el título de una épica de docs/instructions/linear.md §1 o 'Sin épica clara', con un motivo",
+        "La respuesta final es el bloque de salida, con 'status: created' y una línea 'title:'"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "idea-sin-evidencia",
+      "prompt": "Apunta esta necesidad como captura en Linear, para clasificarla después.\n\nPalabras del usuario:\nestaría bien poder guardar combinaciones de efectos como escenas y saltar entre ellas durante la sesion\n\nEvidencia de la conversación:\nSin evidencia\n\nEntorno: sigue .claude/evals/environment.md.",
+      "expected_output": "Una sola creación en Triage, con la cita tal cual (con su errata), «Sin evidencia.» y sin relaciones ni identificadores inventados.",
+      "files": [],
+      "expectations": [
+        "linear-writes.json contiene exactamente una llamada, sin campo id (es una creación)",
+        "La creación tiene state Triage y team y project Mood Table",
+        "La creación no lleva labels, priority, parentId, estimate ni assignee",
+        "La descripción tiene exactamente tres encabezados de nivel 2, en este orden: '## Qué', '## Evidencia', '## Clasificación sugerida'",
+        "La sección Qué es una cita ('> ') con las palabras del usuario sin cambiar ni una palabra, incluida 'sesion' sin tilde",
+        "El título no empieza por un verbo en infinitivo: nombra la necesidad, no una acción",
+        "La sección Evidencia es solo la línea 'Sin evidencia.'",
+        "La creación no lleva relatedTo y la descripción no nombra ningún identificador MOO-n",
+        "La línea Tipo propone exactamente uno de Feature, Bug, Refactor, Spike o Chore, con un motivo",
+        "La línea Épica propone el título de una épica de docs/instructions/linear.md §1 o 'Sin épica clara', con un motivo",
+        "La respuesta final es el bloque de salida, con 'status: created' y una línea 'title:'"
+      ]
+    }
+  ]
+}

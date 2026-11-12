@@ -1,6 +1,6 @@
 # Eval environment
 
-You are running a story skill inside an eval. Follow the skill exactly as written, with these
+You are running a harness skill (or the subagent it launches) inside an eval. Follow the skill exactly as written, with these
 substitutions. They replace the outside world only; they do not change any step of the skill.
 
 ## Linear is offline
