@@ -96,8 +96,35 @@ ask_config_choice() {
     *) fail "«${answer}» no es conservar ni sobrescribir, así que no ha tocado nada." ;;
   esac
 
-  if [[ $config_choice == 'conservar' && ! -f $(existing_config) ]]; then
-    fail "no hay un fichero de configuración que conservar en $(existing_config), así que no ha tocado nada."
+  if [[ $config_choice == 'conservar' ]]; then
+    if [[ ! -f $(existing_config) ]]; then
+      fail "no hay un fichero de configuración que conservar en $(existing_config), así que no ha tocado nada."
+    fi
+    refuse_external_state
+  fi
+}
+
+# Al reinstalar, el estado del instrumento empieza de cero porque data/ no pasa a la instalación
+# nueva. Si el fichero conservado lo guarda fuera de la instalación existente (instrumentState.path
+# absoluta, o relativa que sale de ella), el motor nuevo lo recuperaría; borrarlo sería tocar algo
+# que no es del script. Así que termina antes de cambiar nada. Lo comprueba el Node con el que ya
+# corría esa instalación; si no lo hay, o el fichero no se lee, sigue (el motor dirá qué falla).
+refuse_external_state() {
+  local state_path
+  [[ -x /usr/bin/node ]] || return 0
+  state_path=$(cd "$existing_dir" && /usr/bin/node --input-type=module -e "
+    import { readFileSync } from 'node:fs';
+    import { isAbsolute, relative, resolve } from 'node:path';
+    const state = JSON.parse(readFileSync('config/local.json', 'utf8')).instrumentState;
+    if (state?.type === 'sqlite' && typeof state.path === 'string') {
+      const path = resolve(process.cwd(), state.path);
+      const inside = relative(process.cwd(), path);
+      if (inside === '..' || inside.startsWith('../') || isAbsolute(inside)) console.log(path);
+    }
+  " </dev/null 2>/dev/null) || return 0
+
+  if [[ -n $state_path ]]; then
+    fail "su fichero de configuración guarda el estado del instrumento fuera de la instalación, en ${state_path}: con conservar, la instalación nueva lo recuperaría, y al reinstalar el estado empieza de cero. No ha tocado nada. Elige sobrescribir, o quita instrumentState del fichero y vuelve a lanzar el script."
   fi
 }
 
