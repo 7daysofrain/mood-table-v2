@@ -33,6 +33,14 @@
   fallo (fichero y nombre del test). Así sobrevive a los reinicios y cuadra con D66. Si con la
   repetición el sistema propone un Bug en *Triage* o solo avisa al mantenedor, lo decide la historia
   del relanzamiento (`MOO-155`, con `MOO-79`).
+- **`SonarCloud Code Analysis` no pasa por el triador** (12-nov). Su *quality gate* («Sonar way»)
+  pone umbrales de métricas sobre el código nuevo, que es el de la PR: si falla, es *real* sin
+  preguntar, como `lint` y `typecheck`. Con eso sobra el adaptador específico con la API de Sonar.
+- **`sonar-issues` pasa por el triador, con una pregunta por incidencia** (12-nov). Cada incidencia es
+  la opinión de un analizador y puede no aplicar: por eso se puede aceptar en Sonar con el motivo. Se
+  parece más a un comentario del revisor que a una comprobación, y probablemente necesita criterios
+  como los del revisor. Una incidencia, un hallazgo es `MOO-148`. Falta una fila de una incidencia que
+  se aceptó en Sonar para ver si el triador la distingue, y eso puede ir a `MOO-76`.
 
 ## Resultados
 
