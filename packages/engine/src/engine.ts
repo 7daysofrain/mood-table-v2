@@ -119,6 +119,11 @@ export function powerLimitMessage(strip: StripConfig): string | undefined {
   );
 }
 
+/** Las líneas del límite de las tiras físicas de `config`, en el orden del fichero. */
+export function powerLimitMessages(config: Config): string[] {
+  return config.strips.flatMap((strip) => powerLimitMessage(strip) ?? []);
+}
+
 /** Unos amperios para el log: con coma y como mucho tres decimales (10,38; 0,048). */
 function amps(value: number): string {
   return value.toLocaleString('es-ES', { maximumFractionDigits: 3 });

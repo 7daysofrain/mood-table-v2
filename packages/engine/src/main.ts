@@ -28,7 +28,7 @@ import { restore } from './core/restore.ts';
 import { startStateSaver } from './core/state-saver.ts';
 import type { InstrumentState } from './core/state-store.ts';
 import {
-  powerLimitMessage,
+  powerLimitMessages,
   sourceMessage,
   startEngine,
   startupMessage,
@@ -156,11 +156,12 @@ async function main(): Promise<string | undefined> {
     log: (line) => console.error(line),
   });
 
-  console.log(startupMessage(loaded.file, loaded.config, server.url));
-  for (const strip of loaded.config.strips) {
-    const line = powerLimitMessage(strip);
-    if (line) console.log(line);
-  }
+  console.log(
+    [
+      startupMessage(loaded.file, loaded.config, server.url),
+      ...powerLimitMessages(loaded.config),
+    ].join('\n'),
+  );
   startEngine({
     config: loaded.config,
     control,

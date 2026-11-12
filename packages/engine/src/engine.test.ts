@@ -8,6 +8,7 @@ import { defaultParams } from './core/effects/effect.ts';
 import { estimateAmps } from './core/power-limit.ts';
 import {
   powerLimitMessage,
+  powerLimitMessages,
   sourceMessage,
   startEngine,
   startupMessage,
@@ -239,6 +240,15 @@ describe('la línea del límite de potencia de cada tira física', () => {
 
   it('una tira virtual no tiene línea', () => {
     expect(powerLimitMessage(demoStrip)).toBeUndefined();
+  });
+
+  it('del fichero, salen solo las de las tiras físicas, en su orden', () => {
+    const strips = [mesa(8), demoStrip, { ...mesa(18), name: 'Barra' }];
+
+    expect(powerLimitMessages({ ...config, strips })).toEqual([
+      powerLimitMessage(mesa(8)),
+      powerLimitMessage({ ...mesa(18), name: 'Barra' }),
+    ]);
   });
 });
 
