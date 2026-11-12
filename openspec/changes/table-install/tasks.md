@@ -14,7 +14,7 @@
 
 ## 1. MOO-143 · infra
 
-- [ ] 1.1 **(test en rojo)** `tooling/moodtable-service.test.ts` espera `User=moodtable` y
+- [x] 1.1 **(test en rojo)** `tooling/moodtable-service.test.ts` espera `User=moodtable` y
   `WorkingDirectory=/opt/moodtable` (`design.md`, decisión 7). El resto de comprobaciones se queda.
   Verificar: el test falla solo por esas dos directivas, y el resto de la suite sigue en verde.
 - [ ] 1.2 `deploy/moodtable.service` pasa a `moodtable` y a `/opt/moodtable`. El comentario de
