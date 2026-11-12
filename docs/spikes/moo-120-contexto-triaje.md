@@ -17,7 +17,10 @@
 
 ## Veredicto
 
-*Pendiente.*
+*Borrador, por piezas. Se cierra con `/close-spike`.*
+
+- **`lint` y `typecheck` no pasan por el triador** (decidido con el usuario el 12-nov). Son
+  deterministas: si fallan en una PR, el fallo es *real* sin preguntar al modelo.
 
 ## Resultados
 
