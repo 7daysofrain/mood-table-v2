@@ -44,6 +44,9 @@ Follow skill-creator's "Running and evaluating test cases", with two adjustments
   `estimator` or `poke-holes` the same session still launches the old one. Run the evals in a new
   session; if that is not possible, have each run launch a `general-purpose` subagent with the
   subagent's `model` that reads its file and follows it, and note it in the results (`MOO-71`).
+  In a worktree under `.claude/worktrees/`, a new session takes its skills from the worktree but its
+  subagents from the main checkout: a subagent that only exists on the worktree's branch is not found
+  (`Agent type '<name>' not found`) until it reaches the main checkout's branch (`MOO-149`).
 
 ## Validating the skills' form
 
