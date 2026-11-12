@@ -1,12 +1,12 @@
 {
-  "id": "MOO-904",
+  "id": "MOO-906",
   "title": "Medir cuánto tarda la mesa en volver tras un corte de luz",
   "description": "## Preguntas\n1. ¿Cuánto tarda la mesa en volver a pintar las tiras tras un corte de luz, desde que vuelve la corriente? — *Alimenta:* el `Then` de MOO-121 y la expectativa E6.\n2. ¿Qué parte de ese tiempo es el arranque de la Pi y qué parte el del motor? — *Alimenta:* si merece la pena acelerar el arranque del motor (posible historia en S3).\n\n## Timebox\n½ día de dedicación, fijado por el usuario. El tiempo real lo anota `/close-spike`.\n\n## Entregable\nUna D# en la ficha con el tiempo medido y su reparto, la E6 del PRD con la cifra, el documento en `docs/spikes/` y, si sale, una captura para acelerar el arranque.\n\n## Non-goals\n- Código de producto: lo que deba quedarse entra después por la vía normal.\n- Proteger la SD de los cortes: es MOO-138.\n- Cambiar el arranque automático: es MOO-131.\n\n## Definition of Done (Spike)\n- [ ] Pregunta del *spike* respondida con datos (medidas, prototipo o fuentes), o cerrada sin respuesta con lo aprendido y la pregunta que queda (Q# o captura)\n- [ ] Hallazgos y decisión registrados en la ficha (`docs/idea-mood-table.md`, nueva D#) y en `prompts.md` si la IA intervino\n- [ ] Tiempo dedicado anotado frente al *timebox*\n- [ ] Prototipo borrado de la rama antes de integrar y enlazado desde la PR; nada de `packages/` cambia\n- [ ] Historias, supuestos o preguntas del documento fuente (A#, Q#; BA#, BQ#) afectados actualizados\n- [ ] PR con revisión humana y `Fixes MOO-n` con el ID del *spike*",
   "priority": {
     "value": 4,
     "name": "Low"
   },
-  "url": "https://linear.app/7daysofrain/issue/MOO-904/medir-cuanto-tarda-la-mesa-en-volver-tras-un-corte-de-luz",
+  "url": "https://linear.app/7daysofrain/issue/MOO-906/medir-cuanto-tarda-la-mesa-en-volver-tras-un-corte-de-luz",
   "gitBranchName": "7daysofrain/moo-904-medir-cuanto-tarda-la-mesa-en-volver",
   "estimate": null,
   "status": "Todo",

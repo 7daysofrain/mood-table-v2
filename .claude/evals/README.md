@@ -85,6 +85,9 @@ input every time, and the real issues keep changing.
 | `MOO-902.json` | **Synthetic**: BH1 as a PB story in Backlog, not refined | refine-story |
 | `MOO-903.json` | **Synthetic**: BH2 as a refined PB story, before estimation | estimate-story |
 | `MOO-903.children.json` | **Synthetic**: its tasks MOO-904 and MOO-905 | estimate-story |
+| `MOO-142.json` | Epic S3 (snapshot of 2026-11-12) | refine-story |
+| `MOO-138.json` | Spike under S3 in Backlog, created before the spike lane (snapshot of 2026-11-12) | refine-story |
+| `MOO-906.json` | **Synthetic**: a spike under S3 already shaped by `/create-spike`, in Todo with its timebox | estimate-story |
 
 IDs from `MOO-900` up are synthetic: no real issue has them, so a fixture can never be mistaken for a
 snapshot.
