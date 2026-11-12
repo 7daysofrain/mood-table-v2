@@ -65,7 +65,7 @@
   En `engine.test.ts`, el test *no llevan el resto de la tira* deja de usar `colorOrder` como ejemplo
   de un campo que H4 añadirá a la tira.
   Verificar: los tests de 2.1 pasan, y `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 2.3 Documentación:
+- [x] 2.3 Documentación:
   - README §2.2, adaptador *Adalight serie*: reordena los canales según el chip de la tira, después de
     la gamma, en lugar de «el orden de color lo pone por ahora el sketch»;
   - `prompts.md`: la entrada de esta tarea.
