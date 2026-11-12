@@ -1,0 +1,221 @@
+﻿2026-11-05T18:18:59.0268021Z Current runner version: '2.338.2'
+2026-11-05T18:18:59.0285006Z ##[group]Runner Image Provisioner
+2026-11-05T18:18:59.0285568Z Hosted Compute Agent
+2026-11-05T18:18:59.0285906Z Version: 20261028.624
+2026-11-05T18:18:59.0286329Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-05T18:18:59.0286779Z Build Date: 2026-10-28T21:51:42Z
+2026-11-05T18:18:59.0287216Z Worker ID: {88bbeaa3-3eba-40c0-9eaa-7d5e92de8d5c}
+2026-11-05T18:18:59.0287659Z Region: westus3
+2026-11-05T18:18:59.0287976Z Cloud: Azure
+2026-11-05T18:18:59.0288340Z ##[endgroup]
+2026-11-05T18:18:59.0289344Z ##[group]Operating System
+2026-11-05T18:18:59.0289769Z Ubuntu
+2026-11-05T18:18:59.0290109Z 26.04.1
+2026-11-05T18:18:59.0290405Z LTS
+2026-11-05T18:18:59.0290750Z ##[endgroup]
+2026-11-05T18:18:59.0291077Z ##[group]Runner Image
+2026-11-05T18:18:59.0291447Z Image: ubuntu-26.04
+2026-11-05T18:18:59.0291848Z Version: 20261101.186.1
+2026-11-05T18:18:59.0292619Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261101.186/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-05T18:18:59.0293463Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261101.186
+2026-11-05T18:18:59.0294080Z ##[endgroup]
+2026-11-05T18:18:59.0294706Z ##[group]GITHUB_TOKEN Permissions
+2026-11-05T18:18:59.0295916Z Contents: read
+2026-11-05T18:18:59.0296250Z Metadata: read
+2026-11-05T18:18:59.0296563Z ##[endgroup]
+2026-11-05T18:18:59.0297848Z Secret source: Actions
+2026-11-05T18:18:59.0298370Z Cache mode: write
+2026-11-05T18:18:59.0298995Z Prepare workflow directory
+2026-11-05T18:18:59.0599269Z Prepare all required actions
+2026-11-05T18:18:59.0638725Z Getting action download info
+2026-11-05T18:18:59.3855161Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-05T18:18:59.4665901Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-05T18:18:59.5500362Z Download action repository 'actions/download-artifact@v8' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-11-05T18:19:00.1644455Z Complete job name: sonar-issues
+2026-11-05T18:19:00.2166299Z ##[group]Run actions/checkout@v7
+2026-11-05T18:19:00.2166750Z with:
+2026-11-05T18:19:00.2167031Z   repository: 7daysofrain/mood-table-v2
+2026-11-05T18:19:00.2169257Z   token: ***
+2026-11-05T18:19:00.2169518Z   ssh-strict: true
+2026-11-05T18:19:00.2169784Z   ssh-user: git
+2026-11-05T18:19:00.2170052Z   persist-credentials: true
+2026-11-05T18:19:00.2170346Z   clean: true
+2026-11-05T18:19:00.2170622Z   sparse-checkout-cone-mode: true
+2026-11-05T18:19:00.2170936Z   fetch-depth: 1
+2026-11-05T18:19:00.2171196Z   fetch-tags: false
+2026-11-05T18:19:00.2171457Z   show-progress: true
+2026-11-05T18:19:00.2171722Z   lfs: false
+2026-11-05T18:19:00.2171972Z   submodules: false
+2026-11-05T18:19:00.2172246Z   set-safe-directory: true
+2026-11-05T18:19:00.2172551Z   allow-unsafe-pr-checkout: false
+2026-11-05T18:19:00.2172931Z env:
+2026-11-05T18:19:00.2173230Z   SONAR_TOKEN: ***
+2026-11-05T18:19:00.2173487Z ##[endgroup]
+2026-11-05T18:19:00.4423339Z Syncing repository: 7daysofrain/mood-table-v2
+2026-11-05T18:19:00.4425265Z ##[group]Getting Git version info
+2026-11-05T18:19:00.4426084Z Working directory is '/home/runner/work/mood-table-v2/mood-table-v2'
+2026-11-05T18:19:00.4427136Z [command]/usr/bin/git version
+2026-11-05T18:19:00.4436193Z git version 2.56.0
+2026-11-05T18:19:00.4448205Z ##[endgroup]
+2026-11-05T18:19:00.4455425Z Temporarily overriding HOME='/home/runner/work/_temp/463b6532-69cd-4b8b-a6d8-90ad3b8ace15' before making global git config changes
+2026-11-05T18:19:00.4456515Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-05T18:19:00.4458969Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mood-table-v2/mood-table-v2
+2026-11-05T18:19:00.4514364Z Deleting the contents of '/home/runner/work/mood-table-v2/mood-table-v2'
+2026-11-05T18:19:00.4521762Z ##[group]Determining repository object format
+2026-11-05T18:19:00.4522759Z ##[endgroup]
+2026-11-05T18:19:00.4523825Z ##[group]Initializing the repository
+2026-11-05T18:19:00.4524712Z [command]/usr/bin/git init /home/runner/work/mood-table-v2/mood-table-v2
+2026-11-05T18:19:00.4695549Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-05T18:19:00.4696605Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-05T18:19:00.4697559Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-05T18:19:00.4698280Z hint: call:
+2026-11-05T18:19:00.4698791Z hint:
+2026-11-05T18:19:00.4699319Z hint: 	git config --global init.defaultBranch <name>
+2026-11-05T18:19:00.4699932Z hint:
+2026-11-05T18:19:00.4700509Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-05T18:19:00.4701427Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-05T18:19:00.4702136Z hint:
+2026-11-05T18:19:00.4702534Z hint: 	git branch -m <name>
+2026-11-05T18:19:00.4703005Z hint:
+2026-11-05T18:19:00.4703701Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-05T18:19:00.4706435Z Initialized empty Git repository in /home/runner/work/mood-table-v2/mood-table-v2/.git/
+2026-11-05T18:19:00.4715921Z [command]/usr/bin/git remote add origin https://github.com/7daysofrain/mood-table-v2
+2026-11-05T18:19:00.4838118Z ##[endgroup]
+2026-11-05T18:19:00.4839060Z ##[group]Disabling automatic garbage collection
+2026-11-05T18:19:00.4840259Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-05T18:19:00.4887045Z ##[endgroup]
+2026-11-05T18:19:00.4888161Z ##[group]Setting up auth
+2026-11-05T18:19:00.4888836Z Removing SSH command configuration
+2026-11-05T18:19:00.4891995Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-05T18:19:00.4927666Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-05T18:19:00.5277764Z Removing HTTP extra header
+2026-11-05T18:19:00.5282093Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-05T18:19:00.5309515Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-05T18:19:00.5510053Z Removing includeIf entries pointing to credentials config files
+2026-11-05T18:19:00.5513276Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-05T18:19:00.5539051Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-05T18:19:00.5740720Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-05T18:19:00.5769096Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/mood-table-v2/mood-table-v2/.git.path /home/runner/work/_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config
+2026-11-05T18:19:00.5793664Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/mood-table-v2/mood-table-v2/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config
+2026-11-05T18:19:00.5820918Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config
+2026-11-05T18:19:00.5845359Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config
+2026-11-05T18:19:00.5869177Z ##[endgroup]
+2026-11-05T18:19:00.5869625Z ##[group]Fetching the repository
+2026-11-05T18:19:00.5872957Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c533670c1a7db3cb16e358377fad9d4decd7c906:refs/remotes/pull/116/merge
+2026-11-05T18:19:01.7504470Z From https://github.com/7daysofrain/mood-table-v2
+2026-11-05T18:19:01.7508288Z  * [new ref]         c533670c1a7db3cb16e358377fad9d4decd7c906 -> pull/116/merge
+2026-11-05T18:19:01.7513908Z ##[endgroup]
+2026-11-05T18:19:01.7515979Z ##[group]Determining the checkout info
+2026-11-05T18:19:01.7518788Z ##[endgroup]
+2026-11-05T18:19:01.7519637Z [command]/usr/bin/git sparse-checkout disable
+2026-11-05T18:19:01.7629936Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-05T18:19:01.7674572Z ##[group]Checking out the ref
+2026-11-05T18:19:01.7676966Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/116/merge
+2026-11-05T18:19:01.8437653Z Note: switching to 'refs/remotes/pull/116/merge'.
+2026-11-05T18:19:01.8438772Z 
+2026-11-05T18:19:01.8439483Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-05T18:19:01.8441379Z changes and commit them, and you can discard any commits you make in this
+2026-11-05T18:19:01.8443389Z state without impacting any branches by switching back to a branch.
+2026-11-05T18:19:01.8444538Z 
+2026-11-05T18:19:01.8445321Z If you want to create a new branch to retain commits you create, you may
+2026-11-05T18:19:01.8447155Z do so (now or later) by using -c with the switch command. Example:
+2026-11-05T18:19:01.8447977Z 
+2026-11-05T18:19:01.8448380Z   git switch -c <new-branch-name>
+2026-11-05T18:19:01.8449162Z 
+2026-11-05T18:19:01.8449600Z Or undo this operation with:
+2026-11-05T18:19:01.8450253Z 
+2026-11-05T18:19:01.8450601Z   git switch -
+2026-11-05T18:19:01.8451025Z 
+2026-11-05T18:19:01.8451955Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-05T18:19:01.8453341Z 
+2026-11-05T18:19:01.8454858Z HEAD is now at c533670 Merge b4a47348bf49447cf62cb29d69299445a30f973f into 8bc02a4317daa05d55b920fc19d281fee30fe8c4
+2026-11-05T18:19:01.8458958Z ##[endgroup]
+2026-11-05T18:19:01.8494670Z [command]/usr/bin/git log -1 --format=%H
+2026-11-05T18:19:01.8517706Z c533670c1a7db3cb16e358377fad9d4decd7c906
+2026-11-05T18:19:01.8844890Z ##[group]Run actions/setup-node@v7
+2026-11-05T18:19:01.8845595Z with:
+2026-11-05T18:19:01.8846140Z   node-version-file: .nvmrc
+2026-11-05T18:19:01.8846783Z   check-latest: false
+2026-11-05T18:19:01.8852416Z   token: ***
+2026-11-05T18:19:01.8852992Z   package-manager-cache: true
+2026-11-05T18:19:01.8853644Z env:
+2026-11-05T18:19:01.8854268Z   SONAR_TOKEN: ***
+2026-11-05T18:19:01.8854822Z ##[endgroup]
+2026-11-05T18:19:01.9633097Z Node version file is not TOML file
+2026-11-05T18:19:01.9634063Z Resolved .nvmrc as 24
+2026-11-05T18:19:01.9675315Z Found in cache @ /opt/hostedtoolcache/node/24.22.2/x64
+2026-11-05T18:19:02.0353751Z ##[group]Environment details
+2026-11-05T18:19:02.3156974Z node: v24.22.2
+2026-11-05T18:19:02.3157616Z npm: 11.19.1
+2026-11-05T18:19:02.3157890Z yarn: 1.22.22
+2026-11-05T18:19:02.3159583Z ##[endgroup]
+2026-11-05T18:19:02.3326685Z ##[group]Run actions/download-artifact@v8
+2026-11-05T18:19:02.3326893Z with:
+2026-11-05T18:19:02.3327048Z   name: sonar-report-task
+2026-11-05T18:19:02.3327212Z   path: sonar
+2026-11-05T18:19:02.3327363Z   merge-multiple: false
+2026-11-05T18:19:02.3327533Z   repository: 7daysofrain/mood-table-v2
+2026-11-05T18:19:02.3327711Z   run-id: 42082802927
+2026-11-05T18:19:02.3327872Z   skip-decompress: false
+2026-11-05T18:19:02.3328036Z   digest-mismatch: error
+2026-11-05T18:19:02.3328201Z env:
+2026-11-05T18:19:02.3328435Z   SONAR_TOKEN: ***
+2026-11-05T18:19:02.3328807Z ##[endgroup]
+2026-11-05T18:19:02.4219978Z Downloading single artifact
+2026-11-05T18:19:02.6685838Z Preparing to download the following artifacts:
+2026-11-05T18:19:02.6686820Z - sonar-report-task (ID: 13441926815, Size: 304, Expected Digest: sha256:6a356c88ced19f89fed02cc072b68160418bda7e5b25d942323a95413d4c685b)
+2026-11-05T18:19:03.1515798Z Redirecting to blob download url: https://productionresultssa32.blob.core.windows.net/actions-results/0b70f86d-a42d-8c48-baf3-9bc00b2d87db/workflow-job-run-e4fea596-8ba9-585d-93c5-b1cdc8ab0954/artifacts/c107110c82d215be56c4599fb9f1dcefa5d29ebe8f34bd3d3215267ae39665b5.zip
+2026-11-05T18:19:03.1516914Z Starting download of artifact to: /home/runner/work/mood-table-v2/mood-table-v2/sonar
+2026-11-05T18:19:03.3681123Z (node:2246) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-11-05T18:19:03.3682006Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-05T18:19:03.3725904Z SHA256 digest of downloaded artifact is 6a356c88ced19f89fed02cc072b68160418bda7e5b25d942323a95413d4c685b
+2026-11-05T18:19:03.3739307Z Artifact download completed successfully.
+2026-11-05T18:19:03.3739688Z Total of 1 artifact(s) downloaded
+2026-11-05T18:19:03.3740046Z Download artifact has finished successfully
+2026-11-05T18:19:03.3843902Z ##[group]Run node tooling/ci/check-sonar-issues.ts
+2026-11-05T18:19:03.3844176Z [36;1mnode tooling/ci/check-sonar-issues.ts[0m
+2026-11-05T18:19:03.3891282Z shell: /usr/bin/bash -e {0}
+2026-11-05T18:19:03.3891486Z env:
+2026-11-05T18:19:03.3891688Z   SONAR_TOKEN: ***
+2026-11-05T18:19:03.3891809Z   PR_NUMBER: 116
+2026-11-05T18:19:03.3891947Z   SONAR_REPORT_TASK: sonar/report-task.txt
+2026-11-05T18:19:03.3892104Z ##[endgroup]
+2026-11-05T18:19:04.8794726Z ::stop-commands::***
+2026-11-05T18:19:04.8795188Z 1 incidencias nuevas de SonarQube en la PR:
+2026-11-05T18:19:04.8796255Z - typescript:S2925 · e2e/effects.spec.ts:183 · Replace this fixed wait with a synchronization on an observable condition. · https://sonarcloud.io/project/issues?id=7daysofrain_mood-table-v2&pullRequest=116&open=AaGs71q8Gux6303Aq6C7
+2026-11-05T18:19:04.8796981Z Corrígelas, o márcalas como aceptadas en SonarQube con el motivo de por qué no aplican.
+2026-11-05T18:19:04.8797497Z ::***::
+2026-11-05T18:19:04.8886903Z ##[error]Process completed with exit code 1.
+2026-11-05T18:19:04.8977834Z Post job cleanup.
+2026-11-05T18:19:04.9541297Z [command]/usr/bin/git version
+2026-11-05T18:19:04.9574831Z git version 2.56.0
+2026-11-05T18:19:04.9596999Z Temporarily overriding HOME='/home/runner/work/_temp/e2edb6b2-8938-40da-976f-c373d0d2ea35' before making global git config changes
+2026-11-05T18:19:04.9597828Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-05T18:19:04.9600453Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/mood-table-v2/mood-table-v2
+2026-11-05T18:19:04.9629379Z Removing SSH command configuration
+2026-11-05T18:19:04.9633049Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-05T18:19:04.9664557Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-05T18:19:04.9919262Z Removing HTTP extra header
+2026-11-05T18:19:04.9924794Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-05T18:19:04.9957787Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-05T18:19:05.0194668Z Removing includeIf entries pointing to credentials config files
+2026-11-05T18:19:05.0200498Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-05T18:19:05.0221878Z includeif.gitdir:/home/runner/work/mood-table-v2/mood-table-v2/.git.path
+2026-11-05T18:19:05.0222568Z includeif.gitdir:/home/runner/work/mood-table-v2/mood-table-v2/.git/worktrees/*.path
+2026-11-05T18:19:05.0223061Z includeif.gitdir:/github/workspace/.git.path
+2026-11-05T18:19:05.0241170Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-05T18:19:05.0242984Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/mood-table-v2/mood-table-v2/.git.path
+2026-11-05T18:19:05.0250013Z /home/runner/work/_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config
+2026-11-05T18:19:05.0257776Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/mood-table-v2/mood-table-v2/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-f555c930\-6f53\-44d6\-bc96\-4c10bf0b7f79\.config
+2026-11-05T18:19:05.0287292Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/mood-table-v2/mood-table-v2/.git/worktrees/*.path
+2026-11-05T18:19:05.0307290Z /home/runner/work/_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config
+2026-11-05T18:19:05.0313318Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/mood-table-v2/mood-table-v2/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-f555c930\-6f53\-44d6\-bc96\-4c10bf0b7f79\.config
+2026-11-05T18:19:05.0341000Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-05T18:19:05.0360469Z /github/runner_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config
+2026-11-05T18:19:05.0366143Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-f555c930\-6f53\-44d6\-bc96\-4c10bf0b7f79\.config
+2026-11-05T18:19:05.0393975Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-05T18:19:05.0412930Z /github/runner_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config
+2026-11-05T18:19:05.0419004Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-f555c930\-6f53\-44d6\-bc96\-4c10bf0b7f79\.config
+2026-11-05T18:19:05.0447413Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-05T18:19:05.0662032Z Removing credentials config '/home/runner/work/_temp/git-credentials-f555c930-6f53-44d6-bc96-4c10bf0b7f79.config'
+2026-11-05T18:19:05.0778724Z Cleaning up orphan processes
