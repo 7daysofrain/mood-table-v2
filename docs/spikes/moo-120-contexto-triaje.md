@@ -201,6 +201,34 @@ propuesta y un hallazgo por petición, 3 repeticiones:
 - **Un «no aplica» en una comprobación exigida no deja integrar la PR.** Si el fallo no lo causa la PR,
   lo que toca es relanzar. Ese es justo el disparador de la acción de `MOO-155`.
 
+### Una muestra de comentarios de Codex (12-nov)
+
+Codex es otra fuente de hallazgos para el sistema. Muestra de 8 de sus 24 comentarios en las últimas
+60 PR integradas, cada uno solo en su petición, con el código de producción (`parseCodexFinding`,
+`createDecisionModel`) y 3 repeticiones. La etiqueta sale de lo que se hizo con el comentario: *real*
+si se arregló en la PR, *no aplica* si se resolvió sin cambio en ella.
+
+| Hilo | Etiqueta | Cómo se resolvió | p | Clase |
+|---|---|---|---|---|
+| #88.2 | no aplica | «Real, pero es el alcance de otra tarea» (`MOO-91`) | 0,300 | exige criterio |
+| #101.2 | no aplica *(a confirmar)* | Resuelto sin respuesta ni commit posterior | 0,468 | exige criterio |
+| #101.3 | no aplica *(a confirmar)* | Resuelto sin respuesta ni commit posterior | **0,925** | **real** |
+| #72.1 | real | Arreglado en `1cf8413` | 0,445 | exige criterio |
+| #85.1 | real | Arreglado en `16ccb4c` | **0,807** | **real** ✓ |
+| #122.2 | real | Arreglado en `3167fea` | 0,714 | exige criterio |
+| #134.0 (P1) | real | Arreglado en `838ed32` | 0,655 | exige criterio |
+| #140.0 | real | Arreglado en `ba36b30` | 0,660 | exige criterio |
+
+- **Acierta 1 de 8** con el umbral de 0,80. Las *real* se quedan entre 0,44 y 0,72, y la separación
+  media es pequeña: 0,66 frente a 0,56.
+- **Codex casi siempre tiene razón en este repo:** 21 de sus 24 comentarios se arreglaron en su PR
+  (un 88 %). Una regla de «Codex es *real*» habría acertado más que el triador.
+- **El triador no puede comprobar lo que dice Codex.** Recibe el comentario y el trozo de diff, pero no
+  el código de alrededor ni los otros ficheros. Solo puede juzgar si suena plausible.
+- **Las dos etiquetas de #101 son dudosas.** Codex tenía razón: el código de hoy sigue sin contar las
+  preguntas al partir las peticiones (101.3). Se resolvieron sin arreglarse, quizá porque se dieron
+  por improbables. Las tiene que confirmar el mantenedor.
+
 ### Permisos del PAT
 
 Probado el 12-nov con el PAT del sistema (*fine-grained*, con *Metadata* en lectura e *Issues* y

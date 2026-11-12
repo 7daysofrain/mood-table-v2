@@ -1,0 +1,24 @@
+{"id":"88.2","label":"no aplica","why":"real, pero del alcance de otra tarea (MOO-91)","badge":"P2","title":"Route failed checks directly to the final notification","rep":1,"p":0.2999,"inputTokens":2965}
+{"id":"88.2","label":"no aplica","why":"real, pero del alcance de otra tarea (MOO-91)","badge":"P2","title":"Route failed checks directly to the final notification","rep":2,"p":0.2999,"inputTokens":2965}
+{"id":"88.2","label":"no aplica","why":"real, pero del alcance de otra tarea (MOO-91)","badge":"P2","title":"Route failed checks directly to the final notification","rep":3,"p":0.2999,"inputTokens":2965}
+{"id":"101.2","label":"no aplica","why":"resuelto sin respuesta ni commit posterior","badge":"P2","title":"Preserve accumulated spending when a PR is stopped","rep":1,"p":0.4707,"inputTokens":3235}
+{"id":"101.2","label":"no aplica","why":"resuelto sin respuesta ni commit posterior","badge":"P2","title":"Preserve accumulated spending when a PR is stopped","rep":2,"p":0.4639,"inputTokens":3235}
+{"id":"101.2","label":"no aplica","why":"resuelto sin respuesta ni commit posterior","badge":"P2","title":"Preserve accumulated spending when a PR is stopped","rep":3,"p":0.4707,"inputTokens":3235}
+{"id":"101.3","label":"no aplica","why":"resuelto sin respuesta ni commit posterior","badge":"P2","title":"Include questions when enforcing the request-size limit","rep":1,"p":0.9247,"inputTokens":4722}
+{"id":"101.3","label":"no aplica","why":"resuelto sin respuesta ni commit posterior","badge":"P2","title":"Include questions when enforcing the request-size limit","rep":2,"p":0.9268,"inputTokens":4722}
+{"id":"101.3","label":"no aplica","why":"resuelto sin respuesta ni commit posterior","badge":"P2","title":"Include questions when enforcing the request-size limit","rep":3,"p":0.9228,"inputTokens":4722}
+{"id":"72.1","label":"real","why":"arreglado en 1cf8413","badge":"P2","title":"Wait for current checks before finalizing a completed review","rep":1,"p":0.4446,"inputTokens":4120}
+{"id":"72.1","label":"real","why":"arreglado en 1cf8413","badge":"P2","title":"Wait for current checks before finalizing a completed review","rep":2,"p":0.4446,"inputTokens":4120}
+{"id":"72.1","label":"real","why":"arreglado en 1cf8413","badge":"P2","title":"Wait for current checks before finalizing a completed review","rep":3,"p":0.4446,"inputTokens":4120}
+{"id":"85.1","label":"real","why":"arreglado en 16ccb4c (botón del puntero)","badge":"P2","title":"Ignore non-primary pointer buttons when choosing effects","rep":1,"p":0.8075,"inputTokens":2904}
+{"id":"85.1","label":"real","why":"arreglado en 16ccb4c (botón del puntero)","badge":"P2","title":"Ignore non-primary pointer buttons when choosing effects","rep":2,"p":0.8075,"inputTokens":2904}
+{"id":"85.1","label":"real","why":"arreglado en 16ccb4c (botón del puntero)","badge":"P2","title":"Ignore non-primary pointer buttons when choosing effects","rep":3,"p":0.8062,"inputTokens":2904}
+{"id":"122.2","label":"real","why":"arreglado en 3167fea (__proto__)","badge":"P2","title":"Preserve strip IDs that match prototype property names","rep":1,"p":0.7217,"inputTokens":4780}
+{"id":"122.2","label":"real","why":"arreglado en 3167fea (__proto__)","badge":"P2","title":"Preserve strip IDs that match prototype property names","rep":2,"p":0.6984,"inputTokens":4780}
+{"id":"122.2","label":"real","why":"arreglado en 3167fea (__proto__)","badge":"P2","title":"Preserve strip IDs that match prototype property names","rep":3,"p":0.7217,"inputTokens":4780}
+{"id":"134.0","label":"real","why":"P1, arreglado en 838ed32","badge":"P1","title":"Account for rounded PWM values in the power budget","rep":1,"p":0.6602,"inputTokens":3408}
+{"id":"134.0","label":"real","why":"P1, arreglado en 838ed32","badge":"P1","title":"Account for rounded PWM values in the power budget","rep":2,"p":0.6602,"inputTokens":3408}
+{"id":"134.0","label":"real","why":"P1, arreglado en 838ed32","badge":"P1","title":"Account for rounded PWM values in the power budget","rep":3,"p":0.646,"inputTokens":3408}
+{"id":"140.0","label":"real","why":"arreglado en ba36b30","badge":"P2","title":"Account for external state databases when preserving configuration","rep":1,"p":0.6628,"inputTokens":2329}
+{"id":"140.0","label":"real","why":"arreglado en ba36b30","badge":"P2","title":"Account for external state databases when preserving configuration","rep":2,"p":0.6593,"inputTokens":2329}
+{"id":"140.0","label":"real","why":"arreglado en ba36b30","badge":"P2","title":"Account for external state databases when preserving configuration","rep":3,"p":0.6593,"inputTokens":2329}
