@@ -88,20 +88,27 @@ pasar:
 
 ## 3. Potencia: la fuente manda
 
-A blanco total, cada LED WS2812B consume unos **60 mA** (la cifra que usa la ficha: 5 V · 18 A ≈ 300
-LEDs). Con 173 LEDs:
+A blanco total, cada LED WS2812B consume unos **60 mA**, 20 mA por canal (la cifra que usa la ficha:
+5 V · 18 A ≈ 300 LEDs). Con 173 LEDs son unos **10,4 A**: no caben en el adaptador de 8 A.
 
-| Brillo | Consumo a blanco total | ¿Cabe en 8 A? |
-|---|---|---|
-| 100 % | ≈ 10,4 A | **No** |
-| 75 % | ≈ 7,8 A | Justo, sin margen |
-| 25 % (tope del sketch) | ≈ 2,6 A | Sí |
-
-- **El sketch limita el brillo al 25 %** (`Brightness = 64`, §4.1). Es lo que protege la fuente mientras
-  el programa que manda los colores no tenga límite propio (Hyperion no lo tiene).
-- Con Mood Table, declara en el fichero de configuración el **límite de potencia** de la fuente; el
-  motor baja el brillo de cada frame para no superarlo (E8). Con ese límite puesto se puede subir el
-  tope del sketch.
+- **Mood Table protege la fuente.** El fichero de configuración declara, en cada tira física, su chip
+  y los amperios de su fuente (`"chip": "WS2812B"`, `"power": { "supplyAmps": 8 }`; README §3.2). El
+  motor baja cada frame que pediría más del **80 %** de esos amperios (E8, README §2.2). En la mesa, el
+  blanco total sale a 200 de 255, con unos 6,4 A. Al arrancar, el log lo dice:
+  `Tira «Mesa»: fuente de 8 A, usará como mucho 6,4 A; en blanco total pide 10,38 A: bajará los frames que se pasen`.
+- **Copia los amperios de OUTPUT, no los de INPUT.** La etiqueta de la fuente lleva las dos cifras:
+  INPUT es lo que toma de la red, y OUTPUT lo que da a la tira (8 A en el YU0508).
+- **Si cambias de fuente, cambia el fichero de configuración.** El motor no puede medir la fuente:
+  se fía de lo declarado. Con una fuente más pequeña y el fichero sin cambiar, la sobrecargaría.
+- **Por eso el sketch ya no limita el brillo** (`Brightness = 255`, §4.1). Antes lo dejaba en el 25 %
+  (`64`), porque el programa que mandaba los colores no tenía límite propio.
+- **Mood Table solo limita lo que pinta él.** Si la tira vuelve a recibir colores de otro programa sin
+  límite propio, como Hyperion en la SD de la v1, la fuente queda sin proteger: vuelve a cargar antes
+  el sketch con `64`. Si el límite debe cubrir también eso es una pregunta abierta (Q11 del PRD).
+- ⏳ **Un fusible o una fuente con protección contra sobrecorriente** (recomendado): el límite depende
+  de que lo declarado sea cierto. Un fusible en el `+5V` de la tira, de no más amperios que la fuente,
+  o una fuente que se corte sola al pasarse, como la Mean Well LRS-100-5 de §1. El adaptador de este
+  montaje no lo tiene comprobado.
 - ⏳ En tiras largas, la tensión cae hacia el final (los últimos LEDs se ven más rojizos o tenues). Se
   mide con el polímetro en §5; si cae mucho, se alimenta también por el otro extremo.
 
@@ -139,7 +146,7 @@ En `Adalight-FastLED/Arduino/LEDstream_FastLED/LEDstream_FastLED.ino`, cambia es
 | Valor | En este montaje | Por qué |
 |---|---|---|
 | `Num_Leds` | `173` | Los LEDs reales de la tira. Si pones más, sobran sin problema; si pones menos, los últimos no se encienden |
-| `Brightness` | `64` | Tope del 25 % para no pasar de los 8 A del adaptador (§3) |
+| `Brightness` | `255` | Sin tope: protege la fuente el límite de Mood Table (§3). Con otro programa sin límite propio, `64` (el 25 %) |
 | `PIN_DATA` | `6` | El pin donde va el rojo de datos |
 | `SerialSpeed` | `500000` | A 115.200, Adalight solo da 20 fps con 173 LEDs; a 500.000, 59 (D96). Es exacta para el Uno a 16 MHz. Con Hyperion se usaba 115.200 |
 
@@ -480,6 +487,7 @@ vúmetro de la cabecera del panel como medidor.
 - ⏳ Resistencia de 330 Ω en serie con `Din` (§2).
 - ⏳ Conexión fija entre el Arduino y el cable de datos, sin pines Dupont en la regleta (§2).
 - ⏳ Medidas 1, 2 y 4 de §5.
+- ⏳ Fusible o fuente con protección contra sobrecorriente (§3).
 - ✅ ~~Nivel de audio con música real~~: comprobado el 21-oct (§8),
   [MOO-53](https://linear.app/7daysofrain/issue/MOO-53).
 - ✅ ~~Cable de audio de 3 contactos (TRS) en lugar del de micrófono (TRRS)~~: con la XDJ-AZ, el fondo

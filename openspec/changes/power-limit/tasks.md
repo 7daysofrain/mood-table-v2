@@ -130,7 +130,7 @@
 
 ## 3. MOO-141 · firmware
 
-- [ ] 3.1 `HARDWARE_SETUP.md` §3 y §4.1 (decisión 7): `Brightness` pasa a `255`, porque el límite
+- [x] 3.1 `HARDWARE_SETUP.md` §3 y §4.1 (decisión 7): `Brightness` pasa a `255`, porque el límite
   del motor protege la fuente; §3 explica que Mood Table baja cada frame al 80 % de la fuente
   declarada; se copia la cifra en amperios de **OUTPUT**, no la de INPUT; al cambiar de fuente hay que
   cambiar el fichero de configuración; y se recomienda un fusible o una fuente con protección contra
