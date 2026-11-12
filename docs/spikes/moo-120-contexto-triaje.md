@@ -138,6 +138,40 @@ comentario de Codex. Se repitió con los adaptadores de producción (`createFind
 - **Coste de separarlos:** cada petición repite el título y la descripción de la PR. En la #116, dos
   peticiones de unos 2.170 tokens frente a una de 2.594: alrededor de 0,0004 $ más por push.
 
+### Una pregunta propia para las comprobaciones (12-nov)
+
+Los criterios de producción se escribieron para los comentarios de un revisor («es un error, ya está
+resuelto, queda fuera del alcance, es un detalle menor») y se aplican igual a las comprobaciones. Se
+probó una pregunta y unos criterios propios para una comprobación que falla, con el contexto de la
+propuesta y un hallazgo por petición, 3 repeticiones:
+
+- **Pregunta:** *"Is the failure of the required check '<name>' caused by the changes in this PR?"*
+- **Sí:** el fallo viene de lo que cambia la PR, o la regla de la comprobación señala algo que la PR
+  añade o modifica. La comprobación es exigida: sin pasarla, la PR no se integra.
+- **No:** un test intermitente o sensible a los tiempos, un *timeout*, la infraestructura o la CI, o
+  código y tests que la PR no toca. Relanzarla sin cambiar la PR podría bastar.
+
+| Fila | Etiqueta | Pregunta de hoy | Pregunta propia | Propia + ficheros |
+|---|---|---|---|---|
+| #112 `e2e` | relanzar | 0,380 | 0,340 | 0,251 |
+| #116 `e2e` | relanzar | 0,645 | 0,622 | 0,563 |
+| #117 `e2e` | relanzar | 0,321 | **0,156 · no aplica** | **0,127 · no aplica** |
+| #116 `sonar-issues` | real | 0,760 | **0,944 · real** | **0,946 · real** |
+| #117 `SonarCloud` | real | 0,416 | **0,812 · real** | 0,765 |
+
+- **La separación pasa de 0,14 a 0,51:** con la pregunta propia, la media de las *real* es 0,88, y la
+  de las *relanzar*, 0,37. Con la de hoy eran 0,59 y 0,45.
+- **3 de las 5 filas salen con la clase correcta** sin preguntar al mantenedor, y las otras 2 se quedan
+  en *exige criterio*. Ninguna sale con confianza del lado equivocado.
+- **La lista de ficheros ahora sí aporta en los `e2e`:** baja las tres *relanzar*. A SonarCloud lo deja
+  justo por debajo del umbral (0,77).
+- **La #116 `e2e` sigue sin resolverse** (0,56-0,62). Con el error delante (`jumps`: se esperaba 0 y
+  llegó 1), nada dice que sea intermitente.
+- **Cuidado: los criterios se escribieron conociendo estas 5 filas.** Hay que validarlos con filas que
+  no se hayan visto al escribirlos, como las de `MOO-76`, antes de darlos por buenos.
+- **Un «no aplica» en una comprobación exigida no deja integrar la PR.** Si el fallo no lo causa la PR,
+  lo que toca es relanzar. Ese es justo el disparador de la acción de `MOO-155`.
+
 ### Permisos del PAT
 
 Probado el 12-nov con el PAT del sistema (*fine-grained*, con *Metadata* en lectura e *Issues* y

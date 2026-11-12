@@ -135,7 +135,18 @@ interface Variant {
   name: string;
   finding: (row: Row) => object | null;
   changes: Changes;
+  /** `fix`: la pregunta y los criterios de producción. `cause`: los propios de una comprobación. */
+  question?: 'fix' | 'cause';
 }
+
+/** Pregunta y criterios pensados para una comprobación que falla, no para un comentario. */
+const CAUSE_CRITERIA = {
+  true: "The failure comes from what this PR changes: its code, tests or configuration break the check, or the check's rule flags something this PR adds or modifies. The check is required: the PR cannot be merged until it passes.",
+  false:
+    "The failure does not come from this PR's changes: a flaky or timing-dependent test, a timeout, an infrastructure or CI problem, or a failure in code and tests this PR does not touch. Re-running the check, without changing the PR, could make it pass.",
+};
+const causeQuestion = (name: string) =>
+  `Is the failure of the required check '${name}' caused by the changes in this PR?`;
 const isActions = (row: Row) => json(`${row.id}-check-run.json`).app.slug === 'github-actions';
 const VARIANTS: Variant[] = [
   {
@@ -156,6 +167,8 @@ const VARIANTS: Variant[] = [
   },
   { name: 'propuesta+ficheros', finding: proposed, changes: 'files' },
   { name: 'propuesta+diff', finding: proposed, changes: 'diff' },
+  { name: 'causa', finding: proposed, changes: 'none', question: 'cause' },
+  { name: 'causa+ficheros', finding: proposed, changes: 'files', question: 'cause' },
 ];
 
 function prContext(row: Row, changes: Changes) {
@@ -186,11 +199,14 @@ function request(row: Row, variant: Variant) {
     key,
     state: { ...prContext(row, variant.changes), [key]: finding },
     questions: {
-      [key]: {
-        type: 'noul' as const,
-        instructions: `Should the failing check '${name}' be fixed in this PR before merging?`,
-        criteria: CRITERIA,
-      },
+      [key]:
+        variant.question === 'cause'
+          ? { type: 'noul' as const, instructions: causeQuestion(name), criteria: CAUSE_CRITERIA }
+          : {
+              type: 'noul' as const,
+              instructions: `Should the failing check '${name}' be fixed in this PR before merging?`,
+              criteria: CRITERIA,
+            },
     },
   };
 }
@@ -200,9 +216,13 @@ const PRICE = Number(process.env.DECISION_MODEL_INPUT_PRICE_PER_MTOK || 0.24);
 const estTokens = (v: unknown) => Math.ceil(Buffer.byteLength(JSON.stringify(v)) / 3);
 const dry = process.argv.includes('--dry');
 const reps = Number(process.argv.find((a) => /^\d+$/.test(a)) ?? 5);
+// `--only=causa,causa+ficheros`: solo esas variantes.
+const only = process.argv.find((a) => a.startsWith('--only='))?.slice(7).split(',');
 
 const jobs = ROWS.flatMap((row) =>
-  VARIANTS.map((variant) => ({ row, variant, req: request(row, variant) })).filter((j) => j.req !== null),
+  VARIANTS.filter((v) => !only || only.includes(v.name))
+    .map((variant) => ({ row, variant, req: request(row, variant) }))
+    .filter((j) => j.req !== null),
 );
 mkdirSync(`${here}out/requests`, { recursive: true });
 let total = 0;
