@@ -56,7 +56,7 @@
   («Nueva D#»), su origen (`MOO-137`, change `table-install`) y lo descartado (decisiones 1 a 5). Se
   apunta en `prompts.md` el hito del change (formato de `course.md` §5).
   Verificar: la D110 está en la tabla después de la última D# y no renumera ninguna.
-- [ ] 1.7 Prueba en la mesa, a mano, con la PR abierta. Los pasos con `sudo` y el `dd` los ejecuta
+- [x] 1.7 Prueba en la mesa, a mano, con la PR abierta. Los pasos con `sudo` y el `dd` los ejecuta
   el maker:
   - apagar la mesa, copiar la SD entera al Mac con `dd` y grabar Raspberry Pi OS de 64 bits limpio
     en la misma SD;
