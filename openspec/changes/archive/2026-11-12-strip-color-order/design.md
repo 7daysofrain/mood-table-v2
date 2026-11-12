@@ -67,8 +67,8 @@ que reordena. El nombre en código, `colorOrder`, es el del glosario.
 
 `AdalightStrip` gana `colorOrder`. `openAdalightStrips` lo resuelve con
 `chipOf(output.chip).colorOrder`, junto a `name`, `ledCount`, `port` y `baudRate`. `encodeAdalight`
-recibe el orden y escribe, para cada LED, los tres canales en ese orden, cada uno pasado por la
-respuesta del LED. Da igual reordenar antes o después de la gamma, porque la gamma se aplica a cada
+recibe el orden ya traducido y escribe, para cada LED, los tres canales en ese orden, cada uno pasado
+por la respuesta del LED. Da igual reordenar antes o después de la gamma, porque la gamma se aplica a cada
 canal por separado.
 
 ```
@@ -81,8 +81,11 @@ openAdalightStrips --chipOf--> AdalightStrip { name, ledCount, port, baudRate, c
 frame RGB --> encodeAdalight: por LED, canales en el orden de colorOrder, con la gamma --> puerto serie
 ```
 
-El orden se traduce una vez, al crear la salida, a los índices de origen de cada byte (`GRB` lee el
-canal 1, luego el 0 y luego el 2), para no interpretar la cadena en cada frame.
+El orden se traduce una vez, al crear la salida, al byte de su LED al que va cada canal del frame
+(`channelTargets`: con `GRB`, el rojo va al segundo, el verde al primero y el azul al tercero), para no
+interpretar la cadena en cada frame. *(Al implementar `MOO-146`, en la PR #143: el diseño decía los
+índices de origen de cada byte, la misma permutación vista al revés; leer del origen dejaba seis
+`?? 0` que nunca se cumplen, y SonarQube paraba la PR por cobertura.)*
 
 - **Descartado, pasarle el chip a la salida y que lo resuelva ella:** ahorra una línea en
   `openAdalightStrips`, pero ata la salida al catálogo, y sus tests tendrían que pasar por él. Si un día
