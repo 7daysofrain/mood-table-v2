@@ -2281,6 +2281,40 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Claude Code (`claude-opus-5-5`, 12-nov). Antes de archivar, la IA comprobó en Linear que las dos tareas hijas de `MOO-137` (`MOO-143`, `MOO-144`) estaban en *Done*, y que el `tasks.md` tenía las 11 completas. Al sincronizar, `table-install` pasa a ser una spec principal.*
 
+#### 6.83 Pintar bien los colores con el orden de color del chip de cada tira: refinamiento, estimación, exploración y change (`MOO-136`)
+
+**Prompt 1** (en `/refine-story MOO-136`, antes del caso feliz):
+
+> Una pregunta antes del happy path. El orden del color no se puede deducir del chip que hemos declarado en la tira?
+
+*Claude Code (`claude-opus-5-5`, 12-nov). La historia se creó cuando la tira aún no declaraba su chip, y pedía declarar el orden de color en el fichero de configuración. La IA confirmó que el orden es una propiedad del chip, y el humano lo dejó en el catálogo («desde el catalogo de momento»): un `colorOrder` en el fichero pasa a ser un campo que no existe, la H4 y «Tira» dejan de listarlo en el PRD, y D111 corrige D29. Entró un non-goal: sobrescribir el orden del chip (WS2811, clones) cuando entre un chip que lo necesite.*
+
+**Prompt 2** (el caso feliz del humano):
+
+> Cuando declaro el chip de mi tira en la configuración y se activan los efectos en la tira quiero que los colores se correspondan a lo que pide el motor
+
+*La IA lo tradujo a GIVEN/WHEN/THEN y añadió un esquema con rojo, verde y azul puros *(asumido)*; el humano validó los dos y eligió, de los huecos de `poke-holes`, el escenario de un orden de color declarado en el fichero.*
+
+**Prompt 3** (en `/estimate-story MOO-136`):
+
+> 2, está casi todo hecho, es pasar los valores que ahora estan hardcoded a la configuracion
+
+*El estimador, sin ver la carta del humano, dio un 3: tres PR, documentación en muchos sitios y la prueba en la mesa. La IA señaló que, tras el refinamiento, el valor va al catálogo y no a la configuración; el humano mantuvo el 2. Al explorar, eligió el tipo con las seis permutaciones, que `openAdalightStrips` resuelva el orden del chip y desplegar juntos el motor y el sketch, como en `MOO-141`.*
+
+*Ajustes:*
+- *Mientras se exploraba, `main` cogió D110, D112 y D113; al integrarla en la rama de `MOO-145`, D111 quedó entre ellas sin renumerar.*
+
+#### 6.84 Dar a cada chip del catálogo su orden de color (`MOO-145`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-136
+
+*Claude Code (`claude-opus-5-5`, 12-nov). La IA encontró el change `strip-color-order` en el worktree de la historia, sacó de su rama la de la tarea e integró `main`. Implementó la sección `MOO-145` en TDD: `ColorOrder` con las seis permutaciones y `GRB` en la `WS2812B`, con `satisfies` para que el compilador rechace un chip con un orden que no existe, y los tests de un `colorOrder` en la tira y en su salida, que ya pasaban con el esquema cerrado y fijan el comportamiento. En el README, el orden de color deja de declararse (§1.1, §1.2, §1.4, §2.1, §2.2 y §3) y sale la fila `colorOrder` de la tira declarada.*
+
+*Ajustes:*
+- *Los non-goals de `MOO-13` en el README §5 («orden de color… van en H4») se dejan como están: son la historia tal como se escribió.*
+
 ---
 
 ### 7. Pull Requests

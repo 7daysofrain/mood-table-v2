@@ -27,6 +27,7 @@ export {
   type ChipId,
   ChipIdSchema,
   chipOf,
+  type ColorOrder,
   ledAmpsAtFullBrightness,
 } from './chips.ts';
 

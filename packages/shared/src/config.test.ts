@@ -340,6 +340,37 @@ describe('el chip y la fuente de una tira física', () => {
   });
 });
 
+describe('el orden de color de una tira física', () => {
+  /** La tira de la mesa (specs/engine-config): el orden de color lo fija su chip, no el fichero. */
+  const tableOutput = {
+    type: 'adalight',
+    port: '/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0',
+    baudRate: 500000,
+    chip: 'WS2812B',
+    power: { supplyAmps: 8 },
+  };
+  const tableStrip = {
+    id: 'mesa',
+    name: 'Mesa',
+    output: tableOutput,
+    ledCount: 173,
+    effect: 'breathing',
+  };
+
+  it.each([
+    [
+      { ...tableStrip, colorOrder: 'GRB' },
+      'la tira «mesa», campo `colorOrder`: no existe (¿está bien escrito?)',
+    ],
+    [
+      { ...tableStrip, output: { ...tableOutput, colorOrder: 'GRB' } },
+      'la tira «mesa», campo `output.colorOrder`: no existe (¿está bien escrito?)',
+    ],
+  ])('con la tira %j, no arranca: nombra la tira y el campo que no existe', (strip, message) => {
+    expect(errorOf(text({ strips: [demoStrip, strip] }))).toBe(message);
+  });
+});
+
 describe('el efecto de cada tira', () => {
   it('acepta una tira con la respiración', () => {
     const result = parseConfig(text({ strips: [demoStrip] }));
