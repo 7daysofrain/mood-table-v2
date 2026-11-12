@@ -56,10 +56,10 @@ export interface AdalightStrip {
 }
 
 /**
- * De qué canal del frame (0 rojo, 1 verde, 2 azul) sale cada uno de los 3 bytes de un LED: `GRB` es
- * `[1, 0, 2]`.
+ * A qué byte de su LED va cada canal del frame (rojo, verde y azul): con `GRB`, el rojo va al
+ * segundo, el verde al primero y el azul al tercero, `[1, 0, 2]`.
  */
-export type ChannelSources = readonly [number, number, number];
+export type ChannelTargets = readonly [number, number, number];
 
 export interface AdalightOptions {
   log: (line: string) => void;
@@ -77,7 +77,7 @@ export class AdalightOutput implements LightOutput {
   private readonly options: AdalightOptions;
   private readonly buffer: Uint8Array;
   /** El orden de color, traducido una vez para no interpretarlo en cada frame. */
-  private readonly sources: ChannelSources;
+  private readonly targets: ChannelTargets;
   private busy = false;
   private lost = false;
   /** Lo que ha tardado cada envío medido, en ms, y cuándo empezó el primero. */
@@ -89,13 +89,13 @@ export class AdalightOutput implements LightOutput {
     this.link = link;
     this.options = options;
     this.buffer = adalightBuffer(strip.ledCount);
-    this.sources = channelSources(strip.colorOrder);
+    this.targets = channelTargets(strip.colorOrder);
     link.watchLoss((reason) => this.lose(reason));
   }
 
   write(frame: Uint8Array): void {
     if (this.busy || this.lost) return;
-    encodeAdalight(this.buffer, frame, this.sources);
+    encodeAdalight(this.buffer, frame, this.targets);
     this.busy = true;
     const start = this.options.now();
     this.link.write(this.buffer, (error) => {
@@ -194,28 +194,24 @@ export function adalightBuffer(ledCount: number): Uint8Array {
   return buffer;
 }
 
-/** De qué canal del frame sale cada byte de un LED con ese orden de color. */
-export function channelSources(order: ColorOrder): ChannelSources {
-  const sourceOf = (position: number): number => 'RGB'.indexOf(order.charAt(position));
-  return [sourceOf(0), sourceOf(1), sourceOf(2)];
+/** A qué byte de su LED va cada canal del frame con ese orden de color. */
+export function channelTargets(order: ColorOrder): ChannelTargets {
+  return [order.indexOf('R'), order.indexOf('G'), order.indexOf('B')];
 }
 
 /**
- * Copia los colores de `frame` (RGB, 3 bytes por LED) detrás de la cabecera, cada LED con sus canales
- * en el orden de `sources` y cada canal pasado por la respuesta del LED del núcleo, y devuelve
- * `buffer`. Da igual reordenar antes o después de la gamma: se aplica a cada canal por separado.
+ * Copia los colores de `frame` (RGB, 3 bytes por LED) detrás de la cabecera, cada canal en el byte
+ * de su LED que dice `targets` y pasado por la respuesta del LED del núcleo, y devuelve `buffer`. Da
+ * igual reordenar antes o después de la gamma: se aplica a cada canal por separado.
  */
 export function encodeAdalight(
   buffer: Uint8Array,
   frame: Uint8Array,
-  sources: ChannelSources,
+  targets: ChannelTargets,
 ): Uint8Array {
-  const [first, second, third] = sources;
-  for (let led = 0; led < frame.length; led += 3) {
-    const at = HEADER_LENGTH + led;
-    buffer[at] = LED_RESPONSE[frame[led + first] ?? 0] ?? 0;
-    buffer[at + 1] = LED_RESPONSE[frame[led + second] ?? 0] ?? 0;
-    buffer[at + 2] = LED_RESPONSE[frame[led + third] ?? 0] ?? 0;
-  }
+  frame.forEach((value, index) => {
+    const channel = (index % 3) as 0 | 1 | 2;
+    buffer[HEADER_LENGTH + index - channel + targets[channel]] = LED_RESPONSE[value] ?? 0;
+  });
   return buffer;
 }

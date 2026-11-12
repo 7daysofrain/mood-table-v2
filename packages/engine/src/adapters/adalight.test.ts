@@ -4,7 +4,7 @@ import type { LightOutput } from '../core/frame-loop.ts';
 import {
   adalightBuffer,
   AdalightOutput,
-  channelSources,
+  channelTargets,
   encodeAdalight,
   openAdalight,
   openAdalightStrips,
@@ -116,7 +116,7 @@ describe('la codificación Adalight', () => {
     const frame = new Uint8Array(173 * 3);
     frame[0] = 0xff;
 
-    const encoded = encodeAdalight(adalightBuffer(173), frame, channelSources('GRB'));
+    const encoded = encodeAdalight(adalightBuffer(173), frame, channelTargets('GRB'));
 
     expect(encoded).toHaveLength(525);
     expect(hex(encoded.subarray(0, 9))).toBe('41 64 61 00 AC F9 00 FF 00');
@@ -150,7 +150,7 @@ describe('la codificación Adalight', () => {
   it('con el orden GRB, un color tenue sale más tenue y con el verde primero', () => {
     const frame = Uint8Array.of(128, 30, 255);
 
-    expect(hex(encodeAdalight(adalightBuffer(1), frame, channelSources('GRB')).subarray(6))).toBe(
+    expect(hex(encodeAdalight(adalightBuffer(1), frame, channelTargets('GRB')).subarray(6))).toBe(
       '04 40 FF',
     );
   });
@@ -166,7 +166,7 @@ describe('la codificación Adalight', () => {
   ] as const)('con el orden %s, escribe los canales de cada LED en ese orden: %j', (order, bytes) => {
     const frame = Uint8Array.of(255, 128, 30, 255, 128, 30);
 
-    expect(Array.from(encodeAdalight(adalightBuffer(2), frame, channelSources(order)).subarray(6))).toEqual(
+    expect(Array.from(encodeAdalight(adalightBuffer(2), frame, channelTargets(order)).subarray(6))).toEqual(
       [...bytes, ...bytes],
     );
   });
