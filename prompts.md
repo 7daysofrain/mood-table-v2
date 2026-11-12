@@ -2249,6 +2249,38 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *La IA había propuesto fijar el *timebox* como el planning poker de las historias, con una carta del usuario y otra de un subagente. El maker lo fija solo, y `/create-spike` lo pregunta sin proponer un valor. También eligió que al agotar el *timebox* solo se anote, sin parar ni pedir una ampliación. Implementación en seis pasos con skill-creator: `/create-spike` pasa sus tres evals con el 97 % (61 % sin la skill), y `/refine-story` y `/estimate-story`, que ahora mandan los *spikes* a `/create-spike`, pasaron una eval reducida que eligió el maker: el caso nuevo con la versión anterior y la nueva; los de siempre, solo con la nueva. Errores de la IA, corregidos en la misma PR: un fixture sintético reutilizó un ID que ya existía (`MOO-904`), y la descripción de `/close-spike` rompía su YAML con «: » sin comillas (lo detectó `sm check`). De las evals salió `MOO-153`: el estimator lee la memoria automática del usuario y ve estimaciones reales.*
 
+#### 6.81 Instalar y reinstalar el instrumento con el script, y probarlo en la mesa (`MOO-143`, `MOO-144`)
+
+**Prompt 1:**
+
+> Esto es super lento, para lo que hay igual es hasta mas sencillo recontruirlo?
+
+*Claude Code (`claude-opus-5-5`, 12-nov), durante la prueba en la mesa de `MOO-143`. La copia de la SD con `dd` iba a 3,5 MB/s: la IA calculó unas 6 h más, buscó lo que solo existía en la SD (el sketch de Adalight con cambios sin commitear y las configuraciones de prueba) y propuso cortarla y copiar solo `/home/pi` con `rsync`. El maker aceptó. La consecuencia, que la IA dejó dicha: en `MOO-144` la instalación anterior de la mesa hubo que rehacerla a mano, porque ya no había copia que restaurar.*
+
+**Prompt 2:**
+
+> Hay un issue, ha pasado el triador y lo ha dado por real, lo checkeas?
+
+*Claude Code (`claude-opus-5-5`, 12-nov), con la PR de `MOO-143` lista. Codex señaló que el script daba por buena cualquier Node 24, y el triador del PR Babysitter (en modo sombra) lo clasificó como real. La IA lo comprobó contra `engines.node` (`>=24.15 <25`, con `engineStrict`) y propuso exigir el rango y un test que vigile que el script y el `package.json` digan lo mismo; descartó lanzar siempre NodeSource.*
+
+**Prompt 3:**
+
+> Codex encontró un problema y el triador exige criterio. Yo sinceramente creo que está claro que es un bug. Dime como loves
+
+*Claude Code (`claude-opus-5-5`, 12-nov), con la PR de `MOO-144` lista. Con conservar y el estado guardado fuera de la instalación, el motor nuevo lo recuperaba, contra la spec. La IA coincidió en que era un bug, pero explicó por qué el triador dudaba: había tres arreglos (borrar esa base de datos, rechazarlo antes de tocar nada o cambiar la spec). Descartó borrar y recomendó rechazar; el maker lo eligió. Al probarlo, la IA encontró otro fallo, un fichero conservado con JSON roto que rompe el aviso final, y el maker decidió dejarlo.*
+
+*Ajustes:*
+- *En la prueba sin terminal, `ssh` sin `-t` (como decía `tasks.md`) habría fallado en `sudo` antes de llegar a la pregunta: la IA lo cambió por `sudo -v` y `setsid`.*
+- *Antes de la mesa, la IA probó la reinstalación en un contenedor de Debian con `systemctl`, `git` y `pnpm` simulados, sin commitearlo.*
+
+#### 6.82 Archivar el change `table-install` (`MOO-137`)
+
+**Prompt 1:**
+
+> Sí, archívalo
+
+*Claude Code (`claude-opus-5-5`, 12-nov). Antes de archivar, la IA comprobó en Linear que las dos tareas hijas de `MOO-137` (`MOO-143`, `MOO-144`) estaban en *Done*, y que el `tasks.md` tenía las 11 completas. Al sincronizar, `table-install` pasa a ser una spec principal.*
+
 ---
 
 ### 7. Pull Requests
