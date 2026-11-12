@@ -211,23 +211,27 @@ si se arregló en la PR, *no aplica* si se resolvió sin cambio en ella.
 | Hilo | Etiqueta | Cómo se resolvió | p | Clase |
 |---|---|---|---|---|
 | #88.2 | no aplica | «Real, pero es el alcance de otra tarea» (`MOO-91`) | 0,300 | exige criterio |
-| #101.2 | no aplica *(a confirmar)* | Resuelto sin respuesta ni commit posterior | 0,468 | exige criterio |
-| #101.3 | no aplica *(a confirmar)* | Resuelto sin respuesta ni commit posterior | **0,925** | **real** |
+| #101.2 | real *(se pasó por alto)* | Llegó tras el último repaso y se resolvió al integrar | 0,468 | exige criterio |
+| #101.3 | real *(se pasó por alto)* | Llegó tras el último repaso y se resolvió al integrar | **0,925** | **real** ✓ |
 | #72.1 | real | Arreglado en `1cf8413` | 0,445 | exige criterio |
 | #85.1 | real | Arreglado en `16ccb4c` | **0,807** | **real** ✓ |
 | #122.2 | real | Arreglado en `3167fea` | 0,714 | exige criterio |
 | #134.0 (P1) | real | Arreglado en `838ed32` | 0,655 | exige criterio |
 | #140.0 | real | Arreglado en `ba36b30` | 0,660 | exige criterio |
 
-- **Acierta 1 de 8** con el umbral de 0,80. Las *real* se quedan entre 0,44 y 0,72, y la separación
-  media es pequeña: 0,66 frente a 0,56.
-- **Codex casi siempre tiene razón en este repo:** 21 de sus 24 comentarios se arreglaron en su PR
-  (un 88 %). Una regla de «Codex es *real*» habría acertado más que el triador.
+- **Acierta 2 de 8** con el umbral de 0,80. Cinco de las siete *real* se quedan entre 0,44 y 0,72.
+  Solo hay una *no aplica*, y no basta para medir la separación.
+- **Codex casi siempre tiene razón en este repo:** 23 de sus 24 comentarios eran defectos reales. El
+  que queda (#88.2) también lo era, pero pertenecía a otra tarea. Una regla de «Codex es *real*» habría
+  acertado más que el triador.
 - **El triador no puede comprobar lo que dice Codex.** Recibe el comentario y el trozo de diff, pero no
   el código de alrededor ni los otros ficheros. Solo puede juzgar si suena plausible.
-- **Las dos etiquetas de #101 son dudosas.** Codex tenía razón: el código de hoy sigue sin contar las
-  preguntas al partir las peticiones (101.3). Se resolvieron sin arreglarse, quizá porque se dieron
-  por improbables. Las tiene que confirmar el mantenedor.
+- **#101.2 y #101.3 se pasaron por alto.** Según la transcripción de la sesión de `MOO-108` (2-nov),
+  Codex los publicó sobre `8b6ddc7` a las 10:43, después del último repaso de hallazgos (10:35), y los
+  hilos se resolvieron al integrar sin haberlos visto. Los dos defectos siguen en `main`:
+  `forget()` borra el hilo con el gasto acumulado (`driver.ts`), y `batches()` no cuenta las
+  preguntas al partir las peticiones (`decision-model.ts`). Es el mismo patrón que la nota de la #122
+  en `MOO-76`: una revisión que llega tarde se queda sin atender.
 
 ### Permisos del PAT
 

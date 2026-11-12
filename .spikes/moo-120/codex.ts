@@ -16,8 +16,8 @@ const json = (f: string) => JSON.parse(readFileSync(`${here}data/codex/${f}`, 'u
 /** PR.hilo y su etiqueta: «real» si se arregló en la PR; «no aplica» si se resolvió sin cambio en ella. */
 const SAMPLE: [string, 'real' | 'no aplica', string][] = [
   ['88.2', 'no aplica', 'real, pero del alcance de otra tarea (MOO-91)'],
-  ['101.2', 'no aplica', 'resuelto sin respuesta ni commit posterior'],
-  ['101.3', 'no aplica', 'resuelto sin respuesta ni commit posterior'],
+  ['101.2', 'real', 'se pasó por alto: llegó tras el último repaso (sesión de MOO-108)'],
+  ['101.3', 'real', 'se pasó por alto: llegó tras el último repaso (sesión de MOO-108)'],
   ['72.1', 'real', 'arreglado en 1cf8413'],
   ['85.1', 'real', 'arreglado en 16ccb4c (botón del puntero)'],
   ['122.2', 'real', 'arreglado en 3167fea (__proto__)'],
