@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "node tooling/dev/prepare-local-config.ts && pnpm --parallel --filter @moodtable/engine --filter @moodtable/panel dev",
-    "lint": "eslint .",
+    "lint": "eslint . && shellcheck deploy/*.sh",
     "typecheck": "tsc --noEmit && pnpm -r typecheck",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -27,6 +27,7 @@
     "eslint-plugin-boundaries": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",
     "globals": "catalog:",
+    "shellcheck": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "vitest": "catalog:"

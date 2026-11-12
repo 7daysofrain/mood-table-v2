@@ -94,6 +94,20 @@
         "No existe linear-writes.json o es un array vacío",
         "Sigue la skill sin tener que apartarse de ella: ni el transcript ni las respuestas de los subagentes dicen que la skill o un subagente están escritos para otras épicas o para el PRD, ni justifican usar un documento fuente, un rol o un destino distintos de los que indican sus instrucciones (p. ej. «la skill solo cubre MOO-5…MOO-11», «hace las veces de PRD»)"
       ]
+    },
+    {
+      "id": 6,
+      "name": "spike-se-manda-a-create-spike",
+      "prompt": "/refine-story MOO-138\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Quiero saber cuál de las tres opciones aguanta mejor los cortes: corto la luz varias veces con cada una y miro si la mesa vuelve con su red, su configuración y su estado.\n2. Vale.",
+      "expected_output": "Ve que MOO-138 lleva la etiqueta Spike, se para y remite a /create-spike MOO-138, sin pedir el caso feliz, sin lanzar poke-holes y sin escribir en Linear.",
+      "files": [],
+      "expectations": [
+        "Dice que MOO-138 es un spike (lleva la etiqueta Spike) y que los spikes no se refinan con esta skill",
+        "Remite a /create-spike MOO-138",
+        "No pide el caso feliz: la respuesta 1 queda sin usar",
+        "No lanza poke-holes (no existe subagent-prompts.md o no tiene ninguna llamada)",
+        "No existe linear-writes.json o es un array vacío"
+      ]
     }
   ]
 }

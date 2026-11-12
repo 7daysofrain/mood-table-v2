@@ -48,6 +48,9 @@ catalog:
   react-dom: 19.3.1
   react: 19.3.1
   serialport: 13.0.0
+  # ShellCheck en `pnpm lint` (deploy/*.sh): descarga el binario la primera vez que se ejecuta, sin
+  # script de instalación (design.md del change table-install, decisión 8).
+  shellcheck: 4.1.0
   typescript-eslint: 8.72.0
   typebox: 1.4.3
   typescript: 6.0.3

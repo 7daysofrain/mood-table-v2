@@ -157,13 +157,16 @@ tiras en un fichero.
 
 ### 6.2 Restricciones (condiciones fijas)
 
-- **Funciona sin internet:** todo ocurre en la red local.
+- **Funciona sin internet:** todo ocurre en la red local. Es una restricción de uso: instalar el
+  instrumento sí necesita internet, para descargar el script de instalación, Node.js y las
+  dependencias (MOO-137).
 - **Hardware de referencia:** Raspberry Pi (arm64) y tiras LED direccionables conectadas por serie (Light
   Box o Arduino con Adalight). Sin conexión directa por GPIO.
 - **Sin software de luces de terceros** en el instrumento (Hyperion, dancyPi, LedFx): es la condición de
   la propiedad (§1.2).
-- **Un solo lenguaje, TypeScript**, para que el autor pueda leer y juzgar todo el código. Única
-  excepción: el firmware del S2.
+- **Un solo lenguaje, TypeScript**, para que el autor pueda leer y juzgar todo el código. Excepciones:
+  el firmware del S2 y el script de instalación, en bash porque Node.js todavía no está instalado
+  cuando se lanza (decisión del maker al explorar MOO-137).
 - **La fuente de alimentación manda:** cada tira declara la corriente que aguanta su fuente, y el
   instrumento nunca la supera (E8).
 - **Provisional: en el MVP se toca desde un portátil.** El panel web, pensado para escritorio, es el
@@ -185,6 +188,7 @@ tiras en un fichero.
 | Q9 | ¿El brillo general de todas las tiras (la intensidad de MOO-97) vuelve tras reiniciar, como el estado del instrumento, o arranca siempre al máximo? | Decisión del DJ. Mientras tanto, no se guarda: MOO-25 guarda el efecto activo y los valores de cada tira, y la intensidad arranca al máximo (MOO-97). |
 | Q10 | Si el motor no llega a arrancar al enchufar la mesa (un fichero de configuración mal escrito, una tarjeta de sonido que falta), ¿cómo lo sabe el DJ sin portátil, y qué muestra la tira mientras tanto? | Decisión del DJ. Mientras tanto, la tira queda apagada y el motivo solo está en el registro del arranque (MOO-131). |
 | Q11 | Una vez quitado el tope de brillo del sketch (D46), ¿E8 cubre solo lo que pinta el motor o todo lo que llega a la tira, como la SD de la v1 con Hyperion o lo que pinte el sketch al reiniciarse? | Decisión del maker (surgió al refinar MOO-135). |
+| Q12 | ¿Qué versión del instrumento instala el script de instalación: lo último de `main` o una versión publicada? | ✅ **Resuelta:** lo último de `main`, mientras no haya versiones publicadas; se puede pedir otra rama o etiqueta (decisión del maker al explorar MOO-137). Dos instalaciones de días distintos pueden tener versiones distintas. |
 
 ## 8. Glosario
 
@@ -219,4 +223,6 @@ término que no esté aquí no debería aparecer en specs ni en código sin aña
 | **Panel** | `panel` | Interfaz web desde la que se toca el instrumento: elegir tira y efecto y mover controles. Incluye el visor. En el MVP es el único mando. |
 | **Mando** | `commands` | Cualquier superficie desde la que se toca el instrumento: hoy el panel; en el futuro una pantalla táctil, la F1 o un mando propio. Todos dan las mismas órdenes (cambiar efecto, cambiar un valor, cambiar la intensidad). |
 | **Límite de potencia** | `powerLimit` | Corriente máxima que el instrumento pide a la fuente de una tira física: el 80 % de los amperios de salida que el maker copia de su etiqueta. El motor baja el brillo de cada frame para no superarla (E8, MOO-135). |
+| **Script de instalación** | `deploy/install.sh` | El comando que deja el instrumento instalado en una Raspberry: el maker lo lanza por SSH, sin clonar antes el repositorio. Si ya hay una instalación, pregunta si conservar o sobrescribir el fichero de configuración (MOO-137). |
+| **Usuario propio** | `moodtable` | El usuario del sistema con el que corre el motor en la Raspberry: llega al puerto serie y a la tarjeta de sonido, y no tiene permisos de administrador (MOO-137). |
 | **Mesa** | *(no aparece en el código)* | La instalación física: la mesa de DJ con su Raspberry, sus tiras y su tarjeta de sonido. Donde se usa el instrumento de verdad. |

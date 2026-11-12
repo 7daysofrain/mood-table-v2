@@ -2184,6 +2184,103 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Claude Code (`claude-opus-5-5`, 12-nov). Antes de archivar, la IA comprobó en Linear que las tres tareas hijas de `MOO-135` (`MOO-139`, `MOO-140`, `MOO-141`) estaban en *Done*, y que el `tasks.md` tenía las 19 tareas completas. Al sincronizar, `engine-config` y `physical-strip` cambian y `power-limit` pasa a ser una spec principal. Con `--strict`, 11 specs dan avisos por requisitos de más de 500 caracteres, las mismas que en `main` antes de archivar: no los trae este change.*
 
+#### 6.78 Instalar el instrumento en la mesa con un solo script: refinamiento, estimación, exploración y change (`MOO-137`)
+
+**Prompt 1** (al lanzar el refinamiento):
+
+> /refine-story MOO-137 antes de ir con el happy path tengo una cuestion que puede que cambie bastante el alcance. Igual en vez de tener un script de instalacion podemos tener simplemente una imagen de SD, igual es como bastante mas sencillo y a prueba de fallos
+
+*Claude Code (`claude-opus-5-5`, 11 y 12-nov). La IA reconoció que una imagen es más robusta contra los fallos al instalar, pero señaló lo que no resolvía: la foto de la Pi de la mesa lleva su WiFi, sus claves SSH, su configuración y los errores EXT4 de la SD, se queda vieja con cada cambio y no se puede revisar en una PR. Preguntó si era para la mesa o para cualquier maker; el humano contestó «no, seria generico», y una imagen genérica tendría que construirse desde el repo y ejecutaría el mismo script por dentro. La historia se quedó con el script, y el humano describió el caso feliz: conectarse por SSH a una Pi recién instalada y, con un `curl`, dejar el instrumento listo.*
+
+**Prompt 2** (cuando la IA proponía qué hacer al reinstalar con el fichero de configuración que ya hay):
+
+> Espera que vamos a cambiar el 2a y 2b yo creo que igual lo interesante es preguntar si quieres conservarlo o sobreescribirlo. Sobreescribirlo siempre generaría el .bck
+
+*Antes, el humano había fijado la configuración base (tira virtual y WAV) y que reinstalar deja el instrumento como recién instalado, con una copia `.bck`. Con este cambio, el script pregunta antes de tocar nada, y sobrescribir siempre guarda la copia. Arrancar solo quedó en `MOO-131`. Salieron dos tareas de infra, instalar en una Pi limpia (`MOO-143`) y reinstalar (`MOO-144`). En `/estimate-story`, el humano dio un 3 («aunque es un solo fichero, tiene pinta de ser complejo») y el estimador, un 5, porque el esfuerzo está en probarlo en la Pi; acordaron un 5.*
+
+**Prompt 3** (en `/opsx:explore`, cuando la IA comparó un arranque mínimo en bash con un instalador en TypeScript, o todo en bash):
+
+> Si, vamos por C de momento, prefiero tener una única pieza en este punto
+
+*La IA recomendaba el instalador en TypeScript, porque la lógica de reinstalar quedaría con tests de Vitest, y dijo que pesaba más el criterio del humano. Se quedó en bash, como excepción a «un solo lenguaje» (PRD §6.2), con ShellCheck en `pnpm lint` y los escenarios a mano en la mesa. Después el humano eligió `main` como versión (Q12), NodeSource y que toda la instalación sea del usuario `moodtable`: preguntó cuánta complejidad añadía separar el código de root y los datos del usuario, y la IA lo descartó porque el maker necesita `sudo` en los dos casos. El change `table-install` trae la capacidad `table-install`, la D110 y, en el PRD, §6.2, Q12 y los términos *script de instalación* y *usuario propio*.*
+
+*Ajustes:*
+- *El humano propuso no probar la reinstalación sobre el clon de `/home/pi`. La IA señaló que es una fila de los criterios de `MOO-137` y que, con la copia `dd` de la SD de la mesa, probarla no cuesta nada: es justo pasar la mesa a la instalación nueva. Se mantuvo.*
+- *El README §1.4 pedía copiar un `deploy/config/mesa.example.json` que no existe: lo reescribe `MOO-143`.*
+- *La D106 decía «como `pi`» y el registro a mano: se tacha esa parte y apunta a la D110.*
+
+#### 6.79 Capturar necesidades a mitad de trabajo con `/capture` (`MOO-149`)
+
+**Prompt 1:**
+
+> Lo que me preocupa de este planteamiento es que muchas veces una spike va a salir mientras esté haciendo otra cosa y me va a obligar a centrarme en un protocolo intermedio. Igual no sería interesante primero hacer algo que simplemente capturase el requerimiento con un protocolo rápido, usando un subagente para no contaminar el contexto y que me permita seguir. Esta sería incluso algo mas abstracto que un spike, una captura de necesidad. Que luego puede traducirse a un spike, corregir un bug o incluso una feature nueva
+
+*Claude Code (`claude-opus-5-5`, 12-nov). Al proponer una vía ágil para los *spikes*, la IA había planteado una skill para plantearlos de una sentada; el maker vio que lo caro es la interrupción y propuso separar apuntar de plantear. La IA lo convirtió en dos capas (captura y clasificación), propuso el estado nativo *Triage* de Linear, que el equipo no tenía activado, y señaló el choque con «triaje» del glosario de PB. El maker abrió un fork de la sesión para esta parte; la vía del *spike* sigue en la otra.*
+
+**Prompt 2:**
+
+> Lo de buscar duplicados no me encaja, seguramente sea muy propenso a errores, y requiera de bastante esfuerzo. Que lo cree y ya está, si está duplicado se detectará durante el triaje. Lo que si que igual tiene sentido es estandarizar el formato de lo que entra y sale del agente no?
+
+*La IA había dado al subagente la búsqueda de duplicados y la elección del tipo al hilo principal, con una entrada de siete campos. El maker recortó las dos cosas y, en el mensaje siguiente, pidió una entrada mínima («La entrada debería manterse a algo minimo»): quedó un texto libre, la sugerencia de tipo y épica pasó al subagente y la salida sí quedó fija. También rechazó una skill para clasificar y un aviso («estás intentando cubrir un problema que aun no tenemos»). Al pedir que la skill solo se lanzara a mano, la IA comprobó en la documentación de Claude Code que `context: fork` no pasa la conversación al subagente, y por eso la skill corre en el hilo principal.*
+
+**Prompt 3:**
+
+> Estoy revisando. No tendria sentido que el agente de capturer estuviera dentro de la skill de capture?
+
+*Claude Code (`claude-opus-5-5`, 12-nov), al revisar la PR ya lista. La IA explicó que Claude Code solo registra subagentes con nombre desde `.claude/agents/` y propuso dejar sus instrucciones en `references/` de la skill, que lanza un subagente genérico con Haiku. Señaló lo que se pierde: el límite de herramientas pasa a ser solo por instrucción y cada captura gasta más contexto. Pesó la prueba real: desde una sesión nueva en el worktree, `/capture` cargó pero no encontró el subagente, porque los subagentes se cargan del checkout principal. La captura real (`MOO-150`) sí se creó bien con el subagente genérico. Evals con skill-creator, a petición del maker: en la primera iteración, 97 % con Haiku y con Sonnet y 48 % sin la skill; tras corregir dos fallos y mover las instrucciones, Haiku pasa los tres casos. Error de la IA: escribió las aserciones mientras corrían las primeras ejecuciones, y el baseline de un caso las leyó; las siguientes iteraciones corrieron a ciegas.*
+
+#### 6.80 Dar a los *spikes* su propia vía con `/create-spike` y `/close-spike` (`MOO-152`)
+
+**Prompt 1:**
+
+> Vamos a modificar el workflow, quiero añadir una via distinta para los spikes. Ahora mismo tal y como los tenemos son demasiado rigidos y se pierde mucho tiempo en algo que es mas de experimentación. Debería ser agil. Dime donde encajan en el workflow que hemos definido y que reglas hemos aplicado a ellos
+
+*Claude Code (`claude-opus-5-5`, 12-nov). La IA localizó dónde caían los *spikes* (las tres skills de historias, tareas, una PR por tarea con todas las puertas, solo un DoD propio) y propuso una vía aparte. El maker vio que el coste real era la interrupción y abrió en un fork la captura de necesidades (6.79, D112); luego se decidieron una a una las seis piezas de la vía, que quedaron en la descripción de `MOO-152` antes de escribir nada (D113).*
+
+**Prompt 2:**
+
+> Sigue sin cuadrarme, estás asumiendo que un spike viene siempre de una captura y no tiene que ser asi. Asi como una history puede venir de una captura o de un PRD lo mismo pasa con un spike
+
+*La IA había diseñado la entrada a la vía como un paso que partía de una captura aceptada. El maker la corrigió: un *spike* también se planifica desde una épica, por un supuesto o una pregunta abierta del documento fuente. De ahí `/create-spike <épica | issue>`, por analogía con `/create-story`, que crea un *spike* nuevo o completa uno que ya existe.*
+
+**Prompt 3:**
+
+> Pero no hace falta meter el pair aqui, lo estimo yo
+
+*La IA había propuesto fijar el *timebox* como el planning poker de las historias, con una carta del usuario y otra de un subagente. El maker lo fija solo, y `/create-spike` lo pregunta sin proponer un valor. También eligió que al agotar el *timebox* solo se anote, sin parar ni pedir una ampliación. Implementación en seis pasos con skill-creator: `/create-spike` pasa sus tres evals con el 97 % (61 % sin la skill), y `/refine-story` y `/estimate-story`, que ahora mandan los *spikes* a `/create-spike`, pasaron una eval reducida que eligió el maker: el caso nuevo con la versión anterior y la nueva; los de siempre, solo con la nueva. Errores de la IA, corregidos en la misma PR: un fixture sintético reutilizó un ID que ya existía (`MOO-904`), y la descripción de `/close-spike` rompía su YAML con «: » sin comillas (lo detectó `sm check`). De las evals salió `MOO-153`: el estimator lee la memoria automática del usuario y ve estimaciones reales.*
+
+#### 6.81 Instalar y reinstalar el instrumento con el script, y probarlo en la mesa (`MOO-143`, `MOO-144`)
+
+**Prompt 1:**
+
+> Esto es super lento, para lo que hay igual es hasta mas sencillo recontruirlo?
+
+*Claude Code (`claude-opus-5-5`, 12-nov), durante la prueba en la mesa de `MOO-143`. La copia de la SD con `dd` iba a 3,5 MB/s: la IA calculó unas 6 h más, buscó lo que solo existía en la SD (el sketch de Adalight con cambios sin commitear y las configuraciones de prueba) y propuso cortarla y copiar solo `/home/pi` con `rsync`. El maker aceptó. La consecuencia, que la IA dejó dicha: en `MOO-144` la instalación anterior de la mesa hubo que rehacerla a mano, porque ya no había copia que restaurar.*
+
+**Prompt 2:**
+
+> Hay un issue, ha pasado el triador y lo ha dado por real, lo checkeas?
+
+*Claude Code (`claude-opus-5-5`, 12-nov), con la PR de `MOO-143` lista. Codex señaló que el script daba por buena cualquier Node 24, y el triador del PR Babysitter (en modo sombra) lo clasificó como real. La IA lo comprobó contra `engines.node` (`>=24.15 <25`, con `engineStrict`) y propuso exigir el rango y un test que vigile que el script y el `package.json` digan lo mismo; descartó lanzar siempre NodeSource.*
+
+**Prompt 3:**
+
+> Codex encontró un problema y el triador exige criterio. Yo sinceramente creo que está claro que es un bug. Dime como loves
+
+*Claude Code (`claude-opus-5-5`, 12-nov), con la PR de `MOO-144` lista. Con conservar y el estado guardado fuera de la instalación, el motor nuevo lo recuperaba, contra la spec. La IA coincidió en que era un bug, pero explicó por qué el triador dudaba: había tres arreglos (borrar esa base de datos, rechazarlo antes de tocar nada o cambiar la spec). Descartó borrar y recomendó rechazar; el maker lo eligió. Al probarlo, la IA encontró otro fallo, un fichero conservado con JSON roto que rompe el aviso final, y el maker decidió dejarlo.*
+
+*Ajustes:*
+- *En la prueba sin terminal, `ssh` sin `-t` (como decía `tasks.md`) habría fallado en `sudo` antes de llegar a la pregunta: la IA lo cambió por `sudo -v` y `setsid`.*
+- *Antes de la mesa, la IA probó la reinstalación en un contenedor de Debian con `systemctl`, `git` y `pnpm` simulados, sin commitearlo.*
+
+#### 6.82 Archivar el change `table-install` (`MOO-137`)
+
+**Prompt 1:**
+
+> Sí, archívalo
+
+*Claude Code (`claude-opus-5-5`, 12-nov). Antes de archivar, la IA comprobó en Linear que las dos tareas hijas de `MOO-137` (`MOO-143`, `MOO-144`) estaban en *Done*, y que el `tasks.md` tenía las 11 completas. Al sincronizar, `table-install` pasa a ser una spec principal.*
+
 ---
 
 ### 7. Pull Requests

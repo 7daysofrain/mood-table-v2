@@ -19,8 +19,11 @@
 > En el PRD, H1-H5 se llaman "historias" porque son historias *de producto*. En el backlog son
 > **épicas**: se descomponen en historias de 1-2 días.
 
-> Excepción a la cadena: las *chores* que no tocan requisitos van de la tarea a la PR sin OpenSpec
-> change (§6).
+> Excepciones a la cadena: las *chores* que no tocan requisitos van de la tarea a la PR sin OpenSpec
+> change (§6), y los *spikes* tienen su propia vía, sin tareas ni change (§7).
+
+> Antes de la cadena: lo que aparece a mitad de otro trabajo se apunta como **captura** con
+> `/capture` y entra en la cadena cuando se clasifica, a mano (`linear.md` §2 y §5).
 
 ## 2. Granularidad: tarea → PR, paso → commit
 
@@ -39,6 +42,8 @@
 - En los commits se usa `Refs MOO-n` (nunca `Fixes`): solo la PR cierra la tarea.
 - La historia tiene **varias PR** (una por tarea). El `openspec archive` se hace al integrar la
   **última**.
+- **Excepción: un *spike*** no tiene tareas ni `tasks.md`. Es **una sola PR**, con commits libres
+  (§7).
 
 ## 3. Fuente de verdad de cada cosa
 
@@ -125,7 +130,8 @@ actualiza en el mismo commit.
   `docs/pr-babysitter.md`, para su épica), la historia o el código.
 - **Vocabulario del glosario** (PRD §8; para *PR Babysitter*, también el de su documento, §8). Un término nuevo se añade al glosario antes de usarlo.
 - **No duplicar:** si algo ya está en otro sitio de la tabla del §3, enlázalo.
-- **Tarea → PR, paso → commit:** no mezclar dos tareas en una PR ni dos pasos en un commit.
+- **Tarea → PR, paso → commit:** no mezclar dos tareas en una PR ni dos pasos en un commit. Un
+  *spike* es una PR con commits libres (§7).
 
 ## 6. OpenSpec en este repo
 
@@ -145,3 +151,39 @@ actualiza en el mismo commit.
   - El criterio es tocar requisitos, no el tamaño ni si tiene efecto observable.
   - Su plan va en la descripción de la tarea en Linear, y la PR explica por qué no lleva change.
   - **Si hay duda, lleva change.** Un `Refactor` lleva change siempre.
+
+## 7. Vía del *spike*
+
+Un *spike* es **una pregunta con un *timebox***, no un comportamiento. Por eso no pasa por las
+skills de historias (caso feliz, GIVEN/WHEN/THEN, INVEST, planning poker) ni lleva tareas ni
+OpenSpec change: es experimentación, y las puertas de la cadena la frenarían sin aportar nada.
+El porqué, en D113 de la ficha.
+
+**`/create-spike` → experimentar → `/close-spike`**
+
+| | Historia | *Spike* |
+|---|---|---|
+| Entra por | `/create-story <épica>` | `/create-spike <épica>`, o `/create-spike <issue>` para completar una que ya existe (una captura aceptada como `Spike`, o un *spike* anterior) |
+| Lleva | Criterios, non-goals, DoD, estimación y tareas | 1-3 preguntas con lo que alimenta cada una, *timebox*, entregable, non-goals y DoD de Spike |
+| Tamaño | Estimación Fibonacci, ≤ 8 | *Timebox* de ½, 1 o 2 días que fija el usuario (`linear.md` §4) |
+| Trabajo | Una PR por tarea, un commit por paso | Una rama y **una PR**, commits libres |
+| Deja en `main` | Código, tests y el change archivado | Un **veredicto**: el documento en `docs/spikes/`, una D# nueva y los A#/Q# que toque |
+
+1. **Plantear** (`/create-spike`). Sale en *Todo*, sin estimación.
+2. **Experimentar.** Rama desde `main` con el nombre que propone Linear, y **PR en borrador** con el
+   primer commit (el *spike* pasa a *In Progress*; no hay *Spec*). Los commits llevan `Refs MOO-n`.
+   - El prototipo vive en **`.spikes/moo-n/`**, fuera de lint, tipos, tests y SonarQube, y se
+     escribe lo más simple posible: es para tirarlo.
+   - Las notas pueden ir ya en `docs/spikes/`.
+   - Si el experimento tiene que tocar `packages/`, se toca, pero se deshace antes de cerrar.
+3. **Cerrar** (`/close-spike`). El usuario aprueba el veredicto y anota el tiempo dedicado junto al
+   *timebox*: solo se anota, agotarlo no obliga a nada. Lo que sale se apunta como capturas. El
+   prototipo se borra de la rama y se enlaza desde la PR por su commit: con *squash*, los commits de la
+   rama no llegan a `main`, pero GitHub conserva los de cada PR. El diff que queda es solo el
+   veredicto, y la PR pasa a lista para revisar.
+4. **PR e integrar** como cualquier otra (§4, pasos 4 y 5), con `Fixes MOO-n` con el ID del *spike*.
+
+- **Cerrar sin respuesta también es un resultado:** lo aprendido y la pregunta que queda (un Q# o una
+  captura).
+- **Lo que haya que conservar no se rescata de la rama:** entra por la vía normal (captura o
+  historia, con su change y sus tests).
