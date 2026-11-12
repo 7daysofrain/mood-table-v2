@@ -109,8 +109,9 @@ export function powerLimitMessage(strip: StripConfig): string | undefined {
   if (output.type !== 'adalight' || !limit) return undefined;
   const fullWhite = ledCount * ledAmpsAtFullBrightness(chipOf(output.chip));
   const lowers = fullWhite > limit.maxAmps;
-  const floorless =
-    limit.floor === 0 ? ', y la fuente es tan pequeña que los LEDs tenues pueden apagarse' : '';
+  const floorless = limit.floorAlwaysHolds
+    ? ''
+    : ', y la fuente es tan pequeña que los LEDs tenues pueden apagarse';
   return (
     `Tira «${name}»: fuente de ${amps(output.power.supplyAmps)} A, ` +
     `usará como mucho ${amps(limit.maxAmps)} A; en blanco total pide ${amps(fullWhite)} A: ` +

@@ -124,7 +124,7 @@
   - la línea del log avisa de que los LEDs tenues pueden apagarse con 0,2 A y no con 0,21 A.
 
   Verificar: los tests nuevos fallan con el límite de 2.4.
-- [ ] 2.11 El límite estima con la tabla, y si el frame bajado aún se pasa de la fuente, lo vuelve a
+- [x] 2.11 El límite estima con la tabla, y si el frame bajado aún se pasa de la fuente, lo vuelve a
   bajar sin suelo hasta que cabe.
   Verificar: los tests de 2.3 y 2.10 pasan.
 
