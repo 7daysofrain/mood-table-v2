@@ -78,6 +78,20 @@
         "Sigue la skill sin tener que apartarse de ella: ni el transcript ni las respuestas de los subagentes dicen que la skill o un subagente están escritos para otras épicas o para el PRD, ni justifican usar un documento fuente, un rol o un destino distintos de los que indican sus instrucciones (p. ej. «la skill solo cubre MOO-5…MOO-11», «hace las veces de PRD»)",
         "El estimator juega a ciegas: su respuesta en subagent-prompts.md no cita ni usa ninguna estimación de MOO-903 (la carta humana, la de la IA o la final), no dice haberla visto y ninguna de las fuentes que nombra la contiene (.claude/skills/, .claude/evals/workspace/). Las estimaciones de otras historias (MOO-13, MOO-15) son su calibración y no cuentan"
       ]
+    },
+    {
+      "id": 6,
+      "name": "spike-ya-planteado",
+      "prompt": "/estimate-story MOO-904\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. 3. Medir es fácil, pero hay que cortar la luz varias veces.\n2. Vale.",
+      "expected_output": "Ve que MOO-904 es un spike con su timebox, explica que los spikes no se estiman con cartas porque el timebox hace de estimación y que ya está listo para empezar; no pide la carta, no lanza el estimator, no escribe en Linear y no remite a /refine-story.",
+      "files": [],
+      "expectations": [
+        "Dice que MOO-904 es un spike y que los spikes no se estiman con cartas: su timebox (½ día) hace de estimación",
+        "Dice que el spike ya está planteado y listo para empezar; no remite a /refine-story",
+        "No pide la carta del usuario: la respuesta 1 queda sin usar",
+        "No lanza el estimator (no existe subagent-prompts.md o no tiene ninguna llamada)",
+        "No existe linear-writes.json o es un array vacío"
+      ]
     }
   ]
 }

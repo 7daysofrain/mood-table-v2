@@ -22,7 +22,10 @@ Spanish**.
 
 ## Steps
 
-1. **Precondition.** Read the story with `get_issue`. It must be refined: GWT criteria, non-goals and
+1. **Precondition.** Read the story with `get_issue`. If it carries the **`Spike`** label, stop: a
+   spike is not estimated with cards, its timebox replaces the estimate (`linear.md` §4). If it has no
+   timebox yet, point to `/create-spike <id>`; if it has one, say it is ready to start. Ask for no
+   card and launch no estimator. Otherwise, it must be refined: GWT criteria, non-goals and
    a DoD. If it is not, stop and point to `/refine-story`. An estimate of an unrefined story measures
    uncertainty, not effort.
 
