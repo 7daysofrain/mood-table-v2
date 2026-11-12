@@ -159,6 +159,32 @@ arduino-cli compile --fqbn arduino:avr:uno .
 arduino-cli upload --fqbn arduino:avr:uno -p /dev/cu.usbserial-XXXX .
 ```
 
+**Desde la Pi, sin mover el Arduino** ✅. En la mesa, el Arduino ya va por USB a la Pi, así que se
+puede cargar desde ella. arduino-cli se instala en el usuario `pi`, sin `sudo` (unos 520 MB con el
+core y FastLED). Las versiones son las del montaje: sketch `3286d02`, core `arduino:avr` 1.8.8 y
+FastLED 3.10.7.
+
+```bash
+cd /tmp
+curl -fsSLO https://downloads.arduino.cc/arduino-cli/arduino-cli_1.5.1_Linux_ARM64.tar.gz
+curl -fsSL https://downloads.arduino.cc/arduino-cli/1.5.1-checksums.txt | grep Linux_ARM64.tar.gz | sha256sum -c -
+mkdir -p ~/.local/bin && tar -xzf arduino-cli_1.5.1_Linux_ARM64.tar.gz -C ~/.local/bin arduino-cli
+arduino-cli core update-index
+arduino-cli core install arduino:avr@1.8.8
+arduino-cli lib install FastLED@3.10.7
+cd ~ && git clone https://github.com/dmadison/Adalight-FastLED.git
+cd Adalight-FastLED && git checkout 3286d02
+```
+
+Cambia los valores de la tabla de arriba y compila igual. Para cargar, el motor tiene que soltar el
+puerto: para el servicio antes y arráncalo después.
+
+```bash
+sudo systemctl stop moodtable
+arduino-cli upload --fqbn arduino:avr:uno -p /dev/ttyUSB0 ~/Adalight-FastLED/Arduino/LEDstream_FastLED
+sudo systemctl start moodtable
+```
+
 **Orden de color en Mood Table:** el sketch ya reordena los canales a GRB, así que en el fichero de
 configuración **la tira se declara como `rgb`**. Si la declaras `grb`, el orden se aplica dos veces y
 el rojo y el verde salen cambiados.
