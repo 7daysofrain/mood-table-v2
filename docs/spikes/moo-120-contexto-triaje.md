@@ -41,6 +41,12 @@
   parece más a un comentario del revisor que a una comprobación, y probablemente necesita criterios
   como los del revisor. Una incidencia, un hallazgo es `MOO-148`. Falta una fila de una incidencia que
   se aceptó en Sonar para ver si el triador la distingue, y eso puede ir a `MOO-76`.
+- **`check-sonar-issues.ts` emite cada incidencia como anotación** (`::error file=…,line=…,title=<regla>::…`),
+  en vez de un adaptador que interprete su log (12-nov). Así `sonar-issues` sigue la estrategia
+  genérica de Actions, como `e2e`, y las incidencias se ven en la PR junto a su línea. Las anotaciones
+  se emiten fuera del bloque `::stop-commands::` y con el texto escapado, para que un mensaje de Sonar
+  no pueda inyectar comandos. El adaptador da la lista de errores; que cada uno sea un hallazgo lo
+  decide el núcleo (`MOO-148`).
 
 ## Resultados
 
