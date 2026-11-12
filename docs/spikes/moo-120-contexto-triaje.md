@@ -47,6 +47,11 @@
   se emiten fuera del bloque `::stop-commands::` y con el texto escapado, para que un mensaje de Sonar
   no pueda inyectar comandos. El adaptador da la lista de errores; que cada uno sea un hallazgo lo
   decide el núcleo (`MOO-148`).
+- **Los hallazgos de Codex se dan por buenos, sin pasar por el triador** (12-nov). Codex es una fuente
+  de hallazgos más, aunque llegue como revisión y no como comprobación. En este repo acierta casi
+  siempre (23 de 24) y va a defectos, no a detalles menores, mientras que el triador, sin el código,
+  solo acierta 2 de 8. Quien arregla (BH3) tiene el repo y comprueba cada hallazgo antes de tocar nada.
+  Si cambia el revisor, esto se revisa.
 
 ## Resultados
 
