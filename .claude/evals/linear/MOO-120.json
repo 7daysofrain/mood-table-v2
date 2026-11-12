@@ -1,0 +1,49 @@
+{
+  "id": "MOO-120",
+  "uuid": "46bdc56b-fd64-4d23-95c8-241db7ae6742",
+  "title": "Decidir qué contexto recibe el triaje de cada comprobación y cuándo relanzarla",
+  "description": "## Qué\n\nInvestigar, a partir de un caso real del modo sombra, dos huecos del triaje de las comprobaciones que fallan:\n\n1. **Qué contexto necesita cada comprobación** para que el modelo de decisión pueda triarla.\n2. **Si hace falta una acción «relanzar»** para los fallos transitorios (tiempos al límite, *timeouts*, la infraestructura de la CI).\n\nCuántos hallazgos es una comprobación que falla se decide aparte, en `MOO-148`.\n\n**Resultado:** una decisión escrita en `docs/pr-babysitter.md` y las tareas o historias que salgan de ella.\n\n## El caso: PR #112, comprobación `e2e`\n\n* El e2e falló por **104,7 ms frente a un límite de 100**.\n* El test que falló («el DJ cambia el efecto de la tira desde el panel») no lo toca la PR.\n* `main` estaba en verde.\n* El triaje dio **p = 0,47**, que lo clasifica como *exige criterio*.\n\nCon lo que recibió, la respuesta es razonable. **El problema no es el modelo ni el umbral, sino el contexto que se le da.**\n\n## Lo que se encontró (4-nov)\n\n1. **El corte del log deja fuera el error.**\n   * El paso que falla se corta «hasta el primer `##[error]`» (decisión 2 de `pr-shadow-triage`).\n   * Esa regla se diseñó con un solo ejemplo, `sonar-issues`, cuyo `##[error]` es la última línea.\n   * En Playwright, el `##[error]` es la **primera** línea del bloque de error.\n   * Resultado: el modelo recibió 822 bytes que acaban en el nombre del test, sin el `Expected/Received` y sin el resumen `1 failed · 18 passed`.\n2. **El sistema no sabía que le faltaba contexto.** La regla de «sin contexto, exige criterio sin preguntar» no saltó, porque el log existía. El que llegó al modelo era un log cortado justo antes del error.\n3. **Cada herramienta deja su error en un sitio distinto.** Las anotaciones del *check run* de GitHub dan un contexto estructurado y genérico, pero no para todas:\n\n   | Comprobación | Qué dan sus anotaciones |\n   | -- | -- |\n   | `e2e` | fichero y línea, el error completo y el resumen |\n   | `lint` | fichero, línea y regla |\n   | `typecheck` | el mensaje, sin fichero |\n   | `sonar-issues` | nada útil: su contexto está en el log |\n   | `test` | (el caso visto era un fallo del *scanner* de Sonar) |\n4. **Falta contexto común a todas: el diff.**\n   * En la PR #112 habría bastado con saber que la PR no toca ni `effects.spec.ts` ni el bucle.\n   * Además, la descripción de la PR desorienta. Dice que cubre «cambia el efecto… ≤ 100», y el test que falla se llama igual.\n5. **No hay respuesta para un fallo transitorio.**\n   * La pregunta («¿hay que arreglarlo en esta PR?») no deja decir «relánzalo».\n   * Calibrar el umbral (`MOO-76`) no lo resuelve.\n\n**Historial:** 52 runs de CI fallidos. Por job: `sonar-issues` 28, `lint` 16, `typecheck` 13, `test` 7, `e2e` 5.\n\n## Propuesta para explorar\n\n* **Un puerto «contexto de una comprobación que falla».**\n  * Por defecto, una implementación genérica: las anotaciones más el paso entero, cortado a 16 KiB.\n  * Adaptadores específicos solo donde los datos demuestren que la genérica no basta.\n  * El diff de la PR, como contexto común a todas.\n* **Cada comprobación declara si es determinista.** `lint`, `typecheck` y `sonar-issues` no se relanzan nunca. `test` y `e2e`, sí. Así una parte de la decisión es una regla y no cuesta una pregunta al modelo.\n* **«Relanzar», como acción y no como cuarta clase.**\n  * La clase dice si hay un defecto de la PR: un fallo transitorio es *no aplica*.\n  * La acción dice qué hacer para poder integrar: arreglar, relanzar o preguntar.\n  * Salvaguarda: la política de §4.1, que escala si la misma comprobación falla dos veces seguidas.\n* **Medir con datos reales.**\n  * Un conjunto de evaluación con los fallos reales del historial, etiquetados por el mantenedor como real, no aplica o relanzar.\n  * Primera fila: la PR #112, preguntando a Clef con el paso entero para ver cuánto se mueve la p.\n\n## Decisiones abiertas\n\n* **Permisos.** Relanzar un job pide *Actions: write* en el PAT, que hoy no lo tiene. Leer las anotaciones quizá pida algún permiso más: hay que comprobarlo.\n* **Documentos.** Cambian el glosario de PB (clase frente a acción) y BH2/BH3/BH4 en `docs/pr-babysitter.md`.\n* **El arreglo del corte del log** (punto 1) es pequeño e independiente. Hay que decidir si va aparte, antes que este *spike*, o dentro de lo que salga de él. Contradice la decisión 2 de `pr-shadow-triage`, que está en el `design.md` archivado.\n\n## Relación con otras historias\n\n* `MOO-76` (medir el triaje contra PR ya cerradas): el conjunto de evaluación de este *spike* puede ser parte del suyo.\n* `MOO-79` (BH4, escalar): la regla de «dos fallos seguidos» y quién relanza.\n* `MOO-148` (un hallazgo por error, no por comprobación): salió de este *spike*.\n\n>>> Agent notes\n\n**Traza de LangSmith** (proyecto `pr-babysitter`, región UE):\n\n* Nodo `triar`: `01a1a773-fc95-76e6-a83a-8cb9ae1d1b86`.\n* Llamada `TypeSafeClassifier`: `01a1a774-04d7-701f-aeea-9b017b16c459`. Respuesta `check_e2e: noul 0.4717`, 2.839 tokens de entrada, `clef:27b`.\n\n**El corte:** `packages/pr-babysitter/src/adapters/findings.ts`, función `failingStep`. El test que lo fija es `findings.test.ts` («son un hallazgo cada una, con el paso que falla de su log»), con la fixture `job-logs-sonar-issues.txt`, que acaba en `##[error]Process completed with exit code 1.`.\n\n**La pregunta y sus criterios:** `packages/pr-babysitter/src/adapters/decision-model.ts` (`CRITERIA`, `instructions`, `wire`). Hoy, de una comprobación solo se manda `name` y `log_tail`.\n\n**El log real del e2e:** job `126427896193`, run `41785909988`, commit `2d098993c3f9625f0a82d79030ed64ef9e5ebd0a`. Para la fixture nueva: `gh api repos/7daysofrain/mood-table-v2/actions/jobs/126427896193/logs`.\n\n**Anotaciones:** `gh api repos/7daysofrain/mood-table-v2/check-runs/<job id>/annotations`. Ejemplos consultados:\n\n* `lint`: `125255151031`\n* `typecheck`: `123757229467`\n* `sonar-issues`: `125255762477`\n* `test`: `121810111768`, un fallo del *scanner* de Sonar\n\n**Historial:** `gh run list --status failure --limit 100` da 52 runs. Se cuenta por `jobs[].conclusion == \"failure\"`.\n\n>>>",
+  "priority": {
+    "value": 4,
+    "name": "Low"
+  },
+  "url": "https://linear.app/7daysofrain/issue/MOO-120/decidir-que-contexto-recibe-el-triaje-de-cada-comprobacion-y-cuando",
+  "gitBranchName": "7daysofrain/moo-120-decidir-que-contexto-recibe-el-triaje-de",
+  "createdAt": "2026-11-04T17:41:20.667Z",
+  "updatedAt": "2026-11-12T06:59:01.821Z",
+  "archivedAt": null,
+  "completedAt": null,
+  "startedAt": null,
+  "canceledAt": null,
+  "dueDate": null,
+  "slaStartedAt": null,
+  "slaMediumRiskAt": null,
+  "slaHighRiskAt": null,
+  "slaBreachesAt": null,
+  "status": "Backlog",
+  "statusType": "backlog",
+  "labels": [
+    "infra",
+    "Spike"
+  ],
+  "attachments": [],
+  "documents": [],
+  "stateHistory": [
+    {
+      "state": {
+        "id": "9809259a-a9a7-4739-a87f-ec69c63ff4a6",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "startedAt": "2026-11-04T17:41:20.667Z",
+      "endedAt": null
+    }
+  ],
+  "createdBy": "Joseba Alonso",
+  "createdById": "0ad1b9d4-4a1a-4356-bf51-d3d0eace0f2e",
+  "project": "Mood Table",
+  "projectId": "4fa84241-2001-4d40-8462-36742c278d7f",
+  "parentId": "MOO-67",
+  "team": "Mood Table",
+  "teamId": "cfd6638e-31d2-4ccc-beab-d661aec4d4fa"
+}

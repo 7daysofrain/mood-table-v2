@@ -1,0 +1,58 @@
+{
+  "id": "MOO-907",
+  "uuid": "00000000-0000-4000-8000-000000000907",
+  "title": "Codex no comenta en la PR de Dependabot de vitest",
+  "description": "## Qué\n\n> en la pr de dependabot que sube vitest no ha salido el comentario de codex. no se si codex no revisa las de dependabot o es que no se ha disparado, y si no las revisa el babysitter no puede contar con el\n\n## Evidencia\n\n- PR de Dependabot que sube `vitest`: tras su único push no hay ningún comentario de Codex ni bloque `codex-review-state`.\n- En las PR del mantenedor de esa semana, Codex sí comentó cada push.\n\n## Clasificación sugerida\n\n- **Tipo:** Spike · hay que averiguar si Codex revisa las PR de Dependabot antes de decidir nada; si fuera un fallo puntual del disparo, sería un Bug.\n- **Épica:** «PB · PR Babysitter» · afecta a de dónde saca el sistema los hallazgos de una PR.",
+  "priority": {
+    "value": 4,
+    "name": "Low"
+  },
+  "url": "https://linear.app/7daysofrain/issue/MOO-907/codex-no-comenta-en-la-pr-de-dependabot-de-vitest",
+  "gitBranchName": "7daysofrain/moo-907-codex-no-comenta-en-la-pr-de-dependabot-de",
+  "createdAt": "2026-11-12T09:00:00.000Z",
+  "updatedAt": "2026-11-12T10:00:00.000Z",
+  "archivedAt": null,
+  "completedAt": null,
+  "startedAt": null,
+  "canceledAt": null,
+  "dueDate": null,
+  "slaStartedAt": null,
+  "slaMediumRiskAt": null,
+  "slaHighRiskAt": null,
+  "slaBreachesAt": null,
+  "status": "Backlog",
+  "statusType": "backlog",
+  "labels": [
+    "infra",
+    "Spike"
+  ],
+  "attachments": [],
+  "documents": [],
+  "stateHistory": [
+    {
+      "state": {
+        "id": "triage",
+        "name": "Triage",
+        "type": "triage"
+      },
+      "startedAt": "2026-11-12T09:00:00.000Z",
+      "endedAt": "2026-11-12T10:00:00.000Z"
+    },
+    {
+      "state": {
+        "id": "9809259a-a9a7-4739-a87f-ec69c63ff4a6",
+        "name": "Backlog",
+        "type": "backlog"
+      },
+      "startedAt": "2026-11-12T10:00:00.000Z",
+      "endedAt": null
+    }
+  ],
+  "createdBy": "Joseba Alonso",
+  "createdById": "0ad1b9d4-4a1a-4356-bf51-d3d0eace0f2e",
+  "project": "Mood Table",
+  "projectId": "4fa84241-2001-4d40-8462-36742c278d7f",
+  "parentId": "MOO-67",
+  "team": "Mood Table",
+  "teamId": "cfd6638e-31d2-4ccc-beab-d661aec4d4fa"
+}

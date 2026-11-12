@@ -1,6 +1,7 @@
 # Evals of the harness skills
 
-Evals for the story skills (`/create-story`, `/refine-story`, `/estimate-story`) and for `/capture`,
+Evals for the story skills (`/create-story`, `/refine-story`, `/estimate-story`), for `/create-spike`
+and for `/capture`,
 run with skill-creator. Each skill keeps its own cases in `.claude/skills/<skill>/evals/evals.json`;
 this folder holds what they share. The cases of `/capture` test the subagent it launches: their prompt
 is the text the skill hands it, so for them `with_skill` reads `.claude/skills/capture/references/capturer.md`
@@ -73,14 +74,14 @@ input every time, and the real issues keep changing.
 
 | File | Issue | Used by |
 |---|---|---|
-| `MOO-5.json` | Epic H1 | create-story, refine-story |
-| `MOO-5.children.json` | Sub-issues of MOO-5 (`list_issues` with `parentId`) | create-story, poke-holes |
+| `MOO-5.json` | Epic H1 | create-story, refine-story, create-spike |
+| `MOO-5.children.json` | Sub-issues of MOO-5 (`list_issues` with `parentId`) | create-story, poke-holes, create-spike |
 | `team.json` | The team's stories (`list_issues` without `parentId`); the same ones as above | estimator |
 | `MOO-22.json` | Story in Backlog, not refined | refine-story, estimate-story |
 | `MOO-14.json` | Refined story, **before** estimation (see below) | estimate-story |
 | `MOO-14.children.json` | Its tasks MOO-19, MOO-20, MOO-21 | estimate-story |
 | `MOO-901.json` | **Synthetic**: a story under H1 that is far too big (fails INVEST) | refine-story |
-| `MOO-67.json` | Epic PB, the technical epic whose source document is `docs/pr-babysitter.md` (snapshot of 2026-10-23) | create-story |
+| `MOO-67.json` | Epic PB, the technical epic whose source document is `docs/pr-babysitter.md` (snapshot of 2026-10-23) | create-story, create-spike |
 | `MOO-67.children.json` | Sub-issues of MOO-67: only its *chores*, no story yet | create-story, poke-holes |
 | `MOO-902.json` | **Synthetic**: BH1 as a PB story in Backlog, not refined | refine-story |
 | `MOO-903.json` | **Synthetic**: BH2 as a refined PB story, before estimation | estimate-story |
@@ -88,6 +89,8 @@ input every time, and the real issues keep changing.
 | `MOO-142.json` | Epic S3 (snapshot of 2026-11-12) | refine-story |
 | `MOO-138.json` | Spike under S3 in Backlog, created before the spike lane (snapshot of 2026-11-12) | refine-story |
 | `MOO-906.json` | **Synthetic**: a spike under S3 already shaped by `/create-spike`, in Todo with its timebox | estimate-story |
+| `MOO-120.json` | Spike under PB in Backlog, half shaped before the spike lane (snapshot of 2026-11-12) | create-spike |
+| `MOO-907.json` | **Synthetic**: a capture accepted as Spike under PB, in Backlog with its «Clasificación sugerida» | create-spike |
 
 IDs from `MOO-900` up are synthetic: no real issue has them, so a fixture can never be mistaken for a
 snapshot.

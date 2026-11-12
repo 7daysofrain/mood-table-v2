@@ -1,0 +1,63 @@
+{
+  "skill_name": "create-spike",
+  "evals": [
+    {
+      "id": 1,
+      "name": "spike-nuevo-desde-la-epica",
+      "prompt": "/create-spike MOO-5 quiero saber si los efectos que reaccionan al audio se notan a tempo sin tener que meter una señal de tempo aparte\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Las preguntas me valen así. De lo que propones que falta, me quedo solo con lo primero; el resto fuera.\n2. Timebox: 1 día.\n3. Aprobado, guárdalo.",
+      "expected_output": "Trata MOO-5 como épica y plantea un spike nuevo: redacta 1-3 preguntas respondibles con datos ligadas al supuesto A3 del PRD, ofrece como mucho tres que faltan, pide el timebox sin proponerlo, y tras la aprobación crea la issue bajo MOO-5 en Todo, sin estimación, con el DoD de Spike literal.",
+      "files": [],
+      "expectations": [
+        "Trata MOO-5 como una épica y plantea un spike nuevo: no intenta completar una issue que ya existe",
+        "Antes de la respuesta 1 muestra entre una y tres preguntas, cada una con lo que alimenta, y al menos una enlaza con el supuesto A3 del PRD",
+        "Ofrece como mucho tres preguntas que faltan o cosas que dejar fuera, cada una con su fuente, y no añade ninguna que el usuario no haya elegido",
+        "Pide el timebox dando como opciones ½, 1 o 2 días, sin recomendar ni proponer ninguno antes de que el usuario conteste",
+        "linear-writes.json tiene una sola llamada, sin id (crea una issue), con parentId MOO-5, estado Todo y sin estimate",
+        "La issue creada lleva la etiqueta Spike y exactamente una etiqueta de área (engine, panel, shared, db, infra o firmware), y una prioridad",
+        "El título está en castellano y empieza por un verbo de investigación en infinitivo (Medir, Probar, Comprobar…)",
+        "La descripción tiene las secciones Preguntas, Timebox (1 día), Entregable, Non-goals y Definition of Done (Spike), en ese orden",
+        "Los Non-goals son entre 2 y 4 e incluyen el código de producción",
+        "La sección «Definition of Done (Spike)» es, carácter a carácter, el bloque de .claude/skills/create-spike/assets/dod.md",
+        "La llamada a save_issue llega después de la aprobación del usuario (la última respuesta), no antes",
+        "El cierre apunta a la rama, a la PR en borrador, a .spikes/moo-n/ y a /close-spike"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "captura-aceptada-como-spike",
+      "prompt": "/create-spike MOO-907\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Sí, la redacción me vale. De lo que propones que falta, no me quedo con nada.\n2. Timebox: ½ día.\n3. Aprobado, guárdalo.",
+      "expected_output": "Ve que MOO-907 es una captura aceptada como Spike y la completa: saca las preguntas de su Qué y su Evidencia sin pedir al usuario que las reescriba, las liga a BA2 de docs/pr-babysitter.md, pide el timebox sin proponerlo y tras la aprobación actualiza MOO-907 a Todo, con la descripción anterior en Contexto sin la Clasificación sugerida.",
+      "files": [],
+      "expectations": [
+        "Ve que MOO-907 es una issue con la etiqueta Spike y la completa: no crea ninguna issue",
+        "Saca las preguntas de la captura (su Qué y su Evidencia) y muestra su redacción para que el usuario la corrija, sin pedirle que las escriba ni que las reformule",
+        "Al menos una pregunta enlaza con el supuesto BA2 de docs/pr-babysitter.md (Codex revisa las PR de Dependabot)",
+        "Pide el timebox dando como opciones ½, 1 o 2 días, sin recomendar ni proponer ninguno antes de que el usuario conteste",
+        "linear-writes.json tiene una sola llamada, con id MOO-907, estado Todo y la descripción nueva, sin estimate y sin cambiar labels, priority ni parentId",
+        "En la descripción guardada, la sección Contexto contiene la descripción anterior (el Qué con la cita del usuario tal cual y la Evidencia) y no contiene «Clasificación sugerida»",
+        "La descripción guardada tiene Preguntas, Timebox (½ día), Entregable y Non-goals (entre 2 y 4, con el código de producción)",
+        "La sección «Definition of Done (Spike)» es, carácter a carácter, el bloque de .claude/skills/create-spike/assets/dod.md",
+        "La llamada a save_issue llega después de la aprobación del usuario (la última respuesta), no antes"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "spike-a-medio-plantear-con-timebox-largo",
+      "prompt": "/create-spike MOO-120\n\nEntorno: sigue .claude/evals/environment.md.\n\nRespuestas del usuario:\n1. Las dos preguntas me valen. Lo del arreglo del corte del log déjalo fuera, como non-goal: irá aparte. De lo demás que propongas, nada.\n2. Timebox: 3 días.\n3. Vale, que sean 2 días y lo que no entre se queda fuera.\n4. Aprobado, guárdalo.",
+      "expected_output": "Ve que MOO-120 es un spike creado antes de la vía y lo completa: mantiene sus dos preguntas (contexto de cada comprobación, relanzar) con lo que alimentan, no acepta un timebox de 3 días y propone partirlo, y tras la aprobación lo deja en Todo con 2 días, el corte del log como non-goal y la descripción anterior en Contexto.",
+      "files": [],
+      "expectations": [
+        "Ve que MOO-120 es un spike que ya existe y lo completa: no crea ninguna issue",
+        "Mantiene las dos preguntas de la issue (qué contexto recibe cada comprobación y si hace falta relanzar) y no convierte en pregunta la de MOO-148, que la issue manda aparte",
+        "Cada pregunta dice qué decisión, documento o historia alimenta",
+        "Ante «3 días» no lo acepta: dice que pasa de 2 días y propone partir el spike",
+        "La descripción guardada tiene un Timebox de 2 días",
+        "Los Non-goals incluyen el código de producción y el arreglo del corte del log",
+        "En la descripción guardada, la sección Contexto contiene la descripción anterior sin cambios, Agent notes incluidas",
+        "linear-writes.json tiene una sola llamada, con id MOO-120 y estado Todo, sin estimate y sin cambiar labels, priority ni parentId",
+        "La sección «Definition of Done (Spike)» es, carácter a carácter, el bloque de .claude/skills/create-spike/assets/dod.md",
+        "La llamada a save_issue llega después de la aprobación del usuario (la última respuesta), no antes"
+      ]
+    }
+  ]
+}
