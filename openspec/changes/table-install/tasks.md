@@ -21,7 +21,7 @@
   cabecera dice que la registra `deploy/install.sh`, y el de `User=` deja de hablar de la historia de
   instalación.
   Verificar: el test de 1.1 pasa.
-- [ ] 1.3 `deploy/install.sh` para una Pi limpia (`design.md`, decisiones 2 a 5 y 7, y los pasos 3-7
+- [x] 1.3 `deploy/install.sh` para una Pi limpia (`design.md`, decisiones 2 a 5 y 7, y los pasos 3-7
   de la decisión 6), con `set -euo pipefail`:
   - el argumento opcional `<ref>` (`main` por defecto);
   - Node 24 de NodeSource si `/usr/bin/node` no es una 24, `git` y `corepack enable`;
