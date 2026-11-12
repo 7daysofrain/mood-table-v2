@@ -6,8 +6,9 @@
 #   curl -fsSL https://raw.githubusercontent.com/7daysofrain/mood-table-v2/<rama>/deploy/install.sh | sudo bash -s -- <rama>
 #
 # Qué hace, en orden (design.md del change, decisión 6):
-#   1. busca una instalación existente y, si la hay, termina sin tocar nada: todavía no sabe
-#      reinstalar (el paso 2, preguntar qué hacer con el fichero de configuración, llega después);
+#   1. busca una instalación existente: la del script o la anterior de la mesa;
+#   2. si la hay, pregunta si conservar o sobrescribir su fichero de configuración, y sin una de las
+#      dos respuestas termina sin tocar nada (todavía no sabe reinstalar: termina igualmente);
 #   3. instala Node 24 de NodeSource, git y pnpm (corepack), y crea el usuario propio `moodtable`;
 #   4. clona la rama en /opt/moodtable.new, instala las dependencias y construye el panel;
 #   5. deja el fichero de configuración base: la demo, escuchando en todas las interfaces;
@@ -50,24 +51,47 @@ require_root() {
   fi
 }
 
+# La instalación existente: dónde está ('' en una Pi limpia), y qué ha elegido el maker hacer con
+# su fichero de configuración (conservar o sobrescribir).
+existing_dir=''
+config_choice=''
+
 # Paso 1. La del script está en /opt/moodtable; la anterior de la mesa, en el WorkingDirectory de
 # la unidad registrada (hoy /home/pi/mood-table-v2), sin dar por hecho dónde.
 detect_existing() {
   if [[ -e $INSTALL_DIR ]]; then
-    printf '%s' "$INSTALL_DIR"
-    return
-  fi
-  if [[ $(systemctl show --property=LoadState --value "${SERVICE}.service") == 'loaded' ]]; then
-    systemctl show --property=WorkingDirectory --value "${SERVICE}.service"
+    existing_dir=$INSTALL_DIR
+  elif [[ $(systemctl show --property=LoadState --value "${SERVICE}.service") == 'loaded' ]]; then
+    existing_dir=$(systemctl show --property=WorkingDirectory --value "${SERVICE}.service")
   fi
 }
 
-refuse_reinstall() {
-  local existing
-  existing=$(detect_existing)
-  if [[ -n $existing ]]; then
-    fail "ya hay una instalación del instrumento en ${existing}. Este script todavía no sabe reinstalar, así que no ha tocado nada."
+# Paso 2. La pregunta se lee de /dev/tty: con `curl … | sudo bash`, la entrada estándar es el propio
+# script. Solo valen las dos respuestas; cualquier otra cosa, o no poder preguntar, termina aquí,
+# antes de cambiar nada.
+ask_config_choice() {
+  local answer
+  if ! (: </dev/tty) 2>/dev/null; then
+    fail "ya hay una instalación del instrumento en ${existing_dir} y no hay una terminal desde la que preguntar qué hacer con su fichero de configuración, así que no ha tocado nada. Lánzalo desde una sesión con terminal (ssh -t)."
   fi
+
+  printf '\nYa hay una instalación del instrumento en %s.\n' "$existing_dir" >/dev/tty
+  printf '¿Qué hago con su fichero de configuración (%s)?\n' "${existing_dir}/config/local.json" >/dev/tty
+  printf '  conservar     la instalación nueva lo usa tal cual\n' >/dev/tty
+  printf '  sobrescribir  la nueva usa el fichero base, y el anterior queda como %s.bck\n' \
+    "${INSTALL_DIR}/config/local.json" >/dev/tty
+  printf 'En los dos casos, el estado del instrumento empieza de cero.\n' >/dev/tty
+  printf 'Escribe conservar o sobrescribir: ' >/dev/tty
+  if ! read -r answer </dev/tty; then
+    fail 'no se ha podido leer la respuesta, así que no ha tocado nada.'
+  fi
+
+  answer=${answer,,}
+  case $answer in
+    conservar | sobrescribir) config_choice=$answer ;;
+    '') fail 'no has elegido conservar ni sobrescribir, así que no ha tocado nada.' ;;
+    *) fail "«${answer}» no es conservar ni sobrescribir, así que no ha tocado nada." ;;
+  esac
 }
 
 # Si /usr/bin/node es una 24 a partir de la 24.15. Una 24 anterior no vale: `pnpm install` la
@@ -185,7 +209,11 @@ main() {
   export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
   trap 'on_error $LINENO' ERR
 
-  refuse_reinstall
+  detect_existing
+  if [[ -n $existing_dir ]]; then
+    ask_config_choice
+    fail "has elegido ${config_choice}, pero este script todavía no sabe reinstalar, así que no ha tocado nada."
+  fi
   install_system_packages
   ensure_service_user
   build_staging "$ref"

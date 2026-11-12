@@ -76,7 +76,7 @@
 
 ## 2. MOO-144 · infra
 
-- [ ] 2.1 Detectar la instalación existente y preguntar (`design.md`, decisión 6, pasos 1 y 2): la
+- [x] 2.1 Detectar la instalación existente y preguntar (`design.md`, decisión 6, pasos 1 y 2): la
   del script por `/opt/moodtable` y la anterior por el `WorkingDirectory` de la unidad registrada.
   La pregunta se lee de `/dev/tty`; solo valen conservar o sobrescribir, y cualquier otra cosa (o no
   poder leer) termina sin tocar nada, diciendo por qué. Sustituye la salida provisional de 1.3.
