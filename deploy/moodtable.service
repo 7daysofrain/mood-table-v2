@@ -1,9 +1,7 @@
 # Arranca el motor de la mesa al encender la Pi (D106, change `table-autostart`).
-# Se registra una vez, copiándola (README §1.4):
-#   sudo cp deploy/moodtable.service /etc/systemd/system/
-#   sudo systemctl daemon-reload
-#   sudo systemctl enable --now moodtable
-# Si cambia aquí, hay que volver a copiarla. El registro: journalctl -u moodtable -b
+# La registra deploy/install.sh (D110, change `table-install`): la copia a /etc/systemd/system/,
+# hace daemon-reload y enable --now. Si cambia aquí, se vuelve a lanzar el script.
+# El registro: journalctl -u moodtable -b
 
 [Unit]
 Description=Mood Table: motor del instrumento
@@ -12,10 +10,10 @@ Description=Mood Table: motor del instrumento
 
 [Service]
 Type=simple
-# Como pi, desde el clon instalado a mano: así está hoy la mesa. El usuario propio y las rutas
-# generadas son de la historia de instalación.
-User=pi
-WorkingDirectory=/home/pi/mood-table-v2
+# El usuario propio, sin permisos de administrador: llega al puerto serie (dialout) y a la tarjeta
+# de sonido (audio). Es dueño de la instalación que deja el script en /opt/moodtable.
+User=moodtable
+WorkingDirectory=/opt/moodtable
 # Espera a que udev termine con los dispositivos enchufados al encender: así el puerto serie del
 # controlador Adalight y la tarjeta de sonido ya tienen driver cuando el motor los abre.
 # El prefijo - hace que, si la espera se agota, el motor arranque igualmente y, si le falta algo,
