@@ -2144,6 +2144,18 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El paso 2.8 se comprobó con el motor de verdad: una tira física sobre un pseudoterminal del Mac, a 115.200 baudios, porque el de macOS no admite 500.000.*
 - *El README §2.2 decía que la carga de configuración lee los «límites de potencia» de la tira, un resto de antes de `MOO-139`: ahora dice el chip y la fuente.*
 
+**Prompt 3:**
+
+> ok, ha habido problemas, vamos a examinar cuales son y que ha dicho el triador
+
+*La IA reprodujo el P1 de Codex en la #134: el límite estimaba con `(v/255)²` sin redondear, pero a la tira le llega el PWM redondeado de la tabla. Con 0,12 A, enviaba 132 mA, un 110 % de la fuente; en la mesa, un 80,2 %. Los tests no lo veían porque medían con el mismo estimador. El triador del PR Babysitter, en modo sombra, dejó el P1 y la comprobación `sonar-issues` como «exige criterio» (p = 0,69 y 0,76). El maker vio que había juntado los dos issues de Sonar en un solo hallazgo, uno mecánico (S4138) y otro de criterio (S3776), y pidió añadir el caso al spike `MOO-120`: la IA comprobó que el triaje crea un hallazgo por comprobación, no por error.*
+
+**Prompt 4:**
+
+> ok lo veo. Sigamos adelante con esta tarea entonces. Arreglamos las 3 cosas
+
+*La IA cambió primero la spec y el design: el límite suma la tabla de la respuesta del LED y, si el frame bajado aún se pasa de la fuente, lo vuelve a bajar sin suelo. Dedujo la cota (el redondeo y el suelo suman como mucho una unidad de PWM por canal), y con ella el aviso del log salta con menos de unos 0,2 A en la mesa. Luego, tests en rojo y el arreglo; S3776 se resolvió sacando de `main` las líneas del límite. La IA dejó la segunda pasada para que la escribiera el maker, y él lo corrigió: el código lo escribe la IA.*
+
 ---
 
 ### 7. Pull Requests
