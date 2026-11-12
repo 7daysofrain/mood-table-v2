@@ -52,7 +52,7 @@
 
   Verificar: `grep -n "mesa.example" readme.md` no devuelve nada; el comando del README coincide con
   la URL del script en `main`; los términos nuevos están en el glosario del PRD (§8).
-- [ ] 1.6 La **D110** en `docs/idea-mood-table.md`, con el texto que propone `design.md`
+- [x] 1.6 La **D110** en `docs/idea-mood-table.md`, con el texto que propone `design.md`
   («Nueva D#»), su origen (`MOO-137`, change `table-install`) y lo descartado (decisiones 1 a 5). Se
   apunta en `prompts.md` el hito del change (formato de `course.md` §5).
   Verificar: la D110 está en la tabla después de la última D# y no renumera ninguna.

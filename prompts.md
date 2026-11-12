@@ -2184,6 +2184,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Claude Code (`claude-opus-5-5`, 12-nov). Antes de archivar, la IA comprobó en Linear que las tres tareas hijas de `MOO-135` (`MOO-139`, `MOO-140`, `MOO-141`) estaban en *Done*, y que el `tasks.md` tenía las 19 tareas completas. Al sincronizar, `engine-config` y `physical-strip` cambian y `power-limit` pasa a ser una spec principal. Con `--strict`, 11 specs dan avisos por requisitos de más de 500 caracteres, las mismas que en `main` antes de archivar: no los trae este change.*
 
+#### 6.78 Instalar el instrumento en la mesa con un solo script: refinamiento, estimación, exploración y change (`MOO-137`)
+
+**Prompt 1** (al lanzar el refinamiento):
+
+> /refine-story MOO-137 antes de ir con el happy path tengo una cuestion que puede que cambie bastante el alcance. Igual en vez de tener un script de instalacion podemos tener simplemente una imagen de SD, igual es como bastante mas sencillo y a prueba de fallos
+
+*Claude Code (`claude-opus-5-5`, 11 y 12-nov). La IA reconoció que una imagen es más robusta contra los fallos al instalar, pero señaló lo que no resolvía: la foto de la Pi de la mesa lleva su WiFi, sus claves SSH, su configuración y los errores EXT4 de la SD, se queda vieja con cada cambio y no se puede revisar en una PR. Preguntó si era para la mesa o para cualquier maker; el humano contestó «no, seria generico», y una imagen genérica tendría que construirse desde el repo y ejecutaría el mismo script por dentro. La historia se quedó con el script, y el humano describió el caso feliz: conectarse por SSH a una Pi recién instalada y, con un `curl`, dejar el instrumento listo.*
+
+**Prompt 2** (cuando la IA proponía qué hacer al reinstalar con el fichero de configuración que ya hay):
+
+> Espera que vamos a cambiar el 2a y 2b yo creo que igual lo interesante es preguntar si quieres conservarlo o sobreescribirlo. Sobreescribirlo siempre generaría el .bck
+
+*Antes, el humano había fijado la configuración base (tira virtual y WAV) y que reinstalar deja el instrumento como recién instalado, con una copia `.bck`. Con este cambio, el script pregunta antes de tocar nada, y sobrescribir siempre guarda la copia. Arrancar solo quedó en `MOO-131`. Salieron dos tareas de infra, instalar en una Pi limpia (`MOO-143`) y reinstalar (`MOO-144`). En `/estimate-story`, el humano dio un 3 («aunque es un solo fichero, tiene pinta de ser complejo») y el estimador, un 5, porque el esfuerzo está en probarlo en la Pi; acordaron un 5.*
+
+**Prompt 3** (en `/opsx:explore`, cuando la IA comparó un arranque mínimo en bash con un instalador en TypeScript, o todo en bash):
+
+> Si, vamos por C de momento, prefiero tener una única pieza en este punto
+
+*La IA recomendaba el instalador en TypeScript, porque la lógica de reinstalar quedaría con tests de Vitest, y dijo que pesaba más el criterio del humano. Se quedó en bash, como excepción a «un solo lenguaje» (PRD §6.2), con ShellCheck en `pnpm lint` y los escenarios a mano en la mesa. Después el humano eligió `main` como versión (Q12), NodeSource y que toda la instalación sea del usuario `moodtable`: preguntó cuánta complejidad añadía separar el código de root y los datos del usuario, y la IA lo descartó porque el maker necesita `sudo` en los dos casos. El change `table-install` trae la capacidad `table-install`, la D110 y, en el PRD, §6.2, Q12 y los términos *script de instalación* y *usuario propio*.*
+
+*Ajustes:*
+- *El humano propuso no probar la reinstalación sobre el clon de `/home/pi`. La IA señaló que es una fila de los criterios de `MOO-137` y que, con la copia `dd` de la SD de la mesa, probarla no cuesta nada: es justo pasar la mesa a la instalación nueva. Se mantuvo.*
+- *El README §1.4 pedía copiar un `deploy/config/mesa.example.json` que no existe: lo reescribe `MOO-143`.*
+- *La D106 decía «como `pi`» y el registro a mano: se tacha esa parte y apunta a la D110.*
+
 ---
 
 ### 7. Pull Requests
