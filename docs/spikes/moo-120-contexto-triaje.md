@@ -21,6 +21,18 @@
 
 - **`lint` y `typecheck` no pasan por el triador** (decidido con el usuario el 12-nov). Son
   deterministas: si fallan en una PR, el fallo es *real* sin preguntar al modelo.
+- **`test` y `e2e` se relanzan una vez antes de preguntar al triador** (12-nov):
+  - Si falla un paso de infraestructura, se relanza sin preguntar.
+  - Si pasa al relanzar, *no aplica* para la PR: el test intermitente es una deuda de `main`, sea del
+    test o del producto, y averiguar cuál le toca a quien lo arregle.
+  - Si vuelve a fallar, se pregunta al triador si lo causa la PR, con el dato de que ha fallado dos
+    veces (la regla de §4.1).
+  - Un test intermitente que añade o cambia la propia PR es *real*.
+- **«Si se repite» se saca del historial de GitHub, sin estado en el sistema** (12-nov). Al pasar un
+  relanzamiento, se buscan en los runs fallidos recientes las anotaciones con la misma identidad del
+  fallo (fichero y nombre del test). Así sobrevive a los reinicios y cuadra con D66. Si con la
+  repetición el sistema propone un Bug en *Triage* o solo avisa al mantenedor, lo decide la historia
+  del relanzamiento (`MOO-155`, con `MOO-79`).
 
 ## Resultados
 
