@@ -2365,6 +2365,27 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *La IA corrigió la decisión 3 con una nota de por qué cambió (la cobertura de SonarQube en la #143) y archivó: los tres requisitos MODIFIED de `physical-strip` y `engine-config` pasan a las specs principales.*
 
+
+#### 6.88 Medir qué contexto necesita el triaje de cada comprobación que falla (`MOO-120`, *spike*)
+
+**Prompt 1:**
+
+> Vamos con la MOO-120. Antes de nada quiero realizar una investigacion contigo para saber exactamente que información sale de los diferentes checkeos. Lo que necesito comprender es como se extrae la información del checkeo y se le pasa al triador. Como es ese proceso
+
+*Claude Code (`claude-opus-5-5`, 12-nov). La IA trazó el camino desde el *check run* hasta la petición a Clef, sacó con `gh api` el *check run*, las anotaciones y el log de las 5 filas etiquetadas y reprodujo el corte de hoy (los 822 bytes de la traza de la #112). Cada comprobación dejaba el error en un sitio distinto. El usuario propuso un adaptador que normalizara cada tipo y, al ver la propuesta, lo concretó: una estrategia por `app.slug` con un genérico de reserva. Después pidió comprobar el permiso del PAT antes de medir. Un prototipo en `.spikes/moo-120/` midió 6 variantes con 120 llamadas, por 0,23 $.*
+
+**Prompt 2:**
+
+> Entonces esto es un desastre total, no hay manera de que el triador acierte? igual es el modelo que seleccionamos o como lo estamos configurando? No creo que bajar de una confianza de 0,80 sea buena señal....
+
+*Ninguna variante de contexto llevaba una fila más allá del umbral. La IA defendió no bajar el umbral y separó modelo y configuración: los criterios estaban escritos para comentarios del revisor, no para comprobaciones. Con una pregunta propia («¿lo causa esta PR?»), la separación pasó de 0,14 a 0,51. Por el camino comprobó con el código de producción que agrupar los hallazgos en una petición los contamina: reprodujo el 0,83 de la #116. El usuario corrigió a la IA dos veces. Codex es una fuente de hallazgos como cualquier comprobación, y no se podía dejar fuera del spike. Y un test intermitente es un defecto que hay que arreglar, no un fallo que se relanza y ya.*
+
+**Prompt 3:**
+
+> Tengo una idea para los que vienen de Codex. Dime si tiene sentido. Como la idea es que luego la lista de hallazgos pase a un agente Fixer que los solucione, igual lo que tiene sentido es que el triador evalue el impacto del cambio. Si ese cambio implica un blast radius amplio o fuera del scope inicial de la tarea debería marcarlo como que necesita intervención humana, si no le da luz verde para que pase a la fase de Fix
+
+*Con Codex, preguntar si un comentario era válido acertaba 2 de 8: sin el código, el modelo no puede comprobarlo. La IA propuso separar el alcance, que se puede juzgar antes, del impacto, que se mide mejor sobre el parche. El usuario dejó la comprobación del parche fuera de la primera implementación y pidió medir el alcance: acertó 6 de 10, sin ningún error con confianza. Resultado: D114 (matiza D91), ½ día frente a 1 de *timebox*, y una historia en vez de varias capturas, a propuesta del usuario.*
+
 ---
 
 ### 7. Pull Requests
