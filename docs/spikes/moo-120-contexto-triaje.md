@@ -72,6 +72,10 @@
   la necesita, porque su incidencia ya señala un fichero y una línea. Los criterios dejan de pedir
   *"judge the finding against the diff"*. Responde la pregunta 2: el tope de 0,05 $ por PR no cambia
   (BQ5).
+- **El PAT declara *Checks* y *Actions* en lectura, y `.env.example` lo dice** (13-nov). Hoy los lee
+  sin ese permiso porque el repo es público. Si pasara a privado, el triaje se quedaría a la vez sin
+  *check runs*, logs y anotaciones, y sin avisar. *Actions: write*, que hace falta para relanzar, es de
+  `MOO-155`.
 
 ## Resultados
 
