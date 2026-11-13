@@ -289,6 +289,42 @@ dejarías». Después, cada hallazgo pasó solo por el triador de producción, 2
   cada vuelta. Se controla más con el encargo del revisor (solo defectos, un hallazgo por causa) que
   con el triador, que aquí solo filtraría el *nit* evidente.
 
+### Una pregunta de alcance para los hallazgos de Codex (13-nov)
+
+Si los hallazgos de Codex se dan por buenos, lo que queda por decidir es si el Fixer puede arreglarlos
+solo. Se probó la pregunta *"Is fixing the reviewer comment on <fichero:línea>, titled '<título>',
+within the scope of this PR's task?"*: sí, si el arreglo cae en lo que pide la tarea; no, si es de
+otra tarea, cambia algo fuera de su área o pide una decisión de diseño que la tarea no toma (y
+entonces se escala). La muestra son los 10 comentarios de Codex de 7 PR, uno por petición, 2 veces, con
+y sin la tarea de Linear que cierra la PR.
+
+| Hilo | Etiqueta | Con la tarea | Sin la tarea |
+|---|---|---|---|
+| #88.2, «del alcance de otra tarea» | fuera | **0,107 · fuera** ✓ | 0,122 · fuera ✓ |
+| #88.0 | dentro | **0,866 · dentro** ✓ | 0,907 |
+| #72.1 | dentro | **0,932 · dentro** ✓ | 0,941 |
+| #85.1 | dentro | **0,837 · dentro** ✓ | 0,828 |
+| #122.2 | dentro | **0,937 · dentro** ✓ | 0,933 |
+| #101.3 | dentro | **0,857 · dentro** ✓ | 0,851 |
+| #88.1 | dentro | 0,524 | 0,585 |
+| #134.0 (P1) | dentro | 0,621 | 0,550 |
+| #140.0 | dentro | 0,590 | 0,599 |
+| #101.2 | dentro *(dudosa)* | 0,263 | 0,272 |
+
+- **Acierta 6 de 10, y no se equivoca con confianza en ninguna.** Las otras 4 se quedan en *exige
+  criterio*. Con la pregunta «¿es válido?», acertaba 2 de 8.
+- **La diferencia es que esta pregunta se puede responder con lo que el modelo recibe:** el comentario
+  y la descripción de la PR dicen qué cubre la PR. Saber si el comentario es válido pedía el código.
+- **Las dudas coinciden con los arreglos que pidieron decisiones.** #134.0 cambió el cálculo del límite
+  de potencia y su `design.md`, y #140.0 hizo que el script rechace una configuración. Las dos quedan
+  en la zona de duda, que es donde un humano debería mirarlas.
+- **La tarea de Linear no aporta** (diferencias de menos de 0,07): la descripción de la PR ya dice qué
+  cubre.
+- **#101.2 puede estar mal etiquetada.** Conservar el gasto al detener y reanudar toca el código de
+  detener (de otra historia, `MOO-74`), así que «fuera» también es defendible.
+- **Límites:** solo hay una fila *fuera*, los criterios se escribieron conociéndola y las etiquetas las
+  he puesto yo a partir de los hilos.
+
 ### Permisos del PAT
 
 Probado el 12-nov con el PAT del sistema (*fine-grained*, con *Metadata* en lectura e *Issues* y

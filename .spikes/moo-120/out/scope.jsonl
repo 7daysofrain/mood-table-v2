@@ -1,0 +1,40 @@
+{"id":"88.2","label":"fuera","why":"«Real, pero es el alcance de la otra tarea» (MOO-91)","variant":"con tarea","rep":1,"p":0.1059,"inputTokens":3146}
+{"id":"88.2","label":"fuera","why":"«Real, pero es el alcance de la otra tarea» (MOO-91)","variant":"con tarea","rep":2,"p":0.1067,"inputTokens":3146}
+{"id":"88.0","label":"dentro","why":"arreglado en b841caa","variant":"con tarea","rep":1,"p":0.8657,"inputTokens":3008}
+{"id":"88.0","label":"dentro","why":"arreglado en b841caa","variant":"con tarea","rep":2,"p":0.8657,"inputTokens":3008}
+{"id":"88.1","label":"dentro","why":"arreglado en f55e8d2","variant":"con tarea","rep":1,"p":0.5244,"inputTokens":2922}
+{"id":"88.1","label":"dentro","why":"arreglado en f55e8d2","variant":"con tarea","rep":2,"p":0.5244,"inputTokens":2922}
+{"id":"101.2","label":"dentro","why":"se pasó por alto","variant":"con tarea","rep":1,"p":0.2705,"inputTokens":3478}
+{"id":"101.2","label":"dentro","why":"se pasó por alto","variant":"con tarea","rep":2,"p":0.2553,"inputTokens":3478}
+{"id":"101.3","label":"dentro","why":"se pasó por alto","variant":"con tarea","rep":1,"p":0.8529,"inputTokens":4963}
+{"id":"101.3","label":"dentro","why":"se pasó por alto","variant":"con tarea","rep":2,"p":0.8597,"inputTokens":4963}
+{"id":"72.1","label":"dentro","why":"arreglado en 1cf8413","variant":"con tarea","rep":1,"p":0.9339,"inputTokens":4220}
+{"id":"72.1","label":"dentro","why":"arreglado en 1cf8413","variant":"con tarea","rep":2,"p":0.9292,"inputTokens":4220}
+{"id":"85.1","label":"dentro","why":"arreglado en 16ccb4c","variant":"con tarea","rep":1,"p":0.8366,"inputTokens":3017}
+{"id":"85.1","label":"dentro","why":"arreglado en 16ccb4c","variant":"con tarea","rep":2,"p":0.8366,"inputTokens":3017}
+{"id":"122.2","label":"dentro","why":"arreglado en 3167fea","variant":"con tarea","rep":1,"p":0.9372,"inputTokens":5094}
+{"id":"122.2","label":"dentro","why":"arreglado en 3167fea","variant":"con tarea","rep":2,"p":0.9358,"inputTokens":5094}
+{"id":"134.0","label":"dentro","why":"arreglado en 838ed32","variant":"con tarea","rep":1,"p":0.6179,"inputTokens":3514}
+{"id":"134.0","label":"dentro","why":"arreglado en 838ed32","variant":"con tarea","rep":2,"p":0.6234,"inputTokens":3514}
+{"id":"140.0","label":"dentro","why":"arreglado en ba36b30","variant":"con tarea","rep":1,"p":0.5927,"inputTokens":2484}
+{"id":"140.0","label":"dentro","why":"arreglado en ba36b30","variant":"con tarea","rep":2,"p":0.587,"inputTokens":2484}
+{"id":"88.2","label":"fuera","why":"«Real, pero es el alcance de la otra tarea» (MOO-91)","variant":"sin tarea","rep":1,"p":0.1229,"inputTokens":2961}
+{"id":"88.2","label":"fuera","why":"«Real, pero es el alcance de la otra tarea» (MOO-91)","variant":"sin tarea","rep":2,"p":0.12,"inputTokens":2961}
+{"id":"88.0","label":"dentro","why":"arreglado en b841caa","variant":"sin tarea","rep":1,"p":0.9067,"inputTokens":2823}
+{"id":"88.0","label":"dentro","why":"arreglado en b841caa","variant":"sin tarea","rep":2,"p":0.9067,"inputTokens":2823}
+{"id":"88.1","label":"dentro","why":"arreglado en f55e8d2","variant":"sin tarea","rep":1,"p":0.5851,"inputTokens":2737}
+{"id":"88.1","label":"dentro","why":"arreglado en f55e8d2","variant":"sin tarea","rep":2,"p":0.5851,"inputTokens":2737}
+{"id":"101.2","label":"dentro","why":"se pasó por alto","variant":"sin tarea","rep":1,"p":0.272,"inputTokens":3231}
+{"id":"101.2","label":"dentro","why":"se pasó por alto","variant":"sin tarea","rep":2,"p":0.272,"inputTokens":3231}
+{"id":"101.3","label":"dentro","why":"se pasó por alto","variant":"sin tarea","rep":1,"p":0.849,"inputTokens":4716}
+{"id":"101.3","label":"dentro","why":"se pasó por alto","variant":"sin tarea","rep":2,"p":0.8529,"inputTokens":4716}
+{"id":"72.1","label":"dentro","why":"arreglado en 1cf8413","variant":"sin tarea","rep":1,"p":0.9406,"inputTokens":4116}
+{"id":"72.1","label":"dentro","why":"arreglado en 1cf8413","variant":"sin tarea","rep":2,"p":0.9406,"inputTokens":4116}
+{"id":"85.1","label":"dentro","why":"arreglado en 16ccb4c","variant":"sin tarea","rep":1,"p":0.8333,"inputTokens":2898}
+{"id":"85.1","label":"dentro","why":"arreglado en 16ccb4c","variant":"sin tarea","rep":2,"p":0.8222,"inputTokens":2898}
+{"id":"122.2","label":"dentro","why":"arreglado en 3167fea","variant":"sin tarea","rep":1,"p":0.9329,"inputTokens":4770}
+{"id":"122.2","label":"dentro","why":"arreglado en 3167fea","variant":"sin tarea","rep":2,"p":0.932,"inputTokens":4770}
+{"id":"134.0","label":"dentro","why":"arreglado en 838ed32","variant":"sin tarea","rep":1,"p":0.5477,"inputTokens":3404}
+{"id":"134.0","label":"dentro","why":"arreglado en 838ed32","variant":"sin tarea","rep":2,"p":0.5525,"inputTokens":3404}
+{"id":"140.0","label":"dentro","why":"arreglado en ba36b30","variant":"sin tarea","rep":1,"p":0.5936,"inputTokens":2325}
+{"id":"140.0","label":"dentro","why":"arreglado en ba36b30","variant":"sin tarea","rep":2,"p":0.603,"inputTokens":2325}
