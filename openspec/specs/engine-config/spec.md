@@ -55,6 +55,8 @@ falla en él.
 > `MOO-16`. Sin él, una errata en un campo opcional se ignora sin avisar. El máximo de 256 tiras es
 > *(asumido)*: revisión de la PR de `MOO-17`; el índice de la tira ocupa un byte en el protocolo del
 > visor (D45), y sin el máximo el motor arrancaría y caería al conectar un navegador.
+> El orden de color declarado en una tira: `MOO-136`, escenario *El fichero de configuración declara
+> el orden de color de una tira*. El orden lo fija el chip, no el fichero (D111).
 
 #### Scenario: El fichero no existe
 - **GIVEN** que no existe `config/local.json`
@@ -93,6 +95,13 @@ falla en él.
 - **WHEN** el maker arranca el motor
 - **THEN** el motor no arranca
 - **AND** el mensaje dice que `strips` admite como mucho 256 tiras
+
+#### Scenario: El fichero de configuración declara el orden de color de una tira
+- **GIVEN** un `config/local.json` con una tira física que declara su orden de color, por ejemplo
+  `"colorOrder": "GRB"` en la tira o en su salida
+- **WHEN** el maker arranca el motor
+- **THEN** el motor no arranca
+- **AND** el mensaje nombra la tira y el campo que no existe
 
 ### Requirement: Cada tira declara su identificador, su nombre, su salida y sus LEDs
 Cada tira del fichero MUST declarar `id` (único en el fichero), `name`, `output`, `ledCount` (entero

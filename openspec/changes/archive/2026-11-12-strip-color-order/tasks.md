@@ -74,17 +74,17 @@
 
 ## 3. MOO-147 · firmware
 
-- [ ] 3.1 `HARDWARE_SETUP.md` §4.1 (decisión 4): `COLOR_ORDER` pasa a `RGB`, porque el motor ya
+- [x] 3.1 `HARDWARE_SETUP.md` §4.1 (decisión 4): `COLOR_ORDER` pasa a `RGB`, porque el motor ya
   reordena según el chip de la tira, y se explica qué pasa con el sketch antiguo (el rojo y el verde
   salen cambiados). Se quita «la tira se declara como `rgb`». El procedimiento para contar LEDs se
   revisa: los frames que se mandan directamente al sketch ya no se reordenan, así que en una
   `WS2812B` el rojo y el verde salen cambiados (el blanco no cambia).
   Verificar: §4.1 cuadra con `specs/physical-strip` y con el README §2.2.
-- [ ] 3.2 En la Pi, en un solo paso y a mano (lo hace el maker: `sudo` pide contraseña): actualizar a
+- [x] 3.2 En la Pi, en un solo paso y a mano (lo hace el maker: `sudo` pide contraseña): actualizar a
   `main` con `MOO-146` integrada, cargar el sketch con `COLOR_ORDER` en `RGB` (`arduino-cli`,
   `HARDWARE_SETUP.md` §4.1) y reiniciar el servicio `moodtable`.
   Verificar: el motor arranca y la tira pinta.
-- [ ] 3.3 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-136`):
+- [x] 3.3 Comprobación a mano en la mesa, que confirma el maker (criterios de `MOO-136`):
   - **colores puros**: la *respiración* con su color en rojo puro, luego en verde puro y luego en azul
     puro; la tira física se ve del mismo color que el visor;
   - **un efecto reactivo** (el *espectro* o el *scroll*) con música: la tira física pinta los mismos
@@ -94,7 +94,7 @@
 
   Se anota en la PR. No es documentación hasta que el maker lo confirme.
   Verificar: el maker da el visto bueno en la PR.
-- [ ] 3.4 `prompts.md`: la entrada de esta tarea.
+- [x] 3.4 `prompts.md`: la entrada de esta tarea.
   Verificar: sigue el formato de `docs/instructions/course.md` §5.
 
 ## Workflow follow-up
