@@ -58,6 +58,13 @@
   #116, el `e2e` pasó de 0,64 a 0,83 por ir junto a `sonar-issues`, y el orden mueve la p hasta 0,13.
   Cada petición repite el título y la descripción de la PR, unos 0,0004 $ por hallazgo. De paso,
   desaparece `batches()` y con él el límite de tamaño que no cuenta las preguntas (#101.3).
+- **Un puerto «contexto de una comprobación que falla», con una estrategia por `app.slug`** (12-nov).
+  En `github-actions`, las anotaciones útiles (se descartan los `failure` en `.github` y los `notice`
+  sin título) y, si no queda ninguna, el paso que falla del log, entero y hasta 16 KiB. En cualquier
+  otra app, `output.title` + `output.summary`. La salida es estructurada: el estado del contexto (lo
+  hay, la comprobación no lo da o no se ha podido leer), de dónde sale, un resumen y la lista de
+  errores con fichero, línea y mensaje. Sustituye el corte de hoy, así que resuelve `MOO-154`. Sirve
+  al triador, a la identidad del fallo para las repeticiones y al aviso al mantenedor.
 
 ## Resultados
 
