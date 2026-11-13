@@ -65,6 +65,13 @@
   hay, la comprobación no lo da o no se ha podido leer), de dónde sale, un resumen y la lista de
   errores con fichero, línea y mensaje. Sustituye el corte de hoy, así que resuelve `MOO-154`. Sirve
   al triador, a la identidad del fallo para las repeticiones y al aviso al mantenedor.
+- **El diff de la PR no entra en el contexto; la lista de ficheros, solo con la pregunta de la causa**
+  (13-nov). El diff entero baja la p de todas las filas por igual, también las *real*, y cuesta unas
+  10 veces más por llamada. La lista de ficheros, con «¿lo causa esta PR?», baja las tres *relanzar*
+  por unos 500-900 tokens más. Se manda en los `test` y `e2e` que fallan dos veces. `sonar-issues` no
+  la necesita, porque su incidencia ya señala un fichero y una línea. Los criterios dejan de pedir
+  *"judge the finding against the diff"*. Responde la pregunta 2: el tope de 0,05 $ por PR no cambia
+  (BQ5).
 
 ## Resultados
 
