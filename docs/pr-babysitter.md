@@ -157,8 +157,8 @@ cuenta en `prompts.md` y el resto sigue después.
 |---|---|
 | BA1 | Codex revisa cada push y su comentario se puede leer por máquina (bloque `codex-review-state`). |
 | BA2 | Codex también revisa las PR de Dependabot *(asumido: comprobarlo)*. Si no, en esas PR los hallazgos solo vienen de la CI y de SonarQube. |
-| BA3 | **El revisor puede cambiar** (en octubre pasó de Copilot a Codex): cambiar de revisor no debe obligar a rehacer el sistema. |
-| BA4 | Hay suficientes PR cerradas con hallazgos y respuestas para medir el triaje *(asumido: se cuentan al especificar BH2)*. |
+| BA3 | **El revisor puede cambiar** (en octubre pasó de Copilot a Codex): cambiar de revisor no debe obligar a rehacer el sistema. **Matiz (13-nov, `MOO-120`, D114):** los hallazgos de Codex se dan por buenos porque Codex acierta casi siempre en este repo (23 de 24); con otro revisor se revisa. En una prueba a ciegas, Claude sacó 12 hallazgos donde Codex sacó 3, así que el encargo del revisor es parte de cambiarlo ([spike](spikes/moo-120-contexto-triaje.md)). |
+| BA4 | Hay suficientes PR cerradas con hallazgos y respuestas para medir el triaje *(asumido: se cuentan al especificar BH2)*. **Comprobado en parte (13-nov, `MOO-120`):** hay 52 runs de CI fallidos y 24 comentarios de Codex en las últimas 60 PR integradas, con su respuesta, pero casi todos son *real*: de Codex solo 1 quedó fuera de su PR, y de las comprobaciones hay 5 filas etiquetadas. Faltan casos *no aplica* para medir la separación ([spike](spikes/moo-120-contexto-triaje.md)). |
 | BA5 | Hay un presupuesto mensual para los modelos *(asumido: la cifra se fija en la spec)*. |
 | BA6 | El sistema está en marcha cuando hay PR abiertas *(asumido)*. |
 | BA7 | El revisor atiende a la petición de revisión del sistema: en Codex, un comentario `@codex review`. **Solo se cumple si lo escribe una cuenta vinculada a Codex** (comprobado el 27-oct en la #77): el de una GitHub App lo rechaza y pide «create a Codex account». Por eso el sistema lo escribe con el token del mantenedor. |
@@ -187,7 +187,7 @@ cada historia.
 | BQ2 | Dónde ve el mantenedor las decisiones del modo sombra (un comentario resumen en la PR o solo en las trazas) | BH2. ✅ **Resuelta (28-oct, `MOO-75`):** en un comentario resumen en la PR, firmado por el sistema, uno por push |
 | BQ3 | Qué hace con las PR de Dependabot si subir commits a su rama hace que Dependabot deje de mantenerla *(asumido: comprobarlo en su documentación)*: escalar en vez de arreglar, o pedirle a Dependabot que la rehaga | BH3 |
 | BQ4 | Por dónde contesta el mantenedor cuando el sistema escala | BH4 |
-| BQ5 | Los umbrales de BE3, BE8 y de la política (§4.1) | La spec de cada historia |
+| BQ5 | Los umbrales de BE3, BE8 y de la política (§4.1) | La spec de cada historia. **13-nov (`MOO-120`):** el tope de 0,05 $ por PR no cambia: el diff no entra en el contexto y un hallazgo por petición cuesta unos 0,0004 $ más por hallazgo ([spike](spikes/moo-120-contexto-triaje.md)) |
 | BQ6 | ¿Refleja el sistema en Linear el estado de cada PR (mover la historia o la tarea), además de comentar? Hoy los estados los mueve la integración de GitHub, y dos escritores sobre el mismo estado se pisarían | Una historia propia de PB |
 | BQ7 | Cómo hace push el sistema sin poder integrar: en GitHub, el permiso `Contents: write` del token que hace falta para subir commits también deja integrar PR por la API, y BE2 y D64 piden que no pueda | BH3 |
 
