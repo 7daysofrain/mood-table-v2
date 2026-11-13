@@ -52,6 +52,17 @@
   siempre (23 de 24) y va a defectos, no a detalles menores, mientras que el triador, sin el código,
   solo acierta 2 de 8. Quien arregla (BH3) tiene el repo y comprueba cada hallazgo antes de tocar nada.
   Si cambia el revisor, esto se revisa.
+- **Antes del Fixer, los hallazgos de Codex pasan por una pregunta de alcance** (13-nov, idea del
+  usuario): «¿cae el arreglo dentro del alcance de la tarea de la PR?». *Dentro* va al Fixer; *fuera* o
+  *exige criterio* va al mantenedor. Acierta 6 de 10 sin ninguno con confianza del lado equivocado, y
+  las dudas coinciden con los arreglos que pidieron decisiones de diseño. El contexto es la PR: la
+  tarea de Linear se puede añadir con un adaptador, pero en la muestra no aporta. Falta validarlo con
+  más casos *fuera* (`MOO-76`).
+- **Después del Fixer, una comprobación del parche, fuera de la primera implementación** (13-nov). El
+  impacto de un arreglo se mide mejor sobre el parche hecho que adivinándolo antes, y con reglas, sin
+  modelo: si toca ficheros fuera de la PR, `openspec/specs/`, un `design.md`, decisiones o la API
+  pública, si borra o debilita tests, o si pasa de un tamaño. Si salta, escala con el parche delante.
+  Va con BH3 (`MOO-77`).
 - **Un hallazgo por petición al modelo de decisión** (12-nov). Matiza D91, que descartó esta opción a
   la espera de `MOO-76`. El protocolo está pensado para varias preguntas sobre una misma cosa. Con
   varios hallazgos en el mismo `state`, cada respuesta parte de todos a la vez, y se contaminan: en la
