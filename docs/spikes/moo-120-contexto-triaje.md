@@ -1,23 +1,30 @@
 # Spike de contexto del triaje · ¿Qué contexto de una comprobación que falla necesita el triador?
 
-**Spike:** [MOO-120](https://linear.app/7daysofrain/issue/MOO-120) · **Hecho:** en curso ·
-**Decisiones:** D# por crear (`docs/idea-mood-table.md`)
-
-> **Notas de trabajo.** El documento se completa con las medidas del prototipo y se cierra con
-> `/close-spike`. Lo que hay ahora es lo que se ha visto en los datos crudos, sin preguntar todavía a
-> Clef.
+**Spike:** [MOO-120](https://linear.app/7daysofrain/issue/MOO-120) · **Hecho:** 12 y 13-nov-2026 ·
+**Decisiones:** D114 (`docs/idea-mood-table.md`)
 
 ## Preguntas
 
 1. ¿Qué contexto de una comprobación que falla basta para que el triador acierte, y en qué
-   comprobaciones no basta el genérico? → **Pendiente de medir.** Hay una propuesta de estrategias
-   (abajo), sacada de los datos crudos.
+   comprobaciones no basta el genérico? → **Respondida:** basta con dos estrategias por `app.slug`
+   (en Actions, las anotaciones útiles o, si no hay, el paso entero; en otras apps, el `output`), sin
+   adaptadores por comprobación. Pero el contexto no es lo que más pesa: agrupar los hallazgos en una
+   petición mueve la p hasta 0,20, la pregunta lleva la separación de 0,14 a 0,51 y varias
+   comprobaciones no necesitan triador. El PAT ya lee las anotaciones, porque el repo es público.
 2. ¿Mandar el diff de la PR mueve la p hacia la etiqueta real, y cuánto cuesta frente al tope de
-   0,05 $ por PR? → **Pendiente de medir.**
+   0,05 $ por PR? → **Respondida:** el diff baja la p de todas las filas por igual y cuesta unas 10
+   veces más, así que no entra. La lista de ficheros sí aporta con la pregunta de la causa. El tope no
+   cambia.
 
 ## Veredicto
 
-*Borrador, por piezas. Se cierra con `/close-spike`.*
+**Para triar bien una comprobación que falla pesa más qué se pregunta y cómo se agrupa que el
+contexto.** `lint`, `typecheck` y SonarCloud son *real* por regla. `test` y `e2e` se relanzan antes de
+preguntar «¿lo causa esta PR?». `sonar-issues` se tría incidencia a incidencia. Los hallazgos de Codex
+pasan por una pregunta de alcance antes del Fixer. Cada hallazgo va solo en su petición, con el
+contexto de un puerto por `app.slug` y sin el diff.
+
+Las piezas, acordadas una a una con el usuario (el porqué de cada una, en *Resultados*):
 
 - **`lint` y `typecheck` no pasan por el triador** (decidido con el usuario el 12-nov). Son
   deterministas: si fallan en una PR, el fallo es *real* sin preguntar al modelo.
@@ -130,7 +137,10 @@ contexto.
 - **El error completo no basta solo.** En la #116 `e2e`, el error (`jumps`: se esperaba 0 y llegó 1)
   dice *qué* falla, pero no que la PR no toca el audio. Eso lo da el diff, que es la pregunta 2.
 
-### Propuesta de estrategias, por `app.slug` (a medir)
+### Propuesta de estrategias, por `app.slug` (antes de medir)
+
+*La primera propuesta, del 12-nov. El veredicto la ajusta: SonarCloud pasa a regla y sobra su
+adaptador específico.*
 
 | `app.slug` | Estrategia | Respaldo |
 |---|---|---|
@@ -356,18 +366,19 @@ Probado el 12-nov con el PAT del sistema (*fine-grained*, con *Metadata* en lect
 
 ## Cómo se hizo
 
-Datos crudos de las 5 filas con `gh api`, en [`.spikes/moo-120/data/`](../../.spikes/moo-120/data):
-el *check run*, sus anotaciones y, si es de Actions, el log del *job*.
+Prototipo en `.spikes/moo-120/` (ver *Cómo repetirlo*), en Node 24 sin compilar, contra `clef:27b` en
+la nube de Ollama, con la clave del `.env` del PR Babysitter. Datos crudos de las 5 filas con `gh api`
+en `data/`: el *check run*, sus anotaciones y, si es de Actions, el log del *job*.
 
 - Hay que pedir los *check runs* con `filter=all`, o cada uno por su id. Al relanzar, GitHub da ids
   nuevos y `filter=latest` devuelve el que pasó.
 - El *job* del `e2e` de la #117 es `127481356654` (run `42094639308`, primer intento).
-- [`failing-step.mjs`](../../.spikes/moo-120/failing-step.mjs) reproduce el corte de `failingStep`. Da
+- `failing-step.mjs` reproduce el corte de `failingStep`. Da
   los 822 bytes de la traza de la #112.
-- [`run.ts`](../../.spikes/moo-120/run.ts) arma una petición por fila y variante, igual que la de
+- `run.ts` arma una petición por fila y variante, igual que la de
   producción (mismo `state`, pregunta y criterios), con un solo hallazgo por petición, y la manda 5
   veces a `clef:27b` en la nube de Ollama. Las 120 llamadas sumaron 941.520 tokens de entrada (unos
-  0,23 $). [`summarize.ts`](../../.spikes/moo-120/summarize.ts) saca la tabla de
+  0,23 $). `summarize.ts` saca la tabla de
   `out/results.jsonl`.
 - El título y la descripción de cada PR son los de hoy, que pueden haber cambiado desde el push. El
   diff es el de `main...<sha>` del push.
@@ -377,15 +388,56 @@ el *check run*, sus anotaciones y, si es de Actions, el log del *job*.
 
 ## Límites del resultado
 
-- 5 filas, de 3 comprobaciones: `e2e`, `sonar-issues` y `SonarCloud Code Analysis`. `lint`,
-  `typecheck` y `test` no tienen ninguna fila etiquetada.
-- Los datos crudos se bajaron con el token de `gh` del usuario. Que el PAT del sistema lee lo mismo se
-  comprobó aparte (ver *Permisos del PAT*).
+- **Pocas filas:** 5 de comprobaciones (de `e2e`, `sonar-issues` y SonarCloud; ninguna de `lint`,
+  `typecheck` ni `test`), 10 de Codex con una sola *fuera*, y 2 revisiones de Claude con un encargo
+  genérico. El efecto de agrupar los hallazgos se midió en un solo push.
+- **Criterios sobreajustados:** los de la pregunta de la causa y los de la de alcance se escribieron
+  conociendo las filas con las que se midieron. Hay que validarlos con filas nuevas (`MOO-76`).
+- **Etiquetas puestas por la IA** a partir de lo que se hizo con cada hallazgo. #101.2 es dudosa.
+- **Un solo modelo** (`clef:27b`) y el umbral sin calibrar (0,80).
+- **Contexto de hoy:** el título y la descripción de cada PR pueden haber cambiado desde el push, y el
+  detalle de SonarCloud de la #117 se reconstruyó a mano.
+- Haría cambiar el veredicto que, con más filas, la pregunta de alcance se equivocara con confianza, o
+  que un hallazgo por petición no quitara el efecto de agrupar en pushes con más hallazgos.
 
 ## Qué sale
 
-*Pendiente.*
+- **Una historia** de PB (BH2), con `/create-story MOO-67`: triar según la fuente del hallazgo y con el
+  contexto del puerto por `app.slug` (D114). Tareas previstas: el puerto de contexto y el PAT; un
+  hallazgo por petición, las reglas y la pregunta de la causa; `sonar-issues` con anotaciones y una
+  incidencia por hallazgo; la pregunta de alcance de Codex. Absorbe `MOO-148` y `MOO-154`.
+- **`MOO-77` (BH3):** la comprobación del parche después del Fixer, fuera de la primera
+  implementación.
+- **Un Bug, con `/capture`:** el E2E de `playback.spec.ts` sigue fallando a veces tras `MOO-62` y
+  `MOO-65` (#62 y #116).
+- **Cuando exista la historia:** actualizar `MOO-148` y `MOO-154` (absorbidas), `MOO-155` (relanzar
+  los tests antes de triar y las repeticiones del historial de GitHub) y `MOO-76` (validar las
+  preguntas de causa y de alcance).
+- **Dos defectos de `main`** que se pasaron por alto en la #101 (#101.2 y #101.3), para que los capture
+  el usuario. El segundo desaparece con un hallazgo por petición.
 
 ## Tiempo dedicado frente al *timebox*
 
-*Pendiente.* *Timebox:* 1 día.
+½ día frente a 1 día.
+
+## Cómo repetirlo
+
+El prototipo se borró antes de integrar; está en
+[`5ff8902`](https://github.com/7daysofrain/mood-table-v2/tree/5ff8902b19d2623439ad13500a9ee02af783698a/.spikes/moo-120),
+dentro de la PR [#144](https://github.com/7daysofrain/mood-table-v2/pull/144).
+
+```bash
+git clone https://github.com/7daysofrain/mood-table-v2.git && cd mood-table-v2
+git fetch origin pull/144/head && git checkout 5ff8902b19d2623439ad13500a9ee02af783698a
+pnpm install   # el prototipo usa @langchain/typesafe de packages/pr-babysitter
+# con DECISION_MODEL_API_KEY en packages/pr-babysitter/.env:
+node .spikes/moo-120/run.ts --dry          # tamaños y coste, sin llamar
+node .spikes/moo-120/run.ts 5              # contexto y diff (las 5 filas)
+node .spikes/moo-120/batch.ts 5            # agrupar o no los hallazgos (#116)
+node .spikes/moo-120/codex.ts 3            # validez de los comentarios de Codex
+node .spikes/moo-120/claude.ts 2           # triar la revisión de Claude
+node .spikes/moo-120/scope.ts 2            # alcance de los comentarios de Codex
+node .spikes/moo-120/summarize.ts          # tabla de out/results.jsonl
+```
+
+Las llamadas añaden líneas a `out/*.jsonl`: bórralos antes para empezar de cero.
