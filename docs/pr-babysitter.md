@@ -190,6 +190,7 @@ cada historia.
 | BQ5 | Los umbrales de BE3, BE8 y de la política (§4.1) | La spec de cada historia. **13-nov (`MOO-120`):** el tope de 0,05 $ por PR no cambia: el diff no entra en el contexto y un hallazgo por petición cuesta unos 0,0004 $ más por hallazgo ([spike](spikes/moo-120-contexto-triaje.md)) |
 | BQ6 | ¿Refleja el sistema en Linear el estado de cada PR (mover la historia o la tarea), además de comentar? Hoy los estados los mueve la integración de GitHub, y dos escritores sobre el mismo estado se pisarían | Una historia propia de PB |
 | BQ7 | Cómo hace push el sistema sin poder integrar: en GitHub, el permiso `Contents: write` del token que hace falta para subir commits también deja integrar PR por la API, y BE2 y D64 piden que no pueda | BH3 |
+| BQ8 | Qué clase sale cuando una comprobación que falla no la causa la PR, y cómo se nombra para el mantenedor: *no aplica* no encaja (no está equivocada, ni resuelta, ni fuera de alcance, ni es un nit) y, sin pasar la comprobación exigida, la PR no se integra (`MOO-159`) | `MOO-155` |
 
 ## 8. Glosario
 
@@ -204,6 +205,8 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Alcance de la PR** | `prScope` | Lo que la PR debe cambiar: su tarea y su spec, el plan de la *chore* o la actualización de la dependencia. Salirse de él es motivo para escalar. |
 | **Hallazgo** | `finding` | Algo que una PR debe atender: un comentario del revisor, una incidencia nueva de SonarQube o una comprobación que falla. |
 | **Triaje** | `triage` | Clasificar un hallazgo en **real** (`valid`), **no aplica** (`notApplicable`) o **exige criterio** (`needsJudgment`). La pregunta es si hay que arreglarlo en esta PR antes de integrarla: *real* es que sí. |
+| **Triador** | `triager` | El agente del sistema que tría cada hallazgo: lo decide por una regla o se lo pregunta al modelo de decisión. |
+| **Modelo de decisión** | `decisionModel` | El modelo que responde, dentro del triador, la pregunta de cada hallazgo con la probabilidad de cada respuesta, que se compara con el umbral. No es un LLM generativo (D90). |
 | **No aplica** | `notApplicable` | Hallazgo que no hay que arreglar en esta PR: está equivocado, ya está resuelto, cae fuera del alcance de la PR o es un nit (una cuestión de gusto o una mejora menor que no merece un commit). |
 | **Exige criterio** | `needsJudgment` | Hallazgo que el sistema no decide solo. Sale cuando su confianza no llega al umbral, o por una regla: descartaría un hallazgo de severidad alta, no ha podido reunir su contexto o se ha llegado al tope de gasto de la PR. |
 | **Arreglo** | `fix` | Cambio que atiende un hallazgo. |
