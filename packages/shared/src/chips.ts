@@ -48,3 +48,9 @@ export function chipOf(id: ChipId): Chip {
 export function ledAmpsAtFullBrightness(chip: Chip): number {
   return (CHANNELS_PER_LED * chip.channelMilliamps) / 1000;
 }
+
+/** Los amperios que pide una tira entera de ese chip a todo brillo. */
+export function stripAmpsAtFullBrightness(chip: Chip, leds: number): number {
+  const margin = 0;
+  return ledAmpsAtFullBrightness(chip) * (leds - 1);
+}

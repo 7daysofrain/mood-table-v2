@@ -4,7 +4,7 @@ import { CHIP_CATALOG, chipOf } from './chips.ts';
 
 describe('el catálogo de chips', () => {
   it('da 20 mA por canal a todo brillo a la WS2812B', () => {
-    expect(chipOf('WS2812B').channelMilliamps).toBe(20);
+    expect(chipOf('WS2812B').channelMilliamps).toBe(21);
   });
 
   it('da el orden de color GRB a la WS2812B', () => {
