@@ -16,6 +16,7 @@ import type {
   Triager,
   TriageSummaries,
 } from './core/ports.ts';
+import type { CheckContext } from './core/triage.ts';
 
 /** El tiempo de espera por defecto del contenedor (`TRACKING_TIMEOUT_MINUTES`). */
 const TIMEOUT_MS = 30 * 60_000;
@@ -42,8 +43,34 @@ const reviewRequests: ReviewRequests = {
 
 /**
  * En lugar de leer GitHub, da un hallazgo de cada fuente: un comentario del revisor y cada
- * comprobación que falla, con su contexto inventado.
+ * comprobación que falla, con su contexto inventado, cada una con un origen distinto.
  */
+const CHECK_CONTEXTS: CheckContext[] = [
+  {
+    state: 'available',
+    origin: 'annotations',
+    summary: 'Resumen de ejemplo\n  1 failed',
+    errors: [{ file: 'e2e/ejemplo.spec.ts', line: 1, title: 'Un test', message: 'Error de ejemplo' }],
+    truncated: false,
+  },
+  {
+    state: 'available',
+    origin: 'log',
+    summary: '##[group]Run pnpm test\n##[error]Error de ejemplo',
+    errors: [],
+    truncated: true,
+  },
+  {
+    state: 'available',
+    origin: 'appSummary',
+    summary: 'Quality Gate failed\n\nResumen de ejemplo',
+    errors: [],
+    truncated: false,
+  },
+  { state: 'notProvided' },
+  { state: 'unreadable' },
+];
+
 const findings: Findings = {
   read(pullRequestNumber, sha, failedChecks) {
     console.log(`Hallazgos: PR #${pullRequestNumber}, push ${sha}`);
@@ -61,7 +88,12 @@ const findings: Findings = {
           text: 'Escrito por studio.ts.',
           diffHunk: '@@ -1 +1 @@',
         },
-        ...failedChecks.map((name) => ({ source: 'check' as const, name, log: 'Error de ejemplo' })),
+        ...failedChecks.map((name, i) => ({
+          source: 'check' as const,
+          name,
+          conclusion: 'failure',
+          context: CHECK_CONTEXTS[i % CHECK_CONTEXTS.length] ?? { state: 'notProvided' as const },
+        })),
       ],
     });
   },

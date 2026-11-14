@@ -59,6 +59,7 @@ import {
   classify,
   type Finding,
   findingSchema,
+  hasContext,
   spend,
   type TriageAnswer,
   type TriageBudget,
@@ -182,11 +183,6 @@ function viaTriage<Node extends string>(
 ): Node | typeof TRIAGE_NODE {
   if (node !== 'avisarEstadoFinal') return node;
   return needsTriage(finalState(snapshot, push)) ? TRIAGE_NODE : node;
-}
-
-/** Si se ha podido reunir lo que señala el hallazgo (change pr-shadow-triage, regla 1). */
-function hasContext(finding: Finding): boolean {
-  return finding.source === 'reviewer' ? finding.diffHunk !== null : finding.log !== null;
 }
 
 /** Para a esperar al driver y valida la foto con la que reanuda. */

@@ -43,7 +43,13 @@ const p2: Finding = {
   title: 'Route failed checks directly to the final notification',
 };
 
-const check = (name: string, log: string): Finding => ({ source: 'check', name, log });
+/** Una comprobación que falla, con el paso que falla de su log por contexto. */
+const check = (name: string, summary: string): Finding => ({
+  source: 'check',
+  name,
+  conclusion: 'failure',
+  context: { state: 'available', origin: 'log', summary, errors: [], truncated: false },
+});
 
 function model(respond: (call: Call) => Response | Promise<Response>) {
   const { fetch, calls } = fakeFetch(respond);
@@ -105,8 +111,41 @@ describe('la petición (design.md, decisión 5)', () => {
         text: p1.source === 'reviewer' ? p1.text : '',
         diff_hunk: '@@ -190,6 +190,20 @@',
       },
-      check_e2e: { source: 'check', name: 'e2e', log_tail: 'Error: 1 test failed' },
+      check_e2e: {
+        source: 'check',
+        name: 'e2e',
+        conclusion: 'failure',
+        context: { origin: 'log', summary: 'Error: 1 test failed', errors: [], truncated: false },
+      },
     });
+  });
+
+  it('una comprobación lleva cómo acabó y su contexto: el origen, el resumen, los errores y si se cortó', async () => {
+    const { triager, calls } = model(answerAll);
+    const errors = [
+      {
+        file: 'e2e/playback.spec.ts',
+        line: 189,
+        title: '[chromium] › playback.spec.ts:177:1',
+        message: 'Expected: 0\nReceived: 1',
+      },
+    ];
+    const timedOut: Finding = {
+      source: 'check',
+      name: 'e2e',
+      conclusion: 'timed_out',
+      context: { state: 'available', origin: 'annotations', summary: '1 failed', errors, truncated: true },
+    };
+
+    await triager.triage(context, [timedOut]);
+
+    expect(sent(calls[0]).state.check_e2e).toEqual({
+      source: 'check',
+      name: 'e2e',
+      conclusion: 'timed_out',
+      context: { origin: 'annotations', summary: '1 failed', errors, truncated: true },
+    });
+    expect(JSON.stringify(sent(calls[0]).state)).not.toContain('log_tail');
   });
 
   it('una pregunta sí o no por hallazgo, que lo nombra por su identidad', async () => {

@@ -2386,6 +2386,17 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Con Codex, preguntar si un comentario era válido acertaba 2 de 8: sin el código, el modelo no puede comprobarlo. La IA propuso separar el alcance, que se puede juzgar antes, del impacto, que se mide mejor sobre el parche. El usuario dejó la comprobación del parche fuera de la primera implementación y pidió medir el alcance: acertó 6 de 10, sin ningún error con confianza. Resultado: D114 (matiza D91), ½ día frente a 1 de *timebox*, y una historia en vez de varias capturas, a propuesta del usuario.*
 
+#### 6.89 Leer el contexto de cada comprobación que falla según su app (`MOO-161`)
+
+**Prompt 1:**
+
+> /opsx:apply MOO-159
+
+*Claude Code (`claude-fable-5-2`, 14-nov). El change `pr-check-triage` no estaba en `main`, sino en la rama de la historia: la IA lo encontró por Linear, se cambió a ella e implementó la sección de `MOO-161`, con un commit por paso y los tests en rojo antes de cada implementación. Grabó con `gh api` el `e2e` que falla en la #116 y en la #112 y `SonarCloud Code Analysis` en la #117, con `filter=all`, porque al relanzar GitHub da el *check run* que pasó. Las grabaciones corrigieron dos supuestos: GitHub da una cadena vacía, y no `null`, en el título de una anotación que no lo tiene, y el resumen de Playwright es un `notice` con título, así que cuenta como anotación útil y va al resumen del contexto.*
+
+*Ajustes:*
+- *La IA no encontró en este equipo las conversaciones del refinamiento, la estimación y la exploración de la historia, así que no copió sus prompts. El usuario decidió cerrar la entrada sin ellos.*
+
 ---
 
 ### 7. Pull Requests

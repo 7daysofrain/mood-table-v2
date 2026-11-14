@@ -4,6 +4,7 @@ import {
   classify,
   type Finding,
   findingKeys,
+  hasContext,
   spend,
   type TriageBudget,
   withinBudget,
@@ -27,9 +28,18 @@ function reviewerFinding(overrides: Partial<Extract<Finding, { source: 'reviewer
   };
 }
 
-/** Una comprobación que falla, con el final de su log. */
-function checkFinding(name: string, log: string | null = 'Error: 1 test failed'): Finding {
-  return { source: 'check', name, log };
+/** Una comprobación que falla, con el paso que falla de su log por contexto, si no se dice otro. */
+function checkFinding(
+  name: string,
+  context: Extract<Finding, { source: 'check' }>['context'] = {
+    state: 'available',
+    origin: 'log',
+    summary: 'Error: 1 test failed',
+    errors: [],
+    truncated: false,
+  },
+): Finding {
+  return { source: 'check', name, conclusion: 'failure', context };
 }
 
 const p1 = reviewerFinding({ badge: 'P1', severity: 'high' });
@@ -106,6 +116,19 @@ describe('la clase de un hallazgo (design.md, decisión 4)', () => {
     expect(classify(reviewerFinding(), answered(0.7), 0.7).class).toBe('valid');
     expect(classify(reviewerFinding(), answered(0.3), 0.7).class).toBe('notApplicable');
     expect(classify(reviewerFinding(), answered(0.31), 0.7).class).toBe('needsJudgment');
+  });
+});
+
+describe('si un hallazgo tiene contexto (change pr-check-triage, decisión 1)', () => {
+  it('un comentario del revisor, con el trozo de diff que comenta', () => {
+    expect(hasContext(reviewerFinding())).toBe(true);
+    expect(hasContext(reviewerFinding({ diffHunk: null }))).toBe(false);
+  });
+
+  it('una comprobación, con un contexto que dar al modelo', () => {
+    expect(hasContext(checkFinding('e2e'))).toBe(true);
+    expect(hasContext(checkFinding('e2e', { state: 'notProvided' }))).toBe(false);
+    expect(hasContext(checkFinding('e2e', { state: 'unreadable' }))).toBe(false);
   });
 });
 

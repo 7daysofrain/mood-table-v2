@@ -9,13 +9,15 @@
  * - `pull-88.json`: el título y la descripción de la #88.
  * - `job-logs-sonar-issues.txt`: el log del *job* `sonar-issues` que falló en la #96. Se sirve como
  *   el del *check run* `sonar-issues` de `check-runs-failed.json` (de la #69), que ya no se puede
- *   descargar.
+ *   descargar. Sus anotaciones tampoco: se sirven vacías, y el contexto sale del log. Cómo se arma
+ *   el contexto de cada app se prueba en `check-context.test.ts`.
  */
 import { describe, expect, it } from 'vitest';
 
 import { type Call, fakeFetch, fixture, json, text } from '../../test/fake-github.ts';
 import { GitHubUnauthorizedError } from '../core/ports.ts';
 import type { Finding } from '../core/triage.ts';
+import { readCheckContext } from './check-context.ts';
 import { parseCodexFinding } from './codex-review.ts';
 import { createFindings } from './findings.ts';
 import { createGitHubReader } from './github.ts';
@@ -42,6 +44,8 @@ function github(override: Route = () => undefined) {
     const comments = /\/pulls\/(\d+)\/comments$/.exec(path);
     if (comments) return json(await fixture(`review-comments-${comments[1]}.json`));
     if (path.endsWith('/check-runs')) return json(await fixture('check-runs-failed.json'));
+    // Ninguna comprobación de `check-runs-failed.json` deja anotaciones.
+    if (path.endsWith('/annotations')) return json('[]');
     if (path.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`)) {
       return text(await fixture('job-logs-sonar-issues.txt'));
     }
@@ -58,7 +62,7 @@ function github(override: Route = () => undefined) {
     reviewer: { login: REVIEWER, name: 'Codex', parse: parseCodexFinding },
     github: reader,
   });
-  return { findings, calls };
+  return { findings, reader, calls };
 }
 
 function reviewerFindings(findings: Finding[]) {
@@ -185,66 +189,53 @@ describe('el contexto de la PR', () => {
 });
 
 describe('las comprobaciones que fallan', () => {
-  it('son un hallazgo cada una, con el paso que falla de su log', async () => {
-    const { findings } = github();
+  it('son un hallazgo cada una, con su conclusión y el contexto que da su app', async () => {
+    const { findings, reader } = github();
 
     const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues']);
     const check = read.find((finding) => finding.source === 'check');
 
-    expect(check).toEqual({ source: 'check', name: 'sonar-issues', log: expect.any(String) as string });
-    const log = check?.source === 'check' ? (check.log ?? '') : '';
-    expect(log.startsWith('##[group]Run node tooling/ci/check-sonar-issues.ts')).toBe(true);
-    expect(log).toContain('3 incidencias nuevas de SonarQube en la PR:');
-    expect(log.trimEnd().endsWith('##[error]Process completed with exit code 1.')).toBe(true);
+    expect(check).toEqual({
+      source: 'check',
+      name: 'sonar-issues',
+      ...(await readCheckContext(reader, PUSH_88, 'sonar-issues')),
+    });
+    expect(check).toMatchObject({
+      conclusion: 'failure',
+      context: { state: 'available', origin: 'log', errors: [], truncated: false },
+    });
   });
 
-  it('el log va sin la limpieza del job, sin marcas de tiempo y sin colores', async () => {
+  it('sin anotaciones útiles, el contexto es el paso que falla de su log', async () => {
     const { findings } = github();
 
     const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues']);
-    const log = JSON.stringify(read.find((finding) => finding.source === 'check'));
-
-    expect(log).not.toContain('Post job cleanup');
-    expect(log).not.toMatch(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d/);
-    expect(log).not.toContain(String.raw`\u001b`);
-  });
-
-  it('el log se corta por el principio, hasta 16 KiB', async () => {
-    const lines = Array.from({ length: 2000 }, (_, i) => `2026-10-28T17:09:21.0000000Z línea ${i}`);
-    const long = ['##[group]Run pnpm test', ...lines, '##[error]Process completed with exit code 1.'];
-    const { findings } = github(({ path }) =>
-      path.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? text(long.join('\n')) : undefined,
-    );
-
-    const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues']);
     const check = read.find((finding) => finding.source === 'check');
-    const log = check?.source === 'check' ? (check.log ?? '') : '';
+    const summary =
+      check?.source === 'check' && check.context.state === 'available' ? check.context.summary : '';
 
-    expect(new TextEncoder().encode(log).length).toBeLessThanOrEqual(16 * 1024);
-    expect(log.trimEnd().endsWith('##[error]Process completed with exit code 1.')).toBe(true);
-    expect(log).not.toContain('línea 0\n');
+    expect(summary.startsWith('##[group]Run node tooling/ci/check-sonar-issues.ts')).toBe(true);
+    expect(summary).toContain('3 incidencias nuevas de SonarQube en la PR:');
+    expect(summary).toContain('##[error]Process completed with exit code 1.');
+    expect(summary).not.toContain('Post job cleanup');
   });
 
-  it('sin un error marcado, el log es su final', async () => {
-    const { findings } = github(({ path }) =>
-      path.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? text('primera\nsegunda\núltima') : undefined,
-    );
-
-    const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues']);
-
-    expect(read).toContainEqual({ source: 'check', name: 'sonar-issues', log: 'primera\nsegunda\núltima' });
-  });
-
-  it('sin log que leer, el hallazgo va sin contexto', async () => {
+  it('sin contexto, el hallazgo dice si la comprobación no lo da o si no se ha podido leer', async () => {
     const { findings, calls } = github(({ path }) =>
-      path.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? json('{"message":"Not Found"}', 404) : undefined,
+      path.endsWith(`/actions/jobs/${SONAR_ISSUES_JOB}/logs`) ? json('{"message":"Gone"}', 410) : undefined,
     );
 
     const { findings: read } = await findings.read(88, PUSH_88, ['sonar-issues', 'SonarCloud Code Analysis']);
 
     expect(read.filter((finding) => finding.source === 'check')).toEqual([
-      { source: 'check', name: 'sonar-issues', log: null },
-      { source: 'check', name: 'SonarCloud Code Analysis', log: null },
+      { source: 'check', name: 'sonar-issues', conclusion: 'failure', context: { state: 'unreadable' } },
+      {
+        source: 'check',
+        name: 'SonarCloud Code Analysis',
+        // En la grabación pasó: aquí solo importa que es de otra app y no publica resumen.
+        conclusion: 'success',
+        context: { state: 'notProvided' },
+      },
     ]);
     // La de SonarCloud no es un job de GitHub Actions: no tiene log que pedir.
     expect(calls.filter((call) => call.url.includes('/actions/jobs/'))).toHaveLength(1);

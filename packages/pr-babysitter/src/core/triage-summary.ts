@@ -48,13 +48,37 @@ function identity(finding: Finding): string {
   return `${who} en \`${where}\` · ${finding.title}`;
 }
 
-/** Por qué tiene esa clase (BE4): la probabilidad frente al umbral, o la regla que lo decide. */
+/**
+ * Por qué tiene esa clase (BE4): la probabilidad frente al umbral, o la regla que lo decide. En una
+ * comprobación, termina con el origen de su contexto.
+ */
 function why(finding: Finding, verdict: Verdict, threshold: number): string {
+  return reason(finding, verdict, threshold) + contextOrigin(finding);
+}
+
+const ORIGIN_NAMES = {
+  annotations: 'anotaciones',
+  log: 'log',
+  appSummary: 'resumen de la app',
+} as const;
+
+/**
+ * De dónde sale el contexto de una comprobación, y si se ha cortado (change pr-check-triage,
+ * decisión 2): cuánto fiarse de su clase depende de lo que vio el modelo.
+ */
+function contextOrigin(finding: Finding): string {
+  if (finding.source !== 'check' || finding.context.state !== 'available') return '';
+  const { origin, truncated } = finding.context;
+  return ` · contexto: ${ORIGIN_NAMES[origin]}${truncated ? ', cortado' : ''}`;
+}
+
+function reason(finding: Finding, verdict: Verdict, threshold: number): string {
   switch (verdict.reason) {
     case 'noContext':
-      return finding.source === 'check'
-        ? 'no se ha podido leer su log'
-        : 'no se ha podido leer el trozo de diff que comenta';
+      if (finding.source === 'reviewer') return 'no se ha podido leer el trozo de diff que comenta';
+      return finding.context.state === 'notProvided'
+        ? 'la comprobación no da contexto'
+        : 'no se ha podido leer su contexto';
     case 'overBudget':
       return 'no cabe en el tope de gasto de la PR';
     case 'modelUnavailable':

@@ -1,0 +1,38 @@
+[
+  {
+    "path": ".github",
+    "start_line": 73,
+    "end_line": 73,
+    "annotation_level": "failure",
+    "title": "",
+    "message": "Process completed with exit code 1.",
+    "raw_details": ""
+  },
+  {
+    "path": ".github",
+    "start_line": 63,
+    "end_line": 63,
+    "annotation_level": "notice",
+    "title": "🎭 Playwright Run Summary",
+    "message": "  1 failed\n    [chromium] › effects.spec.ts:81:1 › el DJ cambia el efecto de la tira desde el panel ───────────\n  18 passed (1.0m)",
+    "raw_details": ""
+  },
+  {
+    "path": "e2e/effects.spec.ts",
+    "start_line": 131,
+    "end_line": 131,
+    "annotation_level": "failure",
+    "title": "[chromium] › effects.spec.ts:81:1 › el DJ cambia el efecto de la tira desde el panel",
+    "message": "  1) [chromium] › effects.spec.ts:81:1 › el DJ cambia el efecto de la tira desde el panel ──────────\n    Error: expect(received).toBeLessThan(expected)\n\n    Expected: < 100\n    Received:   104.70000000000437\n\n      129 |       description: `${switchMs.toFixed(1)} ms`,\n      130 |     });\n    > 131 |     expect(switchMs).toBeLessThan(MAX_SWITCH_MS);\n          |                      ^\n      132 |\n      133 |     // Al recargar, el panel marca lo que pinta el motor, no lo que dice el fichero.\n      134 |     await page.reload();\n        at /home/runner/work/mood-table-v2/mood-table-v2/e2e/effects.spec.ts:131:22",
+    "raw_details": ""
+  },
+  {
+    "path": ".github",
+    "start_line": 1,
+    "end_line": 1,
+    "annotation_level": "notice",
+    "title": "",
+    "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"",
+    "raw_details": ""
+  }
+]

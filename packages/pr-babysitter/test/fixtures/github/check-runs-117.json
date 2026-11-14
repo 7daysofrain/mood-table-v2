@@ -1,0 +1,24 @@
+{
+  "total_count": 1,
+  "check_runs": [
+    {
+      "id": 127476958031,
+      "name": "SonarCloud Code Analysis",
+      "head_sha": "709a0582ace1b0e5c6a67edcb32d1d2db2ac4b6e",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-05T19:22:32Z",
+      "completed_at": "2026-11-05T19:23:09Z",
+      "output": {
+        "title": "Quality Gate failed",
+        "summary": "Failed conditions  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/failed.svg '') [71.4% Coverage on New Code](https://sonarcloud.io/component_measures?id=7daysofrain_mood-table-v2&pullRequest=117&metric=new_coverage&view=list) (required ≥ 80%)  \n  \n[See analysis details on SonarQube Cloud](https://sonarcloud.io/dashboard?id=7daysofrain_mood-table-v2&pullRequest=117)\n\n",
+        "text": null,
+        "annotations_count": 0
+      },
+      "app": {
+        "id": 12526,
+        "slug": "sonarqubecloud"
+      }
+    }
+  ]
+}
