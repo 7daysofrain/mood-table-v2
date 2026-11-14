@@ -78,6 +78,18 @@ export interface Driver {
   tick(now: number): Promise<void>;
 }
 
+/**
+ * Cuántas tareas del grafo corren a la vez *(asumido)* (change pr-check-triage, decisión 4). Solo
+ * afecta a las ramas `preguntarModelo`, el único sitio con tareas en paralelo: no sabemos los
+ * límites del proveedor del modelo, y un 429 en ráfaga dejaría varios hallazgos en exige criterio.
+ */
+const MAX_CONCURRENCY = 4;
+
+/** La configuración de cada ejecución del hilo de una PR. */
+function runConfig(pullRequestNumber: number) {
+  return { ...threadConfig(pullRequestNumber), maxConcurrency: MAX_CONCURRENCY };
+}
+
 export function createDriver({
   github,
   reviewer,
@@ -188,7 +200,7 @@ export function createDriver({
    * la foto siguiente verá el push nuevo (change pr-review-request, decisión 6).
    */
   async function retryPending(pullRequest: OpenPullRequest) {
-    const config = threadConfig(pullRequest.number);
+    const config = runConfig(pullRequest.number);
     const state = await graph.getState(config);
     if (lastSnapshot(state.values).headSha === pullRequest.headSha) {
       await graph.invoke(null, config);
@@ -215,7 +227,7 @@ export function createDriver({
   async function finishStopping(pullRequest: OpenPullRequest) {
     const { number } = pullRequest;
     if (!stopping.has(number)) return;
-    const config = threadConfig(number);
+    const config = runConfig(number);
     let state = await graph.getState(config);
     if (state.next.length > 0 && !waiting(state) && !state.next.includes(REVIEW_REQUEST_NODE)) {
       await graph.invoke(null, { ...config, interruptBefore: [REVIEW_REQUEST_NODE] });
@@ -239,7 +251,7 @@ export function createDriver({
   ) {
     await finishStopping(pullRequest);
     const { number } = pullRequest;
-    const config = threadConfig(number);
+    const config = runConfig(number);
     if (tracked.has(number)) {
       const state = await graph.getState(config);
       if (lastSnapshot(state.values).headSha === pullRequest.headSha) {
@@ -287,7 +299,7 @@ export function createDriver({
       await resume(pullRequest, snapshotOf);
       return;
     }
-    const config = threadConfig(pullRequest.number);
+    const config = runConfig(pullRequest.number);
     if (!tracked.has(pullRequest.number)) {
       const snapshot = await snapshotOf(pullRequest);
       tracked.add(pullRequest.number);

@@ -120,7 +120,7 @@
     - sin nada que preguntar, el triaje termina y publica el resumen igual;
     - dos pushes seguidos en el mismo hilo: el segundo resumen no lleva respuestas del primero.
   - **`core/driver.test.ts`:** cada `invoke` lleva `maxConcurrency: 4`.
-- [ ] 2.4 El *fan-out* en `core/graph.ts`:
+- [x] 2.4 El *fan-out* en `core/graph.ts`:
   - `triar` reparte con `Send`, deja la ronda en el estado y va directo a `reunirTriaje` sin nada que
     preguntar;
   - `preguntarModelo` pregunta por un hallazgo y no lanza nunca;

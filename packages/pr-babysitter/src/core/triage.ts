@@ -98,9 +98,37 @@ export type TriageClass = z.infer<typeof triageClassSchema>;
 const unansweredSchema = z.enum(['noContext', 'overBudget', 'modelUnavailable']);
 
 /** Lo que se sabe de un hallazgo antes de clasificarlo: la probabilidad del sí, o por qué no la hay. */
-export type TriageAnswer =
-  | { kind: z.infer<typeof unansweredSchema> }
-  | { kind: 'answered'; probability: number };
+export const triageAnswerSchema = z.union([
+  z.object({ kind: unansweredSchema }),
+  z.object({ kind: z.literal('answered'), probability: z.number() }),
+]);
+
+export type TriageAnswer = z.infer<typeof triageAnswerSchema>;
+
+/**
+ * La respuesta sobre un hallazgo en un triaje del hilo (change pr-check-triage, decisión 4): de qué
+ * ronda es, a qué hallazgo de esa ronda responde (su posición) y los tokens de entrada que costó.
+ * La ronda es un número que crece con cada triaje del hilo.
+ */
+export const roundAnswerSchema = z.object({
+  round: z.number().int(),
+  index: z.number().int(),
+  answer: triageAnswerSchema,
+  inputTokens: z.number(),
+});
+
+export type RoundAnswer = z.infer<typeof roundAnswerSchema>;
+
+/**
+ * El reductor de las respuestas: junta las que llegan con las que había y se queda solo con las de
+ * la ronda más alta. El hilo de una PR sobrevive entre pushes, y sin esto el triaje de un push
+ * llevaría las respuestas del anterior, y el estado crecería push a push.
+ */
+export function latestRound(current: RoundAnswer[], incoming: RoundAnswer[]): RoundAnswer[] {
+  const all = [...current, ...incoming];
+  const latest = Math.max(...all.map(({ round }) => round));
+  return all.filter(({ round }) => round === latest);
+}
 
 /**
  * La clase de un hallazgo y por qué (BE4): una de las reglas, o la probabilidad del sí frente al

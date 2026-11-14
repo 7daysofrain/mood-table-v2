@@ -766,7 +766,7 @@ describe('el sistema tría los hallazgos del último push cuando la PR necesita 
 describe('cada hallazgo sale real, no aplica o exige criterio según la probabilidad del modelo', () => {
   it('deja en el estado del hilo la clase, la probabilidad y el porqué de cada hallazgo, y el gasto', async () => {
     const triage = recordingTriage([codexP2, e2eFailing], (finding) =>
-      Promise.resolve({ probability: finding === codexP2 ? 0.93 : 0.07, inputTokens: 6_000 }),
+      Promise.resolve({ probability: finding.source === 'reviewer' ? 0.93 : 0.07, inputTokens: 6_000 }),
     );
 
     const state = await followTriage(triage, failing);
@@ -898,6 +898,8 @@ describe('el triaje no pasa del tope de gasto de la PR', () => {
 describe('cada hallazgo se pregunta al modelo de decisión en una petición propia', () => {
   const lintFailing = failingCheck('lint');
   const three = [codexP2, lintFailing, e2eFailing];
+  // Por su nombre: el hallazgo llega a cada rama en su `Send`, copiado.
+  const isLint = (finding: Finding) => finding.source === 'check' && finding.name === 'lint';
   /** El estado del reparto: la ronda del último triaje y las respuestas que guarda el hilo. */
   interface FanOutState {
     triageRound: { number: number };
@@ -928,9 +930,9 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
 
   it('si falla la petición de uno, ese exige criterio, los demás salen con su clase y lo cobrado cuenta', async () => {
     const triage = recordingTriage(three, (finding) =>
-      finding === lintFailing
+      isLint(finding)
         ? Promise.reject(new DecisionModelError('La respuesta no trae el hallazgo', 3_000))
-        : Promise.resolve({ probability: finding === codexP2 ? 0.93 : 0.07, inputTokens: 4_000 }),
+        : Promise.resolve({ probability: finding.source === 'reviewer' ? 0.93 : 0.07, inputTokens: 4_000 }),
     );
     const lines: string[] = [];
     const graph = trackingGraph(
@@ -980,7 +982,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
   it('dos pushes seguidos en el mismo hilo: el segundo triaje no lleva respuestas del primero', async () => {
     const found = [codexP2, e2eFailing];
     const triage = recordingTriage(found, (finding) =>
-      Promise.resolve({ probability: finding === lintFailing ? 0.07 : 0.93, inputTokens: 4_000 }),
+      Promise.resolve({ probability: isLint(finding) ? 0.07 : 0.93, inputTokens: 4_000 }),
     );
     const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
     const config = threadConfig(74);
