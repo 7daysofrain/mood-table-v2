@@ -133,7 +133,7 @@
   - los tests de 2.3 y todos los que ya había en verde;
   - `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde;
   - en LangGraph Studio, un hilo con tres hallazgos abre tres ramas `preguntarModelo` a la vez.
-- [ ] 2.5 Documentación:
+- [x] 2.5 Documentación:
   - README §2.2 (*PR Babysitter*): los nodos `triar`, `preguntarModelo` y `reunirTriaje`, con el
     diagrama del *fan-out*, y el puerto `DecisionModel`;
   - `docs/idea-mood-table.md` §10: D115 (el *fan-out*, la ronda, la concurrencia y lo descartado, con
