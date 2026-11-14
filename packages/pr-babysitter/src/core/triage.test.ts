@@ -5,6 +5,8 @@ import {
   type Finding,
   findingKeys,
   hasContext,
+  latestRound,
+  type RoundAnswer,
   spend,
   type TriageBudget,
   withinBudget,
@@ -188,6 +190,31 @@ describe('el reparto del tope de gasto (change pr-check-triage, decisión 5)', (
 
   it('el coste real sale de los tokens de entrada cobrados y se suma al gasto de la PR', () => {
     expect(spend(0.01, 12_000, { capUsd: 0.05, inputPricePerMTok: 0.24 })).toBeCloseTo(0.01288, 10);
+  });
+});
+
+describe('las respuestas de un triaje (change pr-check-triage, decisión 4)', () => {
+  const answer = (round: number, index: number): RoundAnswer => ({
+    round,
+    index,
+    answer: { kind: 'answered', probability: 0.9 },
+    inputTokens: 100,
+  });
+
+  it('las de la misma ronda se juntan, en el orden en que llegan', () => {
+    expect(latestRound([answer(1, 0)], [answer(1, 2)])).toEqual([answer(1, 0), answer(1, 2)]);
+  });
+
+  it('el reductor se queda solo con las de la ronda más alta', () => {
+    expect(latestRound([answer(1, 0), answer(1, 1)], [answer(2, 0)])).toEqual([answer(2, 0)]);
+  });
+
+  it('una respuesta que llega tarde de una ronda anterior no entra', () => {
+    expect(latestRound([answer(2, 0)], [answer(1, 1)])).toEqual([answer(2, 0)]);
+  });
+
+  it('sin respuestas, no hay nada', () => {
+    expect(latestRound([], [])).toEqual([]);
   });
 });
 

@@ -109,7 +109,7 @@
   - `withinBudget` suma la estimación de cada hallazgo (decisión 5).
 
   Verificar: los tests de 2.1 y todos los que ya había en verde; `pnpm typecheck` en verde.
-- [ ] 2.3 **(test en rojo)** El *fan-out* (`design.md` decisiones 4 y 5):
+- [x] 2.3 **(test en rojo)** El *fan-out* (`design.md` decisiones 4 y 5):
   - **`core/triage.test.ts`:** el reductor de las respuestas se queda solo con la ronda más alta.
   - **`core/graph.test.ts`,** un `describe` por requisito de `specs/pr-triage` que toca esta sección,
     con un `DecisionModel` falso que apunta cada llamada:
