@@ -5,6 +5,8 @@ import {
   type Finding,
   findingKeys,
   hasContext,
+  latestRound,
+  type RoundAnswer,
   spend,
   type TriageBudget,
   withinBudget,
@@ -132,7 +134,7 @@ describe('si un hallazgo tiene contexto (change pr-check-triage, decisión 1)', 
   });
 });
 
-describe('el reparto del tope de gasto (design.md, decisión 6)', () => {
+describe('el reparto del tope de gasto (change pr-check-triage, decisión 5)', () => {
   /** 1 $ por millón de tokens: 1 token cuesta 0,000001 $, y el tope son 1.000 tokens. */
   const budget: TriageBudget = { capUsd: 0.001, inputPricePerMTok: 1 };
   const lint = checkFinding('lint');
@@ -140,11 +142,11 @@ describe('el reparto del tope de gasto (design.md, decisión 6)', () => {
   const test = checkFinding('test');
   const typecheck = checkFinding('typecheck');
   const small = checkFinding('small');
-  /** Lo que estimaría el modelo: 100 tokens por la PR, 300 por cada hallazgo y 10 por `small`. */
-  const estimates: Finding[][] = [];
-  const estimate = (some: Finding[]) => {
-    estimates.push(some);
-    return 100 + some.reduce((tokens, finding) => tokens + (finding === small ? 10 : 300), 0);
+  /** Lo que estimaría el modelo de cada petición: 100 tokens por la PR, y 300 por el hallazgo o 10 por `small`. */
+  const estimates: Finding[] = [];
+  const estimate = (finding: Finding) => {
+    estimates.push(finding);
+    return 100 + (finding === small ? 10 : 300);
   };
 
   it('con sitio para todos, se pregunta por todos', () => {
@@ -168,12 +170,15 @@ describe('el reparto del tope de gasto (design.md, decisión 6)', () => {
     });
   });
 
-  it('cada hallazgo se estima junto con los que ya han entrado, en una sola cuenta', () => {
+  it('cada hallazgo se estima por separado, con su petición entera, y las estimaciones se suman', () => {
     estimates.length = 0;
 
-    withinBudget([lint, e2e, test], 0.0004, budget, estimate);
-
-    expect(estimates).toEqual([[lint], [lint, e2e], [lint, test]]);
+    // Quedan 600 tokens: entra una petición de 400, y la PR se cuenta otra vez en la siguiente.
+    expect(withinBudget([lint, e2e, test], 0.0004, budget, estimate)).toEqual({
+      asked: [lint],
+      overBudget: [e2e, test],
+    });
+    expect(estimates).toEqual([lint, e2e, test]);
   });
 
   it('con el tope ya gastado, no entra ninguno', () => {
@@ -185,6 +190,31 @@ describe('el reparto del tope de gasto (design.md, decisión 6)', () => {
 
   it('el coste real sale de los tokens de entrada cobrados y se suma al gasto de la PR', () => {
     expect(spend(0.01, 12_000, { capUsd: 0.05, inputPricePerMTok: 0.24 })).toBeCloseTo(0.01288, 10);
+  });
+});
+
+describe('las respuestas de un triaje (change pr-check-triage, decisión 4)', () => {
+  const answer = (round: number, index: number): RoundAnswer => ({
+    round,
+    index,
+    answer: { kind: 'answered', probability: 0.9 },
+    inputTokens: 100,
+  });
+
+  it('las de la misma ronda se juntan, en el orden en que llegan', () => {
+    expect(latestRound([answer(1, 0)], [answer(1, 2)])).toEqual([answer(1, 0), answer(1, 2)]);
+  });
+
+  it('el reductor se queda solo con las de la ronda más alta', () => {
+    expect(latestRound([answer(1, 0), answer(1, 1)], [answer(2, 0)])).toEqual([answer(2, 0)]);
+  });
+
+  it('una respuesta que llega tarde de una ronda anterior no entra', () => {
+    expect(latestRound([answer(2, 0)], [answer(1, 1)])).toEqual([answer(2, 0)]);
+  });
+
+  it('sin respuestas, no hay nada', () => {
+    expect(latestRound([], [])).toEqual([]);
   });
 });
 

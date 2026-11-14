@@ -91,7 +91,7 @@
 
 ## 2. MOO-162 · infra
 
-- [ ] 2.1 **(test en rojo)** El modelo de decisión, un hallazgo por llamada (`design.md` decisión 3),
+- [x] 2.1 **(test en rojo)** El modelo de decisión, un hallazgo por llamada (`design.md` decisión 3),
   en `adapters/decision-model.test.ts`:
   - `ask` manda una petición con la PR y un solo hallazgo, y una sola pregunta, la de hoy. Da su
     probabilidad y `usage`.
@@ -101,7 +101,7 @@
 
   La respuesta grabada sale de `test/fixtures/decision-model/systemone-88.json`, recortada a un
   hallazgo, o de una petición nueva si cambia `usage`.
-- [ ] 2.2 El puerto `Triager` pasa a `DecisionModel` (`ask`, `estimate` y `DecisionModelError`) en
+- [x] 2.2 El puerto `Triager` pasa a `DecisionModel` (`ask`, `estimate` y `DecisionModelError`) en
   `core/ports.ts`. El adaptador lo implementa sin `batches()`, `MAX_QUESTIONS` ni
   `MAX_REQUEST_TOKENS`.
   - `triar` pregunta de momento uno a uno, en un bucle, para que todo siga compilando. El paso 2.4 lo
@@ -109,7 +109,7 @@
   - `withinBudget` suma la estimación de cada hallazgo (decisión 5).
 
   Verificar: los tests de 2.1 y todos los que ya había en verde; `pnpm typecheck` en verde.
-- [ ] 2.3 **(test en rojo)** El *fan-out* (`design.md` decisiones 4 y 5):
+- [x] 2.3 **(test en rojo)** El *fan-out* (`design.md` decisiones 4 y 5):
   - **`core/triage.test.ts`:** el reductor de las respuestas se queda solo con la ronda más alta.
   - **`core/graph.test.ts`,** un `describe` por requisito de `specs/pr-triage` que toca esta sección,
     con un `DecisionModel` falso que apunta cada llamada:
@@ -120,7 +120,7 @@
     - sin nada que preguntar, el triaje termina y publica el resumen igual;
     - dos pushes seguidos en el mismo hilo: el segundo resumen no lleva respuestas del primero.
   - **`core/driver.test.ts`:** cada `invoke` lleva `maxConcurrency: 4`.
-- [ ] 2.4 El *fan-out* en `core/graph.ts`:
+- [x] 2.4 El *fan-out* en `core/graph.ts`:
   - `triar` reparte con `Send`, deja la ronda en el estado y va directo a `reunirTriaje` sin nada que
     preguntar;
   - `preguntarModelo` pregunta por un hallazgo y no lanza nunca;
@@ -133,7 +133,7 @@
   - los tests de 2.3 y todos los que ya había en verde;
   - `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde;
   - en LangGraph Studio, un hilo con tres hallazgos abre tres ramas `preguntarModelo` a la vez.
-- [ ] 2.5 Documentación:
+- [x] 2.5 Documentación:
   - README §2.2 (*PR Babysitter*): los nodos `triar`, `preguntarModelo` y `reunirTriaje`, con el
     diagrama del *fan-out*, y el puerto `DecisionModel`;
   - `docs/idea-mood-table.md` §10: D115 (el *fan-out*, la ronda, la concurrencia y lo descartado, con
@@ -142,7 +142,7 @@
   - `prompts.md`: lo que añada esta tarea a la entrada de la historia.
 
   Verificar: `pnpm lint` en verde.
-- [ ] 2.6 **Prueba a mano** (sin commit), con el sistema en marcha: una PR de prueba con un hallazgo
+- [x] 2.6 **Prueba a mano** (sin commit), con el sistema en marcha: una PR de prueba con un hallazgo
   de Codex y dos comprobaciones que fallan.
   Verificar:
   - el resumen trae los tres hallazgos;

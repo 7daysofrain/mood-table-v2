@@ -11,11 +11,13 @@
  * Pedir la revisión (change pr-review-request, decisión 2) es también un nodo propio, después del
  * aviso de comprobaciones terminadas, por lo mismo: en la espera, se pediría en cada vuelta.
  *
- * Antes del aviso final, si la PR necesita intervención con hallazgos, el nodo `triar` los tría en
- * modo sombra (change pr-shadow-triage, decisión 1): ya están todos los del push. Es el único nodo
- * que lee GitHub, y solo para esas PR (decisión 2, que matiza D73); el resultado se queda en el
- * estado del hilo, y en la traza, sin cambiar el aviso. Después, `publicarResumen` lo publica en
- * la PR, un comentario por push (decisión 7).
+ * Antes del aviso final, si la PR necesita intervención con hallazgos, se trían en modo sombra
+ * (change pr-shadow-triage, decisión 1): ya están todos los del push. `triar` es el único nodo que
+ * lee GitHub, y solo para esas PR (decisión 2, que matiza D73). Reparte las preguntas con un
+ * *fan-out* de `Send` (change pr-check-triage, decisión 4): una rama `preguntarModelo` por hallazgo,
+ * todas a la vez, y `reunirTriaje` junta las respuestas y clasifica. El resultado se queda en el
+ * estado del hilo, y en la traza, sin cambiar el aviso. Después, `publicarResumen` lo publica en la
+ * PR, un comentario por push (decisión 7).
  *
  * Qué toca después de cada espera lo deciden las reglas puras de `tracking.ts`; aquí solo se
  * traduce cada paso a su nodo. Las esperas devuelven un `Command`, porque a la vez guardan la foto
@@ -28,6 +30,8 @@ import {
   END,
   type GraphNode,
   interrupt,
+  ReducedValue,
+  Send,
   START,
   StateGraph,
   StateSchema,
@@ -36,12 +40,12 @@ import * as z from 'zod';
 
 import { checksFinishedNotice, finalNotice, trackingNotice } from './notice.ts';
 import {
+  type DecisionModel,
+  DecisionModelError,
   type Findings,
   GitHubRequestRejectedError,
   type Notifier,
   type ReviewRequests,
-  type Triager,
-  TriageFailedError,
   type TriageSummaries,
 } from './ports.ts';
 import { type PullRequestSnapshot, pullRequestSnapshotSchema } from './pull-request.ts';
@@ -60,8 +64,11 @@ import {
   type Finding,
   findingSchema,
   hasContext,
+  latestRound,
+  type PullRequestContext,
+  type RoundAnswer,
+  roundAnswerSchema,
   spend,
-  type TriageAnswer,
   type TriageBudget,
   verdictSchema,
   withinBudget,
@@ -89,8 +96,26 @@ const TrackingState = new StateSchema({
    */
   spentUsd: z.number().optional(),
   /**
+   * El triaje en curso (change pr-check-triage, decisión 4): su ronda, un número que crece con cada
+   * triaje del hilo, la PR y los hallazgos del push. Lo deja `triar` para repartir las preguntas.
+   */
+  triageRound: z
+    .object({
+      number: z.number().int(),
+      pr: z.object({ title: z.string(), description: z.string() }),
+      findings: z.array(findingSchema),
+    })
+    .optional(),
+  /**
+   * Las respuestas de la ronda en curso: las que `triar` decide sin el modelo y la de cada rama
+   * `preguntarModelo`. El reductor las junta y tira las de rondas anteriores.
+   */
+  triageAnswers: new ReducedValue(z.array(roundAnswerSchema).default(() => []), {
+    reducer: latestRound,
+  }),
+  /**
    * El último triaje: de qué push, cada hallazgo con su clase y su porqué, y lo que costó (BE4,
-   * BE8). Va en la salida del nodo `triar`, que LangSmith guarda en la traza.
+   * BE8). Va en la salida del nodo `reunirTriaje`, que LangSmith guarda en la traza.
    */
   triage: z
     .object({
@@ -114,7 +139,7 @@ export interface TrackingPorts {
   notifier: Notifier;
   reviewRequests: ReviewRequests;
   findings: Findings;
-  triager: Triager;
+  decisionModel: DecisionModel;
   summaries: TriageSummaries;
 }
 
@@ -125,7 +150,7 @@ export interface TrackingOptions {
    */
   timeoutMs: number;
   /**
-   * Una línea por petición de revisión o resumen del triaje que GitHub rechaza, o por triaje sin
+   * Una línea por petición de revisión o resumen del triaje que GitHub rechaza, o por hallazgo sin
    * respuesta del modelo, para el log de errores.
    */
   log: (line: string) => void;
@@ -140,6 +165,40 @@ export interface TrackingOptions {
 export const REVIEW_REQUEST_NODE = 'pedirRevision';
 
 const TRIAGE_NODE = 'triar';
+
+const ASK_NODE = 'preguntarModelo';
+
+const GATHER_NODE = 'reunirTriaje';
+
+/** Lo que recibe una rama `preguntarModelo` en su `Send`: un hallazgo de una ronda, y la PR. */
+interface AskInput {
+  round: number;
+  index: number;
+  pr: PullRequestContext;
+  finding: Finding;
+}
+
+/** Las respuestas de una ronda entre las que guarda el hilo. */
+function answersOf(round: number, answers: RoundAnswer[]): RoundAnswer[] {
+  return answers.filter((answer) => answer.round === round);
+}
+
+/**
+ * Tras `triar`, una rama `preguntarModelo` por cada hallazgo que aún no tiene respuesta, todas a la
+ * vez. Sin ninguno (todo sin contexto o fuera del tope), directo a `reunirTriaje`: sin ningún
+ * `Send`, el grafo no tendría nodo siguiente.
+ */
+function fanOut({ triageRound, triageAnswers }: State): Send[] | typeof GATHER_NODE {
+  if (!triageRound) return GATHER_NODE;
+  const { number: round, pr, findings } = triageRound;
+  const decided = new Set(answersOf(round, triageAnswers).map(({ index }) => index));
+  const sends = findings.flatMap((finding, index) =>
+    decided.has(index)
+      ? []
+      : [new Send(ASK_NODE, { round, index, pr, finding } satisfies AskInput)],
+  );
+  return sends.length > 0 ? sends : GATHER_NODE;
+}
 
 const SUMMARY_NODE = 'publicarResumen';
 
@@ -192,7 +251,7 @@ function waitFor(waitingFor: TrackingWait['waitingFor']) {
 }
 
 export function createTrackingGraph(
-  { notifier, reviewRequests, findings, triager, summaries }: TrackingPorts,
+  { notifier, reviewRequests, findings, decisionModel, summaries }: TrackingPorts,
   checkpointer: BaseCheckpointSaver,
   { timeoutMs, log, triage }: TrackingOptions,
 ) {
@@ -248,10 +307,10 @@ export function createTrackingGraph(
     return new Command({ update: { snapshot, push }, goto });
   };
 
-  // Lee los hallazgos del push y los clasifica (change pr-shadow-triage, decisiones 2, 4, 6 y 8).
-  // Si GitHub falla al leerlos, lanza, y el nodo queda pendiente para la vuelta siguiente. Si el
-  // modelo no responde, sus hallazgos exigen criterio y el aviso final sale igual: un proveedor
-  // caído no deja la PR sin aviso.
+  // Lee los hallazgos del push y reparte las preguntas (change pr-check-triage, decisiones 4 y 5).
+  // Decide sin el modelo lo que puede: un hallazgo sin contexto, o que no cabe en lo que queda del
+  // tope, que se reserva aquí, antes de repartir. Los demás salen cada uno por su rama. Si GitHub
+  // falla al leerlos, lanza, y el nodo queda pendiente para la vuelta siguiente.
   const triar: GraphNode<typeof TrackingState> = async (state) => {
     const { snapshot } = state;
     const final = finalState(snapshot, pushIn(state));
@@ -260,41 +319,74 @@ export function createTrackingGraph(
         ? final.reasons.flatMap((reason) => (reason.kind === 'checksFailed' ? reason.checks : []))
         : [];
     const read = await findings.read(snapshot.number, snapshot.headSha, failedChecks);
-    const spentBefore = state.spentUsd ?? 0;
-    const answers = new Map<Finding, TriageAnswer>();
-    const { asked, overBudget } = withinBudget(
+    const { overBudget } = withinBudget(
       read.findings.filter(hasContext),
-      spentBefore,
+      state.spentUsd ?? 0,
       triage.budget,
-      (some) => triager.estimate(read.context, some),
+      (finding) => decisionModel.estimate(read.context, finding),
     );
-    for (const finding of overBudget) answers.set(finding, { kind: 'overBudget' });
-    let inputTokens = 0;
-    if (asked.length > 0) {
-      try {
-        const result = await triager.triage(read.context, asked);
-        inputTokens = result.inputTokens;
-        asked.forEach((finding, i) => {
-          answers.set(finding, { kind: 'answered', probability: result.probabilities[i] ?? 0 });
-        });
-      } catch (error) {
-        // Lo que ya ha cobrado antes de fallar también es gasto de la PR.
-        if (error instanceof TriageFailedError) inputTokens = error.inputTokens;
-        log(
-          `El modelo de decisión no ha respondido en la PR #${snapshot.number}; ` +
-            `sus hallazgos exigen criterio: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        for (const finding of asked) answers.set(finding, { kind: 'modelUnavailable' });
+    const round = (state.triageRound?.number ?? 0) + 1;
+    const decided = read.findings.flatMap((finding, index): RoundAnswer[] => {
+      if (!hasContext(finding)) return [{ round, index, answer: { kind: 'noContext' }, inputTokens: 0 }];
+      if (overBudget.includes(finding)) {
+        return [{ round, index, answer: { kind: 'overBudget' }, inputTokens: 0 }];
       }
+      return [];
+    });
+    return {
+      triageRound: { number: round, pr: read.context, findings: read.findings },
+      triageAnswers: decided,
+    };
+  };
+
+  // Pregunta al modelo por un hallazgo (decisión 4). No lanza nunca: si lanzara, fallaría el paso
+  // entero y con él las demás ramas. Si el modelo no responde, ese hallazgo exige criterio, y lo
+  // que ya ha cobrado antes de fallar también es gasto de la PR.
+  const preguntarModelo = async ({ round, index, pr, finding }: AskInput) => {
+    try {
+      const { probability, inputTokens } = await decisionModel.ask(pr, finding);
+      const answered: RoundAnswer = {
+        round,
+        index,
+        answer: { kind: 'answered', probability },
+        inputTokens,
+      };
+      return { triageAnswers: [answered] };
+    } catch (error) {
+      log(
+        `El modelo de decisión no ha respondido sobre un hallazgo; exige criterio: ` +
+          (error instanceof Error ? error.message : String(error)),
+      );
+      const failed: RoundAnswer = {
+        round,
+        index,
+        answer: { kind: 'modelUnavailable' },
+        inputTokens: error instanceof DecisionModelError ? error.inputTokens : 0,
+      };
+      return { triageAnswers: [failed] };
     }
+  };
+
+  // Junta las respuestas de la ronda, clasifica cada hallazgo y suma el gasto (decisiones 4 y 5):
+  // un proveedor caído no deja la PR sin aviso, porque el aviso final sale igual.
+  const reunirTriaje: GraphNode<typeof TrackingState> = (state) => {
+    const { snapshot, triageRound } = state;
+    if (!triageRound) return {};
+    const answers = answersOf(triageRound.number, state.triageAnswers);
+    const inputTokens = answers.reduce((tokens, answer) => tokens + answer.inputTokens, 0);
+    const spentBefore = state.spentUsd ?? 0;
     const spentUsd = spend(spentBefore, inputTokens, triage.budget);
     return {
       spentUsd,
       triage: {
         sha: snapshot.headSha,
-        findings: read.findings.map((finding) => ({
+        findings: triageRound.findings.map((finding, index) => ({
           finding,
-          verdict: classify(finding, answers.get(finding) ?? { kind: 'noContext' }, triage.threshold),
+          verdict: classify(
+            finding,
+            answers.find((answer) => answer.index === index)?.answer ?? { kind: 'modelUnavailable' },
+            triage.threshold,
+          ),
         })),
         inputTokens,
         costUsd: spentUsd - spentBefore,
@@ -340,6 +432,8 @@ export function createTrackingGraph(
       ends: [...Object.values(AFTER_REVIEW), TRIAGE_NODE],
     })
     .addNode(TRIAGE_NODE, triar)
+    .addNode(ASK_NODE, preguntarModelo)
+    .addNode(GATHER_NODE, reunirTriaje)
     .addNode(SUMMARY_NODE, publicarResumen)
     .addNode('avisarEstadoFinal', avisarEstadoFinal)
     .addConditionalEdges(
@@ -358,7 +452,9 @@ export function createTrackingGraph(
       [REVIEW_REQUEST_NODE, 'esperarRevisor'],
     )
     .addEdge(REVIEW_REQUEST_NODE, 'esperarRevisor')
-    .addEdge(TRIAGE_NODE, SUMMARY_NODE)
+    .addConditionalEdges(TRIAGE_NODE, fanOut, [ASK_NODE, GATHER_NODE])
+    .addEdge(ASK_NODE, GATHER_NODE)
+    .addEdge(GATHER_NODE, SUMMARY_NODE)
     .addEdge(SUMMARY_NODE, 'avisarEstadoFinal')
     .addEdge('avisarEstadoFinal', END)
     .compile({ checkpointer });

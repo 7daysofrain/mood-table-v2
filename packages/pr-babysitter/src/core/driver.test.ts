@@ -1,3 +1,5 @@
+import { setTimeout as sleep } from 'node:timers/promises';
+
 import { MemorySaver } from '@langchain/langgraph';
 import { describe, expect, it } from 'vitest';
 
@@ -94,7 +96,10 @@ function fakeNotifier() {
   return { notifier, port };
 }
 
-function setup(pullRequests: OpenPullRequest[] = []) {
+/** Los puertos del triaje que un test cambia; por defecto, un push sin hallazgos. */
+type TriageOverrides = Partial<Pick<Parameters<typeof createDriver>[0], 'findings' | 'decisionModel' | 'summaries'>>;
+
+function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {}) {
   const { github, reader, reviewer, reviewRequests } = fakeGitHub(pullRequests);
   const { notifier, port } = fakeNotifier();
   const log: string[] = [];
@@ -106,14 +111,15 @@ function setup(pullRequests: OpenPullRequest[] = []) {
       notifier: port,
       // Sin hallazgos que triar: el triaje se prueba en el grafo.
       findings: { read: () => Promise.resolve({ context: { title: '', description: '' }, findings: [] }) },
-      triager: {
+      decisionModel: {
         estimate: () => 0,
-        triage: () => Promise.reject(new Error('no hay hallazgos que triar')),
+        ask: () => Promise.reject(new Error('no hay hallazgos que triar')),
       },
       summaries: {
         published: () => Promise.resolve(false),
         publish: () => Promise.reject(new Error('no hay resumen que publicar')),
       },
+      ...triage,
       triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 } },
       checkpointer: new MemorySaver(),
       policy: { maintainer: MAINTAINER, baseBranch: 'main' },
@@ -972,5 +978,51 @@ describe('el sistema no pide dos veces la revisión del mismo push', () => {
       [74, 'tracking'],
       [74, 'checksFinished'],
     ]);
+  });
+});
+
+describe('las peticiones al modelo de decisión en paralelo (change pr-check-triage, decisión 4)', () => {
+  it('como mucho 4 a la vez: cada `invoke` lleva `maxConcurrency: 4`', async () => {
+    const names = ['lint', 'typecheck', 'test', 'e2e', 'sonar-issues', 'build'];
+    const concurrency = { inFlight: 0, peak: 0, calls: 0 };
+    const { github, tick } = setup([pullRequest(74)], {
+      findings: {
+        read: () =>
+          Promise.resolve({
+            context: { title: '', description: '' },
+            findings: names.map((name) => ({
+              source: 'check' as const,
+              name,
+              conclusion: 'failure',
+              context: {
+                state: 'available' as const,
+                origin: 'log' as const,
+                summary: 'Error',
+                errors: [],
+                truncated: false,
+              },
+            })),
+          }),
+      },
+      decisionModel: {
+        estimate: () => 0,
+        async ask() {
+          concurrency.calls += 1;
+          concurrency.inFlight += 1;
+          concurrency.peak = Math.max(concurrency.peak, concurrency.inFlight);
+          await sleep(5);
+          concurrency.inFlight -= 1;
+          return { probability: 0.5, inputTokens: 0 };
+        },
+      },
+      summaries: { published: () => Promise.resolve(false), publish: () => Promise.resolve() },
+    });
+
+    await tick();
+    github.checks['sha-74'] = [{ name: 'lint', status: 'failed' }];
+    await tick();
+
+    expect(concurrency.calls).toBe(6);
+    expect(concurrency.peak).toBe(4);
   });
 });

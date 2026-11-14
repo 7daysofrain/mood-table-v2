@@ -6,14 +6,16 @@
  * Importa solo del núcleo y `main.ts` no lo importa: no es una segunda raíz de composición. No lee
  * el `.env`.
  */
+import { setTimeout as sleep } from 'node:timers/promises';
+
 import { MemorySaver } from '@langchain/langgraph';
 
 import { createTrackingGraph } from './core/graph.ts';
 import type {
+  DecisionModel,
   Findings,
   Notifier,
   ReviewRequests,
-  Triager,
   TriageSummaries,
 } from './core/ports.ts';
 import type { CheckContext } from './core/triage.ts';
@@ -99,11 +101,22 @@ const findings: Findings = {
   },
 };
 
-/** En lugar de preguntar al modelo, da 0,5 a cada hallazgo: todos exigen criterio. */
-const triager: Triager = {
+/**
+ * En lugar de preguntar al modelo, tarda un segundo y da una probabilidad distinta por fuente, para
+ * ver las ramas `preguntarModelo` en paralelo y las tres clases: el comentario del revisor sale
+ * real (0,90); las comprobaciones, por turnos, no aplica (0,10) y exige criterio (0,50).
+ */
+const CHECK_PROBABILITIES = [0.1, 0.5];
+let checksAsked = 0;
+
+const decisionModel: DecisionModel = {
   estimate: () => 0,
-  triage(_context, asked) {
-    return Promise.resolve({ probabilities: asked.map(() => 0.5), inputTokens: 0 });
+  async ask(_pr, finding) {
+    await sleep(1000);
+    if (finding.source === 'reviewer') return { probability: 0.9, inputTokens: 0 };
+    const probability = CHECK_PROBABILITIES[checksAsked % CHECK_PROBABILITIES.length] ?? 0.5;
+    checksAsked += 1;
+    return { probability, inputTokens: 0 };
   },
 };
 
@@ -119,7 +132,7 @@ const summaries: TriageSummaries = {
 // El servidor de Studio cambia el checkpointer del grafo por el suyo en cada ejecución; este solo
 // cumple la firma de `createTrackingGraph`.
 export const graph = createTrackingGraph(
-  { notifier, reviewRequests, findings, triager, summaries },
+  { notifier, reviewRequests, findings, decisionModel, summaries },
   new MemorySaver(),
   {
     timeoutMs: TIMEOUT_MS,
