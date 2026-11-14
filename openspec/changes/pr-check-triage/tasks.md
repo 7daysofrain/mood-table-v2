@@ -91,7 +91,7 @@
 
 ## 2. MOO-162 · infra
 
-- [ ] 2.1 **(test en rojo)** El modelo de decisión, un hallazgo por llamada (`design.md` decisión 3),
+- [x] 2.1 **(test en rojo)** El modelo de decisión, un hallazgo por llamada (`design.md` decisión 3),
   en `adapters/decision-model.test.ts`:
   - `ask` manda una petición con la PR y un solo hallazgo, y una sola pregunta, la de hoy. Da su
     probabilidad y `usage`.
