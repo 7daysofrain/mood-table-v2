@@ -12,7 +12,7 @@
  */
 import type { Findings } from '../core/ports.ts';
 import type { Finding } from '../core/triage.ts';
-import type { ReviewComment } from './github.ts';
+import type { CheckRun, ReviewComment } from './github.ts';
 
 /** El revisor: su cuenta, su nombre y cómo se lee uno de sus comentarios. */
 export interface FindingsReviewer {
@@ -31,7 +31,8 @@ export interface FindingsOptions {
   github: {
     getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;
     listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]>;
-    jobLog(sha: string, checkName: string): Promise<string | null>;
+    checkRun(sha: string, checkName: string): Promise<CheckRun | null>;
+    jobLog(jobId: number): Promise<string | null>;
   };
 }
 
@@ -64,7 +65,9 @@ export function createFindings({ reviewer, github }: FindingsOptions): Findings 
         );
       const fromChecks = await Promise.all(
         failedChecks.map(async (name): Promise<Finding> => {
-          const log = await github.jobLog(sha, name);
+          const run = await github.checkRun(sha, name);
+          // Solo las de GitHub Actions son un *job* con log.
+          const log = run?.app === 'github-actions' ? await github.jobLog(run.id) : null;
           return { source: 'check', name, log: log === null ? null : failingStep(log) };
         }),
       );

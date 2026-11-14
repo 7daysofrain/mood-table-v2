@@ -48,6 +48,28 @@ export interface ReviewComment {
   inReplyTo: number | null;
 }
 
+/** El *check run* de una comprobación en un push. */
+export interface CheckRun {
+  /** En GitHub Actions es también el id del *job*, el que pide su log. */
+  id: number;
+  /** El `slug` de la app que la ejecuta (`github-actions`, `sonarqubecloud`), o `null` si no lo da. */
+  app: string | null;
+  /** Cómo acabó (`failure`, `timed_out`, `cancelled`…), o `null` si no ha terminado. */
+  conclusion: string | null;
+  /** Lo que publica la comprobación; un *job* de GitHub Actions no publica nada. */
+  output: { title: string | null; summary: string | null };
+}
+
+/** Una anotación de un *check run*: lo que deja un paso sobre una línea de un fichero. */
+export interface CheckAnnotation {
+  path: string;
+  line: number;
+  /** `failure`, `warning` o `notice`. */
+  level: string;
+  title: string | null;
+  message: string;
+}
+
 export interface GitHubReaderOptions {
   owner: string;
   repo: string;
@@ -109,6 +131,22 @@ const checkRunSchema = z.object({
   conclusion: z.string().nullable(),
   /** La app que la ejecuta: solo las de GitHub Actions son un *job* con log. */
   app: z.object({ slug: z.string() }).nullable().optional(),
+  output: z
+    .object({
+      title: z.string().nullable().optional(),
+      summary: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+});
+
+/** Lo que se lee de cada anotación de `GET /repos/{owner}/{repo}/check-runs/{id}/annotations`. */
+const annotationSchema = z.object({
+  path: z.string(),
+  start_line: z.number(),
+  annotation_level: z.string().nullable(),
+  title: z.string().nullable().optional(),
+  message: z.string().nullable(),
 });
 
 /** Las conclusiones que cuentan como superadas (`sonar-issues` se salta: `linear.md` §7). */
@@ -130,10 +168,17 @@ export function createGitHubReader({
   /** Los comentarios de revisión en línea de una PR, del primero al último. Para el triaje. */
   listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]>;
   /**
-   * El log entero del *job* de una comprobación en un commit, o `null` si no es un *job* de GitHub
-   * Actions o GitHub no lo da. Para el triaje.
+   * El *check run* más reciente de una comprobación en un commit, o `null` si no hay ninguno con
+   * ese nombre. Para el contexto de una comprobación que falla.
    */
-  jobLog(sha: string, checkName: string): Promise<string | null>;
+  checkRun(sha: string, checkName: string): Promise<CheckRun | null>;
+  /** Las anotaciones de un *check run*, o `null` si GitHub no las da (un 4xx que no se arregla solo). */
+  annotations(checkRunId: number): Promise<CheckAnnotation[] | null>;
+  /**
+   * El log entero de un *job* de GitHub Actions, o `null` si GitHub no lo da (caducado, borrado o
+   * sin permiso).
+   */
+  jobLog(jobId: number): Promise<string | null>;
 } {
   const octokit = new Octokit({
     request: fetch ? { fetch } : {},
@@ -267,20 +312,47 @@ export function createGitHubReader({
         }));
     },
 
-    async jobLog(sha: string, checkName: string): Promise<string | null> {
+    async checkRun(sha: string, checkName: string): Promise<CheckRun | null> {
+      // GitHub da el *check run* más reciente de cada nombre (`filter=latest`).
       const run = (await checkRuns(sha)).find((checkRun) => checkRun.name === checkName);
-      if (run?.app?.slug !== 'github-actions') return null;
-      try {
-        const { data } = await read(() =>
-          octokit.rest.actions.downloadJobLogsForWorkflowRun({ owner, repo, job_id: run.id }),
-        );
-        return typeof data === 'string' ? data : String(data);
-      } catch (error) {
-        // Un log que GitHub no da (caducado, borrado o sin permiso) deja el hallazgo sin contexto;
-        // la red, un 5xx o el límite de la API se reintentan.
-        if (error instanceof RequestError && isRejection(error)) return null;
-        throw error;
-      }
+      if (!run) return null;
+      return {
+        id: run.id,
+        app: run.app?.slug ?? null,
+        conclusion: run.conclusion,
+        output: { title: run.output?.title ?? null, summary: run.output?.summary ?? null },
+      };
+    },
+
+    async annotations(checkRunId: number): Promise<CheckAnnotation[] | null> {
+      const annotations = await readable(() =>
+        octokit.paginate(octokit.rest.checks.listAnnotations, {
+          owner,
+          repo,
+          check_run_id: checkRunId,
+          per_page: 100,
+        }),
+      );
+      if (annotations === null) return null;
+      return z
+        .array(annotationSchema)
+        .parse(annotations)
+        .map((annotation) => ({
+          path: annotation.path,
+          line: annotation.start_line,
+          level: annotation.annotation_level ?? 'notice',
+          // Sin título, GitHub da una cadena vacía.
+          title: annotation.title?.trim() ? annotation.title : null,
+          message: annotation.message ?? '',
+        }));
+    },
+
+    async jobLog(jobId: number): Promise<string | null> {
+      const response = await readable(() =>
+        octokit.rest.actions.downloadJobLogsForWorkflowRun({ owner, repo, job_id: jobId }),
+      );
+      if (response === null) return null;
+      return typeof response.data === 'string' ? response.data : String(response.data);
     },
   };
 }
@@ -293,6 +365,19 @@ async function read<T>(request: () => Promise<T>): Promise<T> {
     if (error instanceof RequestError && error.status === 401) {
       throw new GitHubUnauthorizedError(error.message, { cause: error });
     }
+    throw error;
+  }
+}
+
+/**
+ * Hace una lectura que GitHub puede no dar: un 4xx que no se arregla solo (caducado, borrado o sin
+ * permiso) es `null`. La red, un 5xx o el límite de la API lanzan, y se reintentan.
+ */
+async function readable<T>(request: () => Promise<T>): Promise<T | null> {
+  try {
+    return await read(request);
+  } catch (error) {
+    if (error instanceof RequestError && isRejection(error)) return null;
     throw error;
   }
 }

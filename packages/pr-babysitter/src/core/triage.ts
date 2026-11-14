@@ -37,6 +37,40 @@ export const findingSchema = z.discriminatedUnion('source', [
 
 export type Finding = z.infer<typeof findingSchema>;
 
+/**
+ * El contexto de una comprobación que falla (change pr-check-triage, decisión 1): lo que se le da
+ * al modelo de decisión, de dónde sale y si se ha cortado. Sin él, separa la comprobación que no da
+ * contexto (una app con el resumen vacío, un *job* sin anotaciones útiles y con el log vacío) de la
+ * que GitHub no deja leer (el log ha caducado, se ha borrado o falta un permiso).
+ */
+export const checkContextSchema = z.discriminatedUnion('state', [
+  z.object({
+    state: z.literal('available'),
+    /** De dónde sale: las anotaciones del *check run*, el log del *job* o el resumen de la app. */
+    origin: z.enum(['annotations', 'log', 'appSummary']),
+    /**
+     * El texto: el paso que falla del log, el título y el resumen de la app o, con anotaciones, las
+     * informativas (el resumen de la ejecución).
+     */
+    summary: z.string(),
+    /** Cada error que señala una anotación; vacío con los otros orígenes. */
+    errors: z.array(
+      z.object({
+        file: z.string(),
+        line: z.number().int().nullable(),
+        title: z.string().nullable(),
+        message: z.string(),
+      }),
+    ),
+    /** Si no cabía entero y se ha cortado. */
+    truncated: z.boolean(),
+  }),
+  z.object({ state: z.literal('notProvided') }),
+  z.object({ state: z.literal('unreadable') }),
+]);
+
+export type CheckContext = z.infer<typeof checkContextSchema>;
+
 /** Lo común a todos los hallazgos de la PR: su título y su descripción (decisión 5). */
 export interface PullRequestContext {
   title: string;

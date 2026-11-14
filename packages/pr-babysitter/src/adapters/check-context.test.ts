@@ -51,7 +51,7 @@ const NOISE = [
 ];
 
 /** Responde a una petición por su ruta, sin la *query*; `undefined` deja la grabada. */
-type Route = (call: Call & { path: string }) => Response | Promise<Response> | undefined;
+type Route = (call: Call & { path: string }) => Response | undefined | Promise<Response | undefined>;
 
 /** Un GitHub falso con las respuestas grabadas; `override` responde antes que ellas. */
 function github(override: Route = () => undefined) {

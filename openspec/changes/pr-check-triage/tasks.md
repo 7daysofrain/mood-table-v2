@@ -42,7 +42,7 @@
     - `notProvided` con el resumen vacío o el log vacío; `unreadable` con un 4xx;
     - el corte a 16 KiB con `truncated` (el log por el principio, las anotaciones enteras y en orden);
     - la conclusión.
-- [ ] 1.2 El esquema `CheckContext` en `core/triage.ts`, el módulo `adapters/check-context.ts` y las
+- [x] 1.2 El esquema `CheckContext` en `core/triage.ts`, el módulo `adapters/check-context.ts` y las
   tres lecturas nuevas de `adapters/github.ts`. Todavía no los usa nadie.
   Verificar: los tests de 1.1 en verde, y los que ya había; `pnpm typecheck` en verde.
 - [ ] 1.3 **(test en rojo)** El hallazgo de una comprobación con su contexto:

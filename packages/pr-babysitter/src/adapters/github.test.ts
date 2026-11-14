@@ -262,7 +262,8 @@ describe('el log de un job', () => {
     const body = await fixture('job-logs-112-e2e.txt');
     const { fetch, calls } = fakeFetch(() => text(body));
 
-    await expect(reader(fetch).jobLog(126427896193)).resolves.toBe(body);
+    // El log grabado empieza por una marca de orden de bytes, que `fetch` quita al leerlo.
+    await expect(reader(fetch).jobLog(126427896193)).resolves.toBe(body.replace(/^\uFEFF/, ''));
     expect(new URL(calls[0]!.url).pathname).toBe(
       '/repos/7daysofrain/mood-table-v2/actions/jobs/126427896193/logs',
     );
