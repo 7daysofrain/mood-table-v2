@@ -26,7 +26,9 @@ const p2: Finding = {
   title: 'Skip the request when the push changed',
 };
 
-const e2e: Finding = {
+type CheckFinding = Extract<Finding, { source: 'check' }>;
+
+const e2e: CheckFinding = {
   source: 'check',
   name: 'e2e',
   conclusion: 'failure',
@@ -40,7 +42,7 @@ const e2e: Finding = {
 };
 
 /** La misma comprobación con otro contexto. */
-function e2eWith(context: Extract<Finding, { source: 'check' }>['context']): Finding {
+function e2eWith(context: CheckFinding['context']): Finding {
   return { ...e2e, context };
 }
 
@@ -118,7 +120,7 @@ describe('el resumen del triaje (design.md, decisión 7)', () => {
   });
 
   it('el porqué de una comprobación termina con el origen de su contexto, y con si se cortó', () => {
-    const available = { state: 'available', summary: '1 failed', errors: [] } as const;
+    const available = { state: 'available' as const, summary: '1 failed', errors: [] };
     const text = triageSummary(
       {
         sha: SHA,
@@ -165,7 +167,7 @@ describe('el resumen del triaje (design.md, decisión 7)', () => {
     expect(rows(text).map((row) => row.split(' | ').at(-1))).toEqual([
       'p = 0,93 ≥ 0,90 |',
       'p = 0,07 ≤ 0,10 |',
-      'p = 0,85: no llega al umbral de 0,90 |',
+      'p = 0,85: no llega al umbral de 0,90 · contexto: log |',
     ]);
   });
 

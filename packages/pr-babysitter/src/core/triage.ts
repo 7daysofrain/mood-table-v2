@@ -8,36 +8,6 @@
 import * as z from 'zod';
 
 /**
- * Un hallazgo del último push (glosario de PB): un comentario del revisor o una comprobación que
- * falla. Su contexto (el trozo de diff que comenta el revisor, el final del log del paso que falla)
- * es `null` si no se ha podido reunir.
- */
-export const findingSchema = z.discriminatedUnion('source', [
-  z.object({
-    source: z.literal('reviewer'),
-    /** El nombre del revisor, para nombrar el hallazgo: `Codex`. */
-    reviewer: z.string(),
-    /** Su insignia de severidad, tal como la pone el revisor: `P1`. */
-    badge: z.string().nullable(),
-    /** La severidad en el idioma del sistema: alta es la que no se descarta sin criterio. */
-    severity: z.enum(['high', 'normal']),
-    file: z.string(),
-    /** `null` si el comentario es del fichero entero. */
-    line: z.number().int().nullable(),
-    title: z.string(),
-    text: z.string(),
-    diffHunk: z.string().nullable(),
-  }),
-  z.object({
-    source: z.literal('check'),
-    name: z.string(),
-    log: z.string().nullable(),
-  }),
-]);
-
-export type Finding = z.infer<typeof findingSchema>;
-
-/**
  * El contexto de una comprobación que falla (change pr-check-triage, decisión 1): lo que se le da
  * al modelo de decisión, de dónde sale y si se ha cortado. Sin él, separa la comprobación que no da
  * contexto (una app con el resumen vacío, un *job* sin anotaciones útiles y con el log vacío) de la
@@ -70,6 +40,49 @@ export const checkContextSchema = z.discriminatedUnion('state', [
 ]);
 
 export type CheckContext = z.infer<typeof checkContextSchema>;
+
+/**
+ * Un hallazgo del último push (glosario de PB): un comentario del revisor o una comprobación que
+ * falla. El contexto de un comentario es el trozo de diff que comenta, `null` si no se ha podido
+ * reunir; el de una comprobación, un `CheckContext`.
+ */
+export const findingSchema = z.discriminatedUnion('source', [
+  z.object({
+    source: z.literal('reviewer'),
+    /** El nombre del revisor, para nombrar el hallazgo: `Codex`. */
+    reviewer: z.string(),
+    /** Su insignia de severidad, tal como la pone el revisor: `P1`. */
+    badge: z.string().nullable(),
+    /** La severidad en el idioma del sistema: alta es la que no se descarta sin criterio. */
+    severity: z.enum(['high', 'normal']),
+    file: z.string(),
+    /** `null` si el comentario es del fichero entero. */
+    line: z.number().int().nullable(),
+    title: z.string(),
+    text: z.string(),
+    diffHunk: z.string().nullable(),
+  }),
+  z.object({
+    source: z.literal('check'),
+    name: z.string(),
+    /** Cómo acabó: `failure`, `timed_out`, `cancelled`… `null` si GitHub no da su *check run*. */
+    conclusion: z.string().nullable(),
+    context: checkContextSchema,
+  }),
+]);
+
+export type Finding = z.infer<typeof findingSchema>;
+
+/**
+ * Si el sistema tiene lo que señala el hallazgo: el trozo de diff que comenta el revisor, o un
+ * contexto de la comprobación que dar al modelo. Sin él, no se pregunta (regla 1).
+ */
+export function hasContext(finding: Finding): boolean {
+  return finding.source === 'reviewer'
+    ? finding.diffHunk !== null
+    : finding.context.state === 'available';
+}
+
 
 /** Lo común a todos los hallazgos de la PR: su título y su descripción (decisión 5). */
 export interface PullRequestContext {

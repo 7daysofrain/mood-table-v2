@@ -56,7 +56,7 @@
   - **`core/graph.test.ts`,** en el `describe` del requisito *un hallazgo sin contexto*: con
     `notProvided` y con `unreadable`, la comprobación sale *exige criterio*, el modelo falso no
     recibe nada sobre ella y el resto se tría.
-- [ ] 1.4 El hallazgo de una comprobación pasa de `log` a `conclusion` y `context`:
+- [x] 1.4 El hallazgo de una comprobación pasa de `log` a `conclusion` y `context`:
   - `findingSchema` y `hasContext` en el núcleo;
   - `findings.ts` usa `check-context`, y se borran `failingStep()` y `tail()`;
   - la forma que lee el modelo en `decision-model.ts`;

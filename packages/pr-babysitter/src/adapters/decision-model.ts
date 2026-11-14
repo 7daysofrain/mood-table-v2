@@ -160,7 +160,18 @@ function batches(keyed: Keyed[], contextTokens: number): Keyed[][] {
 /** El hallazgo tal como lo lee el modelo en el `state`. */
 function wire(finding: Finding) {
   if (finding.source === 'check') {
-    return { source: 'check', name: finding.name, log_tail: finding.log };
+    const { name, conclusion, context } = finding;
+    // Sin contexto no se pregunta por ella (`hasContext`); si llegara, va sin él.
+    const available =
+      context.state === 'available'
+        ? {
+            origin: context.origin,
+            summary: context.summary,
+            errors: context.errors,
+            truncated: context.truncated,
+          }
+        : null;
+    return { source: 'check', name, conclusion, context: available };
   }
   return {
     source: 'reviewer',

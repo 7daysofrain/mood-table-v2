@@ -5,14 +5,13 @@
  * - **Del revisor:** sus comentarios de revisión en línea hechos sobre ese push, sin las respuestas
  *   de los hilos. Qué dice cada uno (insignia, severidad, título) lo entiende el adaptador del
  *   revisor (BA3). Un comentario de otra cuenta nunca es un hallazgo (BE6).
- * - **De las comprobaciones que fallan:** el paso que falla de su log. GitHub da el log del *job*
- *   entero, que acaba con su limpieza (paso 1.1): el paso va desde el último `##[group]Run` antes
- *   del primer `##[error]` hasta ese error, sin marcas de tiempo ni colores, y se corta por el
- *   principio hasta 16 KiB *(asumido)*. Sin error marcado, se manda el final del log.
+ * - **De las comprobaciones que fallan:** cómo acabó cada una y su contexto, que depende de la app
+ *   que la ejecuta (`check-context.ts`; change pr-check-triage, decisiones 1 y 2).
  */
 import type { Findings } from '../core/ports.ts';
 import type { Finding } from '../core/triage.ts';
-import type { CheckRun, ReviewComment } from './github.ts';
+import { type CheckContextGitHub, readCheckContext } from './check-context.ts';
+import type { ReviewComment } from './github.ts';
 
 /** El revisor: su cuenta, su nombre y cómo se lee uno de sus comentarios. */
 export interface FindingsReviewer {
@@ -28,16 +27,11 @@ export interface FindingsReviewer {
 
 export interface FindingsOptions {
   reviewer: FindingsReviewer;
-  github: {
+  github: CheckContextGitHub & {
     getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;
     listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]>;
-    checkRun(sha: string, checkName: string): Promise<CheckRun | null>;
-    jobLog(jobId: number): Promise<string | null>;
   };
 }
-
-/** El tamaño máximo del log de una comprobación que llega al modelo *(asumido)*. */
-const MAX_LOG_BYTES = 16 * 1024;
 
 export function createFindings({ reviewer, github }: FindingsOptions): Findings {
   return {
@@ -64,12 +58,13 @@ export function createFindings({ reviewer, github }: FindingsOptions): Findings 
           }),
         );
       const fromChecks = await Promise.all(
-        failedChecks.map(async (name): Promise<Finding> => {
-          const run = await github.checkRun(sha, name);
-          // Solo las de GitHub Actions son un *job* con log.
-          const log = run?.app === 'github-actions' ? await github.jobLog(run.id) : null;
-          return { source: 'check', name, log: log === null ? null : failingStep(log) };
-        }),
+        failedChecks.map(
+          async (name): Promise<Finding> => ({
+            source: 'check',
+            name,
+            ...(await readCheckContext(github, sha, name)),
+          }),
+        ),
       );
       return {
         context: { title: pull.title, description: pull.body },
@@ -77,29 +72,4 @@ export function createFindings({ reviewer, github }: FindingsOptions): Findings 
       };
     },
   };
-}
-
-const TIMESTAMP = /^\d{4}-\d\d-\d\dT[\d:.]+Z ?/;
-// eslint-disable-next-line no-control-regex -- los colores del log son secuencias de escape ANSI.
-const ANSI_COLOR = /\u001b\[[\d;]*m/g;
-
-/** El paso que falla de un log de GitHub Actions, limpio y cortado. */
-function failingStep(log: string): string {
-  const lines = log
-    .split(/\r?\n/)
-    .map((line) => line.replace(TIMESTAMP, '').replaceAll(ANSI_COLOR, ''));
-  const error = lines.findIndex((line) => line.startsWith('##[error]'));
-  if (error === -1) return tail(lines.join('\n').trim(), MAX_LOG_BYTES);
-  const start = lines.slice(0, error).findLastIndex((line) => line.startsWith('##[group]Run '));
-  const step = lines.slice(Math.max(0, start), error + 1);
-  return tail(step.join('\n').trim(), MAX_LOG_BYTES);
-}
-
-/** El final de un texto que cabe en `maxBytes`, desde el principio de una línea. */
-function tail(text: string, maxBytes: number): string {
-  const bytes = new TextEncoder().encode(text);
-  if (bytes.length <= maxBytes) return text;
-  const cut = new TextDecoder().decode(bytes.slice(-maxBytes));
-  // La primera línea puede ir cortada, incluso a mitad de un carácter.
-  return cut.slice(cut.indexOf('\n') + 1);
 }

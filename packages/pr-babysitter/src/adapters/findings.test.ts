@@ -232,7 +232,8 @@ describe('las comprobaciones que fallan', () => {
       {
         source: 'check',
         name: 'SonarCloud Code Analysis',
-        conclusion: 'failure',
+        // En la grabación pasó: aquí solo importa que es de otra app y no publica resumen.
+        conclusion: 'success',
         context: { state: 'notProvided' },
       },
     ]);
