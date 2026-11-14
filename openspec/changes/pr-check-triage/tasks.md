@@ -21,7 +21,7 @@
 
 ## 1. MOO-161 · infra
 
-- [ ] 1.1 **(test en rojo)** Las lecturas y las estrategias del contexto (`design.md` decisiones 1 y
+- [x] 1.1 **(test en rojo)** Las lecturas y las estrategias del contexto (`design.md` decisiones 1 y
   2).
   - **Fixtures** grabadas con `gh api` en `test/fixtures/github/`:
     - el *check run* y las anotaciones del `e2e` que falla en la #116 (con anotaciones útiles);

@@ -11,12 +11,15 @@
  * - `check-runs-in-progress.json`: **derivado a mano** del anterior, porque un push recién hecho no
  *   se puede grabar a posteriori: `e2e` en marcha, `lint` neutral, `sonar-issues` saltada y sin el
  *   *check run* de `SonarCloud Code Analysis`.
+ * - `check-runs-116.json`, `annotations-116-e2e.json`, `check-runs-117.json` y
+ *   `job-logs-112-e2e.txt` (14-nov): las comprobaciones que fallan en la #116, la #117 y la #112
+ *   (detalle en `check-context.test.ts`).
  * Las respuestas a un comentario nuevo no se han grabado: los tests de la escritura solo miran el
  * código de estado.
  */
 import { describe, expect, it } from 'vitest';
 
-import { fakeFetch, fixture, json } from '../../test/fake-github.ts';
+import { fakeFetch, fixture, json, text } from '../../test/fake-github.ts';
 import { GitHubRequestRejectedError, GitHubUnauthorizedError } from '../core/ports.ts';
 import { createGitHubReader } from './github.ts';
 
@@ -166,6 +169,124 @@ describe('las comprobaciones', () => {
     await expect(github.checks('4377f65', REQUIRED_CHECKS)).rejects.toBeInstanceOf(
       GitHubUnauthorizedError,
     );
+  });
+});
+
+describe('el check run de una comprobación', () => {
+  const PUSH_116 = 'b4a47348bf49447cf62cb29d69299445a30f973f';
+  const PUSH_117 = '709a0582ace1b0e5c6a67edcb32d1d2db2ac4b6e';
+
+  it('da su id, su app, su conclusión y su salida', async () => {
+    const body = await fixture('check-runs-117.json');
+    const { fetch, calls } = fakeFetch(() => json(body));
+
+    const run = await reader(fetch).checkRun(PUSH_117, 'SonarCloud Code Analysis');
+
+    expect(run).toEqual({
+      id: 127476958031,
+      app: 'sonarqubecloud',
+      conclusion: 'failure',
+      output: {
+        title: 'Quality Gate failed',
+        summary: expect.stringContaining('71.4% Coverage on New Code') as string,
+      },
+    });
+    expect(new URL(calls[0]!.url).pathname).toBe(
+      `/repos/7daysofrain/mood-table-v2/commits/${PUSH_117}/check-runs`,
+    );
+  });
+
+  it('el de un job de GitHub Actions no trae título ni resumen', async () => {
+    const body = await fixture('check-runs-116.json');
+    const { fetch } = fakeFetch(() => json(body));
+
+    await expect(reader(fetch).checkRun(PUSH_116, 'e2e')).resolves.toEqual({
+      id: 127439969583,
+      app: 'github-actions',
+      conclusion: 'failure',
+      output: { title: null, summary: null },
+    });
+  });
+
+  it('sin un check run con ese nombre, da null', async () => {
+    const body = await fixture('check-runs-116.json');
+    const { fetch } = fakeFetch(() => json(body));
+
+    await expect(reader(fetch).checkRun(PUSH_116, 'lint')).resolves.toBeNull();
+  });
+});
+
+describe('las anotaciones de un check run', () => {
+  it('son todas, con su fichero, su línea, su nivel, su título y su mensaje', async () => {
+    const body = await fixture('annotations-116-e2e.json');
+    const { fetch, calls } = fakeFetch(() => json(body));
+
+    const annotations = await reader(fetch).annotations(127439969583);
+
+    expect(annotations).toHaveLength(4);
+    expect(annotations?.[0]).toEqual({
+      path: '.github',
+      line: 81,
+      level: 'failure',
+      title: null,
+      message: 'Process completed with exit code 1.',
+    });
+    expect(annotations?.[2]).toMatchObject({
+      path: 'e2e/playback.spec.ts',
+      line: 189,
+      level: 'failure',
+      title: expect.stringContaining('playback.spec.ts:177:1') as string,
+    });
+    expect(new URL(calls[0]!.url).pathname).toBe(
+      '/repos/7daysofrain/mood-table-v2/check-runs/127439969583/annotations',
+    );
+  });
+
+  it('un 404 o un 410 dan null', async () => {
+    for (const status of [404, 410]) {
+      const { fetch } = fakeFetch(() => json('{"message":"Not Found"}', status));
+
+      await expect(reader(fetch).annotations(1)).resolves.toBeNull();
+    }
+  });
+
+  it('un 5xx lanza', async () => {
+    const { fetch } = fakeFetch(() => json('{"message":"Server Error"}', 502));
+
+    await expect(reader(fetch).annotations(1)).rejects.toThrow();
+  });
+});
+
+describe('el log de un job', () => {
+  it('es el log entero del job con ese id', async () => {
+    const body = await fixture('job-logs-112-e2e.txt');
+    const { fetch, calls } = fakeFetch(() => text(body));
+
+    await expect(reader(fetch).jobLog(126427896193)).resolves.toBe(body);
+    expect(new URL(calls[0]!.url).pathname).toBe(
+      '/repos/7daysofrain/mood-table-v2/actions/jobs/126427896193/logs',
+    );
+  });
+
+  it('un 404 o un 410 dan null', async () => {
+    for (const status of [404, 410]) {
+      const { fetch } = fakeFetch(() => json('{"message":"Gone"}', status));
+
+      await expect(reader(fetch).jobLog(1)).resolves.toBeNull();
+    }
+  });
+
+  it('un 5xx lanza', async () => {
+    const { fetch } = fakeFetch(() => json('{"message":"Server Error"}', 502));
+
+    await expect(reader(fetch).jobLog(1)).rejects.toThrow();
+  });
+
+  it('un 401 da el error de token rechazado', async () => {
+    const body = await fixture('bad-credentials.json');
+    const { fetch } = fakeFetch(() => json(body, 401));
+
+    await expect(reader(fetch).jobLog(1)).rejects.toBeInstanceOf(GitHubUnauthorizedError);
   });
 });
 

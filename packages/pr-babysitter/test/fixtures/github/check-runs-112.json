@@ -1,0 +1,24 @@
+{
+  "total_count": 1,
+  "check_runs": [
+    {
+      "id": 126427896193,
+      "name": "e2e",
+      "head_sha": "2d098993c3f9625f0a82d79030ed64ef9e5ebd0a",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-11-04T06:30:01Z",
+      "completed_at": "2026-11-04T06:31:45Z",
+      "output": {
+        "title": null,
+        "summary": null,
+        "text": null,
+        "annotations_count": 4
+      },
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    }
+  ]
+}
