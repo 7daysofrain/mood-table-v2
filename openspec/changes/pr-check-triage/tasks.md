@@ -45,7 +45,7 @@
 - [x] 1.2 El esquema `CheckContext` en `core/triage.ts`, el módulo `adapters/check-context.ts` y las
   tres lecturas nuevas de `adapters/github.ts`. Todavía no los usa nadie.
   Verificar: los tests de 1.1 en verde, y los que ya había; `pnpm typecheck` en verde.
-- [ ] 1.3 **(test en rojo)** El hallazgo de una comprobación con su contexto:
+- [x] 1.3 **(test en rojo)** El hallazgo de una comprobación con su contexto:
   - **`adapters/findings.test.ts`:** cada comprobación que falla trae la conclusión y el contexto de
     `check-context`. Sustituye la prueba que fijaba el corte en el primer `##[error]`.
   - **`adapters/decision-model.test.ts`:** el modelo lee `{ source: 'check', name, conclusion,

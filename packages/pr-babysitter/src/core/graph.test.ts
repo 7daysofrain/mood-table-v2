@@ -590,8 +590,21 @@ const codexP2: Finding = {
   diffHunk: '@@ -100,6 +100,12 @@',
 };
 
-/** La comprobación `e2e` que falla, con el final de su log. */
-const e2eFailing: Finding = { source: 'check', name: 'e2e', log: 'Error: 1 test failed' };
+/** Una comprobación que falla, con el paso que falla de su log por contexto, si no se dice otro. */
+function failingCheck(
+  name: string,
+  context: Extract<Finding, { source: 'check' }>['context'] = {
+    state: 'available',
+    origin: 'log',
+    summary: 'Error: 1 test failed',
+    errors: [],
+    truncated: false,
+  },
+): Finding {
+  return { source: 'check', name, conclusion: 'failure', context };
+}
+
+const e2eFailing = failingCheck('e2e');
 
 /**
  * Un triaje que se puede seguir: los hallazgos que da GitHub, las probabilidades que da el modelo
@@ -775,9 +788,26 @@ describe('cada hallazgo sale real, no aplica o exige criterio según la probabil
 });
 
 describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () => {
-  it('no llega al modelo, y el resto sí', async () => {
-    const noLog: Finding = { source: 'check', name: 'e2e', log: null };
-    const triage = recordingTriage([codexP2, noLog]);
+  it('un comentario del revisor sin su trozo de diff no llega al modelo, y el resto sí', async () => {
+    const noDiff: Finding = { ...codexP2, diffHunk: null };
+    const triage = recordingTriage([noDiff, e2eFailing]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ findings }) => findings)).toEqual([[e2eFailing]]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: noDiff, verdict: { class: 'needsJudgment', reason: 'noContext' } },
+          { finding: e2eFailing, verdict: { class: 'valid' } },
+        ],
+      },
+    });
+  });
+
+  it('la comprobación no da contexto: no llega al modelo, y el resto sí', async () => {
+    const notProvided = failingCheck('SonarCloud Code Analysis', { state: 'notProvided' });
+    const triage = recordingTriage([codexP2, notProvided]);
 
     const state = await followTriage(triage, failing);
 
@@ -786,16 +816,41 @@ describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () =
       triage: {
         findings: [
           { finding: codexP2, verdict: { class: 'valid' } },
-          { finding: noLog, verdict: { class: 'needsJudgment', reason: 'noContext' } },
+          { finding: notProvided, verdict: { class: 'needsJudgment', reason: 'noContext' } },
         ],
       },
     });
+    expect(triage.posted.summaries[0]?.text).toContain('la comprobación no da contexto');
+  });
+
+  it('no se puede leer el contexto de una comprobación: no llega al modelo, y el resto sí', async () => {
+    const unreadable = failingCheck('e2e', { state: 'unreadable' });
+    const triage = recordingTriage([codexP2, unreadable]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ findings }) => findings)).toEqual([[codexP2]]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: codexP2, verdict: { class: 'valid' } },
+          { finding: unreadable, verdict: { class: 'needsJudgment', reason: 'noContext' } },
+        ],
+      },
+    });
+    expect(triage.posted.summaries[0]?.text).toContain('no se ha podido leer su contexto');
   });
 });
 
 describe('el triaje no pasa del tope de gasto de la PR', () => {
   it('con el gasto cerca del tope, solo llegan al modelo los que caben', async () => {
-    const longLog: Finding = { source: 'check', name: 'e2e', log: 'x'.repeat(3000) };
+    const longLog = failingCheck('e2e', {
+      state: 'available',
+      origin: 'log',
+      summary: 'x'.repeat(3000),
+      errors: [],
+      truncated: false,
+    });
     const triage = recordingTriage([codexP2, longLog]);
 
     // Quedan 0,0001 $: unos 400 tokens, sitio para el comentario pero no para el log.
