@@ -2395,7 +2395,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Claude Code (`claude-fable-5-2`, 14-nov). El change `pr-check-triage` no estaba en `main`, sino en la rama de la historia: la IA lo encontró por Linear, se cambió a ella e implementó la sección de `MOO-161`, con un commit por paso y los tests en rojo antes de cada implementación. Grabó con `gh api` el `e2e` que falla en la #116 y en la #112 y `SonarCloud Code Analysis` en la #117, con `filter=all`, porque al relanzar GitHub da el *check run* que pasó. Las grabaciones corrigieron dos supuestos: GitHub da una cadena vacía, y no `null`, en el título de una anotación que no lo tiene, y el resumen de Playwright es un `notice` con título, así que cuenta como anotación útil y va al resumen del contexto.*
 
 *Ajustes:*
-- *La IA no encontró en este equipo las conversaciones del refinamiento, la estimación y la exploración de la historia, así que no copió sus prompts: quedan por añadir.*
+- *La IA no encontró en este equipo las conversaciones del refinamiento, la estimación y la exploración de la historia, así que no copió sus prompts. El usuario decidió cerrar la entrada sin ellos.*
 
 ---
 

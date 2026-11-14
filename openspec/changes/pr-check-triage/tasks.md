@@ -65,7 +65,7 @@
 
   Verificar: los tests de 1.3 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 1.5 Documentación:
+- [x] 1.5 Documentación:
   - README §2.2 (*PR Babysitter*): el módulo del contexto y sus estrategias por `app.slug`;
   - README §2.5 (*En el PR Babysitter*): *Checks* y *Actions* en lectura, y que al modelo llega el
     contexto estructurado;
