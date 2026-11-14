@@ -156,5 +156,6 @@ function tail(value: string, maxBytes: number): string {
 function head(value: string, maxBytes: number): string {
   const encoded = new TextEncoder().encode(value);
   if (encoded.length <= maxBytes) return value;
-  return new TextDecoder().decode(encoded.slice(0, Math.max(0, maxBytes))).replace(/�+$/, '');
+  // `stream` deja fuera el carácter que quede a medias al final, en vez de darlo por erróneo.
+  return new TextDecoder().decode(encoded.slice(0, Math.max(0, maxBytes)), { stream: true });
 }

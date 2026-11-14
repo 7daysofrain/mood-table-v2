@@ -367,7 +367,8 @@ describe('un contexto de más de 16 KiB', () => {
       end_line: 1,
       annotation_level: 'failure',
       title: 'Error',
-      message: `principio ${'x'.repeat(20 * KIB)}`,
+      // De dos bytes cada uno, y un número impar antes: el corte cae a mitad de un carácter.
+      message: `principio ${'ñ'.repeat(10 * KIB)}`,
     };
     const { reader } = github(({ path }) =>
       path.endsWith('/annotations') ? json(JSON.stringify([annotation])) : undefined,
@@ -380,6 +381,7 @@ describe('un contexto de más de 16 KiB', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0]?.message.startsWith('principio ')).toBe(true);
     expect(bytes(errors[0]?.message ?? '')).toBeLessThanOrEqual(16 * KIB);
+    expect(errors[0]?.message.endsWith('ñ')).toBe(true);
   });
 });
 
