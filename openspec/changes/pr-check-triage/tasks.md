@@ -142,7 +142,7 @@
   - `prompts.md`: lo que añada esta tarea a la entrada de la historia.
 
   Verificar: `pnpm lint` en verde.
-- [ ] 2.6 **Prueba a mano** (sin commit), con el sistema en marcha: una PR de prueba con un hallazgo
+- [x] 2.6 **Prueba a mano** (sin commit), con el sistema en marcha: una PR de prueba con un hallazgo
   de Codex y dos comprobaciones que fallan.
   Verificar:
   - el resumen trae los tres hallazgos;
