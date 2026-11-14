@@ -78,7 +78,7 @@
     formato de `course.md` §5.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
-- [ ] 1.6 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 1.6 **Prueba a mano** (sin commit), con el sistema en marcha:
   - una PR de prueba con un test de Vitest roto (`test`: anotaciones o log);
   - otra con un `e2e` roto (anotaciones de Playwright).
 
