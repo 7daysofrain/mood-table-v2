@@ -36,12 +36,12 @@ import * as z from 'zod';
 
 import { checksFinishedNotice, finalNotice, trackingNotice } from './notice.ts';
 import {
+  type DecisionModel,
+  DecisionModelError,
   type Findings,
   GitHubRequestRejectedError,
   type Notifier,
   type ReviewRequests,
-  type Triager,
-  TriageFailedError,
   type TriageSummaries,
 } from './ports.ts';
 import { type PullRequestSnapshot, pullRequestSnapshotSchema } from './pull-request.ts';
@@ -114,7 +114,7 @@ export interface TrackingPorts {
   notifier: Notifier;
   reviewRequests: ReviewRequests;
   findings: Findings;
-  triager: Triager;
+  decisionModel: DecisionModel;
   summaries: TriageSummaries;
 }
 
@@ -192,7 +192,7 @@ function waitFor(waitingFor: TrackingWait['waitingFor']) {
 }
 
 export function createTrackingGraph(
-  { notifier, reviewRequests, findings, triager, summaries }: TrackingPorts,
+  { notifier, reviewRequests, findings, decisionModel, summaries }: TrackingPorts,
   checkpointer: BaseCheckpointSaver,
   { timeoutMs, log, triage }: TrackingOptions,
 ) {
@@ -266,25 +266,24 @@ export function createTrackingGraph(
       read.findings.filter(hasContext),
       spentBefore,
       triage.budget,
-      (some) => triager.estimate(read.context, some),
+      (finding) => decisionModel.estimate(read.context, finding),
     );
     for (const finding of overBudget) answers.set(finding, { kind: 'overBudget' });
     let inputTokens = 0;
-    if (asked.length > 0) {
+    // De momento, uno a uno; el paso 2.4 los reparte en paralelo.
+    for (const finding of asked) {
       try {
-        const result = await triager.triage(read.context, asked);
-        inputTokens = result.inputTokens;
-        asked.forEach((finding, i) => {
-          answers.set(finding, { kind: 'answered', probability: result.probabilities[i] ?? 0 });
-        });
+        const answer = await decisionModel.ask(read.context, finding);
+        inputTokens += answer.inputTokens;
+        answers.set(finding, { kind: 'answered', probability: answer.probability });
       } catch (error) {
         // Lo que ya ha cobrado antes de fallar también es gasto de la PR.
-        if (error instanceof TriageFailedError) inputTokens = error.inputTokens;
+        if (error instanceof DecisionModelError) inputTokens += error.inputTokens;
         log(
           `El modelo de decisión no ha respondido en la PR #${snapshot.number}; ` +
-            `sus hallazgos exigen criterio: ${error instanceof Error ? error.message : String(error)}`,
+            `el hallazgo exige criterio: ${error instanceof Error ? error.message : String(error)}`,
         );
-        for (const finding of asked) answers.set(finding, { kind: 'modelUnavailable' });
+        answers.set(finding, { kind: 'modelUnavailable' });
       }
     }
     const spentUsd = spend(spentBefore, inputTokens, triage.budget);

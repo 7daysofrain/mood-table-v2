@@ -31,13 +31,13 @@ import {
   type SystemNotice,
 } from './notice.ts';
 import {
+  type DecisionModel,
   type Findings,
   GitHubUnauthorizedError,
   type GitHubReader,
   type Notifier,
   type ReviewReader,
   type ReviewRequests,
-  type Triager,
   type TriageSummaries,
 } from './ports.ts';
 import {
@@ -56,7 +56,7 @@ export interface DriverOptions {
   notifier: Notifier;
   /** Los hallazgos de un push y el modelo que los tría (change pr-shadow-triage). */
   findings: Findings;
-  triager: Triager;
+  decisionModel: DecisionModel;
   /** Donde publica el resumen del triaje de cada push (change pr-shadow-triage, decisión 7). */
   summaries: TriageSummaries;
   /** El umbral de real y el tope de gasto de cada PR (change pr-shadow-triage, decisiones 4 y 6). */
@@ -84,7 +84,7 @@ export function createDriver({
   reviewRequests,
   notifier,
   findings,
-  triager,
+  decisionModel,
   summaries,
   triage,
   checkpointer,
@@ -93,7 +93,7 @@ export function createDriver({
   log,
 }: DriverOptions): Driver {
   const graph = createTrackingGraph(
-    { notifier, reviewRequests, findings, triager, summaries },
+    { notifier, reviewRequests, findings, decisionModel, summaries },
     checkpointer,
     { timeoutMs, log, triage },
   );

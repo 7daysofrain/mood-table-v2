@@ -101,7 +101,7 @@
 
   La respuesta grabada sale de `test/fixtures/decision-model/systemone-88.json`, recortada a un
   hallazgo, o de una petición nueva si cambia `usage`.
-- [ ] 2.2 El puerto `Triager` pasa a `DecisionModel` (`ask`, `estimate` y `DecisionModelError`) en
+- [x] 2.2 El puerto `Triager` pasa a `DecisionModel` (`ask`, `estimate` y `DecisionModelError`) en
   `core/ports.ts`. El adaptador lo implementa sin `batches()`, `MAX_QUESTIONS` ni
   `MAX_REQUEST_TOKENS`.
   - `triar` pregunta de momento uno a uno, en un bucle, para que todo siga compilando. El paso 2.4 lo

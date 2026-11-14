@@ -83,7 +83,6 @@ export function hasContext(finding: Finding): boolean {
     : finding.context.state === 'available';
 }
 
-
 /** Lo común a todos los hallazgos de la PR: su título y su descripción (decisión 5). */
 export interface PullRequestContext {
   title: string;
@@ -145,23 +144,26 @@ export interface TriageBudget {
 }
 
 /**
- * Qué hallazgos caben en lo que queda del tope de la PR (decisión 6). La salida es gratis, así que
- * el coste es solo de entrada, y lo estima antes de llamar el modelo de decisión (`estimate`), que
- * sabe cómo son sus peticiones. Entran por orden los que caben junto con los que ya han entrado; los
- * demás se quedan fuera (regla 2).
+ * Qué hallazgos caben en lo que queda del tope de la PR (change pr-check-triage, decisión 5). La
+ * salida es gratis, así que el coste es solo de entrada, y lo estima antes de llamar el modelo de
+ * decisión (`estimate`), que sabe cómo es la petición de cada hallazgo. Entran por orden los que
+ * caben junto con los que ya han entrado; los demás se quedan fuera (regla 2). Se reserva por lo
+ * alto antes de preguntar, así que las peticiones en paralelo no pueden pasarse del tope.
  */
 export function withinBudget(
   findings: Finding[],
   spentUsd: number,
   budget: TriageBudget,
-  estimate: (findings: Finding[]) => number,
+  estimate: (finding: Finding) => number,
 ): { asked: Finding[]; overBudget: Finding[] } {
-  const affordable = ((budget.capUsd - spentUsd) * 1_000_000) / budget.inputPricePerMTok;
+  let affordable = ((budget.capUsd - spentUsd) * 1_000_000) / budget.inputPricePerMTok;
   const asked: Finding[] = [];
   const overBudget: Finding[] = [];
   for (const finding of findings) {
-    if (estimate([...asked, finding]) <= affordable) {
+    const tokens = estimate(finding);
+    if (tokens <= affordable) {
       asked.push(finding);
+      affordable -= tokens;
     } else {
       overBudget.push(finding);
     }
@@ -169,7 +171,7 @@ export function withinBudget(
   return { asked, overBudget };
 }
 
-/** El gasto de la PR tras una llamada: lo que llevaba más los tokens de entrada cobrados. */
+/** El gasto de la PR tras un triaje: lo que llevaba más los tokens de entrada cobrados. */
 export function spend(spentUsd: number, inputTokens: number, budget: TriageBudget): number {
   return spentUsd + (inputTokens * budget.inputPricePerMTok) / 1_000_000;
 }

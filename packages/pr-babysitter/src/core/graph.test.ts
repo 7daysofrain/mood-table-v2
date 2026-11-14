@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
 import type { Notice } from './notice.ts';
 import {
+  type DecisionModel,
+  DecisionModelError,
   type Findings,
   GitHubRequestRejectedError,
   type Notifier,
   type ReviewRequests,
-  type Triager,
-  TriageFailedError,
   type TriageSummaries,
 } from './ports.ts';
 import type { Check, PullRequestSnapshot, Review } from './pull-request.ts';
@@ -80,15 +80,15 @@ const CONTEXT: PullRequestContext = { title: 'Avisar de cada PR lista para revis
 /** Lo que el triaje necesita de fuera; por defecto, un push sin hallazgos. */
 interface TriagePorts {
   findings: Findings;
-  triager: Triager;
+  decisionModel: DecisionModel;
   summaries: TriageSummaries;
 }
 
 const noFindings: TriagePorts = {
   findings: { read: () => Promise.resolve({ context: CONTEXT, findings: [] }) },
-  triager: {
+  decisionModel: {
     estimate: () => 0,
-    triage: () => Promise.reject(new Error('no hay hallazgos que triar')),
+    ask: () => Promise.reject(new Error('no hay hallazgos que triar')),
   },
   summaries: {
     published: () => Promise.resolve(false),
@@ -96,9 +96,9 @@ const noFindings: TriagePorts = {
   },
 };
 
-/** La estimación del modelo falso: 1 token cada 3 bytes de la PR y los hallazgos en JSON. */
-function sizeInTokens(context: PullRequestContext, findings: Finding[]): number {
-  return Math.ceil(JSON.stringify({ context, findings }).length / 3);
+/** La estimación del modelo falso: 1 token cada 3 bytes de la PR y el hallazgo en JSON. */
+function sizeInTokens(context: PullRequestContext, finding: Finding): number {
+  return Math.ceil(JSON.stringify({ context, finding }).length / 3);
 }
 
 /**
@@ -108,11 +108,11 @@ function sizeInTokens(context: PullRequestContext, findings: Finding[]): number 
 function trackingGraph(
   notifier: Notifier,
   reviewRequests = recordingRequests().reviewRequests,
-  { findings, triager, summaries }: TriagePorts = noFindings,
+  { findings, decisionModel, summaries }: TriagePorts = noFindings,
   log: (line: string) => void = () => undefined,
 ) {
   return createTrackingGraph(
-    { notifier, reviewRequests, findings, triager, summaries },
+    { notifier, reviewRequests, findings, decisionModel, summaries },
     new MemorySaver(),
     {
       timeoutMs: 30 * MINUTE,
@@ -607,19 +607,19 @@ function failingCheck(
 const e2eFailing = failingCheck('e2e');
 
 /**
- * Un triaje que se puede seguir: los hallazgos que da GitHub, las probabilidades que da el modelo
- * (0,93 para todos, si no se dice), y el orden de lo que pasa, con los avisos.
+ * Un triaje que se puede seguir: los hallazgos que da GitHub, la probabilidad que da el modelo de
+ * cada uno (0,93 con 12.000 tokens, si no se dice), cada llamada al modelo, y el orden de lo que
+ * pasa, con los avisos.
  */
 function recordingTriage(
   found: Finding[],
-  answer: (findings: Finding[]) => Promise<{ probabilities: number[]; inputTokens: number }> = (
-    findings,
-  ) => Promise.resolve({ probabilities: findings.map(() => 0.93), inputTokens: 12_000 }),
+  answer: (finding: Finding) => Promise<{ probability: number; inputTokens: number }> = () =>
+    Promise.resolve({ probability: 0.93, inputTokens: 12_000 }),
 ) {
   const events: string[] = [];
   const reads: { number: number; sha: string; failedChecks: string[] }[] = [];
-  const asked: { context: PullRequestContext; findings: Finding[] }[] = [];
-  const estimated: { context: PullRequestContext; findings: Finding[] }[] = [];
+  const asked: { context: PullRequestContext; finding: Finding }[] = [];
+  const estimated: { context: PullRequestContext; finding: Finding }[] = [];
   const github = { failure: undefined as Error | undefined };
   /** Los resúmenes publicados, los SHA que ya tenían el suyo y el error con que falla publicar. */
   const posted = {
@@ -636,15 +636,15 @@ function recordingTriage(
         return Promise.resolve({ context: CONTEXT, findings: found });
       },
     },
-    triager: {
-      estimate(context, findings) {
-        estimated.push({ context, findings });
-        return sizeInTokens(context, findings);
+    decisionModel: {
+      estimate(context, finding) {
+        estimated.push({ context, finding });
+        return sizeInTokens(context, finding);
       },
-      triage(context, findings) {
+      ask(context, finding) {
         events.push('preguntar al modelo');
-        asked.push({ context, findings });
-        return answer(findings);
+        asked.push({ context, finding });
+        return answer(finding);
       },
     },
     summaries: {
@@ -728,7 +728,10 @@ describe('el sistema tría los hallazgos del último push cuando la PR necesita 
 
     await followTriage(triage, failing);
 
-    expect(triage.asked).toEqual([{ context: CONTEXT, findings: [codexP2, e2eFailing] }]);
+    expect(triage.asked).toEqual([
+      { context: CONTEXT, finding: codexP2 },
+      { context: CONTEXT, finding: e2eFailing },
+    ]);
   });
 
   it('lista para integrar, va directa al aviso final', async () => {
@@ -754,8 +757,8 @@ describe('el sistema tría los hallazgos del último push cuando la PR necesita 
 
 describe('cada hallazgo sale real, no aplica o exige criterio según la probabilidad del modelo', () => {
   it('deja en el estado del hilo la clase, la probabilidad y el porqué de cada hallazgo, y el gasto', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing], () =>
-      Promise.resolve({ probabilities: [0.93, 0.07], inputTokens: 12_000 }),
+    const triage = recordingTriage([codexP2, e2eFailing], (finding) =>
+      Promise.resolve({ probability: finding === codexP2 ? 0.93 : 0.07, inputTokens: 6_000 }),
     );
 
     const state = await followTriage(triage, failing);
@@ -794,7 +797,7 @@ describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () =
 
     const state = await followTriage(triage, failing);
 
-    expect(triage.asked.map(({ findings }) => findings)).toEqual([[e2eFailing]]);
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([e2eFailing]);
     expect(state.values).toMatchObject({
       triage: {
         findings: [
@@ -811,7 +814,7 @@ describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () =
 
     const state = await followTriage(triage, failing);
 
-    expect(triage.asked.map(({ findings }) => findings)).toEqual([[codexP2]]);
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([codexP2]);
     expect(state.values).toMatchObject({
       triage: {
         findings: [
@@ -829,7 +832,7 @@ describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () =
 
     const state = await followTriage(triage, failing);
 
-    expect(triage.asked.map(({ findings }) => findings)).toEqual([[codexP2]]);
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([codexP2]);
     expect(state.values).toMatchObject({
       triage: {
         findings: [
@@ -856,12 +859,12 @@ describe('el triaje no pasa del tope de gasto de la PR', () => {
     // Quedan 0,0001 $: unos 400 tokens, sitio para el comentario pero no para el log.
     const state = await followTriage(triage, failing, 0.0499);
 
-    // El coste lo estima el modelo, con la PR y los que ya han entrado.
+    // El coste lo estima el modelo, petición a petición, con la PR en cada una.
     expect(triage.estimated).toEqual([
-      { context: CONTEXT, findings: [codexP2] },
-      { context: CONTEXT, findings: [codexP2, longLog] },
+      { context: CONTEXT, finding: codexP2 },
+      { context: CONTEXT, finding: longLog },
     ]);
-    expect(triage.asked.map(({ findings }) => findings)).toEqual([[codexP2]]);
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([codexP2]);
     expect(state.values).toMatchObject({
       triage: {
         findings: [
@@ -918,13 +921,16 @@ describe('el triaje no actúa sobre la PR', () => {
         ],
       },
     });
-    expect(lines).toEqual([expect.stringContaining('El modelo no responde') as string]);
+    expect(lines).toEqual([
+      expect.stringContaining('El modelo no responde') as string,
+      expect.stringContaining('El modelo no responde') as string,
+    ]);
     expect(state.next).toEqual([]);
   });
 
   it('si el modelo falla después de cobrar parte del triaje, eso suma al gasto de la PR', async () => {
     const triage = recordingTriage([codexP2, e2eFailing], () =>
-      Promise.reject(new TriageFailedError('Falla la segunda petición', 12_000)),
+      Promise.reject(new DecisionModelError('La respuesta no trae el hallazgo', 6_000)),
     );
 
     const state = await followTriage(triage, failing, 0.01);

@@ -10,10 +10,10 @@ import { MemorySaver } from '@langchain/langgraph';
 
 import { createTrackingGraph } from './core/graph.ts';
 import type {
+  DecisionModel,
   Findings,
   Notifier,
   ReviewRequests,
-  Triager,
   TriageSummaries,
 } from './core/ports.ts';
 import type { CheckContext } from './core/triage.ts';
@@ -100,11 +100,9 @@ const findings: Findings = {
 };
 
 /** En lugar de preguntar al modelo, da 0,5 a cada hallazgo: todos exigen criterio. */
-const triager: Triager = {
+const decisionModel: DecisionModel = {
   estimate: () => 0,
-  triage(_context, asked) {
-    return Promise.resolve({ probabilities: asked.map(() => 0.5), inputTokens: 0 });
-  },
+  ask: () => Promise.resolve({ probability: 0.5, inputTokens: 0 }),
 };
 
 /** En lugar de comentar en la PR, escribe el resumen en la consola. */
@@ -119,7 +117,7 @@ const summaries: TriageSummaries = {
 // El servidor de Studio cambia el checkpointer del grafo por el suyo en cada ejecución; este solo
 // cumple la firma de `createTrackingGraph`.
 export const graph = createTrackingGraph(
-  { notifier, reviewRequests, findings, triager, summaries },
+  { notifier, reviewRequests, findings, decisionModel, summaries },
   new MemorySaver(),
   {
     timeoutMs: TIMEOUT_MS,

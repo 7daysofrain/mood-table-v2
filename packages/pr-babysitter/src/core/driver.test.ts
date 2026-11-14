@@ -106,9 +106,9 @@ function setup(pullRequests: OpenPullRequest[] = []) {
       notifier: port,
       // Sin hallazgos que triar: el triaje se prueba en el grafo.
       findings: { read: () => Promise.resolve({ context: { title: '', description: '' }, findings: [] }) },
-      triager: {
+      decisionModel: {
         estimate: () => 0,
-        triage: () => Promise.reject(new Error('no hay hallazgos que triar')),
+        ask: () => Promise.reject(new Error('no hay hallazgos que triar')),
       },
       summaries: {
         published: () => Promise.resolve(false),
