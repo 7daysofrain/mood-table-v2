@@ -170,7 +170,7 @@
   - con `fixInThisPr`, la pregunta y los criterios de hoy, sin cambios.
 - [x] 3.4 Las dos preguntas en `adapters/decision-model.ts`: `ask` y `estimate` reciben la pregunta.
   Verificar: los tests de 3.3 en verde.
-- [ ] 3.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
+- [x] 3.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
   `specs/pr-triage` que toca esta sección:
   - `lint` sale *real* por regla sin ninguna llamada al modelo falso, también sin contexto y con el
     tope agotado;
