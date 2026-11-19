@@ -119,6 +119,26 @@ describe('el resumen del triaje (design.md, decisión 7)', () => {
     ]);
   });
 
+  it('una comprobación determinista: la decide la regla, sin probabilidad ni origen del contexto', () => {
+    const lint: Finding = { ...e2e, name: 'lint' };
+    const unreadable: Finding = { ...e2e, name: 'typecheck', context: { state: 'unreadable' } };
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [
+          { finding: lint, verdict: { class: 'valid', reason: 'rule' } },
+          { finding: unreadable, verdict: { class: 'valid', reason: 'rule' } },
+        ],
+      },
+      0.8,
+    );
+
+    expect(rows(text)).toEqual([
+      '| Comprobación `lint` | real | regla: comprobación determinista |',
+      '| Comprobación `typecheck` | real | regla: comprobación determinista |',
+    ]);
+  });
+
   it('el porqué de una comprobación termina con el origen de su contexto, y con si se cortó', () => {
     const available = { state: 'available' as const, summary: '1 failed', errors: [] };
     const text = triageSummary(

@@ -15,7 +15,7 @@ import {
   type TriageSummaries,
 } from './ports.ts';
 import type { Check, PullRequestSnapshot, Review } from './pull-request.ts';
-import type { Finding, PullRequestContext } from './triage.ts';
+import type { Finding, PullRequestContext, Question } from './triage.ts';
 import { type TriagedPush, triageSummary } from './triage-summary.ts';
 
 const MINUTE = 60_000;
@@ -103,9 +103,13 @@ function sizeInTokens(context: PullRequestContext, finding: Finding): number {
   return Math.ceil(JSON.stringify({ context, finding }).length / 3);
 }
 
+/** Las comprobaciones que decide la regla en estos tests: las de por defecto. */
+const RULE_CHECKS = ['lint', 'typecheck', 'SonarCloud Code Analysis'];
+
 /**
  * El grafo con un `Notifier`, sin fallos al pedir la revisión, con 30 min de tiempo de espera, el
- * umbral de 0,80 y un tope de 0,05 $ por PR a 0,24 $ el millón de tokens.
+ * umbral de 0,80, un tope de 0,05 $ por PR a 0,24 $ el millón de tokens y la regla de las
+ * comprobaciones deterministas.
  */
 function trackingGraph(
   notifier: Notifier,
@@ -119,7 +123,11 @@ function trackingGraph(
     {
       timeoutMs: 30 * MINUTE,
       log,
-      triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 } },
+      triage: {
+        threshold: 0.8,
+        budget: { capUsd: 0.05, inputPricePerMTok: 0.24 },
+        ruleChecks: RULE_CHECKS,
+      },
     },
   );
 }
@@ -620,8 +628,8 @@ function recordingTriage(
 ) {
   const events: string[] = [];
   const reads: { number: number; sha: string; failedChecks: string[] }[] = [];
-  const asked: { context: PullRequestContext; finding: Finding }[] = [];
-  const estimated: { context: PullRequestContext; finding: Finding }[] = [];
+  const asked: { context: PullRequestContext; finding: Finding; question: Question }[] = [];
+  const estimated: { context: PullRequestContext; finding: Finding; question: Question }[] = [];
   const github = { failure: undefined as Error | undefined };
   /** Cuántas llamadas al modelo hay en curso, y el máximo que ha habido a la vez. */
   const concurrency = { inFlight: 0, peak: 0 };
@@ -641,13 +649,13 @@ function recordingTriage(
       },
     },
     decisionModel: {
-      estimate(context, finding) {
-        estimated.push({ context, finding });
+      estimate(context, finding, question) {
+        estimated.push({ context, finding, question });
         return sizeInTokens(context, finding);
       },
-      ask(context, finding) {
+      ask(context, finding, question) {
         events.push('preguntar al modelo');
-        asked.push({ context, finding });
+        asked.push({ context, finding, question });
         concurrency.inFlight += 1;
         concurrency.peak = Math.max(concurrency.peak, concurrency.inFlight);
         return answer(finding).finally(() => {
@@ -737,8 +745,8 @@ describe('el sistema tría los hallazgos del último push cuando la PR necesita 
     await followTriage(triage, failing);
 
     expect(triage.asked).toEqual([
-      { context: CONTEXT, finding: codexP2 },
-      { context: CONTEXT, finding: e2eFailing },
+      { context: CONTEXT, finding: codexP2, question: 'fixInThisPr' },
+      { context: CONTEXT, finding: e2eFailing, question: 'cause' },
     ]);
   });
 
@@ -817,7 +825,7 @@ describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () =
   });
 
   it('la comprobación no da contexto: no llega al modelo, y el resto sí', async () => {
-    const notProvided = failingCheck('SonarCloud Code Analysis', { state: 'notProvided' });
+    const notProvided = failingCheck('codecov/patch', { state: 'notProvided' });
     const triage = recordingTriage([codexP2, notProvided]);
 
     const state = await followTriage(triage, failing);
@@ -869,8 +877,8 @@ describe('el triaje no pasa del tope de gasto de la PR', () => {
 
     // El coste lo estima el modelo, petición a petición, con la PR en cada una.
     expect(triage.estimated).toEqual([
-      { context: CONTEXT, finding: codexP2 },
-      { context: CONTEXT, finding: longLog },
+      { context: CONTEXT, finding: codexP2, question: 'fixInThisPr' },
+      { context: CONTEXT, finding: longLog, question: 'cause' },
     ]);
     expect(triage.asked.map(({ finding }) => finding)).toEqual([codexP2]);
     expect(state.values).toMatchObject({
@@ -896,10 +904,10 @@ describe('el triaje no pasa del tope de gasto de la PR', () => {
 });
 
 describe('cada hallazgo se pregunta al modelo de decisión en una petición propia', () => {
-  const lintFailing = failingCheck('lint');
-  const three = [codexP2, lintFailing, e2eFailing];
+  const testFailing = failingCheck('test');
+  const three = [codexP2, testFailing, e2eFailing];
   // Por su nombre: el hallazgo llega a cada rama en su `Send`, copiado.
-  const isLint = (finding: Finding) => finding.source === 'check' && finding.name === 'lint';
+  const isTest = (finding: Finding) => finding.source === 'check' && finding.name === 'test';
   /** El estado del reparto: la ronda del último triaje y las respuestas que guarda el hilo. */
   interface FanOutState {
     triageRound: { number: number };
@@ -915,9 +923,9 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
     const state = await followTriage(triage, failing);
 
     expect(triage.asked).toEqual([
-      { context: CONTEXT, finding: codexP2 },
-      { context: CONTEXT, finding: lintFailing },
-      { context: CONTEXT, finding: e2eFailing },
+      { context: CONTEXT, finding: codexP2, question: 'fixInThisPr' },
+      { context: CONTEXT, finding: testFailing, question: 'cause' },
+      { context: CONTEXT, finding: e2eFailing, question: 'cause' },
     ]);
     expect(triage.concurrency.peak).toBe(3);
     expect(state.values).toMatchObject({
@@ -930,7 +938,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
 
   it('si falla la petición de uno, ese exige criterio, los demás salen con su clase y lo cobrado cuenta', async () => {
     const triage = recordingTriage(three, (finding) =>
-      isLint(finding)
+      isTest(finding)
         ? Promise.reject(new DecisionModelError('La respuesta no trae el hallazgo', 3_000))
         : Promise.resolve({ probability: finding.source === 'reviewer' ? 0.93 : 0.07, inputTokens: 4_000 }),
     );
@@ -949,7 +957,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
       triage: {
         findings: [
           { finding: codexP2, verdict: { class: 'valid', reason: 'probability' } },
-          { finding: lintFailing, verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
+          { finding: testFailing, verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
           { finding: e2eFailing, verdict: { class: 'notApplicable', reason: 'probability' } },
         ],
         inputTokens: 11_000,
@@ -982,7 +990,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
   it('dos pushes seguidos en el mismo hilo: el segundo triaje no lleva respuestas del primero', async () => {
     const found = [codexP2, e2eFailing];
     const triage = recordingTriage(found, (finding) =>
-      Promise.resolve({ probability: isLint(finding) ? 0.07 : 0.93, inputTokens: 4_000 }),
+      Promise.resolve({ probability: isTest(finding) ? 0.07 : 0.93, inputTokens: 4_000 }),
     );
     const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
     const config = threadConfig(74);
@@ -991,7 +999,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
     const first = (await graph.getState(config)).values as FanOutState;
 
     // El push nuevo trae un solo hallazgo, y otro.
-    found.splice(0, found.length, lintFailing);
+    found.splice(0, found.length, testFailing);
     await graph.invoke({ snapshot: snapshot(10, { headSha: 'nuevo' }) }, config);
     await graph.invoke(
       new Command({ resume: snapshot(15, { headSha: 'nuevo', checks: FAILED }) }),
@@ -1012,11 +1020,110 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
     expect(state.values).toMatchObject({
       triage: {
         sha: 'nuevo',
-        findings: [{ finding: lintFailing, verdict: { class: 'notApplicable', probability: 0.07 } }],
+        findings: [{ finding: testFailing, verdict: { class: 'notApplicable', probability: 0.07 } }],
         inputTokens: 4_000,
       },
     });
     expect(triage.posted.summaries.at(-1)?.text).not.toContain('tracking.ts');
+  });
+});
+
+describe('las comprobaciones deterministas salen reales por regla', () => {
+  const byRule = { class: 'valid', reason: 'rule' };
+
+  it('`lint` sale real por regla, sin ninguna llamada al modelo, y el resumen lo dice', async () => {
+    const lint = failingCheck('lint');
+    const triage = recordingTriage([lint]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked).toEqual([]);
+    expect(triage.estimated).toEqual([]);
+    expect(state.values).toMatchObject({
+      triage: { findings: [{ finding: lint, verdict: byRule }], inputTokens: 0, costUsd: 0 },
+    });
+    expect(triage.events).toEqual(['tracking', 'leer hallazgos', 'publicar resumen', 'aviso final']);
+    expect(triage.posted.summaries[0]?.text).toContain(
+      '| Comprobación `lint` | real | regla: comprobación determinista |',
+    );
+  });
+
+  it('la regla no necesita contexto: `typecheck` con el log ilegible sale real, y no exige criterio', async () => {
+    const typecheck = failingCheck('typecheck', { state: 'unreadable' });
+    const triage = recordingTriage([typecheck]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked).toEqual([]);
+    expect(state.values).toMatchObject({
+      triage: { findings: [{ finding: typecheck, verdict: byRule }] },
+    });
+  });
+
+  it('la regla no gasta del tope: con el tope agotado, SonarCloud sale real y lo demás exige criterio', async () => {
+    const sonar = failingCheck('SonarCloud Code Analysis');
+    const triage = recordingTriage([sonar, e2eFailing]);
+
+    const state = await followTriage(triage, failing, 0.05);
+
+    expect(triage.asked).toEqual([]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: sonar, verdict: byRule },
+          { finding: e2eFailing, verdict: { class: 'needsJudgment', reason: 'overBudget' } },
+        ],
+        inputTokens: 0,
+      },
+    });
+    expect((state.values as { spentUsd: number }).spentUsd).toBeCloseTo(0.05, 10);
+  });
+
+  it('con una determinista y otra que no lo es, solo la segunda llega al modelo', async () => {
+    const lint = failingCheck('lint');
+    const triage = recordingTriage([lint, e2eFailing]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([e2eFailing]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: lint, verdict: byRule },
+          { finding: e2eFailing, verdict: { class: 'valid', reason: 'probability' } },
+        ],
+      },
+    });
+  });
+});
+
+describe('la pregunta al modelo depende de la fuente del hallazgo', () => {
+  it('`e2e` llega al modelo con la pregunta de la causa, y un comentario del revisor, con la de hoy', async () => {
+    const triage = recordingTriage([codexP2, e2eFailing]);
+
+    await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ finding, question }) => [finding.source, question])).toEqual([
+      ['reviewer', 'fixInThisPr'],
+      ['check', 'cause'],
+    ]);
+  });
+
+  it('una comprobación que no está en la lista también se pregunta por la causa', async () => {
+    const build = failingCheck('build');
+    const triage = recordingTriage([build]);
+
+    await followTriage(triage, failing);
+
+    expect(triage.asked).toEqual([{ context: CONTEXT, finding: build, question: 'cause' }]);
+  });
+
+  it('el tope se reserva con la estimación de la pregunta que se va a hacer', async () => {
+    const triage = recordingTriage([codexP2, e2eFailing]);
+
+    await followTriage(triage, failing);
+
+    expect(triage.estimated.map(({ question }) => question)).toEqual(['fixInThisPr', 'cause']);
   });
 });
 

@@ -38,6 +38,16 @@ const envSchema = z.object({
     .max(1, 'no puede pasar de 1')
     .default(0.8),
   TRIAGE_BUDGET_USD: positiveNumber.default(0.05),
+  // Separadas por comas. Sin ningún nombre (`,`), la regla no decide ninguna.
+  TRIAGE_RULE_CHECKS: z
+    .string()
+    .default('lint,typecheck,SonarCloud Code Analysis')
+    .transform((list) =>
+      list
+        .split(',')
+        .map((name) => name.trim())
+        .filter((name) => name !== ''),
+    ),
 });
 
 export interface Config {
@@ -80,6 +90,11 @@ export interface Config {
   triageThreshold: number;
   /** El tope de gasto del triaje de cada PR, en dólares (decisión 6). */
   triageBudgetUsd: number;
+  /**
+   * Las comprobaciones deterministas, por su nombre en la rama base: si fallan, salen reales por
+   * regla, sin preguntar al modelo (change pr-check-triage, decisión 6).
+   */
+  triageRuleChecks: string[];
 }
 
 export type ConfigResult = { ok: true; config: Config } | { ok: false; error: string };
@@ -117,6 +132,7 @@ export function loadConfig(env: Record<string, string | undefined>): ConfigResul
       decisionModelInputPricePerMTok: vars.DECISION_MODEL_INPUT_PRICE_PER_MTOK,
       triageThreshold: vars.TRIAGE_THRESHOLD,
       triageBudgetUsd: vars.TRIAGE_BUDGET_USD,
+      triageRuleChecks: vars.TRIAGE_RULE_CHECKS,
     },
   };
 }

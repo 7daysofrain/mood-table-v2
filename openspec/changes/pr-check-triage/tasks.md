@@ -153,7 +153,7 @@
 
 ## 3. MOO-163 · infra
 
-- [ ] 3.1 **(test en rojo)** Las reglas (`design.md` decisiones 3 y 6):
+- [x] 3.1 **(test en rojo)** Las reglas (`design.md` decisiones 3 y 6):
   - **`core/triage.test.ts`:**
     - una comprobación de la lista sale `{ class: 'valid', reason: 'rule' }`, aunque no tenga
       contexto o el tope esté agotado;
@@ -161,32 +161,32 @@
   - **`core/triage-summary.test.ts`:** «regla: comprobación determinista».
   - **`adapters/config.test.ts`:** `TRIAGE_RULE_CHECKS`, con el valor por defecto, una lista con
     espacios y una lista vacía.
-- [ ] 3.2 La regla y `questionFor` en `core/triage.ts`, el porqué en `core/triage-summary.ts`, y
+- [x] 3.2 La regla y `questionFor` en `core/triage.ts`, el porqué en `core/triage-summary.ts`, y
   `TRIAGE_RULE_CHECKS` en `adapters/config.ts` y `.env.example`.
   Verificar: los tests de 3.1 en verde; `pnpm typecheck` en verde.
-- [ ] 3.3 **(test en rojo)** La pregunta de la causa en `adapters/decision-model.test.ts`:
+- [x] 3.3 **(test en rojo)** La pregunta de la causa en `adapters/decision-model.test.ts`:
   - con `cause`, las instrucciones nombran la comprobación con la pregunta del *spike* y sus criterios,
     sin *"judge the finding against the diff"*;
   - con `fixInThisPr`, la pregunta y los criterios de hoy, sin cambios.
-- [ ] 3.4 Las dos preguntas en `adapters/decision-model.ts`: `ask` y `estimate` reciben la pregunta.
+- [x] 3.4 Las dos preguntas en `adapters/decision-model.ts`: `ask` y `estimate` reciben la pregunta.
   Verificar: los tests de 3.3 en verde.
-- [ ] 3.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
+- [x] 3.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
   `specs/pr-triage` que toca esta sección:
   - `lint` sale *real* por regla sin ninguna llamada al modelo falso, también sin contexto y con el
     tope agotado;
   - `e2e` llega a `preguntarModelo` con `cause`, y un comentario del revisor, con `fixInThisPr`;
   - una comprobación que no está en la lista, también con `cause`.
-- [ ] 3.6 La regla y la pregunta en `triar` y en el `Send` de `core/graph.ts`, la lista desde
+- [x] 3.6 La regla y la pregunta en `triar` y en el `Send` de `core/graph.ts`, la lista desde
   `src/main.ts` en `TrackingOptions.triage`, y la lista por defecto en `studio.ts`.
   Verificar: los tests de 3.5 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 3.7 Documentación:
+- [x] 3.7 Documentación:
   - README §2.4 (*PR Babysitter*): `TRIAGE_RULE_CHECKS`;
   - README §2.5: las dos preguntas que salen hacia el modelo;
   - `prompts.md`: lo que añada esta tarea a la entrada de la historia.
 
   Verificar: `pnpm lint` en verde.
-- [ ] 3.8 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 3.8 **Prueba a mano** (sin commit), con el sistema en marcha:
   - una PR de prueba con un `lint` roto;
   - otra con un `e2e` roto.
 

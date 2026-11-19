@@ -32,7 +32,25 @@ describe('la configuración del entorno', () => {
         decisionModelInputPricePerMTok: 0.24,
         triageThreshold: 0.8,
         triageBudgetUsd: 0.05,
+        triageRuleChecks: ['lint', 'typecheck', 'SonarCloud Code Analysis'],
       },
+    });
+  });
+
+  it('lee las comprobaciones que decide la regla, separadas por comas y sin los espacios de alrededor', () => {
+    const result = loadConfig({ ...env, TRIAGE_RULE_CHECKS: ' lint , SonarCloud Code Analysis,build ' });
+
+    expect(result).toMatchObject({
+      config: { triageRuleChecks: ['lint', 'SonarCloud Code Analysis', 'build'] },
+    });
+  });
+
+  it('una lista sin ningún nombre apaga la regla; la variable vacía es la lista por defecto', () => {
+    expect(loadConfig({ ...env, TRIAGE_RULE_CHECKS: ',' })).toMatchObject({
+      config: { triageRuleChecks: [] },
+    });
+    expect(loadConfig({ ...env, TRIAGE_RULE_CHECKS: '' })).toMatchObject({
+      config: { triageRuleChecks: ['lint', 'typecheck', 'SonarCloud Code Analysis'] },
     });
   });
 

@@ -2409,6 +2409,28 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La respuesta grabada del modelo es de una petición nueva y no un recorte de la anterior, porque `usage` cambia. El último push de la #88 solo tiene el P2, así que la IA grabó ese: solo en su petición da 0,30, frente a 0,29 junto al P1.*
 - *Los primeros tests del fan-out comparaban los hallazgos por identidad y fallaron con el grafo ya hecho: a cada rama le llega una copia del hallazgo en su `Send`. La IA los cambió para compararlos por su nombre.*
 
+**Prompt 2:**
+
+> puedes volver a lanzar la prueba para ver si tarda otros 30 minutos? me parece mucho
+
+*Claude Code (`claude-fable-5-2`, 19-nov). En la prueba a mano, el triaje había tardado 30 min. La IA leyó la regla de la espera y la CI antes de repetirla, predijo el resultado y lanzó dos PR de prueba: una con un test roto y otra de control, con solo el `lint` roto. La primera tardó 31 min y la segunda, 3: con `test` roto, el paso que publica* SonarCloud Code Analysis *no se ejecuta, y el sistema espera a una comprobación que no va a existir.*
+
+*Ajustes:*
+- *El usuario pidió arreglarlo en la misma sesión con un cambio en la regla. La IA avisó de una carrera (Sonar tampoco tiene* check run *hasta que termina cuando todo va bien) y propuso un margen de 2 minutos.*
+- *La IA lo había planteado como una* chore *sin OpenSpec change y paró antes de crear la tarea: la spec `pr-tracking` dice que una comprobación que no ha empezado cuenta como no terminada, así que el arreglo cambia un requisito. El usuario prefirió capturarlo (`MOO-164`) y decidir más adelante.*
+
+#### 6.91 Decidir por regla las comprobaciones deterministas y preguntar la causa en las demás (`MOO-163`)
+
+**Prompt 1:**
+
+> Sí, MOO-163
+
+*Claude Code (`claude-fable-5-2`, 19-nov). La IA implementó la sección 3 del change `pr-check-triage`, con un commit por paso y los tests en rojo antes de cada implementación: la regla y `questionFor` en el núcleo, las dos preguntas en el adaptador y, al final, el grafo. Lo que se decide sin el modelo (la regla, el contexto y el tope, en ese orden) quedó en una función pura, `withoutModel`, que el nodo `triar` solo llama.*
+
+*Ajustes:*
+- *Una variable de entorno vacía cuenta como que falta, así que `TRIAGE_RULE_CHECKS=` no puede ser «ninguna comprobación». La IA dejó la variable vacía como la lista por defecto y una coma sola como la lista vacía.*
+- *Un test que ya había usaba* SonarCloud Code Analysis *como ejemplo de comprobación sin contexto, y con la regla pasa a salir* real*. La IA lo cambió por una comprobación que no está en la lista.*
+
 ---
 
 ### 7. Pull Requests

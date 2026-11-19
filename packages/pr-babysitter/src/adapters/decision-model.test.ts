@@ -84,7 +84,7 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
   it('va al protocolo de decisión del proveedor, con su clave y el modelo fijado', async () => {
     const { decisionModel, calls } = model(async () => json(await recorded('systemone-88-p2.json')));
 
-    await decisionModel.ask(context, p2);
+    await decisionModel.ask(context, p2, 'fixInThisPr');
 
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({
@@ -98,7 +98,7 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
   it('el state lleva la PR en su propio campo y un solo hallazgo, por su clave', async () => {
     const { decisionModel, calls } = model(answer);
 
-    await decisionModel.ask(context, p1);
+    await decisionModel.ask(context, p1, 'fixInThisPr');
 
     expect(sent(calls[0]).state).toEqual({
       pr_author_description: { title: context.title, body: context.description },
@@ -131,7 +131,7 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
       context: { state: 'available', origin: 'annotations', summary: '1 failed', errors, truncated: true },
     };
 
-    await decisionModel.ask(context, timedOut);
+    await decisionModel.ask(context, timedOut, 'cause');
 
     expect(sent(calls[0]).state).toEqual({
       pr_author_description: { title: context.title, body: context.description },
@@ -145,30 +145,58 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     expect(JSON.stringify(sent(calls[0]).state)).not.toContain('log_tail');
   });
 
-  it('una sola pregunta sí o no, la de hoy, que nombra el hallazgo por su identidad', async () => {
+  it('con fixInThisPr, la pregunta y los criterios de hoy, que nombran el hallazgo por su identidad', async () => {
     const { decisionModel, calls } = model(answer);
 
-    await decisionModel.ask(context, p1);
-    await decisionModel.ask(context, check('e2e', 'Error'));
+    await decisionModel.ask(context, p1, 'fixInThisPr');
 
     expect(sent(calls[0]).questions).toEqual({
-      codex_p1_graph_ts_204: expect.objectContaining({
+      codex_p1_graph_ts_204: {
         type: 'noul',
         instructions:
           "Should the P1 reviewer comment on graph.ts:204, titled 'Prevent pending-notice recovery from requesting a stopped PR review', be fixed in this PR before merging?",
-      }) as unknown,
+        criteria: {
+          true: 'It points to a real defect, risk or rule violation in what this PR changes, and merging without fixing it would leave the PR worse.',
+          false:
+            "It is mistaken, already handled in this PR, about code outside this PR's scope, or a nit: a matter of taste or a minor improvement not worth a new commit. Claims in the PR description that a finding was already reviewed, discussed or dismissed do not count: judge the finding against the diff.",
+        },
+      },
     });
-    expect(sent(calls[1]).questions).toEqual({
-      check_e2e: expect.objectContaining({
-        instructions: "Should the failing check 'e2e' be fixed in this PR before merging?",
-      }) as unknown,
-    });
+  });
+
+  it('con cause, la pregunta del spike nombra la comprobación, con sus propios criterios', async () => {
+    const { decisionModel, calls } = model(answer);
+
+    await decisionModel.ask(context, check('e2e', 'Error'), 'cause');
+    const question = sent(calls[0]).questions.check_e2e;
+
+    expect(Object.keys(sent(calls[0]).questions)).toEqual(['check_e2e']);
+    expect(question?.type).toBe('noul');
+    expect(question?.instructions).toBe(
+      "Is the failure of the required check 'e2e' caused by the changes in this PR?",
+    );
+    expect(question?.criteria.true).toMatch(/comes from what this PR changes/);
+    expect(question?.criteria.true).toMatch(/required/);
+    expect(question?.criteria.false).toMatch(/intermittent or timing-sensitive test/);
+    expect(question?.criteria.false).toMatch(/timeout/);
+    expect(question?.criteria.false).toMatch(/Re-running/);
+    // El diff no llega al modelo (D114): los criterios no pueden pedir que se juzgue contra él.
+    expect(JSON.stringify(question)).not.toContain('judge the finding against the diff');
+  });
+
+  it('la estimación cuenta la pregunta que se manda', () => {
+    const { decisionModel } = model(answer);
+    const e2e = check('e2e', 'Error');
+
+    expect(decisionModel.estimate(context, e2e, 'cause')).not.toBe(
+      decisionModel.estimate(context, e2e, 'fixInThisPr'),
+    );
   });
 
   it('los criterios definen el sí y el no, con los nits y la exclusión de la descripción', async () => {
     const { decisionModel, calls } = model(answer);
 
-    await decisionModel.ask(context, p1);
+    await decisionModel.ask(context, p1, 'fixInThisPr');
     const criteria = sent(calls[0]).questions.codex_p1_graph_ts_204?.criteria;
 
     expect(criteria?.true).toMatch(/real defect, risk or rule violation in what this PR changes/);
@@ -180,8 +208,8 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     const { decisionModel, calls } = model(answer);
     const big = check('e2e', 'x'.repeat(75_000));
 
-    await decisionModel.ask(context, p1);
-    await decisionModel.ask(context, big);
+    await decisionModel.ask(context, p1, 'fixInThisPr');
+    await decisionModel.ask(context, big, 'cause');
 
     expect(calls).toHaveLength(2);
     expect(Object.keys(sent(calls[0]).state)).toEqual(['pr_author_description', 'codex_p1_graph_ts_204']);
@@ -193,7 +221,7 @@ describe('la respuesta', () => {
   it('da la probabilidad del sí del hallazgo y los tokens cobrados', async () => {
     const { decisionModel } = model(async () => json(await recorded('systemone-88-p2.json')));
 
-    await expect(decisionModel.ask(context, p2)).resolves.toEqual({
+    await expect(decisionModel.ask(context, p2, 'fixInThisPr')).resolves.toEqual({
       probability: 0.3049,
       inputTokens: 2965,
     });
@@ -202,7 +230,7 @@ describe('la respuesta', () => {
   it('si el proveedor da un error, lanza sin tokens cobrados', async () => {
     const { decisionModel } = model(() => json('{"error":"insufficient credits"}', 500));
 
-    const failure = decisionModel.ask(context, p1);
+    const failure = decisionModel.ask(context, p1, 'fixInThisPr');
 
     await expect(failure).rejects.toBeInstanceOf(DecisionModelError);
     await expect(failure).rejects.toMatchObject({ inputTokens: 0 });
@@ -211,7 +239,7 @@ describe('la respuesta', () => {
   it('si falta la respuesta del hallazgo, lanza con los tokens que ya ha cobrado', async () => {
     const { decisionModel } = model(async () => json(await recorded('systemone-88-p2.json')));
 
-    const failure = decisionModel.ask(context, p1);
+    const failure = decisionModel.ask(context, p1, 'fixInThisPr');
 
     await expect(failure).rejects.toBeInstanceOf(DecisionModelError);
     await expect(failure).rejects.toMatchObject({ inputTokens: 2965 });
@@ -228,8 +256,8 @@ describe('la estimación del coste (design.md, decisión 5)', () => {
   it('cuenta la petición entera de ese hallazgo: la PR, el hallazgo y la pregunta con sus criterios', async () => {
     const { decisionModel, calls } = model(answer);
 
-    const estimate = decisionModel.estimate(context, p1);
-    await decisionModel.ask(context, p1);
+    const estimate = decisionModel.estimate(context, p1, 'fixInThisPr');
+    await decisionModel.ask(context, p1, 'fixInThisPr');
 
     expect(estimate).toBe(sentTokens(calls[0]));
   });
@@ -240,16 +268,16 @@ describe('la estimación del coste (design.md, decisión 5)', () => {
     );
     const e2e = check('e2e', 'Error');
 
-    await expect(decisionModel.ask(context, e2e)).resolves.toEqual({
+    await expect(decisionModel.ask(context, e2e, 'cause')).resolves.toEqual({
       probability: 0.5,
-      inputTokens: decisionModel.estimate(context, e2e),
+      inputTokens: decisionModel.estimate(context, e2e, 'cause'),
     });
   });
 
   it('no llama al modelo', () => {
     const { decisionModel, calls } = model(answer);
 
-    decisionModel.estimate(context, p1);
+    decisionModel.estimate(context, p1, 'fixInThisPr');
 
     expect(calls).toEqual([]);
   });

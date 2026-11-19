@@ -120,7 +120,7 @@ function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {
         publish: () => Promise.reject(new Error('no hay resumen que publicar')),
       },
       ...triage,
-      triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 } },
+      triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 }, ruleChecks: [] },
       checkpointer: new MemorySaver(),
       policy: { maintainer: MAINTAINER, baseBranch: 'main' },
       timeoutMs: 30 * MINUTE,

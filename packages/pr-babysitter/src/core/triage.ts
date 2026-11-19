@@ -100,6 +100,8 @@ const unansweredSchema = z.enum(['noContext', 'overBudget', 'modelUnavailable'])
 /** Lo que se sabe de un hallazgo antes de clasificarlo: la probabilidad del sí, o por qué no la hay. */
 export const triageAnswerSchema = z.union([
   z.object({ kind: unansweredSchema }),
+  /** La decide la regla de las comprobaciones deterministas, sin preguntar. */
+  z.object({ kind: z.literal('rule') }),
   z.object({ kind: z.literal('answered'), probability: z.number() }),
 ]);
 
@@ -136,6 +138,7 @@ export function latestRound(current: RoundAnswer[], incoming: RoundAnswer[]): Ro
  */
 export const verdictSchema = z.union([
   z.object({ class: z.literal('needsJudgment'), reason: unansweredSchema }),
+  z.object({ class: z.literal('valid'), reason: z.literal('rule') }),
   z.object({
     class: triageClassSchema,
     reason: z.enum(['probability', 'highSeverity']),
@@ -146,12 +149,13 @@ export const verdictSchema = z.union([
 export type Verdict = z.infer<typeof verdictSchema>;
 
 /**
- * La clase de un hallazgo (decisión 4), en el orden de la tabla: sin probabilidad, exige criterio
- * con su motivo; con ella, real si llega al umbral, no aplica si no pasa de su complemento (salvo
+ * La clase de un hallazgo (decisión 4), en el orden de la tabla: si lo decide la regla de las
+ * comprobaciones deterministas, real; sin probabilidad, exige criterio con su motivo; con ella, real si llega al umbral, no aplica si no pasa de su complemento (salvo
  * que sea de severidad alta) y exige criterio entre los dos. El umbral es mayor que 0,5, así que
  * los dos cortes no se cruzan (lo valida la configuración).
  */
 export function classify(finding: Finding, answer: TriageAnswer, threshold: number): Verdict {
+  if (answer.kind === 'rule') return { class: 'valid', reason: 'rule' };
   if (answer.kind !== 'answered') return { class: 'needsJudgment', reason: answer.kind };
   const { probability } = answer;
   if (probability >= threshold) return { class: 'valid', reason: 'probability', probability };
@@ -197,6 +201,59 @@ export function withinBudget(
     }
   }
   return { asked, overBudget };
+}
+
+/**
+ * Lo que el triador decide de cada hallazgo sin el modelo de decisión (change pr-check-triage,
+ * decisión 6), en este orden: la regla, el contexto y el tope. La respuesta de cada uno, en su
+ * posición, o `undefined` si hay que preguntar al modelo.
+ *
+ * La regla va primero porque no necesita contexto ni gasta del tope: una comprobación de
+ * `ruleChecks` (las deterministas: fallan solo si algo de la PR incumple su regla) sale real aunque
+ * su log no se pueda leer o el tope esté agotado, y no reserva nada.
+ */
+export function withoutModel(
+  findings: Finding[],
+  {
+    ruleChecks,
+    spentUsd,
+    budget,
+    estimate,
+  }: {
+    /** Los nombres de las comprobaciones que decide la regla, tal como las exige la rama base. */
+    ruleChecks: string[];
+    spentUsd: number;
+    budget: TriageBudget;
+    estimate: (finding: Finding) => number;
+  },
+): (TriageAnswer | undefined)[] {
+  const byRule = (finding: Finding) =>
+    finding.source === 'check' && ruleChecks.includes(finding.name);
+  const { overBudget } = withinBudget(
+    findings.filter((finding) => !byRule(finding) && hasContext(finding)),
+    spentUsd,
+    budget,
+    estimate,
+  );
+  return findings.map((finding) => {
+    if (byRule(finding)) return { kind: 'rule' };
+    if (!hasContext(finding)) return { kind: 'noContext' };
+    if (overBudget.includes(finding)) return { kind: 'overBudget' };
+    return undefined;
+  });
+}
+
+/**
+ * Qué se le pregunta al modelo de decisión sobre un hallazgo (change pr-check-triage, decisión 3;
+ * D114): por una comprobación que falla, si la causa esta PR; por un comentario del revisor, si hay
+ * que arreglarlo en esta PR antes de integrarla. Cómo se formula cada una es del adaptador.
+ */
+export const questionSchema = z.enum(['cause', 'fixInThisPr']);
+
+export type Question = z.infer<typeof questionSchema>;
+
+export function questionFor(finding: Finding): Question {
+  return finding.source === 'check' ? 'cause' : 'fixInThisPr';
 }
 
 /** El gasto de la PR tras un triaje: lo que llevaba más los tokens de entrada cobrados. */

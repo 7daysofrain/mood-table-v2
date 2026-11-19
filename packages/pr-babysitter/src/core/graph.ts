@@ -63,15 +63,16 @@ import {
   classify,
   type Finding,
   findingSchema,
-  hasContext,
   latestRound,
   type PullRequestContext,
+  type Question,
+  questionFor,
   type RoundAnswer,
   roundAnswerSchema,
   spend,
   type TriageBudget,
   verdictSchema,
-  withinBudget,
+  withoutModel,
 } from './triage.ts';
 import { triageSummary } from './triage-summary.ts';
 
@@ -154,8 +155,12 @@ export interface TrackingOptions {
    * respuesta del modelo, para el log de errores.
    */
   log: (line: string) => void;
-  /** El umbral de real y el tope de gasto de cada PR (change pr-shadow-triage, decisiones 4 y 6). */
-  triage: { threshold: number; budget: TriageBudget };
+  /**
+   * El umbral de real y el tope de gasto de cada PR (change pr-shadow-triage, decisiones 4 y 6), y
+   * las comprobaciones deterministas, que salen reales por regla (change pr-check-triage, decisión
+   * 6).
+   */
+  triage: { threshold: number; budget: TriageBudget; ruleChecks: string[] };
 }
 
 /**
@@ -170,12 +175,16 @@ const ASK_NODE = 'preguntarModelo';
 
 const GATHER_NODE = 'reunirTriaje';
 
-/** Lo que recibe una rama `preguntarModelo` en su `Send`: un hallazgo de una ronda, y la PR. */
+/**
+ * Lo que recibe una rama `preguntarModelo` en su `Send`: un hallazgo de una ronda, la PR y la
+ * pregunta que toca a su fuente, que así queda en la traza, en la entrada de la rama.
+ */
 interface AskInput {
   round: number;
   index: number;
   pr: PullRequestContext;
   finding: Finding;
+  question: Question;
 }
 
 /** Las respuestas de una ronda entre las que guarda el hilo. */
@@ -185,7 +194,7 @@ function answersOf(round: number, answers: RoundAnswer[]): RoundAnswer[] {
 
 /**
  * Tras `triar`, una rama `preguntarModelo` por cada hallazgo que aún no tiene respuesta, todas a la
- * vez. Sin ninguno (todo sin contexto o fuera del tope), directo a `reunirTriaje`: sin ningún
+ * vez. Sin ninguno (todo por regla, sin contexto o fuera del tope), directo a `reunirTriaje`: sin ningún
  * `Send`, el grafo no tendría nodo siguiente.
  */
 function fanOut({ triageRound, triageAnswers }: State): Send[] | typeof GATHER_NODE {
@@ -195,7 +204,15 @@ function fanOut({ triageRound, triageAnswers }: State): Send[] | typeof GATHER_N
   const sends = findings.flatMap((finding, index) =>
     decided.has(index)
       ? []
-      : [new Send(ASK_NODE, { round, index, pr, finding } satisfies AskInput)],
+      : [
+          new Send(ASK_NODE, {
+            round,
+            index,
+            pr,
+            finding,
+            question: questionFor(finding),
+          } satisfies AskInput),
+        ],
   );
   return sends.length > 0 ? sends : GATHER_NODE;
 }
@@ -307,9 +324,10 @@ export function createTrackingGraph(
     return new Command({ update: { snapshot, push }, goto });
   };
 
-  // Lee los hallazgos del push y reparte las preguntas (change pr-check-triage, decisiones 4 y 5).
-  // Decide sin el modelo lo que puede: un hallazgo sin contexto, o que no cabe en lo que queda del
-  // tope, que se reserva aquí, antes de repartir. Los demás salen cada uno por su rama. Si GitHub
+  // Lee los hallazgos del push y reparte las preguntas (change pr-check-triage, decisiones 4 a 6).
+  // Decide sin el modelo lo que puede (`withoutModel`): una comprobación determinista, real por
+  // regla; un hallazgo sin contexto; o uno que no cabe en lo que queda del tope, que se reserva
+  // aquí, antes de repartir. Los demás salen cada uno por su rama, con la pregunta de su fuente. Si GitHub
   // falla al leerlos, lanza, y el nodo queda pendiente para la vuelta siguiente.
   const triar: GraphNode<typeof TrackingState> = async (state) => {
     const { snapshot } = state;
@@ -319,20 +337,15 @@ export function createTrackingGraph(
         ? final.reasons.flatMap((reason) => (reason.kind === 'checksFailed' ? reason.checks : []))
         : [];
     const read = await findings.read(snapshot.number, snapshot.headSha, failedChecks);
-    const { overBudget } = withinBudget(
-      read.findings.filter(hasContext),
-      state.spentUsd ?? 0,
-      triage.budget,
-      (finding) => decisionModel.estimate(read.context, finding),
-    );
     const round = (state.triageRound?.number ?? 0) + 1;
-    const decided = read.findings.flatMap((finding, index): RoundAnswer[] => {
-      if (!hasContext(finding)) return [{ round, index, answer: { kind: 'noContext' }, inputTokens: 0 }];
-      if (overBudget.includes(finding)) {
-        return [{ round, index, answer: { kind: 'overBudget' }, inputTokens: 0 }];
-      }
-      return [];
-    });
+    const decided = withoutModel(read.findings, {
+      ruleChecks: triage.ruleChecks,
+      spentUsd: state.spentUsd ?? 0,
+      budget: triage.budget,
+      estimate: (finding) => decisionModel.estimate(read.context, finding, questionFor(finding)),
+    }).flatMap((answer, index): RoundAnswer[] =>
+      answer ? [{ round, index, answer, inputTokens: 0 }] : [],
+    );
     return {
       triageRound: { number: round, pr: read.context, findings: read.findings },
       triageAnswers: decided,
@@ -342,9 +355,9 @@ export function createTrackingGraph(
   // Pregunta al modelo por un hallazgo (decisión 4). No lanza nunca: si lanzara, fallaría el paso
   // entero y con él las demás ramas. Si el modelo no responde, ese hallazgo exige criterio, y lo
   // que ya ha cobrado antes de fallar también es gasto de la PR.
-  const preguntarModelo = async ({ round, index, pr, finding }: AskInput) => {
+  const preguntarModelo = async ({ round, index, pr, finding, question }: AskInput) => {
     try {
-      const { probability, inputTokens } = await decisionModel.ask(pr, finding);
+      const { probability, inputTokens } = await decisionModel.ask(pr, finding, question);
       const answered: RoundAnswer = {
         round,
         index,

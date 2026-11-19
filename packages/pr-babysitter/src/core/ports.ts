@@ -5,7 +5,7 @@
  */
 import type { Notice } from './notice.ts';
 import type { Check, OpenPullRequest, Review } from './pull-request.ts';
-import type { Finding, PullRequestContext } from './triage.ts';
+import type { Finding, PullRequestContext, Question } from './triage.ts';
 
 /**
  * Publica un aviso para el mantenedor. Solo envía: la respuesta se diseña en BH4. Si el canal no lo
@@ -94,9 +94,16 @@ export interface DecisionModel {
    * lo alto: la petición entera, con la PR, el hallazgo y la pregunta con sus criterios (decisión
    * 5). Solo el adaptador sabe cómo es.
    */
-  estimate(pr: PullRequestContext, finding: Finding): number;
-  /** La probabilidad de que haya que arreglarlo en esta PR, y los tokens de entrada cobrados. */
-  ask(pr: PullRequestContext, finding: Finding): Promise<{ probability: number; inputTokens: number }>;
+  estimate(pr: PullRequestContext, finding: Finding, question: Question): number;
+  /**
+   * La probabilidad del sí a esa pregunta sobre el hallazgo, y los tokens de entrada cobrados. Qué
+   * se pregunta lo decide el núcleo (`questionFor`); cómo se formula, el adaptador.
+   */
+  ask(
+    pr: PullRequestContext,
+    finding: Finding,
+    question: Question,
+  ): Promise<{ probability: number; inputTokens: number }>;
 }
 
 /** GitHub rechaza el token (401): hay que avisar, porque no se arregla solo (decisión 3). */

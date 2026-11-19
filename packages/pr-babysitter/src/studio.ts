@@ -137,6 +137,11 @@ export const graph = createTrackingGraph(
   {
     timeoutMs: TIMEOUT_MS,
     log: (line) => console.error(line),
-    triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 } },
+    triage: {
+      threshold: 0.8,
+      budget: { capUsd: 0.05, inputPricePerMTok: 0.24 },
+      // La lista por defecto del contenedor (`TRIAGE_RULE_CHECKS`).
+      ruleChecks: ['lint', 'typecheck', 'SonarCloud Code Analysis'],
+    },
   },
 );

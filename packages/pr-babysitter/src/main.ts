@@ -79,6 +79,7 @@ const driver = createDriver({
       capUsd: config.triageBudgetUsd,
       inputPricePerMTok: config.decisionModelInputPricePerMTok,
     },
+    ruleChecks: config.triageRuleChecks,
   },
   checkpointer: new MemorySaver(),
   policy: { maintainer: config.githubMaintainer, baseBranch: BASE_BRANCH },
