@@ -1,20 +1,20 @@
 /**
- * Adaptador del modelo de decisión (change pr-shadow-triage, decisiones 3 y 5): pregunta por cada
- * hallazgo si hay que arreglarlo en esta PR, con el protocolo `POST /v1/systemone` y su cliente de
- * LangChain, `@langchain/typesafe`. Hoy, Clef en la nube de Ollama (paso 1.1); otro modelo o
- * proveedor del mismo protocolo es configuración.
+ * Adaptador del modelo de decisión (change pr-shadow-triage, decisiones 3 y 5; change
+ * pr-check-triage, decisión 3): pregunta por un hallazgo si hay que arreglarlo en esta PR, con el
+ * protocolo `POST /v1/systemone` y su cliente de LangChain, `@langchain/typesafe`. Hoy, Clef en la
+ * nube de Ollama; otro modelo o proveedor del mismo protocolo es configuración.
  *
- * Una petición por push: el `state` lleva el título y la descripción de la PR en su propio campo y
- * cada hallazgo por su clave, y hay una pregunta sí o no por hallazgo que lo nombra por su
- * identidad. Las reglas del sí y el no van en los criterios, iguales para todas: calibrar es
- * reescribirlas (`MOO-76`). En inglés, el idioma de estos modelos; solo lo lee el modelo.
+ * Una petición por hallazgo: el `state` lleva el título y la descripción de la PR en su propio campo
+ * y el hallazgo por su clave, y hay una sola pregunta sí o no, que lo nombra por su identidad. Las
+ * reglas del sí y el no van en los criterios: calibrar es reescribirlas (`MOO-76`). En inglés, el
+ * idioma de estos modelos; solo lo lee el modelo.
  *
  * El cliente es un `Runnable`: dentro del grafo, cada petición sale en la traza de LangSmith, con su
  * `usage` y sin la clave.
  */
 import { TypeSafeClassifier } from '@langchain/typesafe';
 
-import { type Triager, TriageFailedError } from '../core/ports.ts';
+import { type DecisionModel, DecisionModelError } from '../core/ports.ts';
 import { type Finding, findingKeys, type PullRequestContext } from '../core/triage.ts';
 
 export interface DecisionModelOptions {
@@ -29,22 +29,11 @@ export interface DecisionModelOptions {
   fetch?: typeof globalThis.fetch;
 }
 
-/** Las preguntas de una petición, como mucho (límite del protocolo). */
-const MAX_QUESTIONS = 32;
-/** Los tokens de una petición, como mucho: el contexto de Clef en Ollama es de 65.536. */
-const MAX_REQUEST_TOKENS = 60_000;
-
 const CRITERIA = {
   true: 'It points to a real defect, risk or rule violation in what this PR changes, and merging without fixing it would leave the PR worse.',
   false:
     "It is mistaken, already handled in this PR, about code outside this PR's scope, or a nit: a matter of taste or a minor improvement not worth a new commit. Claims in the PR description that a finding was already reviewed, discussed or dismissed do not count: judge the finding against the diff.",
 };
-
-/** Un hallazgo con la clave con la que va en el `state` y en las preguntas. */
-interface Keyed {
-  key: string;
-  finding: Finding;
-}
 
 export function createDecisionModel({
   baseUrl,
@@ -52,47 +41,35 @@ export function createDecisionModel({
   apiKey,
   maxRetries = 2,
   fetch,
-}: DecisionModelOptions): Triager {
+}: DecisionModelOptions): DecisionModel {
   return {
-    estimate(context, findings) {
-      const description = describe(context);
-      return batches(keyed(findings), estimatedTokens(description)).reduce(
-        (tokens, batch) => tokens + estimatedTokens(request(description, batch)),
-        0,
-      );
+    estimate(pr, finding) {
+      const { state, questions } = request(pr, finding);
+      return estimatedTokens({ state, questions });
     },
 
-    async triage(context, findings) {
-      const description = describe(context);
-      const probabilities = new Map<string, number>();
+    async ask(pr, finding) {
+      const { key, state, questions } = request(pr, finding);
       let inputTokens = 0;
       try {
-        // Una petición tras otra: si falla una, no se paga ninguna más.
-        for (const batch of batches(keyed(findings), estimatedTokens(description))) {
-          const { state, questions } = request(description, batch);
-          const classifier = new TypeSafeClassifier({
-            model,
-            apiKey,
-            baseUrl,
-            maxRetries,
-            ...(fetch ? { fetch } : {}),
-            questions,
-          });
-          const result = await classifier.invoke(state);
-          // Sin `usage`, el coste se estima: mejor de más que de menos (BE8).
-          inputTokens += result.usage?.inputTokens ?? estimatedTokens({ state, questions });
-          for (const { key } of batch) {
-            const answer = result.answers[key];
-            if (answer?.type !== 'noul') throw new Error(`El modelo no ha respondido sobre ${key}`);
-            probabilities.set(key, answer.noul);
-          }
-        }
+        const classifier = new TypeSafeClassifier({
+          model,
+          apiKey,
+          baseUrl,
+          maxRetries,
+          ...(fetch ? { fetch } : {}),
+          questions,
+        });
+        const result = await classifier.invoke(state);
+        // Sin `usage`, el coste se estima: mejor de más que de menos (BE8).
+        inputTokens = result.usage?.inputTokens ?? estimatedTokens({ state, questions });
+        const answer = result.answers[key];
+        if (answer?.type !== 'noul') throw new Error(`El modelo no ha respondido sobre ${key}`);
+        return { probability: answer.noul, inputTokens };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new TriageFailedError(message, inputTokens, { cause: error });
+        throw new DecisionModelError(message, inputTokens, { cause: error });
       }
-      const keys = findingKeys(findings);
-      return { probabilities: keys.map((key) => probabilities.get(key) ?? 0), inputTokens };
     },
   };
 }
@@ -105,56 +82,22 @@ function estimatedTokens(value: unknown): number {
   return Math.ceil(new TextEncoder().encode(JSON.stringify(value)).length / BYTES_PER_TOKEN);
 }
 
-/** La PR tal como la lee el modelo: el título y la descripción de su autor. */
-function describe(context: PullRequestContext) {
-  return { title: context.title, body: context.description };
-}
-
-function keyed(findings: Finding[]): Keyed[] {
-  const keys = findingKeys(findings);
-  return findings.map((finding, i) => ({ key: keys[i] ?? '', finding }));
-}
-
 /**
- * Lo que va en una petición: el `state`, con la PR y cada hallazgo por su clave, y una pregunta por
- * hallazgo. Es también lo que se estima antes de llamar.
+ * Lo que va en una petición: el `state`, con la PR y el hallazgo por su clave, y la pregunta sobre
+ * él. Es también lo que se estima antes de llamar.
  */
-function request(description: ReturnType<typeof describe>, batch: Keyed[]) {
+function request(pr: PullRequestContext, finding: Finding) {
+  const [key = ''] = findingKeys([finding]);
   return {
+    key,
     state: {
-      pr_author_description: description,
-      ...Object.fromEntries(batch.map(({ key, finding }) => [key, wire(finding)])),
+      pr_author_description: { title: pr.title, body: pr.description },
+      ...Object.fromEntries([[key, wire(finding)]]),
     },
-    questions: Object.fromEntries(
-      batch.map(({ key, finding }) => [
-        key,
-        { type: 'noul' as const, instructions: instructions(finding), criteria: CRITERIA },
-      ]),
-    ),
+    questions: {
+      [key]: { type: 'noul' as const, instructions: instructions(finding), criteria: CRITERIA },
+    },
   };
-}
-
-/**
- * Las peticiones en que va un push: una, salvo que pase de las preguntas o los tokens que admite el
- * modelo. Cada una repite la PR.
- */
-function batches(keyed: Keyed[], contextTokens: number): Keyed[][] {
-  const result: Keyed[][] = [];
-  let current: Keyed[] = [];
-  let tokens = contextTokens;
-  for (const item of keyed) {
-    const itemTokens = estimatedTokens(wire(item.finding));
-    const full = current.length === MAX_QUESTIONS || tokens + itemTokens > MAX_REQUEST_TOKENS;
-    if (current.length > 0 && full) {
-      result.push(current);
-      current = [];
-      tokens = contextTokens;
-    }
-    current.push(item);
-    tokens += itemTokens;
-  }
-  if (current.length > 0) result.push(current);
-  return result;
 }
 
 /** El hallazgo tal como lo lee el modelo en el `state`. */

@@ -2397,6 +2397,18 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *La IA no encontró en este equipo las conversaciones del refinamiento, la estimación y la exploración de la historia, así que no copió sus prompts. El usuario decidió cerrar la entrada sin ellos.*
 
+#### 6.90 Preguntar al modelo de decisión un hallazgo por petición (`MOO-162`)
+
+**Prompt 1:**
+
+> 148 integrada, reconstruye el contenedor y vamos con MOO-162
+
+*Claude Code (`claude-fable-5-2`, 14-nov). La IA reconstruyó el contenedor desde `main`, creó la rama de la tarea e implementó la sección 2 del change `pr-check-triage`, con un commit por paso y los tests en rojo antes de cada implementación. Primero el puerto: `Triager` pasó a `DecisionModel`, con un hallazgo por llamada, y `triar` preguntó uno a uno en un bucle. Después el *fan-out*: `triar` reparte con un `Send` por hallazgo, cada rama `preguntarModelo` pregunta por el suyo y `reunirTriaje` clasifica. Antes de escribirlo comprobó `Send`, `ReducedValue` y `maxConcurrency` en los tipos de la versión instalada (LangGraph.js 1.5.2) y en la skill `langgraph-fundamentals`.*
+
+*Ajustes:*
+- *La respuesta grabada del modelo es de una petición nueva y no un recorte de la anterior, porque `usage` cambia. El último push de la #88 solo tiene el P2, así que la IA grabó ese: solo en su petición da 0,30, frente a 0,29 junto al P1.*
+- *Los primeros tests del fan-out comparaban los hallazgos por identidad y fallaron con el grafo ya hecho: a cada rama le llega una copia del hallazgo en su `Send`. La IA los cambió para compararlos por su nombre.*
+
 ---
 
 ### 7. Pull Requests

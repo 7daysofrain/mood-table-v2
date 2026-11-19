@@ -83,22 +83,20 @@ export interface Findings {
 }
 
 /**
- * El modelo de decisión (change pr-shadow-triage, decisión 3): para cada hallazgo, en su orden, la
- * probabilidad de que haya que arreglarlo en esta PR antes de integrarla, y los tokens de entrada
- * que ha cobrado. No sabe de umbrales ni de reglas. Si el modelo no responde, lanza
- * `TriageFailedError`.
+ * El modelo de decisión (change pr-check-triage, decisión 3; glosario de PB): responde a una
+ * pregunta de sí o no sobre un hallazgo, que va solo en su petición, con la probabilidad del sí. No
+ * sabe de umbrales ni de reglas: eso es del triador, los nodos del grafo. Si no responde, lanza
+ * `DecisionModelError`.
  */
-export interface Triager {
+export interface DecisionModel {
   /**
-   * Los tokens de entrada que costaría triar esos hallazgos, estimados antes de llamar y por lo
-   * alto: las peticiones enteras, con las preguntas y sus criterios, y la PR en cada una (decisión
-   * 6). Solo el adaptador sabe cómo son.
+   * Los tokens de entrada que costaría preguntar por ese hallazgo, estimados antes de llamar y por
+   * lo alto: la petición entera, con la PR, el hallazgo y la pregunta con sus criterios (decisión
+   * 5). Solo el adaptador sabe cómo es.
    */
-  estimate(context: PullRequestContext, findings: Finding[]): number;
-  triage(
-    context: PullRequestContext,
-    findings: Finding[],
-  ): Promise<{ probabilities: number[]; inputTokens: number }>;
+  estimate(pr: PullRequestContext, finding: Finding): number;
+  /** La probabilidad de que haya que arreglarlo en esta PR, y los tokens de entrada cobrados. */
+  ask(pr: PullRequestContext, finding: Finding): Promise<{ probability: number; inputTokens: number }>;
 }
 
 /** GitHub rechaza el token (401): hay que avisar, porque no se arregla solo (decisión 3). */
@@ -116,12 +114,12 @@ export class GitHubRequestRejectedError extends Error {
 }
 
 /**
- * El modelo de decisión no ha respondido a todo el triaje. Lleva los tokens de entrada que ya ha
- * cobrado: si el triaje va en varias peticiones y falla una posterior, las anteriores se han pagado
- * y suman al gasto de la PR (change pr-shadow-triage, decisión 6).
+ * El modelo de decisión no ha respondido sobre un hallazgo. Lleva los tokens de entrada que ya ha
+ * cobrado: una petición que se paga y después falla (la respuesta no trae el hallazgo) suma al gasto
+ * de la PR (change pr-check-triage, decisión 5).
  */
-export class TriageFailedError extends Error {
-  override readonly name = 'TriageFailedError';
+export class DecisionModelError extends Error {
+  override readonly name = 'DecisionModelError';
 
   readonly inputTokens: number;
 

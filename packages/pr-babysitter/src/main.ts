@@ -63,7 +63,7 @@ const driver = createDriver({
     reviewer: { login: config.githubReviewer, name: 'Codex', parse: parseCodexFinding },
     github,
   }),
-  triager: createDecisionModel({
+  decisionModel: createDecisionModel({
     baseUrl: config.decisionModelBaseUrl,
     model: config.decisionModel,
     apiKey: config.decisionModelApiKey,
