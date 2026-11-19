@@ -48,3 +48,8 @@ export function chipOf(id: ChipId): Chip {
 export function ledAmpsAtFullBrightness(chip: Chip): number {
   return (CHANNELS_PER_LED * chip.channelMilliamps) / 1000;
 }
+
+export function sinUsar(): number {
+  const margen = 0;
+  return 1;
+}
