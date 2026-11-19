@@ -53,6 +53,8 @@ function identity(finding: Finding): string {
  * comprobación, termina con el origen de su contexto.
  */
 function why(finding: Finding, verdict: Verdict, threshold: number): string {
+  // La regla decide por el nombre de la comprobación: su contexto no ha contado.
+  if (verdict.reason === 'rule') return 'regla: comprobación determinista';
   return reason(finding, verdict, threshold) + contextOrigin(finding);
 }
 
@@ -72,7 +74,11 @@ function contextOrigin(finding: Finding): string {
   return ` · contexto: ${ORIGIN_NAMES[origin]}${truncated ? ', cortado' : ''}`;
 }
 
-function reason(finding: Finding, verdict: Verdict, threshold: number): string {
+function reason(
+  finding: Finding,
+  verdict: Exclude<Verdict, { reason: 'rule' }>,
+  threshold: number,
+): string {
   switch (verdict.reason) {
     case 'noContext':
       if (finding.source === 'reviewer') return 'no se ha podido leer el trozo de diff que comenta';

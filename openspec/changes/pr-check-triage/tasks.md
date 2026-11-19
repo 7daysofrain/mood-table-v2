@@ -161,7 +161,7 @@
   - **`core/triage-summary.test.ts`:** «regla: comprobación determinista».
   - **`adapters/config.test.ts`:** `TRIAGE_RULE_CHECKS`, con el valor por defecto, una lista con
     espacios y una lista vacía.
-- [ ] 3.2 La regla y `questionFor` en `core/triage.ts`, el porqué en `core/triage-summary.ts`, y
+- [x] 3.2 La regla y `questionFor` en `core/triage.ts`, el porqué en `core/triage-summary.ts`, y
   `TRIAGE_RULE_CHECKS` en `adapters/config.ts` y `.env.example`.
   Verificar: los tests de 3.1 en verde; `pnpm typecheck` en verde.
 - [ ] 3.3 **(test en rojo)** La pregunta de la causa en `adapters/decision-model.test.ts`:
