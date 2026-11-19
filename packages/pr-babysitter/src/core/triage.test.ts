@@ -6,10 +6,12 @@ import {
   findingKeys,
   hasContext,
   latestRound,
+  questionFor,
   type RoundAnswer,
   spend,
   type TriageBudget,
   withinBudget,
+  withoutModel,
 } from './triage.ts';
 
 const THRESHOLD = 0.8;
@@ -190,6 +192,77 @@ describe('el reparto del tope de gasto (change pr-check-triage, decisión 5)', (
 
   it('el coste real sale de los tokens de entrada cobrados y se suma al gasto de la PR', () => {
     expect(spend(0.01, 12_000, { capUsd: 0.05, inputPricePerMTok: 0.24 })).toBeCloseTo(0.01288, 10);
+  });
+});
+
+describe('lo que se decide sin el modelo (change pr-check-triage, decisión 6)', () => {
+  const budget: TriageBudget = { capUsd: 0.001, inputPricePerMTok: 1 };
+  const RULE_CHECKS = ['lint', 'typecheck', 'SonarCloud Code Analysis'];
+  const estimated: Finding[] = [];
+  /** 400 tokens por petición: con el tope de 1.000, caben dos. */
+  const estimate = (finding: Finding) => {
+    estimated.push(finding);
+    return 400;
+  };
+  const decide = (findings: Finding[], spentUsd = 0, ruleChecks = RULE_CHECKS) =>
+    withoutModel(findings, { ruleChecks, spentUsd, budget, estimate });
+
+  it('una comprobación de la lista sale real por regla, sin probabilidad', () => {
+    const lint = checkFinding('lint');
+
+    expect(decide([lint])).toEqual([{ kind: 'rule' }]);
+    expect(classify(lint, { kind: 'rule' }, THRESHOLD)).toEqual({ class: 'valid', reason: 'rule' });
+  });
+
+  it('la regla va antes que el contexto: sale real aunque no lo tenga', () => {
+    expect(
+      decide([
+        checkFinding('typecheck', { state: 'unreadable' }),
+        checkFinding('SonarCloud Code Analysis', { state: 'notProvided' }),
+      ]),
+    ).toEqual([{ kind: 'rule' }, { kind: 'rule' }]);
+  });
+
+  it('la regla va antes que el tope: sale real con el tope agotado, y no reserva nada', () => {
+    estimated.length = 0;
+    const lint = checkFinding('lint');
+    const e2e = checkFinding('e2e');
+
+    expect(decide([lint, e2e], 0.001)).toEqual([{ kind: 'rule' }, { kind: 'overBudget' }]);
+    expect(estimated).toEqual([e2e]);
+  });
+
+  it('las demás: sin contexto, exige criterio; fuera del tope, también; y el resto va al modelo', () => {
+    const noDiff = reviewerFinding({ diffHunk: null });
+    const e2e = checkFinding('e2e');
+    const test = checkFinding('test');
+    const build = checkFinding('build');
+
+    expect(decide([noDiff, e2e, test, build])).toEqual([
+      { kind: 'noContext' },
+      undefined,
+      undefined,
+      { kind: 'overBudget' },
+    ]);
+  });
+
+  it('una comprobación que no está en la lista no la decide la regla', () => {
+    expect(decide([checkFinding('lint')], 0, [])).toEqual([undefined]);
+    expect(decide([checkFinding('Lint')])).toEqual([undefined]);
+  });
+
+  it('un comentario del revisor nunca lo decide la regla, aunque su título sea el de una comprobación', () => {
+    expect(decide([reviewerFinding({ title: 'lint' })])).toEqual([undefined]);
+  });
+});
+
+describe('la pregunta depende de la fuente del hallazgo (change pr-check-triage, decisión 3)', () => {
+  it('por una comprobación, si la causa esta PR', () => {
+    expect(questionFor(checkFinding('e2e'))).toBe('cause');
+  });
+
+  it('por un comentario del revisor, si hay que arreglarlo en esta PR', () => {
+    expect(questionFor(reviewerFinding())).toBe('fixInThisPr');
   });
 });
 

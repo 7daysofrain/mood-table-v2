@@ -153,7 +153,7 @@
 
 ## 3. MOO-163 · infra
 
-- [ ] 3.1 **(test en rojo)** Las reglas (`design.md` decisiones 3 y 6):
+- [x] 3.1 **(test en rojo)** Las reglas (`design.md` decisiones 3 y 6):
   - **`core/triage.test.ts`:**
     - una comprobación de la lista sale `{ class: 'valid', reason: 'rule' }`, aunque no tenga
       contexto o el tope esté agotado;
