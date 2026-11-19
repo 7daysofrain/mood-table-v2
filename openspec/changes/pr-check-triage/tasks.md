@@ -186,7 +186,7 @@
   - `prompts.md`: lo que añada esta tarea a la entrada de la historia.
 
   Verificar: `pnpm lint` en verde.
-- [ ] 3.8 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 3.8 **Prueba a mano** (sin commit), con el sistema en marcha:
   - una PR de prueba con un `lint` roto;
   - otra con un `e2e` roto.
 
