@@ -206,6 +206,12 @@ triar ----->  por hallazgo:  regla?            --> respuesta: rule
 - **LangGraph Studio** (`src/studio.ts`): el modelo falso tarda un poco y da probabilidades distintas
   por fuente, para ver las ramas en paralelo y las tres clases.
 
+> **Nota al archivar (19-nov), alineada con el código:** las respuestas que `triar` decide sin el
+> modelo no van dentro de la ronda, sino por el mismo canal que las de las ramas (`triageAnswers`),
+> con su ronda y la posición del hallazgo. La ronda (`triageRound`) lleva el número, la PR y los
+> hallazgos, y la arista reparte los que aún no tienen respuesta. Así hay un solo sitio donde mirar
+> las respuestas (`MOO-162`, #151).
+
 **Debería ser una D# nueva** en `docs/idea-mood-table.md` §10 (D115): el triaje pregunta cada hallazgo
 en una rama propia del grafo (*fan-out* con `Send`), con una ronda por triaje y un tope de concurrencia;
 matiza D91, como D114.
@@ -251,6 +257,13 @@ habría carreras, y la reserva por lo alto ya basta para BE8.
   El usuario lo aceptó al explorar.
 - **El veredicto:** `{ class: 'valid', reason: 'rule' }`, sin probabilidad. El resumen dice «regla:
   comprobación determinista».
+- **Nota al archivar (19-nov), alineada con el código:**
+  - el orden (regla, contexto y tope) vive en una función pura del núcleo, `withoutModel`, que el
+    nodo `triar` llama, para probarlo sin el grafo;
+  - `TRIAGE_RULE_CHECKS` vacía es la lista por defecto, como cualquier otra variable vacía, y una
+    coma sola apaga la regla;
+  - el resumen de una comprobación decidida por regla no lleva el origen de su contexto, que no ha
+    contado (`MOO-163`, #156).
 - **Una comprobación exigida nueva o un *job* renombrado** no está en la lista, así que va por la
   pregunta de la causa. Es el camino seguro: preguntar cuesta unos 0,0004 $ y puede salir *exige
   criterio*, mientras que una regla equivocada daría *real* sin mirar.

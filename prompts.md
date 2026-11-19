@@ -2431,6 +2431,12 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Una variable de entorno vacía cuenta como que falta, así que `TRIAGE_RULE_CHECKS=` no puede ser «ninguna comprobación». La IA dejó la variable vacía como la lista por defecto y una coma sola como la lista vacía.*
 - *Un test que ya había usaba* SonarCloud Code Analysis *como ejemplo de comprobación sin contexto, y con la regla pasa a salir* real*. La IA lo cambió por una comprobación que no está en la lista.*
 
+**Prompt 2:**
+
+> 156 integrada, reconstruye el contenedor y archiva el change
+
+*Claude Code (`claude-fable-5-2`, 19-nov). La IA comprobó en Linear que las tres tareas de la historia estaban en* Done*, archivó el change con la CLI de OpenSpec, que llevó su delta a la spec `pr-triage` (tres requisitos nuevos y tres modificados), y anotó en el `design.md` archivado las tres desviaciones de la implementación. No lanzó `/opsx:verify`: lo dijo en la PR, con la tabla de escenarios y tests de las tres PR como comprobación.*
+
 ---
 
 ### 7. Pull Requests
