@@ -323,7 +323,8 @@ export function createTrackingGraph(
       read.findings.filter(hasContext),
       state.spentUsd ?? 0,
       triage.budget,
-      (finding) => decisionModel.estimate(read.context, finding),
+      // De momento, la pregunta de hoy para todos; el paso 3.6 pone la de cada fuente.
+      (finding) => decisionModel.estimate(read.context, finding, 'fixInThisPr'),
     );
     const round = (state.triageRound?.number ?? 0) + 1;
     const decided = read.findings.flatMap((finding, index): RoundAnswer[] => {
@@ -344,7 +345,7 @@ export function createTrackingGraph(
   // que ya ha cobrado antes de fallar también es gasto de la PR.
   const preguntarModelo = async ({ round, index, pr, finding }: AskInput) => {
     try {
-      const { probability, inputTokens } = await decisionModel.ask(pr, finding);
+      const { probability, inputTokens } = await decisionModel.ask(pr, finding, 'fixInThisPr');
       const answered: RoundAnswer = {
         round,
         index,

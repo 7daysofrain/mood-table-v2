@@ -168,7 +168,7 @@
   - con `cause`, las instrucciones nombran la comprobación con la pregunta del *spike* y sus criterios,
     sin *"judge the finding against the diff"*;
   - con `fixInThisPr`, la pregunta y los criterios de hoy, sin cambios.
-- [ ] 3.4 Las dos preguntas en `adapters/decision-model.ts`: `ask` y `estimate` reciben la pregunta.
+- [x] 3.4 Las dos preguntas en `adapters/decision-model.ts`: `ask` y `estimate` reciben la pregunta.
   Verificar: los tests de 3.3 en verde.
 - [ ] 3.5 **(test en rojo)** El grafo, en `core/graph.test.ts`, un `describe` por requisito de
   `specs/pr-triage` que toca esta sección:

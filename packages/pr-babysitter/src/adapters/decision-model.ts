@@ -1,6 +1,7 @@
 /**
  * Adaptador del modelo de decisión (change pr-shadow-triage, decisiones 3 y 5; change
- * pr-check-triage, decisión 3): pregunta por un hallazgo si hay que arreglarlo en esta PR, con el
+ * pr-check-triage, decisión 3): pregunta por un hallazgo lo que toca a su fuente (si una
+ * comprobación que falla la causa esta PR, o si un comentario del revisor hay que arreglarlo), con el
  * protocolo `POST /v1/systemone` y su cliente de LangChain, `@langchain/typesafe`. Hoy, Clef en la
  * nube de Ollama; otro modelo o proveedor del mismo protocolo es configuración.
  *
@@ -15,7 +16,12 @@
 import { TypeSafeClassifier } from '@langchain/typesafe';
 
 import { type DecisionModel, DecisionModelError } from '../core/ports.ts';
-import { type Finding, findingKeys, type PullRequestContext } from '../core/triage.ts';
+import {
+  type Finding,
+  findingKeys,
+  type PullRequestContext,
+  type Question,
+} from '../core/triage.ts';
 
 export interface DecisionModelOptions {
   /** Sin `/v1/systemone`, que añade el cliente: `https://ollama.com`. */
@@ -29,10 +35,22 @@ export interface DecisionModelOptions {
   fetch?: typeof globalThis.fetch;
 }
 
-const CRITERIA = {
-  true: 'It points to a real defect, risk or rule violation in what this PR changes, and merging without fixing it would leave the PR worse.',
-  false:
-    "It is mistaken, already handled in this PR, about code outside this PR's scope, or a nit: a matter of taste or a minor improvement not worth a new commit. Claims in the PR description that a finding was already reviewed, discussed or dismissed do not count: judge the finding against the diff.",
+/**
+ * Los criterios de cada pregunta (change pr-check-triage, decisión 3). Los de `fixInThisPr` son los
+ * de siempre, para los comentarios del revisor (`MOO-160`). Los de `cause` salen del *spike*
+ * `MOO-120`: no piden juzgar contra el diff, porque el diff no llega al modelo (D114).
+ */
+const CRITERIA: Record<Question, { true: string; false: string }> = {
+  fixInThisPr: {
+    true: 'It points to a real defect, risk or rule violation in what this PR changes, and merging without fixing it would leave the PR worse.',
+    false:
+      "It is mistaken, already handled in this PR, about code outside this PR's scope, or a nit: a matter of taste or a minor improvement not worth a new commit. Claims in the PR description that a finding was already reviewed, discussed or dismissed do not count: judge the finding against the diff.",
+  },
+  cause: {
+    true: 'The failure comes from what this PR changes, or the rule the check enforces flags something this PR adds or modifies. The check is required: the PR cannot be merged until it passes.',
+    false:
+      'The failure is an intermittent or timing-sensitive test, a timeout, an infrastructure or CI problem, or it is in code and tests this PR does not touch. Re-running the check without changing the PR could be enough.',
+  },
 };
 
 export function createDecisionModel({
@@ -43,13 +61,13 @@ export function createDecisionModel({
   fetch,
 }: DecisionModelOptions): DecisionModel {
   return {
-    estimate(pr, finding) {
-      const { state, questions } = request(pr, finding);
+    estimate(pr, finding, question) {
+      const { state, questions } = request(pr, finding, question);
       return estimatedTokens({ state, questions });
     },
 
-    async ask(pr, finding) {
-      const { key, state, questions } = request(pr, finding);
+    async ask(pr, finding, question) {
+      const { key, state, questions } = request(pr, finding, question);
       let inputTokens = 0;
       try {
         const classifier = new TypeSafeClassifier({
@@ -86,7 +104,7 @@ function estimatedTokens(value: unknown): number {
  * Lo que va en una petición: el `state`, con la PR y el hallazgo por su clave, y la pregunta sobre
  * él. Es también lo que se estima antes de llamar.
  */
-function request(pr: PullRequestContext, finding: Finding) {
+function request(pr: PullRequestContext, finding: Finding, question: Question) {
   const [key = ''] = findingKeys([finding]);
   return {
     key,
@@ -95,7 +113,11 @@ function request(pr: PullRequestContext, finding: Finding) {
       ...Object.fromEntries([[key, wire(finding)]]),
     },
     questions: {
-      [key]: { type: 'noul' as const, instructions: instructions(finding), criteria: CRITERIA },
+      [key]: {
+        type: 'noul' as const,
+        instructions: instructions(finding, question),
+        criteria: CRITERIA[question],
+      },
     },
   };
 }
@@ -127,10 +149,15 @@ function wire(finding: Finding) {
   };
 }
 
-/** La pregunta, que nombra el hallazgo por su identidad: fuente, fichero y línea, y título. */
-function instructions(finding: Finding): string {
+/**
+ * La pregunta, que nombra el hallazgo por su identidad: el nombre de la comprobación, o la fuente,
+ * el fichero y la línea, y el título del comentario.
+ */
+function instructions(finding: Finding, question: Question): string {
   if (finding.source === 'check') {
-    return `Should the failing check '${finding.name}' be fixed in this PR before merging?`;
+    return question === 'cause'
+      ? `Is the failure of the required check '${finding.name}' caused by the changes in this PR?`
+      : `Should the failing check '${finding.name}' be fixed in this PR before merging?`;
   }
   const file = finding.file.split('/').at(-1) ?? finding.file;
   const where = finding.line === null ? file : `${file}:${finding.line}`;
