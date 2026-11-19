@@ -164,7 +164,7 @@
 - [x] 3.2 La regla y `questionFor` en `core/triage.ts`, el porqué en `core/triage-summary.ts`, y
   `TRIAGE_RULE_CHECKS` en `adapters/config.ts` y `.env.example`.
   Verificar: los tests de 3.1 en verde; `pnpm typecheck` en verde.
-- [ ] 3.3 **(test en rojo)** La pregunta de la causa en `adapters/decision-model.test.ts`:
+- [x] 3.3 **(test en rojo)** La pregunta de la causa en `adapters/decision-model.test.ts`:
   - con `cause`, las instrucciones nombran la comprobación con la pregunta del *spike* y sus criterios,
     sin *"judge the finding against the diff"*;
   - con `fixInThisPr`, la pregunta y los criterios de hoy, sin cambios.
