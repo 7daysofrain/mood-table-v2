@@ -180,7 +180,7 @@
   `src/main.ts` en `TrackingOptions.triage`, y la lista por defecto en `studio.ts`.
   Verificar: los tests de 3.5 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 3.7 Documentación:
+- [x] 3.7 Documentación:
   - README §2.4 (*PR Babysitter*): `TRIAGE_RULE_CHECKS`;
   - README §2.5: las dos preguntas que salen hacia el modelo;
   - `prompts.md`: lo que añada esta tarea a la entrada de la historia.
