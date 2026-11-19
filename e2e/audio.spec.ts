@@ -69,7 +69,7 @@ test('la tira virtual reacciona a un fichero de audio', async ({ page }) => {
     await page.goto(engine.url);
 
     await expect(header(page).getByRole('status')).toHaveText('Conectado');
-    await expect(header(page)).toContainText('Fichero: golpes.wav');
+    await expect(header(page)).toContainText('Fichero: otro.wav');
     // El visor cambia entre un golpe (encendido) y el silencio (en negro).
     const brightness = await viewerBrightnessRange(page);
     expect(brightness.max, 'el visor se enciende con los golpes').toBeGreaterThan(0);
