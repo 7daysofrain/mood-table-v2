@@ -176,7 +176,7 @@
     tope agotado;
   - `e2e` llega a `preguntarModelo` con `cause`, y un comentario del revisor, con `fixInThisPr`;
   - una comprobación que no está en la lista, también con `cause`.
-- [ ] 3.6 La regla y la pregunta en `triar` y en el `Send` de `core/graph.ts`, la lista desde
+- [x] 3.6 La regla y la pregunta en `triar` y en el `Send` de `core/graph.ts`, la lista desde
   `src/main.ts` en `TrackingOptions.triage`, y la lista por defecto en `studio.ts`.
   Verificar: los tests de 3.5 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.

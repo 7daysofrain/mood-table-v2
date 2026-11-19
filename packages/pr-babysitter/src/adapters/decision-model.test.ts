@@ -184,7 +184,7 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     expect(JSON.stringify(question)).not.toContain('judge the finding against the diff');
   });
 
-  it('la estimación cuenta la pregunta que se manda', async () => {
+  it('la estimación cuenta la pregunta que se manda', () => {
     const { decisionModel } = model(answer);
     const e2e = check('e2e', 'Error');
 
