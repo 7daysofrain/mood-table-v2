@@ -92,7 +92,7 @@
   - el mismo hilo sigue sin resolver en un push nuevo → vuelve a salir en el resumen de ese push;
   - con el hilo resuelto → *lista para integrar* y sin resumen;
   - una comprobación que falla y un hilo resuelto → el resumen no lo trae.
-- [ ] 1.15 Lo que falte para que 1.14 pase, si falta algo, y `studio.ts` con un hallazgo de un push
+- [x] 1.15 Lo que falte para que 1.14 pase, si falta algo, y `studio.ts` con un hallazgo de un push
   anterior.
   Verificar: `pnpm test` en verde; `pnpm studio` arranca y el hilo de ejemplo llega al resumen.
 - [ ] 1.16 Documentación: README §2.2 (el adaptador de GitHub con los hilos por GraphQL, el del
