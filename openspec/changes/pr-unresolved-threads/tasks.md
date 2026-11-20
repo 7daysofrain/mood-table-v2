@@ -66,7 +66,7 @@
 - [x] 1.9 El núcleo del triaje: la pregunta, la respuesta y el veredicto con `fixed`, `classify`,
   `withoutModel` y el puerto `DecisionModel.ask`.
   Verificar: los tests de 1.8 en verde y los que ya había.
-- [ ] 1.10 **(test en rojo)** El adaptador del modelo de decisión (`design.md` decisión 3), en
+- [x] 1.10 **(test en rojo)** El adaptador del modelo de decisión (`design.md` decisión 3), en
   `adapters/decision-model.test.ts`, con una fixture de `systemone` de una respuesta con tres
   preguntas (`test/fixtures/decision-model/`):
   - un comentario de un push anterior va en una petición con las tres preguntas, con el texto exacto
