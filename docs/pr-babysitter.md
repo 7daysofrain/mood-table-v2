@@ -193,6 +193,7 @@ cada historia.
 | BQ6 | ¿Refleja el sistema en Linear el estado de cada PR (mover la historia o la tarea), además de comentar? Hoy los estados los mueve la integración de GitHub, y dos escritores sobre el mismo estado se pisarían | Una historia propia de PB |
 | BQ7 | Cómo hace push el sistema sin poder integrar: en GitHub, el permiso `Contents: write` del token que hace falta para subir commits también deja integrar PR por la API, y BE2 y D64 piden que no pueda | BH3 |
 | BQ8 | Qué clase sale cuando una comprobación que falla no la causa la PR, y cómo se nombra para el mantenedor: *no aplica* no encaja (no está equivocada, ni resuelta, ni fuera de alcance, ni es un nit) y, sin pasar la comprobación exigida, la PR no se integra (`MOO-159`) | `MOO-155` |
+| BQ9 | Qué clase sale cuando una incidencia nueva de SonarQube habría que aceptarla en SonarQube porque su regla no se cumple en ese código: *no aplica* encaja con el triaje, pero aceptarla es motivo para escalar (§4.1), así que quizá deba *exigir criterio*. Hasta resolverla, sale *no aplica* y el resumen dice que se aceptaría en SonarQube (`MOO-148`) | BH4 |
 
 ## 8. Glosario
 
@@ -205,7 +206,7 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Revisor** | `reviewer` | El servicio externo que revisa el código de la PR y deja comentarios (hoy, Codex). |
 | **Comprobación** | `check` | Cada puerta automática de la PR: `lint`, `typecheck`, `test`, `e2e` y SonarQube. |
 | **Alcance de la PR** | `prScope` | Lo que la PR debe cambiar: su tarea y su spec, el plan de la *chore* o la actualización de la dependencia. Un arreglo claramente fuera de él no se escala, se capturaría; si no está claro, sí (§4.1). |
-| **Hallazgo** | `finding` | Algo que una PR debe atender: un comentario del revisor, una incidencia nueva de SonarQube o una comprobación que falla. |
+| **Hallazgo** | `finding` | Algo que una PR debe atender: un comentario del revisor, una incidencia nueva de SonarQube o una comprobación que falla. Cada incidencia es un hallazgo propio, con su fichero y su línea; la comprobación que las lista es un hallazgo solo cuando no lista ninguna (`MOO-148`). |
 | **Triaje** | `triage` | Clasificar un hallazgo en **real** (`valid`), **no aplica** (`notApplicable`) o **exige criterio** (`needsJudgment`). La pregunta es si hay que arreglarlo en esta PR antes de integrarla: *real* es que sí. |
 | **Triador** | `triager` | El agente del sistema que tría cada hallazgo: lo decide por una regla o se lo pregunta al modelo de decisión. |
 | **Modelo de decisión** | `decisionModel` | El modelo que responde, dentro del triador, la pregunta de cada hallazgo con la probabilidad de cada respuesta, que se compara con el umbral. No es un LLM generativo (D90). |
