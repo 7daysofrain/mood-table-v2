@@ -28,7 +28,7 @@
     nuevas; se anotan 10»; con 2, «2 incidencias nuevas; se anotan 2»;
   - el escapado: `%`, `\r` y `\n` en el texto; además `:` y `,` en `file` y `title`. Una ruta o un
     mensaje con `::stop-commands::` o un salto de línea sale en una sola línea.
-- [ ] 1.2 Las funciones puras en `tooling/ci/sonar-issues.ts`, y `check-sonar-issues.ts` pide
+- [x] 1.2 Las funciones puras en `tooling/ci/sonar-issues.ts`, y `check-sonar-issues.ts` pide
   `additionalFields=rules` e imprime las anotaciones antes del bloque `::stop-commands::`. El log y el
   resumen del *job* no cambian.
   Verificar: los tests de 1.1 en verde, y los que ya había; `pnpm lint` y `pnpm typecheck` en verde.

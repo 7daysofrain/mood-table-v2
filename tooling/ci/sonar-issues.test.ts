@@ -121,7 +121,14 @@ describe('resultado a partir de las incidencias de la PR', () => {
     const response: IssuesSearchResponse = {
       paging: { total: 3 },
       issues: [
-        { key: 'AX1', rule: 'typescript:S1', severity: 'MAJOR', component: 'p:a.ts', line: 1, message: 'm' },
+        {
+          key: 'AX1',
+          rule: 'typescript:S1',
+          severity: 'MAJOR',
+          component: 'p:a.ts',
+          line: 1,
+          message: 'm',
+        },
       ],
     };
     const result = summarizeIssues(response, PR);
@@ -220,7 +227,9 @@ describe('anotaciones de las incidencias', () => {
   });
 
   it('anota como mucho 10, en el orden de SonarQube, y el aviso dice cuántas hay', () => {
-    const issues = Array.from({ length: 12 }, (_, index) => issue({ key: `A${index}`, line: index + 1 }));
+    const issues = Array.from({ length: 12 }, (_, index) =>
+      issue({ key: `A${index}`, line: index + 1 }),
+    );
     const annotations = toAnnotations({ paging: { total: 12 }, issues, rules: RULES });
     const errors = annotations.filter((line) => line.startsWith('::error '));
     expect(errors).toHaveLength(10);
