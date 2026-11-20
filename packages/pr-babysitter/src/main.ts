@@ -52,6 +52,7 @@ const driver = createDriver({
     listComments: (number) => github.listComments(number),
     createComment: (number, body) => github.createComment(number, body),
   }),
+  checkReruns: { rerun: (runId) => github.rerunFailedJobs(runId) },
   notifier: createLinearNotifier({
     clientId: config.linearClientId,
     clientSecret: config.linearClientSecret,
@@ -86,6 +87,7 @@ const driver = createDriver({
   checkpointer: new MemorySaver(),
   policy: { maintainer: config.githubMaintainer, baseBranch: BASE_BRANCH },
   timeoutMs: config.trackingTimeoutMs,
+  rerunChecks: config.rerunChecks,
   log,
 });
 

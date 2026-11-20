@@ -9,7 +9,9 @@
  * driver lo reintenta (decisión 4).
  *
  * Pedir la revisión (change pr-review-request, decisión 2) es también un nodo propio, después del
- * aviso de comprobaciones terminadas, por lo mismo: en la espera, se pediría en cada vuelta.
+ * aviso de comprobaciones terminadas, por lo mismo: en la espera, se pediría en cada vuelta. Y
+ * relanzar una comprobación que falla en su primer intento (change pr-check-rerun, decisión 4):
+ * `relanzar` lo pide y vuelve a la espera de las comprobaciones.
  *
  * Antes del aviso final, si la PR necesita intervención con hallazgos, se trían en modo sombra
  * (change pr-shadow-triage, decisión 1): ya están todos los del push. `triar` es el único nodo que
@@ -40,6 +42,7 @@ import * as z from 'zod';
 
 import { checksFinishedNotice, finalNotice, trackingNotice } from './notice.ts';
 import {
+  type CheckReruns,
   type DecisionModel,
   DecisionModelError,
   type Findings,
@@ -53,6 +56,7 @@ import {
   afterChecksWait,
   afterReviewWait,
   type ChecksStep,
+  checksToRerun,
   finalState,
   needsReviewRequest,
   needsTriage,
@@ -85,7 +89,15 @@ const TrackingState = new StateSchema({
    * el aviso de seguimiento.
    */
   push: z
-    .object({ sha: z.string(), seenAt: z.number(), reviewSince: z.number().optional() })
+    .object({
+      sha: z.string(),
+      seenAt: z.number(),
+      reviewSince: z.number().optional(),
+      /** Cuándo pidió el sistema relanzar sus comprobaciones (change pr-check-rerun, decisión 3). */
+      rerunSince: z.number().optional(),
+      /** Las relanzables que GitHub no ha dejado relanzar (change pr-check-rerun, decisión 5). */
+      rerunRejected: z.array(z.string()).optional(),
+    })
     .optional(),
   /**
    * Entrada opcional: la ejecución empieza sin el aviso de seguimiento, porque el driver ya ha
@@ -146,6 +158,7 @@ export interface TrackingPorts {
   findings: Findings;
   decisionModel: DecisionModel;
   summaries: TriageSummaries;
+  checkReruns: CheckReruns;
 }
 
 export interface TrackingOptions {
@@ -155,8 +168,14 @@ export interface TrackingOptions {
    */
   timeoutMs: number;
   /**
-   * Una línea por petición de revisión o resumen del triaje que GitHub rechaza, o por hallazgo sin
-   * respuesta del modelo, para el log de errores.
+   * Las comprobaciones relanzables, por su nombre en la rama base: si fallan en su primer intento,
+   * se relanzan una vez antes del estado final (change pr-check-rerun, decisión 7). Sin ninguna, no
+   * se relanza nada.
+   */
+  rerunChecks: string[];
+  /**
+   * Una línea por petición de revisión, relanzamiento o resumen del triaje que GitHub rechaza, o por
+   * hallazgo sin respuesta del modelo, para el log de errores.
    */
   log: (line: string) => void;
   /**
@@ -178,6 +197,22 @@ export interface TrackingOptions {
  * una PR (change pr-stop, decisión 3): pedirla no es terminar lo que estaba en curso.
  */
 export const REVIEW_REQUEST_NODE = 'pedirRevision';
+
+/** El nodo que relanza las comprobaciones (change pr-check-rerun, decisión 4). */
+export const RERUN_NODE = 'relanzar';
+
+/**
+ * Los nodos que actúan sobre la PR en GitHub. El driver no entra en ellos con la foto de un push
+ * que ya no es el último, ni al terminar la parada de una PR: actuarían sobre lo que ya no toca.
+ */
+export const PR_ACTION_NODES = [REVIEW_REQUEST_NODE, RERUN_NODE] as const;
+
+type PrActionNode = (typeof PR_ACTION_NODES)[number];
+
+/** Si un nodo del hilo actúa sobre la PR en GitHub. */
+export function isPrActionNode(node: string): node is PrActionNode {
+  return (PR_ACTION_NODES as readonly string[]).includes(node);
+}
 
 const TRIAGE_NODE = 'triar';
 
@@ -244,6 +279,7 @@ const AFTER_CHECKS = {
   checksFinished: 'avisarComprobaciones',
   checksFailed: 'avisarEstadoFinal',
   timedOut: 'avisarEstadoFinal',
+  rerun: RERUN_NODE,
 } as const satisfies Record<ChecksStep, string>;
 
 const AFTER_REVIEW = {
@@ -278,9 +314,9 @@ function waitFor(waitingFor: TrackingWait['waitingFor']) {
 }
 
 export function createTrackingGraph(
-  { notifier, reviewRequests, findings, decisionModel, summaries }: TrackingPorts,
+  { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns }: TrackingPorts,
   checkpointer: BaseCheckpointSaver,
-  { timeoutMs, log, triage }: TrackingOptions,
+  { timeoutMs, rerunChecks, log, triage }: TrackingOptions,
 ) {
   const avisarSeguimiento: GraphNode<typeof TrackingState> = async ({ snapshot }) => {
     await notifier.notify(trackingNotice(snapshot));
@@ -299,7 +335,7 @@ export function createTrackingGraph(
     Nodes: AfterChecks;
   }> = (state) => {
     const snapshot = waitFor('checks');
-    const { push, next } = afterChecksWait(pushIn(state), snapshot, timeoutMs);
+    const { push, next } = afterChecksWait(pushIn(state), snapshot, timeoutMs, rerunChecks);
     const goto = viaTriage(AFTER_CHECKS[next], snapshot, push);
     return new Command({ update: { snapshot, push }, goto });
   };
@@ -323,6 +359,31 @@ export function createTrackingGraph(
       );
     }
     return {};
+  };
+
+  // Relanza los *jobs* fallidos del run terminado de una relanzable que falla, con una llamada: GitHub
+  // relanza con ellos los de las demás que fallan en el mismo run (change pr-check-rerun, decisión
+  // 2). Si GitHub lo rechaza (p. ej. el token no tiene *Actions: write*), reintentarlo no lo arregla:
+  // la PR va al estado final con ese motivo (decisión 5). Cualquier otro fallo lanza, y el nodo
+  // queda pendiente para la vuelta siguiente, con el reloj aún desde el push.
+  const relanzar: GraphNode<typeof TrackingState> = async (state) => {
+    const { snapshot } = state;
+    const push = pushIn(state);
+    const toRerun = checksToRerun(snapshot, rerunChecks);
+    const ready = toRerun.find((check) => check.runFinished);
+    if (!ready) return {};
+    try {
+      await checkReruns.rerun(ready.runId);
+      return { push: { ...push, rerunSince: snapshot.observedAt } };
+    } catch (error) {
+      if (!(error instanceof GitHubRequestRejectedError)) throw error;
+      const rejected = toRerun.map(({ name }) => name);
+      log(
+        `GitHub rechaza relanzar ${rejected.join(', ')} en la PR #${snapshot.number}; ` +
+          `necesita intervención: ${error.message}`,
+      );
+      return { push: { ...push, rerunRejected: rejected } };
+    }
   };
 
   const esperarRevisor: GraphNode<{ InputSchema: typeof TrackingState; Nodes: AfterReview }> = (
@@ -455,6 +516,7 @@ export function createTrackingGraph(
     })
     .addNode('avisarComprobaciones', avisarComprobaciones)
     .addNode(REVIEW_REQUEST_NODE, pedirRevision)
+    .addNode(RERUN_NODE, relanzar)
     .addNode('esperarRevisor', esperarRevisor, {
       ends: [...Object.values(AFTER_REVIEW), TRIAGE_NODE],
     })
@@ -479,6 +541,17 @@ export function createTrackingGraph(
       [REVIEW_REQUEST_NODE, 'esperarRevisor'],
     )
     .addEdge(REVIEW_REQUEST_NODE, 'esperarRevisor')
+    // Tras pedirlo, a esperar su resultado; si GitHub lo rechaza, al estado final por el triaje.
+    // Una arista y no un `Command`: así el driver puede saltarse el nodo con `updateState` y el hilo
+    // sigue a la espera (change pr-check-rerun, decisión 4).
+    .addConditionalEdges(
+      RERUN_NODE,
+      (state) =>
+        state.push?.rerunRejected
+          ? viaTriage('avisarEstadoFinal', state.snapshot, pushIn(state))
+          : 'esperarComprobaciones',
+      ['esperarComprobaciones', TRIAGE_NODE, 'avisarEstadoFinal'],
+    )
     .addConditionalEdges(TRIAGE_NODE, fanOut, [ASK_NODE, GATHER_NODE])
     .addEdge(ASK_NODE, GATHER_NODE)
     .addEdge(GATHER_NODE, SUMMARY_NODE)

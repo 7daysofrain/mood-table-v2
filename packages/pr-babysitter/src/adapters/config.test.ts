@@ -34,6 +34,7 @@ describe('la configuración del entorno', () => {
         triageBudgetUsd: 0.05,
         triageRuleChecks: ['lint', 'typecheck', 'SonarCloud Code Analysis'],
         triageSonarIssuesCheck: 'sonar-issues',
+        rerunChecks: ['test', 'e2e'],
       },
     });
   });
@@ -41,6 +42,18 @@ describe('la configuración del entorno', () => {
   it('lee el nombre de la comprobación que lista las incidencias nuevas de SonarQube, sin espacios alrededor', () => {
     expect(loadConfig({ ...env, TRIAGE_SONAR_ISSUES_CHECK: ' sonar-nuevas ' })).toMatchObject({
       config: { triageSonarIssuesCheck: 'sonar-nuevas' },
+    });
+  });
+
+  it('lee las comprobaciones relanzables; sin ningún nombre no relanza ninguna (change pr-check-rerun)', () => {
+    expect(loadConfig({ ...env, RERUN_CHECKS: ' test , build ' })).toMatchObject({
+      config: { rerunChecks: ['test', 'build'] },
+    });
+    expect(loadConfig({ ...env, RERUN_CHECKS: ',' })).toMatchObject({
+      config: { rerunChecks: [] },
+    });
+    expect(loadConfig({ ...env, RERUN_CHECKS: '' })).toMatchObject({
+      config: { rerunChecks: ['test', 'e2e'] },
     });
   });
 

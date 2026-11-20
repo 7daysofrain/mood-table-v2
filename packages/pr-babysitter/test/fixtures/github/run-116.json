@@ -1,0 +1,8 @@
+{
+  "id": 42082802927,
+  "name": "CI",
+  "head_sha": "b4a47348bf49447cf62cb29d69299445a30f973f",
+  "status": "completed",
+  "conclusion": "failure",
+  "run_attempt": 1
+}

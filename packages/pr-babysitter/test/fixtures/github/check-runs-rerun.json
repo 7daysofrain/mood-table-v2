@@ -1,0 +1,181 @@
+{
+  "check_runs": [
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:58:20Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 135781537852,
+      "name": "test",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:56:49Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:58:36Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 135781516056,
+      "name": "e2e",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:56:49Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:58:34Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 135781433633,
+      "name": "sonar-issues",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:58:23Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:57:16Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 135781433389,
+      "name": "typecheck",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:56:49Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-19T18:20:54Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 135781429142,
+      "name": "lint",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-19T18:20:10Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:58:34Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 132569596335,
+      "name": "sonar-issues",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:58:23Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "sonarqubecloud"
+      },
+      "completed_at": "2026-11-14T19:58:17Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 132569587088,
+      "name": "SonarCloud Code Analysis",
+      "output": {
+        "summary": "Issues  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed.svg '') [0 New issues](https://sonarcloud.io/project/issues?id=7daysofrain_mood-table-v2&pullRequest=151&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/accepted.svg '') [0 Accepted issues](https://sonarcloud.io/project/issues?id=7daysofrain_mood-table-v2&pullRequest=151&issueStatuses=ACCEPTED)\n\nMeasures  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed.svg '') [0 Security Hotspots](https://sonarcloud.io/project/security_hotspots?id=7daysofrain_mood-table-v2&pullRequest=151&issueStatuses=OPEN,CONFIRMED&sinceLeakPeriod=true)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed.svg '') [95.5% Coverage on New Code](https://sonarcloud.io/component_measures?id=7daysofrain_mood-table-v2&pullRequest=151&metric=new_coverage&view=list)  \n![](https://sonarsource.github.io/sonarcloud-github-static-resources/v2/common/passed.svg '') [0.0% Duplication on New Code](https://sonarcloud.io/component_measures?id=7daysofrain_mood-table-v2&pullRequest=151&metric=new_duplicated_lines_density&view=list)  \n  \n[See analysis details on SonarQube Cloud](https://sonarcloud.io/dashboard?id=7daysofrain_mood-table-v2&pullRequest=151)\n\n",
+        "title": "Quality Gate passed"
+      },
+      "started_at": "2026-11-14T19:57:39Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:57:16Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 132569185728,
+      "name": "typecheck",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:56:49Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:58:20Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 132569185720,
+      "name": "test",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:56:49Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:58:36Z",
+      "conclusion": "success",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 132569185652,
+      "name": "e2e",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:56:49Z",
+      "status": "completed"
+    },
+    {
+      "app": {
+        "slug": "github-actions"
+      },
+      "completed_at": "2026-11-14T19:57:32Z",
+      "conclusion": "failure",
+      "head_sha": "5f884fad37648758d2d61341ff698253175621e0",
+      "id": 132569185481,
+      "name": "lint",
+      "output": {
+        "summary": null,
+        "title": null
+      },
+      "started_at": "2026-11-14T19:56:49Z",
+      "status": "completed"
+    }
+  ],
+  "total_count": 11
+}

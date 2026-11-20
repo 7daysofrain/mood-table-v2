@@ -1,8 +1,10 @@
 /**
  * Adaptador de GitHub (change pr-tracking, decisiones 3, 4 y 6), con octokit. Lee, también los
- * hallazgos que tría el sistema (change pr-shadow-triage, decisión 2), y solo escribe comentarios
- * en una PR, para pedir la revisión (change pr-review-request, decisión 2): el token tiene
- * escritura en *Issues* y *Pull requests*, y *Contents* solo en lectura (D117), así que no puede
+ * hallazgos que tría el sistema (change pr-shadow-triage, decisión 2), y solo escribe comentarios en
+ * una PR, para pedir la revisión y publicar el resumen del triaje (change pr-review-request, decisión
+ * 2), y relanzamientos de los *jobs* fallidos de un run (change pr-check-rerun, decisión 2): el token
+ * tiene escritura en *Issues*, *Pull requests* y *Actions*, y *Contents* solo en lectura (D117), así
+ * que no puede
  * subir commits ni integrar (D64).
  *
  * Las comprobaciones exigidas salen de las reglas de la rama base, no de los *check runs* que haya:
@@ -140,6 +142,12 @@ const checkRunSchema = z.object({
     .optional(),
 });
 
+/** Lo que se lee de un *job* de `GET /repos/{owner}/{repo}/actions/jobs/{job_id}`. */
+const jobSchema = z.object({ run_id: z.number(), run_attempt: z.number() });
+
+/** Lo que se lee de `GET /repos/{owner}/{repo}/actions/runs/{id}`: si el run ha terminado. */
+const workflowRunSchema = z.object({ status: z.string().nullable() });
+
 /** Lo que se lee de cada anotación de `GET /repos/{owner}/{repo}/check-runs/{id}/annotations`. */
 const annotationSchema = z.object({
   path: z.string(),
@@ -148,6 +156,22 @@ const annotationSchema = z.object({
   title: z.string().nullable().optional(),
   message: z.string().nullable(),
 });
+
+/** La app de GitHub Actions: sus *check runs* son *jobs*, con log, intento y run. */
+const ACTIONS_APP = 'github-actions';
+
+/**
+ * El *check run* más reciente de una comprobación: GitHub ya da solo ese (`filter=latest`), pero un
+ * relanzamiento deja dos del mismo nombre si se piden todos, y el más reciente tiene el id mayor.
+ */
+function latest<Run extends { id: number; name: string }>(runs: Run[], name: string) {
+  return runs
+    .filter((run) => run.name === name)
+    .reduce<Run | undefined>(
+      (newest, run) => (newest && newest.id > run.id ? newest : run),
+      undefined,
+    );
+}
 
 /** Las conclusiones que cuentan como superadas (`sonar-issues` se salta: `linear.md` §7). */
 const PASSING_CONCLUSIONS = new Set(['success', 'neutral', 'skipped']);
@@ -163,6 +187,11 @@ export function createGitHubReader({
   listComments(pullRequestNumber: number): Promise<PullRequestComment[]>;
   /** Publica un comentario en una PR. Para la petición de revisión. */
   createComment(pullRequestNumber: number, body: string): Promise<void>;
+  /**
+   * Relanza los *jobs* fallidos de un run de GitHub Actions, y los que dependen de ellos (change
+   * pr-check-rerun, decisión 2). Si GitHub lo rechaza, lanza `GitHubRequestRejectedError`.
+   */
+  rerunFailedJobs(runId: number): Promise<void>;
   /** El título y la descripción de una PR. Para el triaje. */
   getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;
   /** Los comentarios de revisión en línea de una PR, del primero al último. Para el triaje. */
@@ -193,6 +222,25 @@ export function createGitHubReader({
   octokit.hook.before('request', async (options) => {
     options.headers.authorization = `token ${await token()}`;
   });
+
+  /**
+   * El *job* de un *check run* de GitHub Actions, que tiene su mismo id, o `null` si GitHub no lo da
+   * (un 4xx que no se arregla solo): la comprobación se queda sin intento, y no se relanza.
+   */
+  async function jobOf(jobId: number) {
+    const response = await readable(() =>
+      octokit.rest.actions.getJobForWorkflowRun({ owner, repo, job_id: jobId }),
+    );
+    return response && jobSchema.parse(response.data);
+  }
+
+  /** Si el run ha terminado; si GitHub no lo da (4xx), se cuenta como no terminado. */
+  async function runFinished(runId: number) {
+    const response = await readable(() =>
+      octokit.rest.actions.getWorkflowRun({ owner, repo, run_id: runId }),
+    );
+    return response !== null && workflowRunSchema.parse(response.data).status === 'completed';
+  }
 
   async function checkRuns(sha: string) {
     const runs = await read(() =>
@@ -256,13 +304,27 @@ export function createGitHubReader({
 
     async checks(sha: string, required: string[]): Promise<Check[]> {
       const runs = await checkRuns(sha);
-      return required.map((name) => {
-        // GitHub da el *check run* más reciente de cada nombre (`filter=latest`).
-        const run = runs.find((checkRun) => checkRun.name === name);
-        if (run?.status !== 'completed') return { name, status: 'pending' };
-        const passed = PASSING_CONCLUSIONS.has(run.conclusion ?? '');
-        return { name, status: passed ? 'passed' : 'failed' };
-      });
+      return Promise.all(
+        required.map(async (name): Promise<Check> => {
+          const run = latest(runs, name);
+          if (run?.status !== 'completed') return { name, status: 'pending', conclusion: null };
+          const { conclusion } = run;
+          if (PASSING_CONCLUSIONS.has(conclusion ?? '')) {
+            return { name, status: 'passed', conclusion };
+          }
+          // El intento solo hace falta para relanzar: el de una de Actions que falla (decisión 3).
+          const job = run.app?.slug === ACTIONS_APP ? await jobOf(run.id) : null;
+          if (!job) return { name, status: 'failed', conclusion };
+          return {
+            name,
+            status: 'failed',
+            conclusion,
+            attempt: job.run_attempt,
+            runId: job.run_id,
+            runFinished: await runFinished(job.run_id),
+          };
+        }),
+      );
     },
 
     async listComments(pullRequestNumber: number): Promise<PullRequestComment[]> {
@@ -283,6 +345,12 @@ export function createGitHubReader({
     async createComment(pullRequestNumber: number, body: string): Promise<void> {
       await write(() =>
         octokit.rest.issues.createComment({ owner, repo, issue_number: pullRequestNumber, body }),
+      );
+    },
+
+    async rerunFailedJobs(runId: number): Promise<void> {
+      await write(() =>
+        octokit.rest.actions.reRunWorkflowFailedJobs({ owner, repo, run_id: runId }),
       );
     },
 
@@ -318,8 +386,7 @@ export function createGitHubReader({
     },
 
     async checkRun(sha: string, checkName: string): Promise<CheckRun | null> {
-      // GitHub da el *check run* más reciente de cada nombre (`filter=latest`).
-      const run = (await checkRuns(sha)).find((checkRun) => checkRun.name === checkName);
+      const run = latest(await checkRuns(sha), checkName);
       if (!run) return null;
       return {
         id: run.id,
