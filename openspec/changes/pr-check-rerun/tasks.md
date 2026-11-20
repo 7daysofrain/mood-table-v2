@@ -88,7 +88,7 @@
   - El requisito y su escenario en `specs/pr-tracking/spec.md`.
 
   Verificar: `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 1.7 **Prueba a mano** (sin commit), con el sistema en marcha y el PAT con *Actions: write*:
+- [x] 1.7 **Prueba a mano** (sin commit), con el sistema en marcha y el PAT con *Actions: write*:
   - una PR de prueba con un test de Vitest que falla solo en el primer intento
     (`process.env.GITHUB_RUN_ATTEMPT === '1'`);
   - otra con un test que falla siempre.
