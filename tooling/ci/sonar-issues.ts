@@ -1,6 +1,6 @@
 /**
  * Parte pura de la comprobación de incidencias nuevas de SonarQube (specs/quality-gates, design.md
- * decisión 3). Sin E/S: la E/S (variables de entorno, peticiones y espera) vive en
+ * decisión 3; las anotaciones, change `pr-sonar-issue-triage`, decisión 1). Sin E/S: la E/S (variables de entorno, peticiones y espera) vive en
  * `check-sonar-issues.ts`, que queda fuera de la cobertura.
  */
 
@@ -10,6 +10,10 @@ export type CeTaskStep = { kind: 'wait' } | { kind: 'continue' } | { kind: 'fail
 export interface SonarIssue {
   key: string;
   rule: string;
+  /** La severidad heredada (`BLOCKER`, `CRITICAL`, `MAJOR`, `MINOR`, `INFO`). */
+  severity: string;
+  /** Los impactos de la incidencia, cada uno con su severidad (`BLOCKER` … `INFO`). */
+  impacts?: { softwareQuality: string; severity: string }[];
   /** `<projectKey>:<ruta del fichero>`. */
   component: string;
   /** Ausente en las incidencias de fichero. */
@@ -21,7 +25,27 @@ export interface SonarIssue {
 export interface IssuesSearchResponse {
   paging: { total: number };
   issues: SonarIssue[];
+  /** Con `additionalFields=rules`: el nombre de cada regla de la página. */
+  rules?: { key: string; name: string }[];
 }
+
+/**
+ * Las anotaciones de error que guarda el runner de GitHub Actions por paso (`_maxCountPerIssueType`
+ * en `actions/runner`); las demás solo salen en el log.
+ */
+export const MAX_ANNOTATIONS = 10;
+
+/** De más a menos grave. */
+const SEVERITIES = ['BLOCKER', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
+
+/** La severidad heredada, en la escala de los impactos. */
+const LEGACY_SEVERITIES: Record<string, string> = {
+  BLOCKER: 'BLOCKER',
+  CRITICAL: 'HIGH',
+  MAJOR: 'MEDIUM',
+  MINOR: 'LOW',
+  INFO: 'INFO',
+};
 
 /** La PR analizada, para construir los enlaces a SonarQube. */
 export interface PullRequestRef {
@@ -100,6 +124,59 @@ export function summarizeIssues(response: IssuesSearchResponse, pr: PullRequestR
 }
 
 /**
+ * Las anotaciones de la comprobación, para imprimirlas antes del informe: un `::error` en la línea de
+ * cada incidencia, como mucho `MAX_ANNOTATIONS`, en el orden de SonarQube, y un `::notice` con el
+ * total. El total va siempre, para que quien las lea sepa si faltan.
+ */
+export function toAnnotations(response: IssuesSearchResponse): string[] {
+  const total = response.paging.total;
+  if (total === 0) return [];
+
+  const names = new Map(response.rules?.map((rule) => [rule.key, rule.name]));
+  const annotated = response.issues.slice(0, MAX_ANNOTATIONS);
+  const errors = annotated.map((issue) => {
+    const title = `${issue.rule} · ${issueSeverity(issue)} · ${names.get(issue.rule) ?? issue.rule}`;
+    const properties = [`file=${escapeProperty(pathOf(issue))}`];
+    if (issue.line !== undefined) properties.push(`line=${issue.line}`);
+    properties.push(`title=${escapeProperty(title)}`);
+    return `::error ${properties.join(',')}::${escapeData(issue.message)}`;
+  });
+  const notice =
+    `::notice title=${escapeProperty('Incidencias nuevas de SonarQube')}::` +
+    escapeData(`${total} incidencias nuevas; se anotan ${annotated.length}`);
+  return [...errors, notice];
+}
+
+/** La más alta de sus impactos; sin impactos, la heredada traducida. */
+export function issueSeverity(issue: SonarIssue): string {
+  const [first, ...rest] = (issue.impacts ?? []).map((impact) => impact.severity);
+  if (first === undefined) return LEGACY_SEVERITIES[issue.severity] ?? issue.severity;
+  return rest.reduce(
+    (highest, severity) => (rank(severity) < rank(highest) ? severity : highest),
+    first,
+  );
+}
+
+/** Una severidad desconocida va detrás de todas las conocidas. */
+function rank(severity: string): number {
+  const index = SEVERITIES.indexOf(severity);
+  return index === -1 ? SEVERITIES.length : index;
+}
+
+/**
+ * El escapado que deshace el runner en el texto de un comando: así un dato de SonarQube no puede
+ * abrir una línea nueva (y, con ella, otro comando).
+ */
+function escapeData(text: string): string {
+  return text.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A');
+}
+
+/** En una propiedad, además `:` y `,`, que la cerrarían o abrirían otra. */
+function escapeProperty(text: string): string {
+  return escapeData(text).replaceAll(':', '%3A').replaceAll(',', '%2C');
+}
+
+/**
  * Deja una línea segura para el log de GitHub Actions. Los mensajes y las rutas vienen de SonarQube
  * (y las rutas, de la PR): un salto de línea permitiría inyectar líneas, incluidos los comandos `::`
  * del runner. Se sustituye cualquier carácter de control por un espacio.
@@ -117,9 +194,13 @@ export function withoutRunnerCommands(lines: string[], token: string): string {
   return [`::stop-commands::${token}`, ...lines.map(toLogLine), `::${token}::`].join('\n');
 }
 
-function location(issue: SonarIssue): string {
+function pathOf(issue: SonarIssue): string {
   const separator = issue.component.indexOf(':');
-  const path = separator === -1 ? issue.component : issue.component.slice(separator + 1);
+  return separator === -1 ? issue.component : issue.component.slice(separator + 1);
+}
+
+function location(issue: SonarIssue): string {
+  const path = pathOf(issue);
   return issue.line === undefined ? path : `${path}:${issue.line}`;
 }
 

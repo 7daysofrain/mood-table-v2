@@ -18,6 +18,7 @@ import {
   parseReportTask,
   type ReportTask,
   summarizeIssues,
+  toAnnotations,
   toLogLine,
   withoutRunnerCommands,
 } from './sonar-issues.ts';
@@ -81,16 +82,20 @@ async function fetchIssues(report: ReportTask, pullRequest: string, token: strin
     // Deja fuera las aceptadas y los falsos positivos.
     resolved: 'false',
     ps: String(PAGE_SIZE),
+    // El nombre de cada regla, para el título de su anotación.
+    additionalFields: 'rules',
   });
   const url = `${report.serverUrl}/api/issues/search?${query.toString()}`;
   return getJson<IssuesSearchResponse>(url, token, AbortSignal.timeout(ISSUES_TIMEOUT_MS));
 }
 
 /**
- * Todo por stdout, para que el orden se mantenga; el fallo lo marca el código de salida. El resumen
- * del job es Markdown y el runner no busca comandos en él.
+ * Todo por stdout, para que el orden se mantenga; el fallo lo marca el código de salida. Las
+ * anotaciones van antes del informe, que desactiva los comandos del runner, y llevan su texto
+ * escapado. El resumen del job es Markdown y el runner no busca comandos en él.
  */
-function publish(result: CheckResult): void {
+function publish(result: CheckResult, annotations: string[] = []): void {
+  for (const annotation of annotations) console.log(annotation);
   console.log(withoutRunnerCommands(result.lines, randomUUID()));
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (summaryPath) {
@@ -99,18 +104,21 @@ function publish(result: CheckResult): void {
   }
 }
 
-async function main(): Promise<CheckResult> {
+async function main(): Promise<{ result: CheckResult; annotations: string[] }> {
   const token = requiredEnv('SONAR_TOKEN');
   const pullRequest = requiredEnv('PR_NUMBER');
   const report = parseReportTask(readFileSync(requiredEnv('SONAR_REPORT_TASK'), 'utf8'));
   await waitForAnalysis(report.ceTaskUrl, token);
   const issues = await fetchIssues(report, pullRequest, token);
-  return summarizeIssues(issues, { ...report, pullRequest });
+  return {
+    result: summarizeIssues(issues, { ...report, pullRequest }),
+    annotations: toAnnotations(issues),
+  };
 }
 
 try {
-  const result = await main();
-  publish(result);
+  const { result, annotations } = await main();
+  publish(result, annotations);
   process.exitCode = result.passed ? 0 : 1;
 } catch (error) {
   publish({ passed: false, lines: [error instanceof Error ? error.message : String(error)] });
