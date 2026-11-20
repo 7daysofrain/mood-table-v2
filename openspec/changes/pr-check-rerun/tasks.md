@@ -147,7 +147,7 @@
   `core/tracking.ts`); las respuestas falsas de `src/studio.ts`.
   Verificar: los tests de 2.3 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 2.5 Documentación:
+- [x] 2.5 Documentación:
   - README §2.2 (*PR Babysitter*: la regla tras el relanzamiento y el resumen en una PR lista para
     integrar) y §2.5 (`test` y `e2e` ya no envían su contexto al modelo de decisión);
   - `prompts.md`, si la sección 1 dejó algo por contar.
