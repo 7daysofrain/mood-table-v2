@@ -2462,6 +2462,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La PR de los tests del grafo y la de Studio tenían la descripción vacía, así que con la regla nueva todos sus comentarios del revisor salían* exige criterio*. La IA les dio una descripción para que siguieran probando lo mismo.*
 - *En la prueba a mano, Codex solo comentó el defecto que la PR de prueba introducía a propósito, y no el límite de una hora que la descripción dejaba para otra tarea. Así que no salió ningún «se capturaría» real, y la IA lo dejó anotado tal cual: la clasificación la cubren los tests.*
 
+#### 6.93 Relanzar una vez test y e2e que fallan y esperar su resultado (`MOO-170`)
+
+**Prompt 1:**
+
+> Quiero que al finalizar la ejecucion de las tareas de `test` o `e2e` si estás terminan en un fallo transitorio se relanzen automaticamente hasta 3 veces. En caso que a la tercera siga fallando se marcaría como requiere criterio
+
+*Claude Code (`claude-opus-5-5`, 20-nov), el caso feliz de `/refine-story MOO-155`, que era una captura en* Triage *y se clasificó y redactó en la misma sesión. La IA explicó que relanzar el* job *relanza todos sus tests, y que el* spike *`MOO-120` ya había medido que el texto del error no dice si un fallo es transitorio. El usuario lo cambió a relanzar una vez y, más adelante, corrigió su propia idea: si vuelve a fallar es* real*, no* exige criterio *(«cierto, me equivoque, si falla es real, no necesita criterio»). Eso resolvió BQ8. Estimada a 5 en el planning poker con `estimator` (humano 3, IA 5).*
+
+**Prompt 2:**
+
+> vale, es que esto no lo habia tenido en cuenta, que relanza todas. Me gustaría volver a intentar crear la pregunta correcta para que el triador se de cuenta de cuando es una buena opción relanzar. En mi opinion esto ocurre cuando hablamos de timeouts o condiciones de carrera. Por ejemplo si ha ocurrido un timeout, es un buen candidato a relanzarse. ¿No podemos simplemente preguntar por los casos evidentes? ¿Se te ocurre alguno mas?
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en el mismo refinamiento. La IA propuso una regla rápida en código, sin el modelo de decisión, con cuatro casos evidentes (*timeout*, infraestructura, red y* runner *perdido), y dejó fuera `cancelled` porque la CI cancela el run de un push viejo. El usuario eligió relanzar todas una vez y usar la regla solo para el porqué. Al explorar el change, la IA movió el cálculo del caso evidente al error del intento que vuelve a fallar, para no subir el contexto de una comprobación a puerto del núcleo.*
+
+**Prompt 3:**
+
+> No me gusta linear, al final esto es una cosa del proceso de la PR, prefiero que deje el aviso en la PR, dentro del resumen
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en `/opsx:explore MOO-155`. La única decisión que la IA le planteó al usuario fue dónde contar un relanzamiento que pasa; el resto lo decidió ella como lo evidente, a petición del usuario («No me plantees las que tienen respuestas evidentes»). Resultado: el change `pr-check-rerun`, con el nodo `relanzar` en el seguimiento y no en el triaje, y D119, que matiza D114. En `/opsx:apply`, la IA implementó la sección de `MOO-170` con un commit por paso y los tests en rojo antes de cada implementación.*
+
+*Ajustes:*
+- *La IA cambió el diseño en un punto al implementar: `relanzar` sale por una arista condicional y no por un `Command`, para que el* driver *pueda saltárselo, como ya hace con `pedirRevision`, si llega un push nuevo o se detiene la PR. Lo anotó en el `design.md`.*
+- *El puerto quedó como `rerun(runId)`, y no `rerun(sha, checks)`: el núcleo elige el run.*
+- *Para no relanzar ninguna, `RERUN_CHECKS` lleva una coma sola, como `TRIAGE_RULE_CHECKS`: una variable vacía es la lista por defecto.*
+
 ---
 
 ### 7. Pull Requests

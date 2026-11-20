@@ -66,12 +66,12 @@
 - [x] 1.5 El destino `rerun` en `core/tracking.ts`, el puerto `CheckReruns` en `core/ports.ts`, el
   nodo `relanzar` y su arista en `core/graph.ts`, y `rerunSince` y el rechazo en el estado.
   Verificar: los tests de 1.4 y todos los que ya había en verde; `pnpm typecheck` en verde.
-- [ ] 1.6 El adaptador y el montaje:
+- [x] 1.6 El adaptador y el montaje:
   - **`adapters/github.ts`:** `rerun(runId)` con `rerun-failed-jobs`; un 4xx da
     `GitHubRequestRejectedError`. Test en `adapters/github.test.ts` con `fakeFetch`: la URL y el método,
     201, 403 y 5xx.
-  - **`adapters/config.ts`:** `RERUN_CHECKS`, por defecto `test,e2e`, y vacía desactiva el
-    relanzamiento. Test en `adapters/config.test.ts`.
+  - **`adapters/config.ts`:** `RERUN_CHECKS`, por defecto `test,e2e`, y sin ningún nombre (una
+    coma) desactiva el relanzamiento. Test en `adapters/config.test.ts`.
   - `.env.example`, `src/main.ts` y los puertos falsos de `src/studio.ts`.
   - **README:** §2.2 (*PR Babysitter*: el nodo `relanzar` y el puerto `CheckReruns`), §2.4
     (`RERUN_CHECKS`) y §2.5 (*Actions: write*, qué deja hacer y que el código solo relanza).

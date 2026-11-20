@@ -413,6 +413,43 @@ describe('los fallos de GitHub', () => {
   });
 });
 
+describe('relanzar los jobs fallidos de un run (change pr-check-rerun)', () => {
+  /** El error que da `rerunFailedJobs` con una respuesta de GitHub, o `undefined` si la acepta. */
+  async function rerunError(response: () => Response) {
+    const { fetch } = fakeFetch(response);
+    return reader(fetch)
+      .rerunFailedJobs(42082802927)
+      .then(() => undefined)
+      .catch((error: unknown) => error);
+  }
+
+  it('lo pide al run, con el token del proveedor', async () => {
+    const { fetch, calls } = fakeFetch(() => json('{}', 201));
+
+    await reader(fetch, () => 'ghp_token').rerunFailedJobs(42082802927);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({
+      method: 'POST',
+      url: 'https://api.github.com/repos/7daysofrain/mood-table-v2/actions/runs/42082802927/rerun-failed-jobs',
+      authorization: 'token ghp_token',
+    });
+  });
+
+  it('un 403 sin Actions: write da el error de petición rechazada', async () => {
+    const forbidden = '{"message":"Resource not accessible by personal access token"}';
+
+    expect(await rerunError(() => json(forbidden, 403))).toBeInstanceOf(GitHubRequestRejectedError);
+  });
+
+  it('un error del servidor da un error que no es de petición rechazada', async () => {
+    const error = await rerunError(() => json('{"message":"Server Error"}', 502));
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(GitHubRequestRejectedError);
+  });
+});
+
 describe('un comentario nuevo', () => {
   /** El error que da `createComment` con una respuesta de GitHub, o `undefined` si la acepta. */
   async function commentError(response: () => Response) {

@@ -33,7 +33,20 @@ describe('la configuración del entorno', () => {
         triageThreshold: 0.8,
         triageBudgetUsd: 0.05,
         triageRuleChecks: ['lint', 'typecheck', 'SonarCloud Code Analysis'],
+        rerunChecks: ['test', 'e2e'],
       },
+    });
+  });
+
+  it('lee las comprobaciones relanzables; sin ningún nombre no relanza ninguna (change pr-check-rerun)', () => {
+    expect(loadConfig({ ...env, RERUN_CHECKS: ' test , build ' })).toMatchObject({
+      config: { rerunChecks: ['test', 'build'] },
+    });
+    expect(loadConfig({ ...env, RERUN_CHECKS: ',' })).toMatchObject({
+      config: { rerunChecks: [] },
+    });
+    expect(loadConfig({ ...env, RERUN_CHECKS: '' })).toMatchObject({
+      config: { rerunChecks: ['test', 'e2e'] },
     });
   });
 

@@ -1,9 +1,10 @@
 /**
  * Adaptador de GitHub (change pr-tracking, decisiones 3, 4 y 6), con octokit. Lee, también los
  * hallazgos que tría el sistema (change pr-shadow-triage, decisión 2), y solo escribe comentarios en
- * una PR, para pedir la revisión (change pr-review-request, decisión 2): el token
- * tiene escritura en *Issues* y *Pull requests*, pero no en *Contents*, así que no puede subir
- * commits ni integrar (D64).
+ * una PR, para pedir la revisión y publicar el resumen del triaje (change pr-review-request, decisión
+ * 2), y relanzamientos de los *jobs* fallidos de un run (change pr-check-rerun, decisión 2): el token
+ * tiene escritura en *Issues*, *Pull requests* y *Actions*, pero no en *Contents*, así que no puede
+ * subir commits ni integrar (D64).
  *
  * Las comprobaciones exigidas salen de las reglas de la rama base, no de los *check runs* que haya:
  * justo después de un push aún no hay ninguno, y con «todos los que haya» una lista vacía daría las
@@ -182,6 +183,11 @@ export function createGitHubReader({
   listComments(pullRequestNumber: number): Promise<PullRequestComment[]>;
   /** Publica un comentario en una PR. Para la petición de revisión. */
   createComment(pullRequestNumber: number, body: string): Promise<void>;
+  /**
+   * Relanza los *jobs* fallidos de un run de GitHub Actions, y los que dependen de ellos (change
+   * pr-check-rerun, decisión 2). Si GitHub lo rechaza, lanza `GitHubRequestRejectedError`.
+   */
+  rerunFailedJobs(runId: number): Promise<void>;
   /** El título y la descripción de una PR. Para el triaje. */
   getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;
   /** Los comentarios de revisión en línea de una PR, del primero al último. Para el triaje. */
@@ -319,6 +325,12 @@ export function createGitHubReader({
     async createComment(pullRequestNumber: number, body: string): Promise<void> {
       await write(() =>
         octokit.rest.issues.createComment({ owner, repo, issue_number: pullRequestNumber, body }),
+      );
+    },
+
+    async rerunFailedJobs(runId: number): Promise<void> {
+      await write(() =>
+        octokit.rest.actions.reRunWorkflowFailedJobs({ owner, repo, run_id: runId }),
       );
     },
 

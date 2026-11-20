@@ -144,7 +144,7 @@ desde el seguimiento, y el contexto sigue siendo un módulo del adaptador (D114,
 
 `RERUN_CHECKS`, por defecto `test,e2e`, igual que `TRIAGE_RULE_CHECKS`: por nombre de comprobación. La
 usan el seguimiento (qué relanzar) y el triaje (qué decide la regla nueva y qué no pasa por la pregunta
-de la causa). Vacía, el sistema vuelve al comportamiento de hoy.
+de la causa). Sin ningún nombre (una coma sola), el sistema vuelve al comportamiento de hoy.
 
 ### 8. El resumen cuenta lo relanzado, también en una PR lista para integrar
 
@@ -176,4 +176,5 @@ quiere en la PR, que es donde vive el proceso.
    relanzamiento sale rechazado: *exige criterio*, con el motivo, y nada se rompe.
 2. Desplegar `MOO-170` (relanza, y lo que vuelve a fallar sigue con la pregunta de la causa) y después
    `MOO-171` (la regla y el resumen).
-3. **Vuelta atrás:** `RERUN_CHECKS=` vacío devuelve el comportamiento de hoy sin desplegar código.
+3. **Vuelta atrás:** `RERUN_CHECKS=,` (una coma sola; vacía es la lista por defecto, como
+   `TRIAGE_RULE_CHECKS`) devuelve el comportamiento de hoy sin desplegar código.
