@@ -78,7 +78,7 @@
 - [x] 1.11 El adaptador: la pregunta «ya arreglado» en `CRITERIA` e `instructions`, la petición con
   tres preguntas y su respuesta.
   Verificar: los tests de 1.10 en verde y los que ya había.
-- [ ] 1.12 **(test en rojo)** El resumen (`design.md` decisión 5), en `core/triage-summary.test.ts`:
+- [x] 1.12 **(test en rojo)** El resumen (`design.md` decisión 5), en `core/triage-summary.test.ts`:
   la identidad con `· de un push anterior (…)` solo en los de un push anterior, y una prueba por fila
   de su tabla (ya arreglado, ya arreglado con P1, ninguna llega con tres probabilidades, sin código).
   Las demás filas no cambian.

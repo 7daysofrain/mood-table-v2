@@ -303,6 +303,57 @@ describe('el porqué de cada hallazgo del revisor (change pr-reviewer-scope, dec
   });
 });
 
+describe('un comentario de un push anterior (change pr-unresolved-threads, decisión 5)', () => {
+  const earlier: Finding = {
+    ...p2,
+    file: 'packages/pr-babysitter/src/adapters/findings.ts',
+    line: 54,
+    title: 'Split SonarQube annotations before applying the context size limit',
+    earlierPush: { sha: '576b49636780068462fa4984e34a7c39902eba8a', code: '>>   54 | x' },
+  };
+  const earlierP1: Finding = { ...earlier, badge: 'P1', severity: 'high' };
+  /** El veredicto con las tres probabilidades. */
+  const fixedScope = (
+    cls: 'valid' | 'notApplicable' | 'needsJudgment',
+    reason: 'alreadyFixed' | 'inScope' | 'outOfScope' | 'unclearScope' | 'contradictoryScope' | 'highSeverity',
+    fixed: number,
+    inside: number,
+    outside: number,
+  ): Verdict => ({ class: cls, reason, fixed, inside, outside });
+  const summary = (findings: { finding: Finding; verdict: Verdict }[]) =>
+    rows(triageSummary({ sha: SHA, findings }, 0.8));
+
+  it('la identidad dice que es de un push anterior, con su SHA corto', () => {
+    expect(summary([{ finding: earlier, verdict: fixedScope('valid', 'inScope', 0.31, 0.83, 0.21) }])).toEqual([
+      '| P2 de Codex en `findings.ts:54` · Split SonarQube annotations before applying the context size limit · de un push anterior (`576b496`) | real | dentro del alcance: p = 0,83 ≥ 0,80 |',
+    ]);
+  });
+
+  it('la de uno del último push no lo dice', () => {
+    const [row] = summary([{ finding: p2, verdict: scope('valid', 'inScope', 0.91, 0.11) }]);
+
+    expect(row).not.toContain('push anterior');
+  });
+
+  it('una fila por caso de su tabla: la clase y por qué', () => {
+    expect(
+      summary([
+        { finding: earlier, verdict: fixedScope('notApplicable', 'alreadyFixed', 0.91, 0.2, 0.1) },
+        { finding: earlierP1, verdict: fixedScope('needsJudgment', 'highSeverity', 0.93, 0.2, 0.1) },
+        { finding: earlier, verdict: fixedScope('needsJudgment', 'unclearScope', 0.4, 0.58, 0.32) },
+        { finding: earlier, verdict: fixedScope('needsJudgment', 'contradictoryScope', 0.4, 0.85, 0.82) },
+        { finding: earlier, verdict: { class: 'needsJudgment', reason: 'noCurrentCode' } },
+      ]).map((row) => row.split(' | ').slice(1).join(' | ')),
+    ).toEqual([
+      'no aplica | ya arreglado en el último push: p = 0,91 ≥ 0,80 |',
+      'exige criterio | regla: descartaría un hallazgo de severidad alta |',
+      'exige criterio | ya arreglado p = 0,40, dentro p = 0,58, de otra tarea p = 0,32: ninguna llega a 0,80 |',
+      'exige criterio | ya arreglado p = 0,40, dentro p = 0,85, de otra tarea p = 0,82: se contradicen |',
+      'exige criterio | no se ha podido leer su código en el último push |',
+    ]);
+  });
+});
+
 describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 5)', () => {
   const issue: Finding = {
     source: 'sonarIssue',
