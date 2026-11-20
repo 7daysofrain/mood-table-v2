@@ -88,7 +88,7 @@
   `decision-model.ts`; `TRIAGE_SONAR_ISSUES_CHECK` en `config.ts` y `.env.example`; el montaje en
   `main.ts` y `studio.ts`.
   Verificar: los tests de 2.4 en verde, y todos los demás; `pnpm lint` y `pnpm typecheck` en verde.
-- [ ] 2.6 Documentación:
+- [x] 2.6 Documentación:
   - README §2.2 (el módulo `sonar-issues` y la pregunta `rule`) y §2.4 (`TRIAGE_SONAR_ISSUES_CHECK`);
   - `docs/umbrales-para-specs.md`: la ventana de código (25 antes, 15 después), *(asumido)* hasta
     `MOO-76`;
