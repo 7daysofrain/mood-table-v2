@@ -1,0 +1,79 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "reviewThreads": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "Y3Vyc29yOnYyOpK0MjAyNi0xMC0yOFQwOTo1ODo1M1rOsREg8A=="
+          },
+          "nodes": [
+            {
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "author": {
+                      "__typename": "Bot",
+                      "login": "chatgpt-codex-connector"
+                    },
+                    "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Prevent pending-notice recovery from requesting a stopped PR review**\n\nIf Linear rejects `avisarComprobaciones` and the maintainer adds `babysitter:stop` before the next tick, `driver.ts`'s `finishStopping()` invokes the pending graph to deliver that notice. This new edge then proceeds directly to `pedirRevision`, publishing `@codex review` even though the driver has already observed the stop label. Previously, recovery only finished the pending notification before stopping; it now starts a new external action and consumes a review against the maintainer's stop request. Preserve delivery of the pending notice, but prevent recovery from entering the review-request node once the PR is stopped.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.\n\n<!-- codex-code-review-finding:v1 -->",
+                    "path": "packages/pr-babysitter/src/core/graph.ts",
+                    "originalLine": 204,
+                    "line": null,
+                    "diffHunk": "@@ -159,8 +196,14 @@ export function createTrackingGraph(\n     .addEdge('avisarSeguimiento', 'esperarComprobaciones')\n     .addEdge('empezarSinAviso', 'esperarComprobaciones')\n     // Siempre a esperar, aunque el revisor ya haya terminado: si el aviso se reintenta tras un\n-    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dir\u00e1.\n-    .addEdge('avisarComprobaciones', 'esperarRevisor')\n+    // fallo del canal, su foto puede ser de un push anterior, y la siguiente lo dir\u00e1. Antes, se\n+    // pide la revisi\u00f3n si nadie la ha pedido ni empezado (decisi\u00f3n 3).\n+    .addConditionalEdges(\n+      'avisarComprobaciones',\n+      ({ snapshot }) => (needsReviewRequest(snapshot) ? 'pedirRevision' : 'esperarRevisor'),\n+      ['pedirRevision', 'esperarRevisor'],",
+                    "originalCommit": {
+                      "oid": "5ccb86c438a75ea0a1214633c6f04ec43dcbefeb"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "author": {
+                      "__typename": "Bot",
+                      "login": "chatgpt-codex-connector"
+                    },
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Revalidate the current push before recovering a review request**\n\nIf Linear rejects the checks-finished notice for push A and push B arrives before recovery, `driver.ts` observes B but resumes the pending graph with `graph.invoke(null, config)`, retaining A's snapshot. After delivering the notice, this node publishes a request marked for A, although `@codex review` reviews the current head B\u2014even if B's checks are pending or failing. The same problem occurs when recovering a failed request. Unlike a push racing with publication, the changed head is already known to the driver here. Preserve pending-notice delivery, but revalidate the current head and its checks before allowing recovery to publish a review request.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.\n\n<!-- codex-code-review-finding:v1 -->",
+                    "path": "packages/pr-babysitter/src/core/graph.ts",
+                    "originalLine": 163,
+                    "line": 163,
+                    "diffHunk": "@@ -129,6 +155,22 @@ export function createTrackingGraph(\n     return {};\n   };\n \n+  // Si GitHub la rechaza (p. ej. el token no tiene permiso), reintentarla no la arregla, y la PR se\n+  // quedar\u00eda sin avisos: se sigue a la espera, y su tiempo avisa al mantenedor (decisi\u00f3n 6).\n+  // Cualquier otro fallo lanza, y el nodo queda pendiente para la vuelta siguiente.\n+  const pedirRevision: GraphNode<typeof TrackingState> = async ({ snapshot }) => {\n+    try {\n+      await reviewRequests.request(snapshot.number, snapshot.headSha);",
+                    "originalCommit": {
+                      "oid": "68ea3358730e02ac2f235b849a43c03162f2ae8f"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "author": {
+                      "__typename": "Bot",
+                      "login": "chatgpt-codex-connector"
+                    },
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Route failed checks directly to the final notification**\n\nWhen all checks finish with at least one failure and there is no review of the current push, this branch still returns `checksFinished`, sending the graph through `avisarComprobaciones` into `esperarRevisor`. Since `needsReviewRequest` now deliberately prevents requesting a review for failed checks, the PR waits until the timeout for a review that was never requested, then incorrectly reports an unfinished review alongside the check failure. This contradicts the changed failure scenario in `openspec/changes/pr-review-request/specs/pr-tracking/spec.md`: notify the final failure without waiting for review or publishing the checks-finished notice. Route failed checks directly to the final notification and omit the unfinished-review reason when no review was needed.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.\n\n<!-- codex-code-review-finding:v1 -->",
+                    "path": "packages/pr-babysitter/src/core/tracking.ts",
+                    "originalLine": 109,
+                    "line": 109,
+                    "diffHunk": "@@ -67,30 +88,37 @@ export function pushOf(current: TrackedPush, snapshot: PullRequestSnapshot): Tra\n     : { sha: snapshot.headSha, seenAt: snapshot.observedAt };\n }\n \n-function timedOut(push: TrackedPush, snapshot: PullRequestSnapshot, timeoutMs: number): boolean {\n-  return snapshot.observedAt - push.seenAt >= timeoutMs;\n+function timedOut(since: number, snapshot: PullRequestSnapshot, timeoutMs: number): boolean {\n+  return snapshot.observedAt - since >= timeoutMs;\n }\n \n /**\n  * Al reanudar la espera de las comprobaciones con una foto: un push nuevo reinicia el tiempo y se\n- * sigue con la foto que lo trae.\n+ * sigue con la foto que lo trae. Si han pasado todas, la espera de la revisi\u00f3n empieza a contar.\n  */\n export function afterChecksWait(\n   current: TrackedPush,\n   snapshot: PullRequestSnapshot,\n   timeoutMs: number,\n ): { push: TrackedPush; next: ChecksStep } {\n   const push = pushOf(current, snapshot);\n-  if (checksFinished(snapshot)) return { push, next: 'checksFinished' };\n-  if (timedOut(push, snapshot, timeoutMs)) return { push, next: 'timedOut' };\n+  if (checksFinished(snapshot)) {\n+    const passed = checksPassed(snapshot);\n+    return {\n+      push: passed ? { ...push, reviewSince: snapshot.observedAt } : push,\n+      next: 'checksFinished',",
+                    "originalCommit": {
+                      "oid": "38f0872eb46bd3ad2cec57b754653df0504cfbeb"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

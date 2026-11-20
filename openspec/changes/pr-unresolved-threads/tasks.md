@@ -43,7 +43,7 @@
   `listReviewComments`; el conteo en `adapters/codex-review.ts`, sin `hasFindings`; el montaje en
   `main.ts`.
   Verificar: los tests de 1.4 en verde y los que ya había.
-- [ ] 1.6 **(test en rojo)** Los hallazgos del revisor (`design.md` decisiones 1 y 3), en
+- [x] 1.6 **(test en rojo)** Los hallazgos del revisor (`design.md` decisiones 1 y 3), en
   `adapters/findings.test.ts`:
   - son los hilos sin resolver cuyo primer comentario es del revisor, de cualquier push; un hilo
     resuelto o de otra cuenta no es un hallazgo;

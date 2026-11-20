@@ -1,0 +1,79 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "reviewThreads": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "Y3Vyc29yOnYyOpK0MjAyNi0xMC0yOFQwNzoyODowOFrOsQVWTQ=="
+          },
+          "nodes": [
+            {
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "author": {
+                      "__typename": "Bot",
+                      "login": "chatgpt-codex-connector"
+                    },
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Persist the automatically selected strip's ID**\n\nIf the panel initially receives strips `[A, B]`, A appears selected but `selectedId` remains `undefined` until the user explicitly selects a strip. Restarting the engine with `[B, A]` therefore selects B, even though A is still declared, contrary to the documented reconnect behavior. Subsequent effect choices then target B rather than the previously selected strip. Store the resolved selection's ID when selecting the initial or fallback strip, while preserving it during disconnection.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.\n\n<!-- codex-code-review-finding:v1 -->",
+                    "path": "packages/panel/src/App.tsx",
+                    "originalLine": 90,
+                    "line": 90,
+                    "diffHunk": "@@ -69,6 +86,8 @@ export function App({\n   const status = useSyncExternalStore(subscribe, () => connection.status);\n   const source = useSyncExternalStore(subscribe, () => connection.source);\n   const sourceLost = useSyncExternalStore(subscribe, () => connection.sourceLost);\n+  const strips = useSyncExternalStore(subscribe, () => connection.strips);\n+  const selected = strips?.find((strip) => strip.id === selectedId) ?? strips?.[0];",
+                    "originalCommit": {
+                      "oid": "a48f14aceb5df4d58d5cc40683bbaa9b5bdf5323"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "author": {
+                      "__typename": "Bot",
+                      "login": "chatgpt-codex-connector"
+                    },
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Ignore non-primary pointer buttons when choosing effects**\n\nRight-clicking or middle-clicking an enabled effect button currently calls `choose` and sends a PUT, because `pointerdown` fires for those buttons too. Opening the browser context menu can consequently change the live lighting effect without a normal activation. Filter pointer events to the primary button before choosing the effect, while retaining touch and keyboard activation.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.\n\n<!-- codex-code-review-finding:v1 -->",
+                    "path": "packages/panel/src/effects/EffectList.tsx",
+                    "originalLine": 66,
+                    "line": null,
+                    "diffHunk": "@@ -0,0 +1,83 @@\n+import { Badge, Button, Stack, Text } from '@mantine/core';\n+import { EFFECT_CATALOG, type EffectId, needsAudioSource } from '@moodtable/shared';\n+import { type MouseEvent, useId } from 'react';\n+\n+import { EFFECT_KIND, EFFECT_LIST_LABEL, EFFECT_NAMES, NEEDS_AUDIO_SOURCE } from '../literals.ts';\n+\n+interface EffectListProps {\n+  /** El efecto que el motor pinta en la tira seleccionada. */\n+  active: EffectId;\n+  /** Sin fuente de audio, los efectos reactivos no se pueden elegir. */\n+  hasAudioSource: boolean;\n+  onChoose: (effect: EffectId) => void;\n+}\n+\n+/**\n+ * Zona Efectos (README \u00a71.3, specs/instrument-control): los efectos del cat\u00e1logo para la tira\n+ * seleccionada, etiquetados como reactivos o de ambiente, con el activo marcado. Se tocan como los\n+ * pads de una controladora (decisi\u00f3n 7 del change strip-effect-switch): el efecto se elige al pulsar,\n+ * no al soltar, y sin indicadores de espera; el activo es el que dice el motor, no el pulsado.\n+ */\n+export function EffectList({ active, hasAudioSource, onChoose }: Readonly<EffectListProps>) {\n+  return (\n+    <Stack gap=\"xs\" role=\"group\" aria-label={EFFECT_LIST_LABEL}>\n+      {EFFECT_CATALOG.map(({ id, usesAudio }) => (\n+        <EffectButton\n+          key={id}\n+          effect={id}\n+          reactive={usesAudio}\n+          active={id === active}\n+          disabled={!hasAudioSource && needsAudioSource(id)}\n+          onChoose={onChoose}\n+        />\n+      ))}\n+    </Stack>\n+  );\n+}\n+\n+interface EffectButtonProps {\n+  effect: EffectId;\n+  reactive: boolean;\n+  active: boolean;\n+  disabled: boolean;\n+  onChoose: (effect: EffectId) => void;\n+}\n+\n+function EffectButton({ effect, reactive, active, disabled, onChoose }: Readonly<EffectButtonProps>) {\n+  const reasonId = useId();\n+  const choose = () => {\n+    if (!disabled) onChoose(effect);\n+  };\n+  // El rat\u00f3n y el dedo eligen en `pointerdown`; su clic, que llega al soltar, ya no cuenta. Enter y\n+  // Espacio solo generan el clic, sin puntero (`detail` 0): ese s\u00ed elige.\n+  const chooseFromKeyboard = (event: MouseEvent) => {\n+    if (event.detail === 0) choose();\n+  };\n+\n+  return (\n+    <div>\n+      <Button\n+        fullWidth\n+        justify=\"space-between\"\n+        variant={active ? 'filled' : 'default'}\n+        aria-current={active ? 'true' : undefined}\n+        aria-describedby={disabled ? reasonId : undefined}\n+        disabled={disabled}\n+        onPointerDown={choose}",
+                    "originalCommit": {
+                      "oid": "a48f14aceb5df4d58d5cc40683bbaa9b5bdf5323"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "author": {
+                      "__typename": "Bot",
+                      "login": "chatgpt-codex-connector"
+                    },
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Wait for the breathing frame before snapshotting the timeline**\n\nIf the effect-state update reaches the page before the next frame tick, both `aria-current` assertions can pass while the timeline still contains no breathing frame. The engine broadcasts the strip-state update synchronously through `strips.watch` (`packages/engine/src/adapters/server.ts:273\u2013275`), whereas frames are broadcast separately by `viewerOutput.write`. Taking a one-time snapshot here can therefore trigger \u201cLa tira no ha pintado la respiraci\u00f3n\u201d even when the switch completes within 100 ms. Wait for a matching frame before reading the timeline, and continue using its recorded arrival timestamp for the latency assertion.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.\n\n<!-- codex-code-review-finding:v1 -->",
+                    "path": "e2e/effects.spec.ts",
+                    "originalLine": 100,
+                    "line": null,
+                    "diffHunk": "@@ -0,0 +1,125 @@\n+import { fileURLToPath } from 'node:url';\n+\n+import { type Page, expect, test } from '@playwright/test';\n+\n+import { createTestEngine } from './engine.ts';\n+\n+/**\n+ * E2E de la historia `MOO-94`: el DJ cambia el efecto de una tira desde el panel, con la m\u00fasica\n+ * sonando (specs/instrument-control). Lanza su propio motor, con el fichero de golpes y la tira con\n+ * energ\u00eda.\n+ */\n+\n+/** El fichero de golpes: 4 s con un golpe de 50 ms en los segundos 1, 2 y 3 y silencio digital. */\n+const GOLPES = fileURLToPath(new URL('../packages/engine/test/fixtures/golpes.wav', import.meta.url));\n+\n+/** E1 (control \u2192 luz) de `docs/umbrales-para-specs.md`. */\n+const MAX_SWITCH_MS = 100;\n+\n+/** Lo que el script de la p\u00e1gina anota: cu\u00e1ndo puls\u00f3 el DJ y cu\u00e1ndo lleg\u00f3 cada frame de la tira. */\n+interface Timeline {\n+  pressedAt: number | undefined;\n+  /** Instante de llegada de cada frame de la tira, y si es de la respiraci\u00f3n. */\n+  frames: [arrivedAt: number, breathing: boolean][];\n+}\n+\n+declare global {\n+  interface Window {\n+    moodTableTimeline: Timeline;\n+  }\n+}\n+\n+/**\n+ * Antes de cargar el panel: anota el instante del primer `pointerdown` y el de cada frame de la\n+ * tira 0 que llega por el WebSocket del visor (tipo `1`, `docs/instructions/viewer-protocol.md`).\n+ * Un frame es de la respiraci\u00f3n si todos sus LEDs tienen el mismo color y no est\u00e1n apagados: la\n+ * respiraci\u00f3n nunca baja del 5 %, y energ\u00eda con este fichero es un dibujo en espejo o negro.\n+ */\n+async function recordTimeline(page: Page): Promise<void> {\n+  await page.addInitScript(() => {\n+    const timeline: Timeline = { pressedAt: undefined, frames: [] };\n+    window.moodTableTimeline = timeline;\n+    document.addEventListener(\n+      'pointerdown',\n+      () => {\n+        timeline.pressedAt ??= performance.now();\n+      },\n+      { capture: true },\n+    );\n+    const HEADER_BYTES = 6;\n+    const NativeWebSocket = window.WebSocket;\n+    window.WebSocket = class extends NativeWebSocket {\n+      constructor(...args: ConstructorParameters<typeof WebSocket>) {\n+        super(...args);\n+        this.addEventListener('message', ({ data }: MessageEvent) => {\n+          if (!(data instanceof ArrayBuffer)) return;\n+          const bytes = new Uint8Array(data);\n+          if (bytes[0] !== 1 || bytes[5] !== 0) return;\n+          const [red = 0, green = 0, blue = 0] = bytes.subarray(HEADER_BYTES, HEADER_BYTES + 3);\n+          let uniform = true;\n+          for (let index = HEADER_BYTES; index < bytes.length; index += 3) {\n+            if (bytes[index] !== red || bytes[index + 1] !== green || bytes[index + 2] !== blue) {\n+              uniform = false;\n+              break;\n+            }\n+          }\n+          timeline.frames.push([performance.now(), uniform && red + green + blue > 0]);\n+        });\n+      }\n+    };\n+  });\n+}\n+\n+function zone(page: Page, name: string) {\n+  return page.getByRole('region', { name });\n+}\n+\n+function effect(page: Page, name: string) {\n+  return zone(page, 'Efectos').getByRole('button', { name: new RegExp(`^${name}`) });\n+}\n+\n+test('el DJ cambia el efecto de la tira desde el panel', async ({ page }) => {\n+  const engine = await createTestEngine({ audioFile: GOLPES, effect: 'energy' });\n+  await engine.start();\n+  // El motor se para aunque falle una comprobaci\u00f3n: si no, quedar\u00eda vivo con su puerto ocupado.\n+  try {\n+    await recordTimeline(page);\n+    await page.goto(engine.url);\n+\n+    // El DJ ve su tira, seleccionada, con el efecto que pinta el motor marcado.\n+    const strip = zone(page, 'Tiras').getByRole('radio', { name: /Tira de los E2E/ });\n+    await expect(strip).toBeChecked();\n+    await expect(strip).toContainText('60 LEDs \u00b7 Virtual');\n+    await expect(effect(page, 'Energ\u00eda')).toHaveAttribute('aria-current', 'true');\n+    await expect(effect(page, 'Respiraci\u00f3n')).not.toHaveAttribute('aria-current');\n+\n+    // Elige la respiraci\u00f3n: la tira se pinta con ella en menos de 100 ms desde que la pulsa.\n+    await effect(page, 'Respiraci\u00f3n').click();\n+    await expect(effect(page, 'Respiraci\u00f3n')).toHaveAttribute('aria-current', 'true');\n+    await expect(effect(page, 'Energ\u00eda')).not.toHaveAttribute('aria-current');\n+    const { pressedAt, frames } = await page.evaluate(() => window.moodTableTimeline);",
+                    "originalCommit": {
+                      "oid": "e0db936d13c35d54c866880ea98792f3f3b551b6"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
