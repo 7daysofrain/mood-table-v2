@@ -84,7 +84,7 @@
   Las demás filas no cambian.
 - [x] 1.13 Los textos en `core/triage-summary.ts`.
   Verificar: los tests de 1.12 en verde y los que ya había.
-- [ ] 1.14 **(test en rojo)** Los escenarios de la spec de punta a punta en el grafo y el driver
+- [x] 1.14 **(test en rojo)** Los escenarios de la spec de punta a punta en el grafo y el driver
   (`core/graph.test.ts`, `core/driver.test.ts`), con GitHub y el modelo de decisión falsos:
   - la #166: último push revisado sin hallazgos y dos hilos sin resolver de un push anterior → el
     aviso «necesita intervención» con hallazgos de un push anterior, y el resumen con los dos, cada

@@ -13,6 +13,7 @@ import {
   type ReviewRequests,
 } from './ports.ts';
 import type { Check, OpenPullRequest, Review, ReviewerThreads } from './pull-request.ts';
+import type { Finding, Question } from './triage.ts';
 
 const MAINTAINER = '7daysofrain';
 const MINUTE = 60_000;
@@ -863,6 +864,95 @@ describe('los hilos sin resolver del revisor (change pr-unresolved-threads, deci
     await ticks(tick, 3);
 
     expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
+  });
+});
+
+describe('de punta a punta, con los hilos sin resolver del revisor (change pr-unresolved-threads)', () => {
+  /** Un P2 de Codex sobre un push anterior, sin resolver. */
+  const earlier = (file: string, line: number): Finding => ({
+    source: 'reviewer',
+    reviewer: 'Codex',
+    badge: 'P2',
+    severity: 'normal',
+    file,
+    line,
+    title: `Fix ${file}`,
+    text: 'Details.',
+    diffHunk: '@@ -1 +1 @@',
+    earlierPush: { sha: '576b49636780068462fa4984e34a7c39902eba8a', code: `>> ${line} | x` },
+  });
+  const e2e: Finding = {
+    source: 'check',
+    name: 'e2e',
+    conclusion: 'failure',
+    context: { state: 'available', origin: 'log', summary: 'Error', errors: [], truncated: false },
+  };
+
+  /** Los puertos del triaje con estos hallazgos, que guardan las preguntas y los resúmenes. */
+  function triageWith(findings: Finding[]) {
+    const recorded = { questions: [] as Question[], summaries: [] as string[] };
+    const ports: TriageOverrides = {
+      findings: {
+        read: () =>
+          Promise.resolve({ context: { title: 'PR', description: 'Fixes MOO-1' }, findings, sonarIssues: null }),
+      },
+      decisionModel: {
+        estimate: () => 0,
+        ask(_context, _finding, question) {
+          recorded.questions.push(question);
+          return Promise.resolve({
+            answer:
+              question === 'fixedScope'
+                ? { kind: 'fixedScope', fixed: 0.31, inside: 0.83, outside: 0.21 }
+                : { kind: 'answered', probability: 0.93 },
+            inputTokens: 100,
+          });
+        },
+      },
+      summaries: {
+        published: () => Promise.resolve(false),
+        publish(_number, _sha, text) {
+          recorded.summaries.push(text);
+          return Promise.resolve();
+        },
+      },
+    };
+    return { ports, recorded };
+  }
+
+  const finalOf = (notices: Notice[]) => notices.findLast((notice) => notice.type === 'final');
+
+  it('la #166: el último push revisado sin hallazgos y dos hilos de un push anterior', async () => {
+    const found = [earlier('sonar-issues.ts', 59), earlier('findings.ts', 54)];
+    const { ports, recorded } = triageWith(found);
+    const { github, notifier, tick } = setup([pullRequest(74)], ports);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    github.threads[74] = { lastPush: 0, earlierPushes: 2 };
+
+    await ticks(tick, 3);
+
+    expect(finalOf(notifier.notices)).toMatchObject({
+      state: { status: 'needsIntervention', reasons: [{ kind: 'reviewFindings', pushes: 'earlier' }] },
+    });
+    expect(recorded.questions).toEqual(['fixedScope', 'fixedScope']);
+    expect(recorded.summaries).toHaveLength(1);
+    expect(recorded.summaries[0]?.match(/· de un push anterior \(`576b496`\)/g)).toHaveLength(2);
+  });
+
+  it('una comprobación que falla y el hilo resuelto: el resumen no lo trae, y el aviso no dice hallazgos', async () => {
+    // El hilo está resuelto: el revisor no lo cuenta, y los hallazgos no lo traen.
+    const { ports, recorded } = triageWith([e2e]);
+    const { github, notifier, tick } = setup([pullRequest(74)], ports);
+    github.checks['sha-74'] = [{ name: 'lint', status: 'failed' }];
+    github.threads[74] = { lastPush: 0, earlierPushes: 0 };
+
+    await ticks(tick, 2);
+
+    expect(finalOf(notifier.notices)).toMatchObject({
+      state: { status: 'needsIntervention', reasons: [{ kind: 'checksFailed', checks: ['lint'] }] },
+    });
+    expect(recorded.summaries[0]).not.toContain('push anterior');
   });
 });
 
