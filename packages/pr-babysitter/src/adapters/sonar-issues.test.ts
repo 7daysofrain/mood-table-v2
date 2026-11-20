@@ -67,7 +67,7 @@ function files(contents: Record<string, string | null>) {
 function annotated(
   errors: { file: string; line: number | null; title: string | null; message?: string }[],
   notice = `${errors.length} incidencias nuevas; se anotan ${errors.length}`,
-): CheckContext {
+): Extract<CheckContext, { state: 'available' }> {
   return {
     state: 'available',
     origin: 'annotations',
@@ -84,7 +84,7 @@ describe('las incidencias de sonar-issues', () => {
     const read = await readSonarIssues(github, SHA, await context165());
 
     expect(read?.total).toBe(3);
-    expect(read?.issues.map(({ code: _code, ...issue }) => issue)).toEqual([
+    expect(read?.issues).toMatchObject([
       {
         rule: 'typescript:S6959',
         ruleName: '"Array.reduce()" calls should include an initial value',
@@ -120,7 +120,9 @@ describe('las incidencias de sonar-issues', () => {
     ['INFO', 'normal'],
   ])('una incidencia %s es de severidad %s', async (severity, expected) => {
     const { github } = files({ 'a.ts': lines(5) });
-    const context = annotated([{ file: 'a.ts', line: 1, title: `typescript:S1 · ${severity} · Regla` }]);
+    const context = annotated([
+      { file: 'a.ts', line: 1, title: `typescript:S1 · ${severity} · Regla` },
+    ]);
 
     const read = await readSonarIssues(github, SHA, context);
 
@@ -129,7 +131,9 @@ describe('las incidencias de sonar-issues', () => {
 
   it('el nombre de la regla puede llevar el separador', async () => {
     const { github } = files({ 'a.ts': lines(5) });
-    const context = annotated([{ file: 'a.ts', line: 1, title: 'typescript:S1 · LOW · Uno · dos' }]);
+    const context = annotated([
+      { file: 'a.ts', line: 1, title: 'typescript:S1 · LOW · Uno · dos' },
+    ]);
 
     const read = await readSonarIssues(github, SHA, context);
 

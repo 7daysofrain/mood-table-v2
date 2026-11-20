@@ -59,7 +59,7 @@
       primeras;
     - una línea fuera del fichero, o un fichero que no llega, dan `code: null`;
     - cada fichero se pide una vez.
-- [ ] 2.3 `fileAt` en `adapters/github.ts` y el módulo `adapters/sonar-issues.ts`. Todavía no los usa
+- [x] 2.3 `fileAt` en `adapters/github.ts` y el módulo `adapters/sonar-issues.ts`. Todavía no los usa
   nadie.
   Verificar: los tests de 2.2 en verde; `pnpm typecheck` en verde.
 - [ ] 2.4 **(test en rojo)** El triaje de una incidencia:
