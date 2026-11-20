@@ -169,11 +169,18 @@ de la causa). Sin ningún nombre (una coma sola), el sistema vuelve al comportam
 
 ### 8. El resumen cuenta lo relanzado, también en una PR lista para integrar
 
-Las comprobaciones que han pasado con `attempt` 2 o más salen del *snapshot*. Si hay alguna, el camino
-de *lista para integrar* pasa por `publicarResumen` antes de `avisarEstadoFinal`, con un resumen sin
-hallazgos que lo dice; en una PR que necesita intervención, va como líneas aparte junto a los
-hallazgos. La marca de un resumen por push no cambia. El aviso de Linear no cambia: el usuario lo
+Al relanzar, el push apunta qué comprobaciones fallaban en ese run (`rerunNames`): GitHub las relanza
+todas, relanzables o no. Las que pasan después son las que «se relanzaron y pasaron». Si hay alguna,
+el camino de *lista para integrar* pasa por `publicarResumen` antes de `avisarEstadoFinal`, con un
+resumen sin hallazgos que lo dice; en una PR que necesita intervención, va como líneas aparte junto a
+los hallazgos. La marca de un resumen por push no cambia. El aviso de Linear no cambia: el usuario lo
 quiere en la PR, que es donde vive el proceso.
+
+Antes decía que salían del *snapshot*, con su `attempt` 2 o más, pero el adaptador solo lee el
+intento de las que fallan: leerlo de las que pasan serían unas 4 lecturas más de GitHub por PR y
+vuelta. El usuario eligió apuntarlo al relanzar (al implementar `MOO-171`, 20-nov). Lo que se pierde:
+una relanzada a mano que pasa no sale en el resumen; una relanzada a mano que vuelve a fallar sí
+cuenta (decisión 1), porque su intento se lee.
 
 ## Risks / Trade-offs
 

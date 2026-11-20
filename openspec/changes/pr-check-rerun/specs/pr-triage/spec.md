@@ -77,8 +77,8 @@ MUST decir cuál de los tres motivos es.
 El sistema SHALL publicar el triaje en un comentario de la PR que diga que es del PR Babysitter y de qué
 push es, con cada hallazgo, su clase y por qué: la probabilidad frente al umbral, o la regla que lo ha
 decidido; y, en una comprobación, de dónde sale su contexto y si se ha cortado. El resumen SHALL decir
-también qué comprobaciones se relanzaron y pasaron, y MUST publicarse aunque la PR acabe lista para
-integrar si alguna se relanzó y pasó. MUST publicar como mucho uno por push; un push nuevo MUST tener el
+también qué comprobaciones relanzó el sistema y pasaron, y MUST publicarse aunque la PR acabe lista
+para integrar si alguna pasó así. MUST publicar como mucho uno por push; un push nuevo MUST tener el
 suyo, sin tocar el anterior.
 
 > Traza: `MOO-75`, caso feliz (*la PR tiene un comentario resumen del sistema*) y criterio *un solo
@@ -90,7 +90,8 @@ suyo, sin tocar el anterior.
 > traza, se decidió al explorar el change (13-nov), `design.md` decisión 2. Lo relanzado que pasa:
 > `MOO-155`, criterios *la comprobación pasa al relanzarla* y *el relanzamiento pasa y la PR sigue su
 > camino*; en el resumen de la PR y no en el aviso de Linear, decidido por el usuario al explorar el
-> change `pr-check-rerun` (20-nov).
+> change `pr-check-rerun` (20-nov). Solo lo que relanzó el sistema, y no lo relanzado a mano que pasa:
+> decidido por el usuario al implementar `MOO-171` (20-nov), `design.md` decisión 8.
 
 #### Scenario: El resumen se identifica y dice de qué push es
 - **GIVEN** una PR que necesita intervención con hallazgos en su último push

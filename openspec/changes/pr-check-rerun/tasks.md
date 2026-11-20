@@ -142,7 +142,7 @@
   - relanzado y pasado junto a un `lint` que falla: el resumen lleva las dos cosas;
   - una PR que pasa a la primera no tiene resumen;
   - un solo resumen por push, también en el camino de *lista para integrar*.
-- [ ] 2.4 `needsTriage` con el relanzamiento que no termina, el resultado del relanzamiento hasta el
+- [x] 2.4 `needsTriage` con el relanzamiento que no termina, el resultado del relanzamiento hasta el
   triaje, y `publicarResumen` en el camino de *lista para integrar* (`core/graph.ts`,
   `core/tracking.ts`); las respuestas falsas de `src/studio.ts`.
   Verificar: los tests de 2.3 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y

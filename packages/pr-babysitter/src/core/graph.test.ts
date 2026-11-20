@@ -151,7 +151,8 @@ const noFindings: TriagePorts = {
   },
   summaries: {
     published: () => Promise.resolve(false),
-    publish: () => Promise.reject(new Error('no hay resumen que publicar')),
+    // Sin hallazgos, solo se publica lo que el sistema relanzó y pasó (change pr-check-rerun).
+    publish: () => Promise.resolve(),
   },
 };
 

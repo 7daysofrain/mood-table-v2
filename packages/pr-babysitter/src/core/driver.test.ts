@@ -1082,8 +1082,9 @@ describe('el sistema no pide dos veces la revisión del mismo push', () => {
 
 describe('las peticiones al modelo de decisión en paralelo (change pr-check-triage, decisión 4)', () => {
   it('como mucho 4 a la vez: cada `invoke` lleva `maxConcurrency: 4`', async () => {
-    // Ninguna es la de incidencias de SonarQube, que sin incidencias no se pregunta.
-    const names = ['lint', 'typecheck', 'test', 'e2e', 'docs', 'build'];
+    // Ninguna es la de incidencias de SonarQube, que sin incidencias no se pregunta, ni relanzable
+    // (`test`, `e2e`), que decide su regla (change pr-check-rerun).
+    const names = ['lint', 'typecheck', 'unit', 'browser', 'docs', 'build'];
     const concurrency = { inFlight: 0, peak: 0, calls: 0 };
     const { github, tick } = setup([pullRequest(74)], {
       findings: {
