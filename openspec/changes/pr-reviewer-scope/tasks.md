@@ -53,7 +53,7 @@
   comprobaciones no cambian.
 - [x] 1.7 Los textos del porqué en `core/triage-summary.ts`.
   Verificar: los tests de 1.6 en verde y los que ya había.
-- [ ] 1.8 **(test en rojo)** Los escenarios de la spec de punta a punta en el grafo, en
+- [x] 1.8 **(test en rojo)** Los escenarios de la spec de punta a punta en el grafo, en
   `core/graph.test.ts`, con el modelo de decisión falso:
   - una PR con un comentario del revisor y una comprobación que falla: el modelo recibe una petición
     `scope` y otra `cause`, y el resumen da cada uno con su clase;
