@@ -385,6 +385,97 @@ describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 
   });
 });
 
+describe('lo relanzado (change pr-check-rerun, decisiones 1, 6 y 8)', () => {
+  const twice = (evidentCase: 'timeout' | 'infrastructure' | 'network' | 'runnerLost' | null): Verdict => ({
+    class: 'valid',
+    reason: 'failedTwice',
+    evidentCase,
+  });
+
+  it('una relanzable que ha fallado dos veces: la regla, y el caso evidente si lo hay, sin origen del contexto', () => {
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [
+          { finding: e2e, verdict: twice(null) },
+          { finding: e2e, verdict: twice('timeout') },
+          { finding: e2e, verdict: twice('infrastructure') },
+          { finding: e2e, verdict: twice('network') },
+          { finding: e2e, verdict: twice('runnerLost') },
+        ],
+      },
+      0.8,
+    );
+
+    expect(rows(text).map((row) => row.split(' | ').slice(1).join(' | '))).toEqual([
+      'real | regla: ha fallado dos veces |',
+      'real | regla: ha fallado dos veces · caso evidente: timeout |',
+      'real | regla: ha fallado dos veces · caso evidente: infraestructura |',
+      'real | regla: ha fallado dos veces · caso evidente: red |',
+      'real | regla: ha fallado dos veces · caso evidente: runner perdido |',
+    ]);
+  });
+
+  it('los tres motivos de exige criterio, sin origen del contexto', () => {
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [
+          { finding: e2e, verdict: { class: 'needsJudgment', reason: 'notRerun' } },
+          { finding: e2e, verdict: { class: 'needsJudgment', reason: 'rerunUnfinished' } },
+          { finding: e2e, verdict: { class: 'needsJudgment', reason: 'cancelled' } },
+        ],
+      },
+      0.8,
+    );
+
+    expect(rows(text).map((row) => row.split(' | ').slice(1).join(' | '))).toEqual([
+      'exige criterio | regla: no se ha podido relanzar |',
+      'exige criterio | regla: el relanzamiento no ha terminado |',
+      'exige criterio | regla: se ha cancelado |',
+    ]);
+  });
+
+  it('con hallazgos, dice bajo la tabla qué se relanzó y pasó', () => {
+    const lint: Finding = { ...e2e, name: 'lint' };
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [{ finding: lint, verdict: { class: 'valid', reason: 'rule' } }],
+        rerunPassed: ['e2e'],
+      },
+      0.8,
+    );
+
+    expect(rows(text)).toEqual(['| Comprobación `lint` | real | regla: comprobación determinista |']);
+    expect(text).toContain('| real | regla: comprobación determinista |\n\nLa comprobación `e2e` se relanzó y pasó.\n');
+  });
+
+  it('sin hallazgos, sin tabla: solo lo que se relanzó y pasó, y la marca del push', () => {
+    const text = triageSummary({ sha: SHA, findings: [], rerunPassed: ['test', 'e2e'] }, 0.8);
+
+    expect(text).not.toContain('| Hallazgo |');
+    expect(text.split('\n')).toEqual([
+      '**Triaje del PR Babysitter** (modo sombra: no actúa) · push `abc1234`',
+      '',
+      'La comprobación `test` se relanzó y pasó.',
+      'La comprobación `e2e` se relanzó y pasó.',
+      '',
+      `<!-- pr-babysitter:triage {"sha":"${SHA}"} -->`,
+    ]);
+    expect(summaryMarks(text)).toEqual([SHA]);
+  });
+
+  it('sin nada relanzado, no dice nada de ello', () => {
+    const text = triageSummary(
+      { sha: SHA, findings: [{ finding: e2e, verdict: twice(null) }], rerunPassed: [] },
+      0.8,
+    );
+
+    expect(text).not.toContain('se relanzó');
+  });
+});
+
 describe('las marcas de un comentario', () => {
   it('no hay ninguna en un comentario cualquiera', () => {
     expect(summaryMarks('Buen trabajo')).toEqual([]);

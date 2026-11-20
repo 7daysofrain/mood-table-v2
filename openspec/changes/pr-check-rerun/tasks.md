@@ -118,7 +118,7 @@
 
 ## 2. MOO-171 · infra
 
-- [ ] 2.1 **(test en rojo)** Las reglas del triaje tras el relanzamiento (`design.md` decisiones 1, 6
+- [x] 2.1 **(test en rojo)** Las reglas del triaje tras el relanzamiento (`design.md` decisiones 1, 6
   y 7):
   - **`core/triage.test.ts`:**
     - un relanzable fallido con intento 2 o más sale *real* por la regla nueva, que registra que ha
