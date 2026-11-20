@@ -15,7 +15,7 @@
 
 ## 1. MOO-177 · infra
 
-- [ ] 1.1 El umbral y la decisión (`design.md` decisión 5): el margen de 2 minutos con la medición de
+- [x] 1.1 El umbral y la decisión (`design.md` decisión 5): el margen de 2 minutos con la medición de
   las 7 PR en `docs/umbrales-para-specs.md` (*PR Babysitter*), y D121 en `docs/idea-mood-table.md`
   §10.
   Verificar: el umbral cita las PR medidas y el porqué de 2 y no 1; D121 enlaza este change y dice qué
