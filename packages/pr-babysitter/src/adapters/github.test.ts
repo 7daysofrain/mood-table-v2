@@ -357,18 +357,19 @@ describe('los hilos de revisión de una PR (change pr-unresolved-threads, decisi
       variables: { owner: '7daysofrain', repo: 'mood-table-v2', number: 166 },
     });
     expect(threads).toHaveLength(2);
-    expect(threads[0]).toEqual({
+    const [first] = threads;
+    expect(first).toMatchObject({
       isResolved: true,
       comment: {
         author: 'chatgpt-codex-connector[bot]',
-        body: expect.stringMatching(/^\*\*<sub><sub>!\[P2 Badge\].*Preserve file-level issue identity/),
         path: 'packages/pr-babysitter/src/adapters/sonar-issues.ts',
         originalLine: 59,
         line: null,
         originalSha: '576b49636780068462fa4984e34a7c39902eba8a',
-        diffHunk: expect.stringMatching(/^@@ /),
       },
     });
+    expect(first?.comment.body).toMatch(/^\*\*<sub><sub>!\[P2 Badge\].*file-level issue identity/);
+    expect(first?.comment.diffHunk).toMatch(/^@@ /);
     expect(threads[1]?.comment.path).toBe('packages/pr-babysitter/src/adapters/findings.ts');
   });
 

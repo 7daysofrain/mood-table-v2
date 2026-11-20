@@ -39,7 +39,7 @@
   - en `adapters/codex-review.test.ts`: cuenta los hilos sin resolver del revisor del último push y
     de los anteriores, sin los resueltos ni los de otra cuenta; del bloque solo lee el commit y si ha
     terminado.
-- [ ] 1.5 Los adaptadores: `listReviewThreads` por GraphQL en `adapters/github.ts`, sin
+- [x] 1.5 Los adaptadores: `listReviewThreads` por GraphQL en `adapters/github.ts`, sin
   `listReviewComments`; el conteo en `adapters/codex-review.ts`, sin `hasFindings`; el montaje en
   `main.ts`.
   Verificar: los tests de 1.4 en verde y los que ya había.

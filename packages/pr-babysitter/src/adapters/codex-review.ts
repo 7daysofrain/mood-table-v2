@@ -4,6 +4,11 @@
  * pr-review-request, decisiones 1-3). El núcleo solo ve el estado de
  * dominio (`Review`), así que otro revisor (BA3) sería otro adaptador.
  *
+ * Sus hallazgos son sus hilos sin resolver, de cualquier push, no lo que diga el bloque (change
+ * pr-unresolved-threads, decisión 2): `has_any_findings` arrastraba los de otro push (la #166) y
+ * `has_unresolved_findings` no sigue a los hilos (la #62). Del bloque solo se usan el commit revisado
+ * y si ha terminado.
+ *
  * Solo cuentan los comentarios de la cuenta del revisor: los de otras cuentas no llegan al núcleo
  * (BE6). Un usuario de GitHub no puede tener `[bot]` en su login, así que no se puede suplantar.
  * Codex suele dejar un único comentario con el bloque, que va editando, pero también otros sin él
@@ -14,31 +19,29 @@ import * as z from 'zod';
 
 import type { ReviewReader, ReviewRequests } from '../core/ports.ts';
 import type { Review } from '../core/pull-request.ts';
-import type { PullRequestComment } from './github.ts';
+import type { PullRequestComment, ReviewThread } from './github.ts';
 
 export interface CodexReviewReaderOptions {
   /** La cuenta de GitHub del revisor. */
   reviewer: string;
   listComments: (pullRequestNumber: number) => Promise<PullRequestComment[]>;
+  listReviewThreads: (pullRequestNumber: number) => Promise<ReviewThread[]>;
 }
 
 const BLOCK = /<!-- codex-review-state:v1 (.*?) -->/s;
 
-/**
- * Lo que se lee del bloque. `has_any_findings` y no `has_unresolved_findings`, que no sigue a los
- * hilos: en la #62 seguía en `true` con los hilos ya resueltos.
- */
+/** Lo que se lee del bloque: el commit revisado y si ha terminado. */
 const blockSchema = z.object({
   code_review: z.object({
     commit_sha: z.string().min(1),
     status: z.string(),
-    has_any_findings: z.boolean().nullable(),
   }),
 });
 
 export function createCodexReviewReader({
   reviewer,
   listComments,
+  listReviewThreads,
 }: CodexReviewReaderOptions): ReviewReader {
   return {
     async review(pullRequestNumber) {
@@ -49,9 +52,12 @@ export function createCodexReviewReader({
       return last === undefined ? null : parseBlock(last);
     },
 
-    unresolvedThreads() {
-      // Los hilos se leen por GraphQL en el paso 1.5 del change pr-unresolved-threads.
-      return Promise.reject(new Error('Sin implementar: los hilos del revisor'));
+    async unresolvedThreads(pullRequestNumber, headSha) {
+      const open = (await listReviewThreads(pullRequestNumber)).filter(
+        ({ isResolved, comment }) => !isResolved && comment.author === reviewer,
+      );
+      const lastPush = open.filter(({ comment }) => comment.originalSha === headSha).length;
+      return { lastPush, earlierPushes: open.length - lastPush };
     },
   };
 }
@@ -65,11 +71,8 @@ function parseBlock(text: string): Review | null {
   }
   const parsed = blockSchema.safeParse(json);
   if (!parsed.success) return null;
-  const { commit_sha, status, has_any_findings } = parsed.data.code_review;
-  const completed = status === 'completed';
-  // Terminada sin decir si hay hallazgos: no se sabe qué ha pasado.
-  if (completed && has_any_findings === null) return null;
-  return { reviewedSha: commit_sha, completed };
+  const { commit_sha, status } = parsed.data.code_review;
+  return { reviewedSha: commit_sha, completed: status === 'completed' };
 }
 
 export interface CodexReviewRequestsOptions {

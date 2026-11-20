@@ -48,6 +48,36 @@ export interface ReviewComment {
   inReplyTo: number | null;
 }
 
+/**
+ * Un hilo de revisión de una PR (change pr-unresolved-threads, decisión 1): si está resuelto y el
+ * comentario que lo abre, el único que se mira; las respuestas no.
+ */
+export interface ReviewThread {
+  isResolved: boolean;
+  comment: {
+    /**
+     * Login de GitHub de la cuenta que lo escribe, como en REST: el de un bot lleva `[bot]`, que
+     * GraphQL no pone. Un usuario no puede tener `[bot]` en su login, así que no se puede suplantar.
+     */
+    author: string;
+    body: string;
+    /**
+     * El push sobre el que se hizo (`originalCommit`). No el `commit`, que GitHub mueve al push
+     * siguiente si la línea no cambia (la #88).
+     */
+    originalSha: string;
+    path: string;
+    /** La línea en ese push, o `null` si el comentario es del fichero entero. */
+    originalLine: number | null;
+    /**
+     * La línea en el último push, que GitHub sigue mientras el código de alrededor no cambia, o
+     * `null` si ya no la sabe (el comentario está *outdated*).
+     */
+    line: number | null;
+    diffHunk: string | null;
+  };
+}
+
 /** El *check run* de una comprobación en un push. */
 export interface CheckRun {
   /** En GitHub Actions es también el id del *job*, el que pide su log. */
@@ -113,6 +143,75 @@ const reviewCommentSchema = z.object({
   in_reply_to_id: z.number().nullable().optional(),
 });
 
+/**
+ * Los hilos de revisión de una PR, de 100 en 100, con el comentario que abre cada uno (change
+ * pr-unresolved-threads, decisión 1). REST no dice si un hilo está resuelto.
+ */
+const REVIEW_THREADS_QUERY = `
+  query ($owner: String!, $repo: String!, $number: Int!, $cursor: String) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $number) {
+        reviewThreads(first: 100, after: $cursor) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            isResolved
+            comments(first: 1) {
+              nodes {
+                author {
+                  __typename
+                  login
+                }
+                body
+                path
+                originalLine
+                line
+                diffHunk
+                originalCommit {
+                  oid
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+/** Lo que se lee de cada página de `REVIEW_THREADS_QUERY`. */
+const reviewThreadsSchema = z.object({
+  repository: z.object({
+    pullRequest: z.object({
+      reviewThreads: z.object({
+        pageInfo: z.object({ hasNextPage: z.boolean(), endCursor: z.string().nullable() }),
+        nodes: z.array(
+          z.object({
+            isResolved: z.boolean(),
+            comments: z.object({
+              nodes: z.array(
+                z.object({
+                  // Una cuenta borrada no tiene autor.
+                  author: z.object({ __typename: z.string(), login: z.string() }).nullable(),
+                  body: z.string(),
+                  path: z.string(),
+                  originalLine: z.number().nullable(),
+                  line: z.number().nullable(),
+                  diffHunk: z.string().nullable(),
+                  // Un commit que ya no existe (*force push*) puede no tener objeto.
+                  originalCommit: z.object({ oid: z.string() }).nullable(),
+                }),
+              ),
+            }),
+          }),
+        ),
+      }),
+    }),
+  }),
+});
+
 /** Lo que se lee de cada regla de `GET /repos/{owner}/{repo}/rules/branches/{branch}`. */
 const ruleSchema = z.object({
   type: z.string(),
@@ -167,6 +266,11 @@ export function createGitHubReader({
   getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;
   /** Los comentarios de revisión en línea de una PR, del primero al último. Para el triaje. */
   listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]>;
+  /**
+   * Los hilos de revisión de una PR, con el comentario que abre cada uno, por GraphQL. Para el
+   * revisor y el triaje (change pr-unresolved-threads, decisión 1).
+   */
+  listReviewThreads(pullRequestNumber: number): Promise<ReviewThread[]>;
   /**
    * El *check run* más reciente de una comprobación en un commit, o `null` si no hay ninguno con
    * ese nombre. Para el contexto de una comprobación que falla.
@@ -317,6 +421,35 @@ export function createGitHubReader({
         }));
     },
 
+    async listReviewThreads(pullRequestNumber: number): Promise<ReviewThread[]> {
+      const threads: ReviewThread[] = [];
+      let cursor: string | null = null;
+      do {
+        const variables = { owner, repo, number: pullRequestNumber, cursor };
+        const data: unknown = await read(() => octokit.graphql(REVIEW_THREADS_QUERY, variables));
+        const { reviewThreads } = reviewThreadsSchema.parse(data).repository.pullRequest;
+        for (const { isResolved, comments } of reviewThreads.nodes) {
+          const [first] = comments.nodes;
+          // Un hilo cuyo comentario se ha borrado no dice nada.
+          if (first === undefined || first.originalCommit === null) continue;
+          threads.push({
+            isResolved,
+            comment: {
+              author: loginOf(first.author),
+              body: first.body,
+              originalSha: first.originalCommit.oid,
+              path: first.path,
+              originalLine: first.originalLine,
+              line: first.line,
+              diffHunk: first.diffHunk,
+            },
+          });
+        }
+        cursor = reviewThreads.pageInfo.hasNextPage ? reviewThreads.pageInfo.endCursor : null;
+      } while (cursor !== null);
+      return threads;
+    },
+
     async checkRun(sha: string, checkName: string): Promise<CheckRun | null> {
       // GitHub da el *check run* más reciente de cada nombre (`filter=latest`).
       const run = (await checkRuns(sha)).find((checkRun) => checkRun.name === checkName);
@@ -377,6 +510,15 @@ export function createGitHubReader({
       return typeof data === 'string' ? data : null;
     },
   };
+}
+
+/**
+ * El login de una cuenta de GraphQL como lo da REST: el de un bot, con `[bot]`. Una cuenta borrada
+ * es `ghost`, como en REST.
+ */
+function loginOf(author: { __typename: string; login: string } | null): string {
+  if (author === null) return 'ghost';
+  return author.__typename === 'Bot' ? `${author.login}[bot]` : author.login;
 }
 
 /** Hace una lectura y convierte un 401 en el error de token rechazado (decisión 3). */
