@@ -48,6 +48,11 @@ const envSchema = z.object({
         .map((name) => name.trim())
         .filter((name) => name !== ''),
     ),
+  // La comprobación que lista las incidencias nuevas de SonarQube, por su nombre en main.
+  TRIAGE_SONAR_ISSUES_CHECK: z
+    .string()
+    .default('sonar-issues')
+    .transform((name) => name.trim()),
 });
 
 export interface Config {
@@ -95,6 +100,11 @@ export interface Config {
    * regla, sin preguntar al modelo (change pr-check-triage, decisión 6).
    */
   triageRuleChecks: string[];
+  /**
+   * La comprobación que lista las incidencias nuevas de SonarQube: cada incidencia que anota es un
+   * hallazgo (change pr-sonar-issue-triage, decisión 2).
+   */
+  triageSonarIssuesCheck: string;
 }
 
 export type ConfigResult = { ok: true; config: Config } | { ok: false; error: string };
@@ -133,6 +143,7 @@ export function loadConfig(env: Record<string, string | undefined>): ConfigResul
       triageThreshold: vars.TRIAGE_THRESHOLD,
       triageBudgetUsd: vars.TRIAGE_BUDGET_USD,
       triageRuleChecks: vars.TRIAGE_RULE_CHECKS,
+      triageSonarIssuesCheck: vars.TRIAGE_SONAR_ISSUES_CHECK,
     },
   };
 }

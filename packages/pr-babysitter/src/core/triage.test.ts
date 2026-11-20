@@ -46,6 +46,21 @@ function checkFinding(
   return { source: 'check', name, conclusion: 'failure', context };
 }
 
+/** Una incidencia de SonarQube con su código, de severidad normal. */
+function sonarIssue(overrides: Partial<Extract<Finding, { source: 'sonarIssue' }>> = {}): Finding {
+  return {
+    source: 'sonarIssue',
+    rule: 'typescript:S9382',
+    ruleName: 'Promises should not be awaited sequentially in a loop',
+    severity: 'normal',
+    file: 'tooling/ci/check-sonar-issues.ts',
+    line: 58,
+    message: 'Unexpected `await` inside a loop.',
+    code: '>>   58 |       await sleep(POLL_INTERVAL_MS, undefined, { signal });',
+    ...overrides,
+  };
+}
+
 const p1 = reviewerFinding({ badge: 'P1', severity: 'high' });
 
 describe('la clase de un hallazgo (design.md, decisión 4)', () => {
@@ -269,7 +284,15 @@ describe('lo que se decide sin el modelo (change pr-check-triage, decisión 6)',
     spentUsd = 0,
     ruleChecks = RULE_CHECKS,
     description = 'Pregunta por el alcance de la PR los hallazgos del revisor.',
-  ) => withoutModel(findings, { ruleChecks, description, spentUsd, budget, estimate });
+  ) =>
+    withoutModel(findings, {
+      ruleChecks,
+      sonarIssuesCheck: 'sonar-issues',
+      description,
+      spentUsd,
+      budget,
+      estimate,
+    });
 
   it('una comprobación de la lista sale real por regla, sin probabilidad', () => {
     const lint = checkFinding('lint');
@@ -329,7 +352,14 @@ describe('una PR sin descripción no dice su alcance (change pr-reviewer-scope, 
     return 400;
   };
   const decide = (findings: Finding[], description: string) =>
-    withoutModel(findings, { ruleChecks: ['lint'], description, spentUsd: 0, budget, estimate });
+    withoutModel(findings, {
+      ruleChecks: ['lint'],
+      sonarIssuesCheck: 'sonar-issues',
+      description,
+      spentUsd: 0,
+      budget,
+      estimate,
+    });
 
   it('con la descripción vacía o solo con espacios, un comentario del revisor sale noScope, sin reservar tope', () => {
     for (const description of ['', '  \n\t ']) {
@@ -432,5 +462,104 @@ describe('la clave de cada hallazgo (design.md, decisión 2)', () => {
       expect(new Set(keys).size).toBe(findings.length);
       for (const key of keys) expect(key.length).toBeLessThanOrEqual(100);
     }
+  });
+});
+
+describe('una incidencia de SonarQube (change pr-sonar-issue-triage, decisiones 3 y 5)', () => {
+  const answered = (probability: number) => ({ kind: 'answered', probability }) as const;
+  const budget: TriageBudget = { capUsd: 0.001, inputPricePerMTok: 1 };
+  const estimated: Finding[] = [];
+  const decide = (findings: Finding[], ruleChecks = ['lint']) =>
+    withoutModel(findings, {
+      ruleChecks,
+      sonarIssuesCheck: 'sonar-issues',
+      description: 'Tría cada incidencia de SonarQube.',
+      spentUsd: 0,
+      budget,
+      estimate: (finding) => {
+        estimated.push(finding);
+        return 400;
+      },
+    });
+
+  it('se le pregunta si su regla se cumple en ese código', () => {
+    expect(questionFor(sonarIssue())).toBe('rule');
+  });
+
+  it('real con 0,80 o más, no aplica con 0,20 o menos y exige criterio entre los dos', () => {
+    expect(classify(sonarIssue(), answered(0.85), THRESHOLD)).toEqual({
+      class: 'valid',
+      reason: 'probability',
+      probability: 0.85,
+    });
+    expect(classify(sonarIssue(), answered(0.1), THRESHOLD)).toEqual({
+      class: 'notApplicable',
+      reason: 'probability',
+      probability: 0.1,
+    });
+    expect(classify(sonarIssue(), answered(0.5), THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'probability',
+      probability: 0.5,
+    });
+  });
+
+  it('una de severidad alta que saldría no aplica exige criterio por esa regla, con la probabilidad', () => {
+    expect(classify(sonarIssue({ severity: 'high' }), answered(0.1), THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'highSeverity',
+      probability: 0.1,
+    });
+  });
+
+  it('una de severidad alta que se cumple es real, y en medio exige criterio por la probabilidad', () => {
+    const high = sonarIssue({ severity: 'high' });
+
+    expect(classify(high, answered(0.9), THRESHOLD)).toMatchObject({ class: 'valid' });
+    expect(classify(high, answered(0.5), THRESHOLD)).toMatchObject({
+      class: 'needsJudgment',
+      reason: 'probability',
+    });
+  });
+
+  it('tiene contexto si se ha podido leer su código', () => {
+    expect(hasContext(sonarIssue())).toBe(true);
+    expect(hasContext(sonarIssue({ code: null }))).toBe(false);
+  });
+
+  it('sin código, exige criterio sin preguntar ni reservar tope', () => {
+    estimated.length = 0;
+    const withCode = sonarIssue();
+
+    expect(decide([sonarIssue({ code: null }), withCode])).toEqual([{ kind: 'noContext' }, undefined]);
+    expect(estimated).toEqual([withCode]);
+  });
+
+  it('la comprobación de incidencias sin ninguna legible exige criterio, sin preguntar ni reservar tope', () => {
+    estimated.length = 0;
+
+    expect(
+      decide([checkFinding('sonar-issues'), checkFinding('sonar-issues', { state: 'unreadable' })]),
+    ).toEqual([{ kind: 'noIssues' }, { kind: 'noIssues' }]);
+    expect(estimated).toEqual([]);
+    expect(classify(checkFinding('sonar-issues'), { kind: 'noIssues' }, THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'noIssues',
+    });
+  });
+
+  it('noIssues va después de la regla', () => {
+    expect(decide([checkFinding('sonar-issues')], ['sonar-issues'])).toEqual([{ kind: 'rule' }]);
+  });
+
+  it('otra comprobación no es la de incidencias', () => {
+    expect(decide([checkFinding('e2e')])).toEqual([undefined]);
+  });
+
+  it('su clave la nombra por su regla, su fichero y su línea', () => {
+    expect(findingKeys([sonarIssue(), sonarIssue({ line: null })])).toEqual([
+      'sonar_typescript_s9382_check_sonar_issues_ts_58',
+      'sonar_typescript_s9382_check_sonar_issues_ts',
+    ]);
   });
 });

@@ -1,9 +1,9 @@
 /**
  * Adaptador de GitHub (change pr-tracking, decisiones 3, 4 y 6), con octokit. Lee, también los
- * hallazgos que tría el sistema (change pr-shadow-triage, decisión 2), y solo escribe comentarios en
- * una PR, para pedir la revisión (change pr-review-request, decisión 2): el token
- * tiene escritura en *Issues* y *Pull requests*, pero no en *Contents*, así que no puede subir
- * commits ni integrar (D64).
+ * hallazgos que tría el sistema (change pr-shadow-triage, decisión 2), y solo escribe comentarios
+ * en una PR, para pedir la revisión (change pr-review-request, decisión 2): el token tiene
+ * escritura en *Issues* y *Pull requests*, y *Contents* solo en lectura (D117), así que no puede
+ * subir commits ni integrar (D64).
  *
  * Las comprobaciones exigidas salen de las reglas de la rama base, no de los *check runs* que haya:
  * justo después de un push aún no hay ninguno, y con «todos los que haya» una lista vacía daría las
@@ -179,6 +179,11 @@ export function createGitHubReader({
    * sin permiso).
    */
   jobLog(jobId: number): Promise<string | null>;
+  /**
+   * El texto de un fichero en un commit, o `null` si GitHub no lo da (no existe en ese commit, o
+   * falta el permiso). Para el código de una incidencia de SonarQube (D117).
+   */
+  fileAt(sha: string, path: string): Promise<string | null>;
 } {
   const octokit = new Octokit({
     request: fetch ? { fetch } : {},
@@ -353,6 +358,23 @@ export function createGitHubReader({
       );
       if (response === null) return null;
       return typeof response.data === 'string' ? response.data : String(response.data);
+    },
+
+    async fileAt(sha: string, path: string): Promise<string | null> {
+      // En crudo: el texto tal cual, sin el JSON con el contenido en base64.
+      const response = await readable(() =>
+        octokit.rest.repos.getContent({
+          owner,
+          repo,
+          path,
+          ref: sha,
+          mediaType: { format: 'raw' },
+        }),
+      );
+      if (response === null) return null;
+      // Los tipos de octokit no conocen el formato crudo: dicen el JSON, pero llega el texto.
+      const data: unknown = response.data;
+      return typeof data === 'string' ? data : null;
     },
   };
 }

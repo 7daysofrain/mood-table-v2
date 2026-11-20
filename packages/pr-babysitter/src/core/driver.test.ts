@@ -110,7 +110,10 @@ function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {
       reviewRequests,
       notifier: port,
       // Sin hallazgos que triar: el triaje se prueba en el grafo.
-      findings: { read: () => Promise.resolve({ context: { title: '', description: '' }, findings: [] }) },
+      findings: {
+        read: () =>
+          Promise.resolve({ context: { title: '', description: '' }, findings: [], sonarIssues: null }),
+      },
       decisionModel: {
         estimate: () => 0,
         ask: () => Promise.reject(new Error('no hay hallazgos que triar')),
@@ -120,7 +123,12 @@ function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {
         publish: () => Promise.reject(new Error('no hay resumen que publicar')),
       },
       ...triage,
-      triage: { threshold: 0.8, budget: { capUsd: 0.05, inputPricePerMTok: 0.24 }, ruleChecks: [] },
+      triage: {
+        threshold: 0.8,
+        budget: { capUsd: 0.05, inputPricePerMTok: 0.24 },
+        ruleChecks: [],
+        sonarIssuesCheck: 'sonar-issues',
+      },
       checkpointer: new MemorySaver(),
       policy: { maintainer: MAINTAINER, baseBranch: 'main' },
       timeoutMs: 30 * MINUTE,
@@ -983,13 +991,15 @@ describe('el sistema no pide dos veces la revisión del mismo push', () => {
 
 describe('las peticiones al modelo de decisión en paralelo (change pr-check-triage, decisión 4)', () => {
   it('como mucho 4 a la vez: cada `invoke` lleva `maxConcurrency: 4`', async () => {
-    const names = ['lint', 'typecheck', 'test', 'e2e', 'sonar-issues', 'build'];
+    // Ninguna es la de incidencias de SonarQube, que sin incidencias no se pregunta.
+    const names = ['lint', 'typecheck', 'test', 'e2e', 'docs', 'build'];
     const concurrency = { inFlight: 0, peak: 0, calls: 0 };
     const { github, tick } = setup([pullRequest(74)], {
       findings: {
         read: () =>
           Promise.resolve({
             context: { title: '', description: '' },
+            sonarIssues: null,
             findings: names.map((name) => ({
               source: 'check' as const,
               name,

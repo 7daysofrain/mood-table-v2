@@ -46,11 +46,11 @@
 
 ## 2. MOO-168 · infra
 
-- [ ] 2.1 Decisiones: D117 (*Contents* en lectura, matiza D64 y D71) y D118 (la pregunta de la premisa
+- [x] 2.1 Decisiones: D117 (*Contents* en lectura, matiza D64 y D71) y D118 (la pregunta de la premisa
   de la regla, con el código y criterios genéricos) en `docs/idea-mood-table.md` §10, y README §2.5
   (*Contents* en lectura, y que el código de las incidencias sale hacia el modelo de decisión).
   Verificar: las dos D# citan este change y `MOO-148`.
-- [ ] 2.2 **(test en rojo)** Lecturas y recorte (`design.md` decisiones 4 y 5):
+- [x] 2.2 **(test en rojo)** Lecturas y recorte (`design.md` decisiones 4 y 5):
   - **`adapters/github.test.ts`:** `fileAt(sha, path)` da el texto; un 404 da `null` y un 5xx lanza.
   - **`adapters/sonar-issues.test.ts`** (nuevo), con las anotaciones grabadas en 1.4 como fixture:
     - de cada `failure` saca regla, nombre, severidad (`high` con `BLOCKER` y `HIGH`), fichero, línea
@@ -59,10 +59,10 @@
       primeras;
     - una línea fuera del fichero, o un fichero que no llega, dan `code: null`;
     - cada fichero se pide una vez.
-- [ ] 2.3 `fileAt` en `adapters/github.ts` y el módulo `adapters/sonar-issues.ts`. Todavía no los usa
+- [x] 2.3 `fileAt` en `adapters/github.ts` y el módulo `adapters/sonar-issues.ts`. Todavía no los usa
   nadie.
   Verificar: los tests de 2.2 en verde; `pnpm typecheck` en verde.
-- [ ] 2.4 **(test en rojo)** El triaje de una incidencia:
+- [x] 2.4 **(test en rojo)** El triaje de una incidencia:
   - **`core/triage.test.ts`:**
     - `questionFor` da `rule` para una incidencia;
     - `classify`: real, no aplica y exige criterio por la probabilidad; `high` que saldría no aplica da
@@ -83,19 +83,19 @@
     - la línea de la lista cortada, solo cuando `triaged < total`.
   - **`core/graph.test.ts`:** dos incidencias dan dos peticiones al modelo falso, cada una sin la otra;
     una sin código no recibe ninguna y la otra sí.
-- [ ] 2.5 La implementación: `findingSchema`, `hasContext`, `questionFor`, `classify`, `withoutModel` y
+- [x] 2.5 La implementación: `findingSchema`, `hasContext`, `questionFor`, `classify`, `withoutModel` y
   `verdictSchema` en `core/triage.ts`; el resumen; `findings.ts` con `adapters/sonar-issues.ts`;
   `decision-model.ts`; `TRIAGE_SONAR_ISSUES_CHECK` en `config.ts` y `.env.example`; el montaje en
   `main.ts` y `studio.ts`.
   Verificar: los tests de 2.4 en verde, y todos los demás; `pnpm lint` y `pnpm typecheck` en verde.
-- [ ] 2.6 Documentación:
+- [x] 2.6 Documentación:
   - README §2.2 (el módulo `sonar-issues` y la pregunta `rule`) y §2.4 (`TRIAGE_SONAR_ISSUES_CHECK`);
   - `docs/umbrales-para-specs.md`: la ventana de código (25 antes, 15 después), *(asumido)* hasta
     `MOO-76`;
   - `prompts.md`.
 
   Verificar: el README no contradice las specs.
-- [ ] 2.7 Prueba a mano, con el babysitter en local y LangSmith, contra una PR de prueba contra `main`
+- [x] 2.7 Prueba a mano, con el babysitter en local y LangSmith, contra una PR de prueba contra `main`
   con dos incidencias: una mecánica (p. ej., un ternario anidado) y un `await` dentro de un bucle que
   debe ir en orden, con el porqué en el código.
   - El resumen del push trae dos filas, una por incidencia, cada una con su clase. Se espera la

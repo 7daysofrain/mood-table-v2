@@ -135,7 +135,10 @@ export function toAnnotations(response: IssuesSearchResponse): string[] {
   const names = new Map(response.rules?.map((rule) => [rule.key, rule.name]));
   const annotated = response.issues.slice(0, MAX_ANNOTATIONS);
   const errors = annotated.map((issue) => {
-    const title = `${issue.rule} · ${issueSeverity(issue)} · ${names.get(issue.rule) ?? issue.rule}`;
+    // GitHub da línea a toda anotación (la 1 si no se dice): la de fichero lo dice en el título.
+    const scope = issue.line === undefined ? ' · fichero' : '';
+    const name = names.get(issue.rule) ?? issue.rule;
+    const title = `${issue.rule} · ${issueSeverity(issue)} · ${name}${scope}`;
     const properties = [`file=${escapeProperty(pathOf(issue))}`];
     if (issue.line !== undefined) properties.push(`line=${issue.line}`);
     properties.push(`title=${escapeProperty(title)}`);

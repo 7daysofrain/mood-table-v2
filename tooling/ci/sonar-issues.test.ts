@@ -198,7 +198,7 @@ describe('anotaciones de las incidencias', () => {
     );
   });
 
-  it('anota una incidencia de fichero sin línea', () => {
+  it('anota una incidencia de fichero sin línea, y lo dice al final del título', () => {
     const [annotation] = toAnnotations({
       paging: { total: 1 },
       issues: [issue({ line: undefined })],
@@ -206,6 +206,12 @@ describe('anotaciones de las incidencias', () => {
     });
     expect(annotation).toMatch(/^::error file=packages\/engine\/src\/core\/loop\.ts,title=/);
     expect(annotation).not.toContain('line=');
+    expect(annotation).toMatch(/ · fichero::/);
+  });
+
+  it('una incidencia con línea no lleva la marca de fichero', () => {
+    const [annotation] = toAnnotations({ paging: { total: 1 }, issues: [issue()], rules: RULES });
+    expect(annotation).not.toContain('fichero');
   });
 
   it('pone la clave de la regla si la respuesta no trae su nombre', () => {

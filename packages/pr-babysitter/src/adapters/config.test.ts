@@ -33,7 +33,14 @@ describe('la configuración del entorno', () => {
         triageThreshold: 0.8,
         triageBudgetUsd: 0.05,
         triageRuleChecks: ['lint', 'typecheck', 'SonarCloud Code Analysis'],
+        triageSonarIssuesCheck: 'sonar-issues',
       },
+    });
+  });
+
+  it('lee el nombre de la comprobación que lista las incidencias nuevas de SonarQube, sin espacios alrededor', () => {
+    expect(loadConfig({ ...env, TRIAGE_SONAR_ISSUES_CHECK: ' sonar-nuevas ' })).toMatchObject({
+      config: { triageSonarIssuesCheck: 'sonar-nuevas' },
     });
   });
 

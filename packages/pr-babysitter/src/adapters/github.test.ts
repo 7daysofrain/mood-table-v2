@@ -14,6 +14,9 @@
  * - `check-runs-116.json`, `annotations-116-e2e.json`, `check-runs-117.json` y
  *   `job-logs-112-e2e.txt` (14-nov): las comprobaciones que fallan en la #116, la #117 y la #112
  *   (detalle en `check-context.test.ts`).
+ * - `annotations-165-sonar-issues.json` (20-nov): las de `sonar-issues` en la PR de prueba #165
+ *   (`MOO-167`), con tres incidencias, su aviso y el `failure` de `.github`.
+ * El contenido de un fichero no se ha grabado: es el texto tal cual, y el test lo escribe.
  * Las respuestas a un comentario nuevo no se han grabado: los tests de la escritura solo miran el
  * código de estado.
  */
@@ -288,6 +291,34 @@ describe('el log de un job', () => {
     const { fetch } = fakeFetch(() => json(body, 401));
 
     await expect(reader(fetch).jobLog(1)).rejects.toBeInstanceOf(GitHubUnauthorizedError);
+  });
+});
+
+describe('el código de un fichero en un commit', () => {
+  const SHA = '38fc23365853f5355dc76ab4a15c2a62f7e7d3ea';
+
+  it('es el texto del fichero en ese commit, en crudo', async () => {
+    const body = 'export async function enOrden() {\n  await x();\n}\n';
+    const { fetch, calls } = fakeFetch(() => text(body));
+
+    await expect(reader(fetch).fileAt(SHA, 'tooling/ci/prueba-await.ts')).resolves.toBe(body);
+    const url = new URL(calls[0]!.url);
+    expect(decodeURIComponent(url.pathname)).toBe(
+      '/repos/7daysofrain/mood-table-v2/contents/tooling/ci/prueba-await.ts',
+    );
+    expect(url.searchParams.get('ref')).toBe(SHA);
+  });
+
+  it('un 404 da null', async () => {
+    const { fetch } = fakeFetch(() => json('{"message":"Not Found"}', 404));
+
+    await expect(reader(fetch).fileAt(SHA, 'no-existe.ts')).resolves.toBeNull();
+  });
+
+  it('un 5xx lanza', async () => {
+    const { fetch } = fakeFetch(() => json('{"message":"Server Error"}', 502));
+
+    await expect(reader(fetch).fileAt(SHA, 'a.ts')).rejects.toThrow();
   });
 });
 
