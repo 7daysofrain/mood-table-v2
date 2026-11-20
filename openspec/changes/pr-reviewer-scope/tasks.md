@@ -13,7 +13,7 @@
 
 ## 1. MOO-165 · infra
 
-- [ ] 1.1 Alinear PB con lo decidido (`design.md` decisión 6): `docs/pr-babysitter.md` §4.1 (un
+- [x] 1.1 Alinear PB con lo decidido (`design.md` decisión 6): `docs/pr-babysitter.md` §4.1 (un
   arreglo claramente fuera del alcance de la PR no se escala: es *no aplica* y se capturaría) y §8
   (*No aplica*). Y D116 en `docs/idea-mood-table.md` §10, que matiza D114 (`design.md` decisiones 1 a
   3, con la medición).
