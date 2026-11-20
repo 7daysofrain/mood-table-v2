@@ -24,6 +24,11 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: pnpm lint
+        env:
+          # El paquete npm `shellcheck` descarga el binario en cada job y antes pregunta la última
+          # versión a la API de GitHub. Sin token, el límite es por IP, compartida entre runners, y
+          # se agota (403 «rate limit exceeded»). Con el token del workflow, es por repositorio.
+          GITHUB_TOKEN: ${{ github.token }}
 
   typecheck:
     runs-on: ubuntu-latest
