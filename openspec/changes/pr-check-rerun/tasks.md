@@ -42,7 +42,7 @@
 - [x] 1.3 El `Check` del *snapshot* con `conclusion`, `attempt` y `runId` (`core/pull-request.ts`), y
   su lectura en `adapters/github.ts`.
   Verificar: los tests de 1.2 en verde, y los que ya había; `pnpm typecheck` en verde.
-- [ ] 1.4 **(test en rojo)** Cuándo se relanza y el reloj (`design.md` decisiones 3 y 4):
+- [x] 1.4 **(test en rojo)** Cuándo se relanza y el reloj (`design.md` decisiones 3 y 4):
   - **`core/tracking.test.ts`:**
     - un relanzable fallido (`failure` o `timed_out`) en el intento 1 da el destino `rerun`;
     - no lo da si está cancelado, si su intento es 2 o más, si el push ya tiene `rerunSince`, si solo
