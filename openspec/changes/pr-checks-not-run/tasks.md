@@ -20,7 +20,7 @@
   §10.
   Verificar: el umbral cita las PR medidas y el porqué de 2 y no 1; D121 enlaza este change y dice qué
   matiza.
-- [ ] 1.2 **(test en rojo)** El estado `notStarted` en el adaptador (`design.md` decisión 1), en
+- [x] 1.2 **(test en rojo)** El estado `notStarted` en el adaptador (`design.md` decisión 1), en
   `adapters/github.test.ts`: una comprobación exigida sin *check run* sale `notStarted`; una con su
   *check run* `queued` o `in_progress`, `pending`; una `completed` sigue como hoy (superada o fallada,
   con su intento si es de GitHub Actions).
