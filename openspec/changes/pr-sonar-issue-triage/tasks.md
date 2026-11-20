@@ -35,7 +35,7 @@
 - [x] 1.3 Documentación: `docs/umbrales-para-specs.md` (las 10 anotaciones por paso, con la fuente del
   runner) y la parte de `sonar-issues` del README, si la describe.
   Verificar: el README no contradice la spec `quality-gates`.
-- [ ] 1.4 Prueba a mano, con una PR de prueba contra `main` que añade dos incidencias en ficheros
+- [x] 1.4 Prueba a mano, con una PR de prueba contra `main` que añade dos incidencias en ficheros
   distintos (p. ej., un ternario anidado y un `await` dentro de un bucle):
   - `sonar-issues` en rojo, con las dos anotaciones en su línea en *Files changed*;
   - `gh api repos/7daysofrain/mood-table-v2/check-runs/<job id>/annotations` da los dos `failure` con
