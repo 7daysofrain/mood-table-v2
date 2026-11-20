@@ -292,6 +292,26 @@ describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 
     for (const call of contents) expect(new URL(call.url).searchParams.get('ref')).toBe(PUSH_88);
   });
 
+  it('tría las 10 anotadas aunque sus mensajes pasen del corte del contexto', async () => {
+    const long = Array.from({ length: 10 }, (_, index) => ({
+      path: 'a.ts',
+      start_line: index + 1,
+      annotation_level: 'failure',
+      title: `typescript:S${index} · LOW · Regla`,
+      message: 'x'.repeat(2000),
+    }));
+    const { findings } = github((call) =>
+      call.path.endsWith(`/check-runs/${SONAR_ISSUES_JOB}/annotations`)
+        ? json(JSON.stringify(long))
+        : withSonarAnnotations(call),
+    );
+
+    const { findings: read, sonarIssues } = await findings.read(88, PUSH_88, ['sonar-issues']);
+
+    expect(read.filter((finding) => finding.source === 'sonarIssue')).toHaveLength(10);
+    expect(sonarIssues).toEqual({ total: 10, triaged: 10 });
+  });
+
   it('las incidencias van en el sitio de la comprobación, entre las demás', async () => {
     const { findings } = github(withSonarAnnotations);
 

@@ -49,9 +49,12 @@ export function createFindings({ reviewer, sonarIssuesCheck, github }: FindingsO
     name: string,
     sha: string,
   ): Promise<{ findings: Finding[]; count: SonarIssueCount }> {
-    const check = await readCheckContext(github, sha, name);
     if (name === sonarIssuesCheck) {
-      const read = await readSonarIssues(github, sha, check.context);
+      // Las anotaciones enteras, sin el corte del contexto (`sonar-issues.ts`). Si no anota ninguna
+      // incidencia legible, el contexto de la comprobación las vuelve a pedir: es el caso raro.
+      const run = await github.checkRun(sha, name);
+      const annotations = run?.app === 'github-actions' ? await github.annotations(run.id) : null;
+      const read = annotations ? await readSonarIssues(github, sha, annotations) : null;
       if (read) {
         return {
           findings: read.issues.map((issue) => ({ source: 'sonarIssue', ...issue })),
@@ -59,6 +62,7 @@ export function createFindings({ reviewer, sonarIssuesCheck, github }: FindingsO
         };
       }
     }
+    const check = await readCheckContext(github, sha, name);
     return { findings: [{ source: 'check', name, ...check }], count: null };
   }
 

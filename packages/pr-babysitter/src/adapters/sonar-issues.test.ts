@@ -8,15 +8,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { fakeFetch, fixture, json } from '../../test/fake-github.ts';
-import type { CheckContext } from '../core/triage.ts';
-import { readCheckContext } from './check-context.ts';
-import { createGitHubReader } from './github.ts';
+import { type CheckAnnotation, createGitHubReader } from './github.ts';
 import { readSonarIssues } from './sonar-issues.ts';
 
 const SHA = '38fc23365853f5355dc76ab4a15c2a62f7e7d3ea';
 
-/** El contexto de `sonar-issues` en la #165, leído como lo lee el triador. */
-async function context165(): Promise<CheckContext> {
+/** Las anotaciones de `sonar-issues` en la #165, leídas como las lee el triador. */
+async function annotations165(): Promise<CheckAnnotation[]> {
   const body = await fixture('annotations-165-sonar-issues.json');
   const { fetch } = fakeFetch(() => json(body));
   const github = createGitHubReader({
@@ -26,22 +24,7 @@ async function context165(): Promise<CheckContext> {
     token: () => 'ghp_x',
     fetch,
   });
-  const { context } = await readCheckContext(
-    {
-      checkRun: () =>
-        Promise.resolve({
-          id: 136112262311,
-          app: 'github-actions',
-          conclusion: 'failure',
-          output: { title: null, summary: null },
-        }),
-      annotations: (id) => github.annotations(id),
-      jobLog: () => Promise.resolve(null),
-    },
-    SHA,
-    'sonar-issues',
-  );
-  return context;
+  return (await github.annotations(136112262311)) ?? [];
 }
 
 /** Un fichero de `count` líneas, «línea 1», «línea 2"…, para contar a ojo. */
@@ -63,25 +46,38 @@ function files(contents: Record<string, string | null>) {
   };
 }
 
-/** Un contexto de `sonar-issues` con las anotaciones dadas y el aviso del total. */
+/** Las anotaciones de `sonar-issues` dadas, de error, y el aviso del total. */
 function annotated(
-  errors: { file: string; line: number | null; title: string | null; message?: string }[],
-  notice = `${errors.length} incidencias nuevas; se anotan ${errors.length}`,
-): Extract<CheckContext, { state: 'available' }> {
-  return {
-    state: 'available',
-    origin: 'annotations',
-    summary: `Incidencias nuevas de SonarQube\n${notice}`,
-    errors: errors.map((error) => ({ message: 'm', ...error })),
-    truncated: false,
-  };
+  errors: { file: string; line: number; title: string | null; message?: string }[],
+  notice: string | null = `${errors.length} incidencias nuevas; se anotan ${errors.length}`,
+): CheckAnnotation[] {
+  return [
+    ...errors.map(({ file, line, title, message = 'm' }) => ({
+      path: file,
+      line,
+      level: 'failure',
+      title,
+      message,
+    })),
+    ...(notice === null
+      ? []
+      : [
+          {
+            path: '.github',
+            line: 1,
+            level: 'notice',
+            title: 'Incidencias nuevas de SonarQube',
+            message: notice,
+          },
+        ]),
+  ];
 }
 
 describe('las incidencias de sonar-issues', () => {
   it('saca de cada anotación de error su regla, su nombre, su severidad, su fichero, su línea y su mensaje', async () => {
     const { github } = files({});
 
-    const read = await readSonarIssues(github, SHA, await context165());
+    const read = await readSonarIssues(github, SHA, await annotations165());
 
     expect(read?.total).toBe(3);
     expect(read?.issues).toMatchObject([
@@ -152,10 +148,10 @@ describe('las incidencias de sonar-issues', () => {
 
   it('sin el aviso, el total son las incidencias leídas', async () => {
     const { github } = files({ 'a.ts': lines(5) });
-    const context: CheckContext = {
-      ...annotated([{ file: 'a.ts', line: 1, title: 'typescript:S1 · LOW · Regla' }]),
-      summary: '',
-    };
+    const context = annotated(
+      [{ file: 'a.ts', line: 1, title: 'typescript:S1 · LOW · Regla' }],
+      null,
+    );
 
     expect((await readSonarIssues(github, SHA, context))?.total).toBe(1);
   });
@@ -173,11 +169,58 @@ describe('las incidencias de sonar-issues', () => {
     expect(read?.issues.map(({ line }) => line)).toEqual([3]);
   });
 
-  it.each<[string, CheckContext]>([
-    ['el log', { state: 'available', origin: 'log', summary: 'x', errors: [], truncated: false }],
-    ['ningún contexto', { state: 'notProvided' }],
-    ['un contexto ilegible', { state: 'unreadable' }],
+  it('lee todas las anotadas, aunque sus mensajes pasen de 16 KiB', async () => {
+    const { github } = files({ 'a.ts': lines(20) });
+    const context = annotated(
+      Array.from({ length: 10 }, (_, index) => ({
+        file: 'a.ts',
+        line: index + 1,
+        title: `typescript:S${index} · LOW · Regla`,
+        message: 'x'.repeat(2000),
+      })),
+    );
+
+    const read = await readSonarIssues(github, SHA, context);
+
+    expect(read?.issues).toHaveLength(10);
+    expect(read?.total).toBe(10);
+  });
+
+  it('un aviso o un aviso sin el título del total no es una incidencia', async () => {
+    const { github } = files({ 'a.ts': lines(5) });
+    const context: CheckAnnotation[] = [
+      ...annotated([{ file: 'a.ts', line: 1, title: 'typescript:S1 · LOW · Regla' }], null),
+      { path: 'a.ts', line: 2, level: 'warning', title: 'typescript:S2 · LOW · R', message: 'm' },
+      {
+        path: '.github',
+        line: 1,
+        level: 'notice',
+        title: 'Otro',
+        message: '5 incidencias nuevas; se anotan 5',
+      },
+    ];
+
+    const read = await readSonarIssues(github, SHA, context);
+
+    expect(read?.issues.map(({ rule }) => rule)).toEqual(['typescript:S1']);
+    expect(read?.total).toBe(1);
+  });
+
+  it.each<[string, CheckAnnotation[]]>([
+    ['sin anotaciones', []],
     ['anotaciones sin ninguna incidencia', annotated([{ file: 'a.ts', line: 1, title: null }])],
+    [
+      'solo el failure de .github',
+      [
+        {
+          path: '.github',
+          line: 1,
+          level: 'failure',
+          title: null,
+          message: 'Process completed with exit code 1.',
+        },
+      ],
+    ],
   ])('sin ninguna incidencia legible (%s) da null', async (_case, context) => {
     const { github, calls } = files({});
 
@@ -214,19 +257,6 @@ describe('el código de una incidencia', () => {
       '      5 | línea 5',
       '      6 | línea 6',
     ]);
-  });
-
-  it('una incidencia de fichero toma las 40 primeras líneas, sin marca', async () => {
-    const { github } = files({ 'a.ts': lines(100) });
-    const context = annotated([{ file: 'a.ts', line: null, title: 'typescript:S1 · LOW · Regla' }]);
-
-    const code = (await readSonarIssues(github, SHA, context))?.issues[0]?.code ?? '';
-
-    const rows = code.split('\n');
-    expect(rows).toHaveLength(40);
-    expect(rows[0]).toBe('      1 | línea 1');
-    expect(rows.at(-1)).toBe('     40 | línea 40');
-    expect(code).not.toContain('>>');
   });
 
   it('una línea fuera del fichero da code null', async () => {

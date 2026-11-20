@@ -149,9 +149,13 @@ tarde.
 - **La lista cortada:** `Findings.read` devuelve, además, `sonarIssues: { total, triaged } | null`.
   Viaja en el estado del hilo y el resumen añade una línea bajo la tabla: «`sonar-issues` trae 12
   incidencias nuevas; se han triado 10».
-- **Partir es del adaptador:** `adapters/sonar-issues.ts` (nuevo) lee las anotaciones del contexto de
-  la comprobación, saca cada incidencia y el total, y pide y recorta el código. `findings.ts` lo usa
+- **Partir es del adaptador:** `adapters/sonar-issues.ts` (nuevo) lee las anotaciones de la
+  comprobación, saca cada incidencia y el total, y pide y recorta el código. `findings.ts` lo usa
   para la comprobación de `TRIAGE_SONAR_ISSUES_CHECK`.
+- **Las anotaciones enteras, no el contexto:** el contexto de una comprobación se corta a 16 KiB
+  (`check-context.ts`), y con mensajes largos dejaría incidencias anotadas sin triar, y quizá el
+  aviso con el total. El código de cada incidencia ya va acotado por su ventana. *(Lo encontró Codex
+  en la #166.)*
 
 **Por qué un `source` propio y no un `check` con incidencias:** una incidencia tiene fichero, línea,
 severidad y una pregunta propias, como un comentario del revisor. Meterla dentro de `check` llenaría

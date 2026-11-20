@@ -9,10 +9,12 @@
  * ::notice title=Incidencias nuevas de SonarQube::<total> incidencias nuevas; se anotan <n>
  * ```
  *
- * Es un módulo del adaptador de los hallazgos, como `check-context.ts`: lee el contexto que ese
- * módulo ya ha armado con las anotaciones.
+ * Es un módulo del adaptador de los hallazgos, como `check-context.ts`. Lee las anotaciones
+ * enteras y no el contexto que arma ese módulo, que se corta a 16 KiB: con mensajes largos, el
+ * corte dejaría incidencias anotadas sin triar, y quizá el aviso con el total. El código de cada
+ * una ya va acotado por su ventana.
  */
-import type { CheckContext } from '../core/triage.ts';
+import type { CheckAnnotation } from './github.ts';
 
 /** La lectura de GitHub que hace falta. Lanza si GitHub falla y se puede reintentar. */
 export interface SonarIssuesGitHub {
@@ -41,23 +43,26 @@ const FILE_LINES = LINES_BEFORE + LINES_AFTER;
 
 const SEPARATOR = ' · ';
 const HIGH_SEVERITIES = new Set(['BLOCKER', 'HIGH']);
-/** El aviso con el total, en su propia línea del resumen: anclado, para que no busque desde cada dígito. */
-const TOTAL = /^(\d+) incidencias nuevas; se anotan \d+$/m;
+const NOTICE_TITLE = 'Incidencias nuevas de SonarQube';
+/** El mensaje del aviso con el total: anclado, para que no busque desde cada dígito. */
+const TOTAL = /^(\d+) incidencias nuevas; se anotan \d+$/;
 
 /**
- * Las incidencias de la comprobación y cuántas trae, o `null` si no anota ninguna legible: sin
- * anotaciones (el contexto es el log, o no hay), o con anotaciones que no son de incidencias. El
- * total sale del aviso; sin él, son las leídas.
+ * Las incidencias de las anotaciones de la comprobación y cuántas trae, o `null` si no anota
+ * ninguna legible: sin anotaciones, o con anotaciones que no son de incidencias. El total sale del
+ * aviso; sin él, son las leídas.
  */
 export async function readSonarIssues(
   github: SonarIssuesGitHub,
   sha: string,
-  context: CheckContext,
+  annotations: CheckAnnotation[],
 ): Promise<{ issues: SonarIssue[]; total: number } | null> {
-  if (context.state !== 'available' || context.origin !== 'annotations') return null;
-  const parsed = context.errors.flatMap((error) => {
-    const issue = fromTitle(error.title);
-    return issue ? [{ ...issue, file: error.file, line: error.line, message: error.message }] : [];
+  const parsed = annotations.flatMap((annotation) => {
+    if (annotation.level !== 'failure') return [];
+    const issue = fromTitle(annotation.title);
+    if (!issue) return [];
+    const { path: file, line, message } = annotation;
+    return [{ ...issue, file, line, message }];
   });
   if (parsed.length === 0) return null;
 
@@ -77,7 +82,10 @@ export async function readSonarIssues(
       return { ...issue, code: text === null ? null : around(text, issue.line) };
     }),
   );
-  const total = TOTAL.exec(context.summary)?.[1];
+  const notice = annotations.find(
+    (annotation) => annotation.level === 'notice' && annotation.title === NOTICE_TITLE,
+  );
+  const total = notice && TOTAL.exec(notice.message)?.[1];
   return { issues, total: total === undefined ? issues.length : Number(total) };
 }
 
