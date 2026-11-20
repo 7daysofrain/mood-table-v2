@@ -114,6 +114,17 @@ petición falla, el hallazgo *exige criterio* («el modelo de decisión no ha re
   probabilidades. El veredicto las guarda las dos, también cuando decide una regla, para que `MOO-76`
   calibre P2 sobre ellas.
 
+> **Nota al archivar (20-nov), alineada con el código:**
+> - Las claves son la del hallazgo con `_inside` (P1) y `_outside` (P2), con la base cortada a 92
+>   caracteres para que quepan las dos.
+> - El puerto devuelve `{ answer, inputTokens }`. `answer` es la respuesta tal como la guarda el
+>   hilo: `{ kind: 'answered', probability }` para la causa, o `{ kind: 'scope', inside, outside }`.
+> - El veredicto nombra cada caso de la decisión 1 (`inScope`, `outOfScope`, `unclearScope`,
+>   `contradictoryScope` y `highSeverity`), así que el resumen no vuelve a comparar con el umbral
+>   para elegir el texto.
+> - La regla que guarda las dos probabilidades es la de severidad alta. La de la PR sin descripción
+>   decide antes de preguntar, así que no tiene ninguna (`MOO-165`, #160).
+
 **Alternativa:** dos peticiones. Duplica el `state` y el coste, y solo aporta que una pregunta pueda
 responder si la otra falla, lo que no sirve: sin las dos no se puede clasificar.
 
