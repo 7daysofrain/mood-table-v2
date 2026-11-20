@@ -4,7 +4,7 @@ import { Command, MemorySaver } from '@langchain/langgraph';
 import { describe, expect, it } from 'vitest';
 
 import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
-import type { Notice } from './notice.ts';
+import { type Notice, noticeSummary } from './notice.ts';
 import {
   type CheckReruns,
   type DecisionModel,
@@ -2151,5 +2151,147 @@ describe('cada incidencia nueva de SonarQube se tría como un hallazgo propio', 
     await followTriage(triage, failing);
 
     expect(triage.posted.summaries[0]?.text).toContain('trae 12; se han triado las 10 que anota');
+  });
+});
+
+describe('las comprobaciones que no van a ejecutarse (change pr-checks-not-run)', () => {
+  const SONAR = 'SonarCloud Code Analysis';
+  const passed = (name: string): Check => ({ name, status: 'passed', conclusion: 'success' });
+  const failed = (name: string): Check => ({ name, status: 'failed', conclusion: 'failure' });
+  const notStarted = (name: string): Check => ({ name, status: 'notStarted', conclusion: null });
+  const skipped: Check = { name: 'sonar-issues', status: 'passed', conclusion: 'skipped' };
+  /** Falla `lint`, que no se relanza, `e2e` pasa y SonarCloud no tiene check run. */
+  const QUIET: Check[] = [failed('lint'), passed('e2e'), notStarted(SONAR)];
+
+  it('la #154: falla test dos veces y SonarCloud no aparece; 2 minutos después, el aviso y el resumen del triaje', async () => {
+    const triage = recordingTriage([failingCheck('test')]);
+    const at154 = (minute: number, test: Check, e2e: Check) =>
+      snapshot(minute, { checks: [test, skipped, e2e, notStarted(SONAR)] });
+
+    await followTriage(triage, [
+      snapshot(0),
+      at154(5, failedIn('test', 1), pending('e2e')),
+      at154(6, pending('test'), pending('e2e')),
+      at154(8, failedIn('test', 2), passed('e2e')),
+      at154(9, failedIn('test', 2), passed('e2e')),
+      at154(10, failedIn('test', 2), passed('e2e')),
+    ]);
+
+    expect(triage.events).toEqual(['tracking', 'leer hallazgos', 'publicar resumen', 'aviso final']);
+    expect(triage.reads).toEqual([{ number: 74, sha: HEAD, failedChecks: ['test'] }]);
+    const final = triage.notices.at(-1)!;
+    expect(final.type === 'final' && final.state).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['test'] },
+        { kind: 'checksNotRun', checks: [SONAR] },
+      ],
+    });
+    expect(noticeSummary(final)).toContain('falla test; no ha llegado a ejecutarse SonarCloud Code Analysis');
+    expect(noticeSummary(final)).not.toContain('no ha terminado');
+  });
+
+  it('antes de los 2 minutos, ningún aviso', async () => {
+    const { notices, state } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: QUIET }),
+      snapshot(6.5, { checks: QUIET }),
+    );
+
+    expect(summary(notices)).toEqual(['tracking']);
+    expect(state.next).toEqual(['esperarComprobaciones']);
+  });
+
+  it('una en curso y otra en cola: ningún aviso hasta que terminan, y otros 2 minutos', async () => {
+    const running = [failed('lint'), pending('e2e'), pending('typecheck'), notStarted(SONAR)];
+    const finished = [failed('lint'), passed('e2e'), passed('typecheck'), notStarted(SONAR)];
+    const waiting = await follow(
+      snapshot(0),
+      snapshot(5, { checks: running }),
+      snapshot(8, { checks: running }),
+      snapshot(20, { checks: running }),
+      snapshot(21, { checks: finished }),
+      snapshot(22, { checks: finished }),
+    );
+    const noticed = await follow(
+      snapshot(0),
+      snapshot(5, { checks: running }),
+      snapshot(21, { checks: finished }),
+      snapshot(23, { checks: finished }),
+    );
+
+    expect(summary(waiting.notices)).toEqual(['tracking']);
+    expect(summary(noticed.notices)).toEqual([
+      'tracking',
+      {
+        status: 'needsIntervention',
+        reasons: [
+          { kind: 'checksFailed', checks: ['lint'] },
+          { kind: 'checksNotRun', checks: [SONAR] },
+        ],
+      },
+    ]);
+  });
+
+  it('algo entra en cola durante el margen: se espera a que termine y a otros 2 minutos', async () => {
+    const quiet = [...QUIET, notStarted('sonar-issues')];
+    const queued = [...QUIET, pending('sonar-issues')];
+    const done = [...QUIET, skipped];
+    const before = await follow(
+      snapshot(0),
+      snapshot(5, { checks: quiet }),
+      snapshot(6, { checks: queued }),
+      snapshot(7.5, { checks: queued }),
+      snapshot(8, { checks: done }),
+      snapshot(9.5, { checks: done }),
+    );
+    const after = await follow(
+      snapshot(0),
+      snapshot(5, { checks: quiet }),
+      snapshot(6, { checks: queued }),
+      snapshot(8, { checks: done }),
+      snapshot(10, { checks: done }),
+    );
+
+    expect(summary(before.notices)).toEqual(['tracking']);
+    expect(summary(after.notices)).toEqual([
+      'tracking',
+      {
+        status: 'needsIntervention',
+        reasons: [
+          { kind: 'checksFailed', checks: ['lint'] },
+          { kind: 'checksNotRun', checks: [SONAR] },
+        ],
+      },
+    ]);
+  });
+
+  it('el relanzamiento pasa: ningún aviso por ese fallo, y se espera a la que falta hasta el plazo', async () => {
+    const { notices, reruns } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: [passed('lint'), failedIn('e2e', 1), notStarted(SONAR)] }),
+      snapshot(6, { checks: [passed('lint'), pending('e2e'), notStarted(SONAR)] }),
+      snapshot(9, { checks: [passed('lint'), passed('e2e'), notStarted(SONAR)] }),
+      snapshot(34, { checks: [passed('lint'), passed('e2e'), notStarted(SONAR)] }),
+      snapshot(35, { checks: [passed('lint'), passed('e2e'), notStarted(SONAR)] }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+    expect(summary(notices)).toEqual([
+      'tracking',
+      { status: 'needsIntervention', reasons: [{ kind: 'checksUnfinished', checks: [SONAR] }] },
+    ]);
+  });
+
+  it('todas pasan salvo una sin empezar: ningún aviso hasta el plazo, como hoy', async () => {
+    const checks = [...PASSED, notStarted(SONAR)];
+    const before = await follow(snapshot(0), snapshot(5, { checks }), snapshot(29, { checks }));
+    const after = await follow(snapshot(0), snapshot(5, { checks }), snapshot(30, { checks }));
+
+    expect(summary(before.notices)).toEqual(['tracking']);
+    expect(summary(after.notices)).toEqual([
+      'tracking',
+      { status: 'needsIntervention', reasons: [{ kind: 'checksUnfinished', checks: [SONAR] }] },
+    ]);
   });
 });

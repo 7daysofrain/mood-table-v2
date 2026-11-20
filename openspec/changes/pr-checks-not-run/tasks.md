@@ -45,7 +45,7 @@
 - [x] 1.5 El núcleo: `quietSince` en `TrackedPush` y en `pushOf`, la espera en `afterChecksWait` con
   `notRunMarginMs`, el motivo `checksNotRun` en `finalState` y su texto en `core/notice.ts`.
   Verificar: los tests de 1.4 en verde y los que ya había.
-- [ ] 1.6 **(test en rojo)** Los escenarios de la spec de punta a punta en el grafo
+- [x] 1.6 **(test en rojo)** Los escenarios de la spec de punta a punta en el grafo
   (`core/graph.test.ts`), con GitHub falso y un reloj de fotos, un `describe` para el requisito:
   - la #154: `test` falla, `sonar-issues` saltada, `e2e` termina y *SonarCloud Code Analysis* no
     aparece → el aviso «necesita intervención» 2 minutos después, con «falla test» y «no ha llegado a
