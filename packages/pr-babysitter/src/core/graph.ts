@@ -326,7 +326,7 @@ export function createTrackingGraph(
 
   // Lee los hallazgos del push y reparte las preguntas (change pr-check-triage, decisiones 4 a 6).
   // Decide sin el modelo lo que puede (`withoutModel`): una comprobación determinista, real por
-  // regla; un hallazgo sin contexto; o uno que no cabe en lo que queda del tope, que se reserva
+  // regla; un comentario del revisor de una PR que no dice su alcance; un hallazgo sin contexto; o uno que no cabe en lo que queda del tope, que se reserva
   // aquí, antes de repartir. Los demás salen cada uno por su rama, con la pregunta de su fuente. Si GitHub
   // falla al leerlos, lanza, y el nodo queda pendiente para la vuelta siguiente.
   const triar: GraphNode<typeof TrackingState> = async (state) => {
@@ -340,6 +340,7 @@ export function createTrackingGraph(
     const round = (state.triageRound?.number ?? 0) + 1;
     const decided = withoutModel(read.findings, {
       ruleChecks: triage.ruleChecks,
+      description: read.context.description,
       spentUsd: state.spentUsd ?? 0,
       budget: triage.budget,
       estimate: (finding) => decisionModel.estimate(read.context, finding, questionFor(finding)),
@@ -357,13 +358,8 @@ export function createTrackingGraph(
   // que ya ha cobrado antes de fallar también es gasto de la PR.
   const preguntarModelo = async ({ round, index, pr, finding, question }: AskInput) => {
     try {
-      const { probability, inputTokens } = await decisionModel.ask(pr, finding, question);
-      const answered: RoundAnswer = {
-        round,
-        index,
-        answer: { kind: 'answered', probability },
-        inputTokens,
-      };
+      const { answer, inputTokens } = await decisionModel.ask(pr, finding, question);
+      const answered: RoundAnswer = { round, index, answer, inputTokens };
       return { triageAnswers: [answered] };
     } catch (error) {
       log(

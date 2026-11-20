@@ -89,8 +89,15 @@ function reason(
       return 'no cabe en el tope de gasto de la PR';
     case 'modelUnavailable':
       return 'el modelo de decisión no ha respondido';
+    case 'noScope':
+      return 'regla: la PR no dice su alcance';
     case 'highSeverity':
-      return `p = ${decimal(verdict.probability)}: descartaría un hallazgo de severidad alta`;
+      return `p = ${decimal(verdict.outside)}: descartaría un hallazgo de severidad alta`;
+    case 'inScope':
+    case 'outOfScope':
+    case 'unclearScope':
+    case 'contradictoryScope':
+      return `dentro p = ${decimal(verdict.inside)}, de otra tarea p = ${decimal(verdict.outside)}`;
     case 'probability': {
       const p = `p = ${decimal(verdict.probability)}`;
       if (verdict.class === 'valid') return `${p} ≥ ${decimal(threshold)}`;

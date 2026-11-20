@@ -113,10 +113,12 @@ const decisionModel: DecisionModel = {
   estimate: () => 0,
   async ask(_pr, finding) {
     await sleep(1000);
-    if (finding.source === 'reviewer') return { probability: 0.9, inputTokens: 0 };
+    if (finding.source === 'reviewer') {
+      return { answer: { kind: 'scope', inside: 0.9, outside: 0.05 }, inputTokens: 0 };
+    }
     const probability = CHECK_PROBABILITIES[checksAsked % CHECK_PROBABILITIES.length] ?? 0.5;
     checksAsked += 1;
-    return { probability, inputTokens: 0 };
+    return { answer: { kind: 'answered', probability }, inputTokens: 0 };
   },
 };
 

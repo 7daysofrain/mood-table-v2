@@ -5,7 +5,7 @@
  */
 import type { Notice } from './notice.ts';
 import type { Check, OpenPullRequest, Review } from './pull-request.ts';
-import type { Finding, PullRequestContext, Question } from './triage.ts';
+import type { Finding, ModelAnswer, PullRequestContext, Question } from './triage.ts';
 
 /**
  * Publica un aviso para el mantenedor. Solo envía: la respuesta se diseña en BH4. Si el canal no lo
@@ -83,9 +83,10 @@ export interface Findings {
 }
 
 /**
- * El modelo de decisión (change pr-check-triage, decisión 3; glosario de PB): responde a una
- * pregunta de sí o no sobre un hallazgo, que va solo en su petición, con la probabilidad del sí. No
- * sabe de umbrales ni de reglas: eso es del triador, los nodos del grafo. Si no responde, lanza
+ * El modelo de decisión (change pr-check-triage, decisión 3; glosario de PB): responde a la pregunta
+ * sobre un hallazgo, que va solo en su petición, con la probabilidad del sí de cada pregunta de sí o
+ * no que lleva: una en la de la causa, dos en la del alcance (change pr-reviewer-scope, decisión 2).
+ * No sabe de umbrales ni de reglas: eso es del triador, los nodos del grafo. Si no responde, lanza
  * `DecisionModelError`.
  */
 export interface DecisionModel {
@@ -96,14 +97,15 @@ export interface DecisionModel {
    */
   estimate(pr: PullRequestContext, finding: Finding, question: Question): number;
   /**
-   * La probabilidad del sí a esa pregunta sobre el hallazgo, y los tokens de entrada cobrados. Qué
-   * se pregunta lo decide el núcleo (`questionFor`); cómo se formula, el adaptador.
+   * La respuesta a esa pregunta sobre el hallazgo, y los tokens de entrada cobrados: con `cause`,
+   * la probabilidad del sí (`answered`); con `scope`, las de P1 y P2 (`scope`). Qué se pregunta lo
+   * decide el núcleo (`questionFor`); cómo se formula, el adaptador.
    */
   ask(
     pr: PullRequestContext,
     finding: Finding,
     question: Question,
-  ): Promise<{ probability: number; inputTokens: number }>;
+  ): Promise<{ answer: ModelAnswer; inputTokens: number }>;
 }
 
 /** GitHub rechaza el token (401): hay que avisar, porque no se arregla solo (decisión 3). */

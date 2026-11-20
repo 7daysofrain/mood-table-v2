@@ -28,7 +28,7 @@
     extremos de 0,80 cuentan dentro de su caso. El veredicto guarda las dos probabilidades;
   - `withoutModel` con la descripción vacía o solo con espacios: los comentarios del revisor salen
     `noScope`, sin reservar tope; las comprobaciones, como siempre; `noScope` antes que `noContext`.
-- [ ] 1.3 El núcleo: `questionSchema` (`cause`, `scope`), la respuesta y el veredicto con `inside` y
+- [x] 1.3 El núcleo: `questionSchema` (`cause`, `scope`), la respuesta y el veredicto con `inside` y
   `outside`, `classify`, `withoutModel` con la descripción de la PR, el puerto `DecisionModel.ask`
   según la pregunta, y `graph.ts` (`triar` pasa la descripción; `preguntarModelo` guarda la respuesta
   tal como llega). `fixInThisPr` sale del núcleo.

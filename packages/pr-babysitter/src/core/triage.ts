@@ -1,7 +1,7 @@
 /**
  * Las reglas del triaje en modo sombra (change pr-shadow-triage, decisiones 2, 4 y 6): qué es un
  * hallazgo, su clave, cuánto cabe en el tope de gasto de la PR y su clase. Funciones puras: el
- * modelo de decisión solo da una probabilidad por hallazgo, y todo lo demás se decide aquí.
+ * modelo de decisión solo da una probabilidad por pregunta, y todo lo demás se decide aquí.
  *
  * Se valida con zod, porque el hallazgo y su veredicto van en el estado del grafo (D65).
  */
@@ -94,15 +94,30 @@ export const triageClassSchema = z.enum(['valid', 'notApplicable', 'needsJudgmen
 
 export type TriageClass = z.infer<typeof triageClassSchema>;
 
-/** Por qué no se ha preguntado por un hallazgo, o no ha habido respuesta (reglas 1 a 3). */
-const unansweredSchema = z.enum(['noContext', 'overBudget', 'modelUnavailable']);
+/**
+ * Por qué no se ha preguntado por un hallazgo, o no ha habido respuesta (reglas 1 a 3, y la PR que
+ * no dice su alcance: change pr-reviewer-scope, decisión 4).
+ */
+const unansweredSchema = z.enum(['noScope', 'noContext', 'overBudget', 'modelUnavailable']);
 
-/** Lo que se sabe de un hallazgo antes de clasificarlo: la probabilidad del sí, o por qué no la hay. */
+/**
+ * La respuesta del modelo de decisión, según la pregunta: a la de la causa, la probabilidad del sí;
+ * a la del alcance (change pr-reviewer-scope, decisiones 1 y 2), la de que el arreglo cae dentro del
+ * alcance de la PR (P1, `inside`) y la de que es trabajo de otra tarea o historia (P2, `outside`).
+ */
+export const modelAnswerSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('answered'), probability: z.number() }),
+  z.object({ kind: z.literal('scope'), inside: z.number(), outside: z.number() }),
+]);
+
+export type ModelAnswer = z.infer<typeof modelAnswerSchema>;
+
+/** Lo que se sabe de un hallazgo antes de clasificarlo: la respuesta del modelo, o por qué no la hay. */
 export const triageAnswerSchema = z.union([
   z.object({ kind: unansweredSchema }),
   /** La decide la regla de las comprobaciones deterministas, sin preguntar. */
   z.object({ kind: z.literal('rule') }),
-  z.object({ kind: z.literal('answered'), probability: z.number() }),
+  modelAnswerSchema,
 ]);
 
 export type TriageAnswer = z.infer<typeof triageAnswerSchema>;
@@ -133,40 +148,74 @@ export function latestRound(current: RoundAnswer[], incoming: RoundAnswer[]): Ro
 }
 
 /**
- * La clase de un hallazgo y por qué (BE4): una de las reglas, o la probabilidad del sí frente al
- * umbral. Con probabilidad, se guarda siempre, para que `MOO-76` elija el corte sobre ella.
+ * La clase de un hallazgo y por qué (BE4): una de las reglas, la probabilidad de la causa frente al
+ * umbral o las dos del alcance (change pr-reviewer-scope, decisión 1): solo llega P1 (`inScope`),
+ * solo P2 (`outOfScope`), ninguna (`unclearScope`), las dos (`contradictoryScope`), o P2 en un
+ * hallazgo de severidad alta (`highSeverity`). Las probabilidades se guardan siempre, también
+ * cuando decide la regla de severidad alta, para que `MOO-76` elija el corte sobre ellas.
  */
 export const verdictSchema = z.union([
   z.object({ class: z.literal('needsJudgment'), reason: unansweredSchema }),
   z.object({ class: z.literal('valid'), reason: z.literal('rule') }),
+  z.object({ class: triageClassSchema, reason: z.literal('probability'), probability: z.number() }),
   z.object({
     class: triageClassSchema,
-    reason: z.enum(['probability', 'highSeverity']),
-    probability: z.number(),
+    reason: z.enum(['inScope', 'outOfScope', 'unclearScope', 'contradictoryScope', 'highSeverity']),
+    inside: z.number(),
+    outside: z.number(),
   }),
 ]);
 
 export type Verdict = z.infer<typeof verdictSchema>;
 
 /**
- * La clase de un hallazgo (decisión 4), en el orden de la tabla: si lo decide la regla de las
- * comprobaciones deterministas, real; sin probabilidad, exige criterio con su motivo; con ella, real si llega al umbral, no aplica si no pasa de su complemento (salvo
- * que sea de severidad alta) y exige criterio entre los dos. El umbral es mayor que 0,5, así que
- * los dos cortes no se cruzan (lo valida la configuración).
+ * La clase de un hallazgo (decisión 4): si lo decide la regla de las comprobaciones deterministas,
+ * real; sin respuesta del modelo, exige criterio con su motivo; con la de la causa, por su
+ * probabilidad (`byCause`), y con la del alcance, por las dos (`byScope`).
  */
 export function classify(finding: Finding, answer: TriageAnswer, threshold: number): Verdict {
   if (answer.kind === 'rule') return { class: 'valid', reason: 'rule' };
+  if (answer.kind === 'scope') return byScope(finding, answer, threshold);
   if (answer.kind !== 'answered') return { class: 'needsJudgment', reason: answer.kind };
-  const { probability } = answer;
+  return byCause(answer.probability, threshold);
+}
+
+/**
+ * Por la probabilidad de que la causa la PR: real si llega al umbral, no aplica si no pasa de su
+ * complemento y exige criterio entre los dos. El umbral es mayor que 0,5, así que los dos cortes no
+ * se cruzan (lo valida la configuración).
+ */
+function byCause(probability: number, threshold: number): Verdict {
   if (probability >= threshold) return { class: 'valid', reason: 'probability', probability };
   // `1 - p >= umbral` y no `p <= 1 - umbral`: con coma flotante, 1 - 0,80 no llega a 0,20.
   if (1 - probability >= threshold) {
-    if (finding.source === 'reviewer' && finding.severity === 'high') {
-      return { class: 'needsJudgment', reason: 'highSeverity', probability };
-    }
     return { class: 'notApplicable', reason: 'probability', probability };
   }
   return { class: 'needsJudgment', reason: 'probability', probability };
+}
+
+/**
+ * Por el alcance de la PR (change pr-reviewer-scope, decisión 1), con el umbral en las dos
+ * preguntas: real si solo llega P1; no aplica si solo llega P2, salvo que sea de severidad alta,
+ * que exige criterio por esa regla; y exige criterio si no llega ninguna o llegan las dos.
+ */
+function byScope(
+  finding: Finding,
+  { inside, outside }: Extract<ModelAnswer, { kind: 'scope' }>,
+  threshold: number,
+): Verdict {
+  const probabilities = { inside, outside };
+  const isInside = inside >= threshold;
+  const isOutside = outside >= threshold;
+  if (isInside && isOutside) {
+    return { class: 'needsJudgment', reason: 'contradictoryScope', ...probabilities };
+  }
+  if (isInside) return { class: 'valid', reason: 'inScope', ...probabilities };
+  if (!isOutside) return { class: 'needsJudgment', reason: 'unclearScope', ...probabilities };
+  if (finding.source === 'reviewer' && finding.severity === 'high') {
+    return { class: 'needsJudgment', reason: 'highSeverity', ...probabilities };
+  }
+  return { class: 'notApplicable', reason: 'outOfScope', ...probabilities };
 }
 
 /** El tope de gasto de la PR y el precio del modelo, en dólares (decisión 6). */
@@ -205,23 +254,31 @@ export function withinBudget(
 
 /**
  * Lo que el triador decide de cada hallazgo sin el modelo de decisión (change pr-check-triage,
- * decisión 6), en este orden: la regla, el contexto y el tope. La respuesta de cada uno, en su
- * posición, o `undefined` si hay que preguntar al modelo.
+ * decisión 6; change pr-reviewer-scope, decisión 4), en este orden: la regla, el alcance de la PR,
+ * el contexto y el tope. La respuesta de cada uno, en su posición, o `undefined` si hay que
+ * preguntar al modelo.
  *
  * La regla va primero porque no necesita contexto ni gasta del tope: una comprobación de
  * `ruleChecks` (las deterministas: fallan solo si algo de la PR incumple su regla) sale real aunque
  * su log no se pueda leer o el tope esté agotado, y no reserva nada.
+ *
+ * Una PR con la descripción vacía o solo con espacios no dice su alcance, que es lo que se pregunta
+ * por un comentario del revisor: sus comentarios exigen criterio sin preguntar ni reservar tope. Va
+ * antes que el contexto porque es de la PR entera, y lo arregla el mantenedor una vez.
  */
 export function withoutModel(
   findings: Finding[],
   {
     ruleChecks,
+    description,
     spentUsd,
     budget,
     estimate,
   }: {
     /** Los nombres de las comprobaciones que decide la regla, tal como las exige la rama base. */
     ruleChecks: string[];
+    /** La descripción de la PR, que dice su alcance. */
+    description: string;
     spentUsd: number;
     budget: TriageBudget;
     estimate: (finding: Finding) => number;
@@ -229,14 +286,17 @@ export function withoutModel(
 ): (TriageAnswer | undefined)[] {
   const byRule = (finding: Finding) =>
     finding.source === 'check' && ruleChecks.includes(finding.name);
+  const withoutScope = (finding: Finding) =>
+    finding.source === 'reviewer' && description.trim() === '';
   const { overBudget } = withinBudget(
-    findings.filter((finding) => !byRule(finding) && hasContext(finding)),
+    findings.filter((finding) => !byRule(finding) && !withoutScope(finding) && hasContext(finding)),
     spentUsd,
     budget,
     estimate,
   );
   return findings.map((finding) => {
     if (byRule(finding)) return { kind: 'rule' };
+    if (withoutScope(finding)) return { kind: 'noScope' };
     if (!hasContext(finding)) return { kind: 'noContext' };
     if (overBudget.includes(finding)) return { kind: 'overBudget' };
     return undefined;
@@ -245,15 +305,16 @@ export function withoutModel(
 
 /**
  * Qué se le pregunta al modelo de decisión sobre un hallazgo (change pr-check-triage, decisión 3;
- * D114): por una comprobación que falla, si la causa esta PR; por un comentario del revisor, si hay
- * que arreglarlo en esta PR antes de integrarla. Cómo se formula cada una es del adaptador.
+ * D114 y D116): por una comprobación que falla, si la causa esta PR; por un comentario del revisor,
+ * si su arreglo cae dentro del alcance de la PR y si es trabajo de otra tarea, las dos en una
+ * petición. Cómo se formula cada una es del adaptador.
  */
-export const questionSchema = z.enum(['cause', 'fixInThisPr']);
+export const questionSchema = z.enum(['cause', 'scope']);
 
 export type Question = z.infer<typeof questionSchema>;
 
 export function questionFor(finding: Finding): Question {
-  return finding.source === 'check' ? 'cause' : 'fixInThisPr';
+  return finding.source === 'check' ? 'cause' : 'scope';
 }
 
 /** El gasto de la PR tras un triaje: lo que llevaba más los tokens de entrada cobrados. */

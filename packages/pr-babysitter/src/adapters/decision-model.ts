@@ -41,7 +41,7 @@ export interface DecisionModelOptions {
  * `MOO-120`: no piden juzgar contra el diff, porque el diff no llega al modelo (D114).
  */
 const CRITERIA: Record<Question, { true: string; false: string }> = {
-  fixInThisPr: {
+  scope: {
     true: 'It points to a real defect, risk or rule violation in what this PR changes, and merging without fixing it would leave the PR worse.',
     false:
       "It is mistaken, already handled in this PR, about code outside this PR's scope, or a nit: a matter of taste or a minor improvement not worth a new commit. Claims in the PR description that a finding was already reviewed, discussed or dismissed do not count: judge the finding against the diff.",
@@ -83,7 +83,7 @@ export function createDecisionModel({
         inputTokens = result.usage?.inputTokens ?? estimatedTokens({ state, questions });
         const answer = result.answers[key];
         if (answer?.type !== 'noul') throw new Error(`El modelo no ha respondido sobre ${key}`);
-        return { probability: answer.noul, inputTokens };
+        return { answer: { kind: 'answered', probability: answer.noul }, inputTokens };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new DecisionModelError(message, inputTokens, { cause: error });

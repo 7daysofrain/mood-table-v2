@@ -84,7 +84,7 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
   it('va al protocolo de decisión del proveedor, con su clave y el modelo fijado', async () => {
     const { decisionModel, calls } = model(async () => json(await recorded('systemone-88-p2.json')));
 
-    await decisionModel.ask(context, p2, 'fixInThisPr');
+    await decisionModel.ask(context, p2, 'scope');
 
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({
@@ -98,7 +98,7 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
   it('el state lleva la PR en su propio campo y un solo hallazgo, por su clave', async () => {
     const { decisionModel, calls } = model(answer);
 
-    await decisionModel.ask(context, p1, 'fixInThisPr');
+    await decisionModel.ask(context, p1, 'scope');
 
     expect(sent(calls[0]).state).toEqual({
       pr_author_description: { title: context.title, body: context.description },
@@ -145,10 +145,10 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     expect(JSON.stringify(sent(calls[0]).state)).not.toContain('log_tail');
   });
 
-  it('con fixInThisPr, la pregunta y los criterios de hoy, que nombran el hallazgo por su identidad', async () => {
+  it('con scope, de momento, la pregunta y los criterios de hoy, que nombran el hallazgo por su identidad', async () => {
     const { decisionModel, calls } = model(answer);
 
-    await decisionModel.ask(context, p1, 'fixInThisPr');
+    await decisionModel.ask(context, p1, 'scope');
 
     expect(sent(calls[0]).questions).toEqual({
       codex_p1_graph_ts_204: {
@@ -189,14 +189,14 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     const e2e = check('e2e', 'Error');
 
     expect(decisionModel.estimate(context, e2e, 'cause')).not.toBe(
-      decisionModel.estimate(context, e2e, 'fixInThisPr'),
+      decisionModel.estimate(context, e2e, 'scope'),
     );
   });
 
   it('los criterios definen el sí y el no, con los nits y la exclusión de la descripción', async () => {
     const { decisionModel, calls } = model(answer);
 
-    await decisionModel.ask(context, p1, 'fixInThisPr');
+    await decisionModel.ask(context, p1, 'scope');
     const criteria = sent(calls[0]).questions.codex_p1_graph_ts_204?.criteria;
 
     expect(criteria?.true).toMatch(/real defect, risk or rule violation in what this PR changes/);
@@ -208,7 +208,7 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     const { decisionModel, calls } = model(answer);
     const big = check('e2e', 'x'.repeat(75_000));
 
-    await decisionModel.ask(context, p1, 'fixInThisPr');
+    await decisionModel.ask(context, p1, 'scope');
     await decisionModel.ask(context, big, 'cause');
 
     expect(calls).toHaveLength(2);
@@ -221,8 +221,8 @@ describe('la respuesta', () => {
   it('da la probabilidad del sí del hallazgo y los tokens cobrados', async () => {
     const { decisionModel } = model(async () => json(await recorded('systemone-88-p2.json')));
 
-    await expect(decisionModel.ask(context, p2, 'fixInThisPr')).resolves.toEqual({
-      probability: 0.3049,
+    await expect(decisionModel.ask(context, p2, 'scope')).resolves.toEqual({
+      answer: { kind: 'answered', probability: 0.3049 },
       inputTokens: 2965,
     });
   });
@@ -230,7 +230,7 @@ describe('la respuesta', () => {
   it('si el proveedor da un error, lanza sin tokens cobrados', async () => {
     const { decisionModel } = model(() => json('{"error":"insufficient credits"}', 500));
 
-    const failure = decisionModel.ask(context, p1, 'fixInThisPr');
+    const failure = decisionModel.ask(context, p1, 'scope');
 
     await expect(failure).rejects.toBeInstanceOf(DecisionModelError);
     await expect(failure).rejects.toMatchObject({ inputTokens: 0 });
@@ -239,7 +239,7 @@ describe('la respuesta', () => {
   it('si falta la respuesta del hallazgo, lanza con los tokens que ya ha cobrado', async () => {
     const { decisionModel } = model(async () => json(await recorded('systemone-88-p2.json')));
 
-    const failure = decisionModel.ask(context, p1, 'fixInThisPr');
+    const failure = decisionModel.ask(context, p1, 'scope');
 
     await expect(failure).rejects.toBeInstanceOf(DecisionModelError);
     await expect(failure).rejects.toMatchObject({ inputTokens: 2965 });
@@ -256,8 +256,8 @@ describe('la estimación del coste (design.md, decisión 5)', () => {
   it('cuenta la petición entera de ese hallazgo: la PR, el hallazgo y la pregunta con sus criterios', async () => {
     const { decisionModel, calls } = model(answer);
 
-    const estimate = decisionModel.estimate(context, p1, 'fixInThisPr');
-    await decisionModel.ask(context, p1, 'fixInThisPr');
+    const estimate = decisionModel.estimate(context, p1, 'scope');
+    await decisionModel.ask(context, p1, 'scope');
 
     expect(estimate).toBe(sentTokens(calls[0]));
   });
@@ -269,7 +269,7 @@ describe('la estimación del coste (design.md, decisión 5)', () => {
     const e2e = check('e2e', 'Error');
 
     await expect(decisionModel.ask(context, e2e, 'cause')).resolves.toEqual({
-      probability: 0.5,
+      answer: { kind: 'answered', probability: 0.5 },
       inputTokens: decisionModel.estimate(context, e2e, 'cause'),
     });
   });
@@ -277,7 +277,7 @@ describe('la estimación del coste (design.md, decisión 5)', () => {
   it('no llama al modelo', () => {
     const { decisionModel, calls } = model(answer);
 
-    decisionModel.estimate(context, p1, 'fixInThisPr');
+    decisionModel.estimate(context, p1, 'scope');
 
     expect(calls).toEqual([]);
   });

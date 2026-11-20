@@ -97,7 +97,7 @@ describe('el resumen del triaje (design.md, decisión 7)', () => {
         findings: [
           {
             finding: p1,
-            verdict: { class: 'needsJudgment', reason: 'highSeverity', probability: 0.1 },
+            verdict: { class: 'needsJudgment', reason: 'highSeverity', inside: 0.05, outside: 0.9 },
           },
           { finding: notProvided, verdict: { class: 'needsJudgment', reason: 'noContext' } },
           { finding: unreadable, verdict: { class: 'needsJudgment', reason: 'noContext' } },
@@ -110,7 +110,7 @@ describe('el resumen del triaje (design.md, decisión 7)', () => {
     );
 
     expect(rows(text).map((row) => row.split(' | ').slice(1).join(' | '))).toEqual([
-      'exige criterio | p = 0,10: descartaría un hallazgo de severidad alta |',
+      'exige criterio | p = 0,90: descartaría un hallazgo de severidad alta |',
       'exige criterio | la comprobación no da contexto |',
       'exige criterio | no se ha podido leer su contexto |',
       'exige criterio | no se ha podido leer el trozo de diff que comenta |',
