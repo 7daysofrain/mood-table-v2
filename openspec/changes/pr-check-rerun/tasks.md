@@ -133,7 +133,7 @@
   en `core/triage.ts`: la regla nueva, la función del caso evidente y los tres motivos; el porqué en
   `core/triage-summary.ts`.
   Verificar: los tests de 2.1 y todos los que ya había en verde; `pnpm typecheck` en verde.
-- [ ] 2.3 **(test en rojo)** El triaje y el resumen en el grafo (`design.md` decisión 8), en
+- [x] 2.3 **(test en rojo)** El triaje y el resumen en el grafo (`design.md` decisión 8), en
   `core/graph.test.ts`, un `describe` por requisito nuevo o cambiado de `pr-triage`:
   - vuelve a fallar: el resumen da *real* por regla, sin ninguna pregunta al modelo falso;
   - rechazado, no terminado o cancelado: *exige criterio* con su motivo, sin pregunta al modelo;
