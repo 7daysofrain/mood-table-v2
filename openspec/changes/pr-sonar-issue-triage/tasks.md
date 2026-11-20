@@ -32,7 +32,7 @@
   `additionalFields=rules` e imprime las anotaciones antes del bloque `::stop-commands::`. El log y el
   resumen del *job* no cambian.
   Verificar: los tests de 1.1 en verde, y los que ya había; `pnpm lint` y `pnpm typecheck` en verde.
-- [ ] 1.3 Documentación: `docs/umbrales-para-specs.md` (las 10 anotaciones por paso, con la fuente del
+- [x] 1.3 Documentación: `docs/umbrales-para-specs.md` (las 10 anotaciones por paso, con la fuente del
   runner) y la parte de `sonar-issues` del README, si la describe.
   Verificar: el README no contradice la spec `quality-gates`.
 - [ ] 1.4 Prueba a mano, con una PR de prueba contra `main` que añade dos incidencias en ficheros
