@@ -19,7 +19,7 @@
   3, con la medición).
   Verificar: el glosario y §4.1 ya no dicen que salirse del alcance escala siempre; D116 enlaza este
   change.
-- [ ] 1.2 **(test en rojo)** Las reglas del núcleo (`design.md` decisiones 1, 2 y 4), en
+- [x] 1.2 **(test en rojo)** Las reglas del núcleo (`design.md` decisiones 1, 2 y 4), en
   `core/triage.test.ts`:
   - `questionFor`: `scope` para un comentario del revisor, `cause` para una comprobación;
   - `classify` con una respuesta `scope`, una prueba por fila de la tabla de la decisión 1: P1 llega →
