@@ -184,6 +184,7 @@ function trackingGraph(
     new MemorySaver(),
     {
       timeoutMs: 30 * MINUTE,
+      notRunMarginMs: 2 * MINUTE,
       log,
       rerunChecks: RERUN_CHECKS,
       triage: {

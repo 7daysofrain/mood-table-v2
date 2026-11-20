@@ -124,6 +124,8 @@ function reasonSummary(reason: InterventionReason): string {
       return `${reason.checks.length === 1 ? 'falla' : 'fallan'} ${list(reason.checks)}`;
     case 'checksUnfinished':
       return `${reason.checks.length === 1 ? 'no ha' : 'no han'} terminado ${list(reason.checks)}`;
+    case 'checksNotRun':
+      return `${reason.checks.length === 1 ? 'no ha' : 'no han'} llegado a ejecutarse ${list(reason.checks)}`;
     case 'reviewFindings':
       return `el revisor tiene hallazgos${FINDING_PUSHES[reason.pushes]}`;
     case 'reviewUnfinished':

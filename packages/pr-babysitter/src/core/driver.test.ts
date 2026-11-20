@@ -156,6 +156,7 @@ function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {
       checkpointer: new MemorySaver(),
       policy: { maintainer: MAINTAINER, baseBranch: 'main' },
       timeoutMs: 30 * MINUTE,
+      notRunMarginMs: 2 * MINUTE,
       rerunChecks: ['test', 'e2e'],
       log: (line) => log.push(line),
     });

@@ -76,6 +76,8 @@ export interface DriverOptions {
   timeoutMs: number;
   /** Las comprobaciones relanzables (change pr-check-rerun, decisión 7). */
   rerunChecks: string[];
+  /** El margen de las que no van a ejecutarse (change pr-checks-not-run, decisión 3). */
+  notRunMarginMs: number;
   /** Una línea por fallo, para el log de errores. */
   log: (line: string) => void;
 }
@@ -111,12 +113,13 @@ export function createDriver({
   policy,
   timeoutMs,
   rerunChecks,
+  notRunMarginMs,
   log,
 }: DriverOptions): Driver {
   const graph = createTrackingGraph(
     { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns },
     checkpointer,
-    { timeoutMs, rerunChecks, log, triage },
+    { timeoutMs, rerunChecks, notRunMarginMs, log, triage },
   );
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
