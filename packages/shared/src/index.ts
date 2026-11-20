@@ -94,3 +94,5 @@ export {
   type StripsMessage,
   StripsMessageSchema,
 } from './viewer-protocol.ts';
+
+export let PRUEBA_LINT = 1;
