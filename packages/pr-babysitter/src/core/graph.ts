@@ -69,6 +69,7 @@ import {
   questionFor,
   type RoundAnswer,
   roundAnswerSchema,
+  sonarIssueCountSchema,
   spend,
   type TriageBudget,
   verdictSchema,
@@ -105,6 +106,7 @@ const TrackingState = new StateSchema({
       number: z.number().int(),
       pr: z.object({ title: z.string(), description: z.string() }),
       findings: z.array(findingSchema),
+      sonarIssues: sonarIssueCountSchema,
     })
     .optional(),
   /**
@@ -115,13 +117,15 @@ const TrackingState = new StateSchema({
     reducer: latestRound,
   }),
   /**
-   * El último triaje: de qué push, cada hallazgo con su clase y su porqué, y lo que costó (BE4,
+   * El último triaje: de qué push, cada hallazgo con su clase y su porqué, cuántas incidencias de
+   * SonarQube trae la comprobación que las lista y cuántas se han triado, y lo que costó (BE4,
    * BE8). Va en la salida del nodo `reunirTriaje`, que LangSmith guarda en la traza.
    */
   triage: z
     .object({
       sha: z.string(),
       findings: z.array(z.object({ finding: findingSchema, verdict: verdictSchema })),
+      sonarIssues: sonarIssueCountSchema,
       inputTokens: z.number(),
       costUsd: z.number(),
     })
@@ -156,11 +160,17 @@ export interface TrackingOptions {
    */
   log: (line: string) => void;
   /**
-   * El umbral de real y el tope de gasto de cada PR (change pr-shadow-triage, decisiones 4 y 6), y
+   * El umbral de real y el tope de gasto de cada PR (change pr-shadow-triage, decisiones 4 y 6),
    * las comprobaciones deterministas, que salen reales por regla (change pr-check-triage, decisión
-   * 6).
+   * 6), y la comprobación que lista las incidencias nuevas de SonarQube (change
+   * pr-sonar-issue-triage, decisión 2).
    */
-  triage: { threshold: number; budget: TriageBudget; ruleChecks: string[] };
+  triage: {
+    threshold: number;
+    budget: TriageBudget;
+    ruleChecks: string[];
+    sonarIssuesCheck: string;
+  };
 }
 
 /**
@@ -341,6 +351,7 @@ export function createTrackingGraph(
     const round = (state.triageRound?.number ?? 0) + 1;
     const decided = withoutModel(read.findings, {
       ruleChecks: triage.ruleChecks,
+      sonarIssuesCheck: triage.sonarIssuesCheck,
       description: read.context.description,
       spentUsd: state.spentUsd ?? 0,
       budget: triage.budget,
@@ -349,7 +360,12 @@ export function createTrackingGraph(
       answer ? [{ round, index, answer, inputTokens: 0 }] : [],
     );
     return {
-      triageRound: { number: round, pr: read.context, findings: read.findings },
+      triageRound: {
+        number: round,
+        pr: read.context,
+        findings: read.findings,
+        sonarIssues: read.sonarIssues,
+      },
       triageAnswers: decided,
     };
   };
@@ -398,6 +414,7 @@ export function createTrackingGraph(
             triage.threshold,
           ),
         })),
+        sonarIssues: triageRound.sonarIssues,
         inputTokens,
         costUsd: spentUsd - spentBefore,
       },

@@ -83,7 +83,7 @@
     - la línea de la lista cortada, solo cuando `triaged < total`.
   - **`core/graph.test.ts`:** dos incidencias dan dos peticiones al modelo falso, cada una sin la otra;
     una sin código no recibe ninguna y la otra sí.
-- [ ] 2.5 La implementación: `findingSchema`, `hasContext`, `questionFor`, `classify`, `withoutModel` y
+- [x] 2.5 La implementación: `findingSchema`, `hasContext`, `questionFor`, `classify`, `withoutModel` y
   `verdictSchema` en `core/triage.ts`; el resumen; `findings.ts` con `adapters/sonar-issues.ts`;
   `decision-model.ts`; `TRIAGE_SONAR_ISSUES_CHECK` en `config.ts` y `.env.example`; el montaje en
   `main.ts` y `studio.ts`.

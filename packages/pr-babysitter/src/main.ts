@@ -61,6 +61,7 @@ const driver = createDriver({
   }),
   findings: createFindings({
     reviewer: { login: config.githubReviewer, name: 'Codex', parse: parseCodexFinding },
+    sonarIssuesCheck: config.triageSonarIssuesCheck,
     github,
   }),
   decisionModel: createDecisionModel({
@@ -80,6 +81,7 @@ const driver = createDriver({
       inputPricePerMTok: config.decisionModelInputPricePerMTok,
     },
     ruleChecks: config.triageRuleChecks,
+    sonarIssuesCheck: config.triageSonarIssuesCheck,
   },
   checkpointer: new MemorySaver(),
   policy: { maintainer: config.githubMaintainer, baseBranch: BASE_BRANCH },

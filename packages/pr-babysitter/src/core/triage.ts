@@ -42,9 +42,11 @@ export const checkContextSchema = z.discriminatedUnion('state', [
 export type CheckContext = z.infer<typeof checkContextSchema>;
 
 /**
- * Un hallazgo del último push (glosario de PB): un comentario del revisor o una comprobación que
- * falla. El contexto de un comentario es el trozo de diff que comenta, `null` si no se ha podido
- * reunir; el de una comprobación, un `CheckContext`.
+ * Un hallazgo del último push (glosario de PB): un comentario del revisor, una comprobación que
+ * falla o una incidencia nueva de SonarQube que anota la comprobación que las lista (change
+ * pr-sonar-issue-triage, decisión 5). El contexto de un comentario es el trozo de diff que comenta,
+ * `null` si no se ha podido reunir; el de una comprobación, un `CheckContext`; el de una incidencia,
+ * el código de alrededor de su línea, `null` si no se ha podido leer.
  */
 export const findingSchema = z.discriminatedUnion('source', [
   z.object({
@@ -69,18 +71,49 @@ export const findingSchema = z.discriminatedUnion('source', [
     conclusion: z.string().nullable(),
     context: checkContextSchema,
   }),
+  z.object({
+    source: z.literal('sonarIssue'),
+    /** La clave de la regla: `typescript:S3358`. */
+    rule: z.string(),
+    ruleName: z.string(),
+    /** Alta es `BLOCKER` o `HIGH` en SonarQube: la que no se descarta sin criterio. */
+    severity: z.enum(['high', 'normal']),
+    file: z.string(),
+    /** `null` si la incidencia es del fichero entero. */
+    line: z.number().int().nullable(),
+    message: z.string(),
+    /** Las líneas de alrededor en el commit del push, numeradas. */
+    code: z.string().nullable(),
+  }),
 ]);
 
 export type Finding = z.infer<typeof findingSchema>;
 
 /**
- * Si el sistema tiene lo que señala el hallazgo: el trozo de diff que comenta el revisor, o un
- * contexto de la comprobación que dar al modelo. Sin él, no se pregunta (regla 1).
+ * Cuántas incidencias nuevas de SonarQube trae la comprobación que las lista y cuántas se trían
+ * (change pr-sonar-issue-triage, decisión 5): se trían las que anota, como mucho 10. `null` si la
+ * comprobación no falla o no anota ninguna legible.
+ */
+export const sonarIssueCountSchema = z
+  .object({ total: z.number().int(), triaged: z.number().int() })
+  .nullable();
+
+export type SonarIssueCount = z.infer<typeof sonarIssueCountSchema>;
+
+/**
+ * Si el sistema tiene lo que señala el hallazgo: el trozo de diff que comenta el revisor, un
+ * contexto de la comprobación que dar al modelo o el código de la incidencia. Sin él, no se
+ * pregunta (regla 1).
  */
 export function hasContext(finding: Finding): boolean {
-  return finding.source === 'reviewer'
-    ? finding.diffHunk !== null
-    : finding.context.state === 'available';
+  switch (finding.source) {
+    case 'reviewer':
+      return finding.diffHunk !== null;
+    case 'check':
+      return finding.context.state === 'available';
+    case 'sonarIssue':
+      return finding.code !== null;
+  }
 }
 
 /** Lo común a todos los hallazgos de la PR: su título y su descripción (decisión 5). */
@@ -95,10 +128,17 @@ export const triageClassSchema = z.enum(['valid', 'notApplicable', 'needsJudgmen
 export type TriageClass = z.infer<typeof triageClassSchema>;
 
 /**
- * Por qué no se ha preguntado por un hallazgo, o no ha habido respuesta (reglas 1 a 3, y la PR que
- * no dice su alcance: change pr-reviewer-scope, decisión 4).
+ * Por qué no se ha preguntado por un hallazgo, o no ha habido respuesta (reglas 1 a 3; la PR que
+ * no dice su alcance: change pr-reviewer-scope, decisión 4; y la comprobación de incidencias de
+ * SonarQube que no anota ninguna legible: change pr-sonar-issue-triage, decisión 5).
  */
-const unansweredSchema = z.enum(['noScope', 'noContext', 'overBudget', 'modelUnavailable']);
+const unansweredSchema = z.enum([
+  'noScope',
+  'noIssues',
+  'noContext',
+  'overBudget',
+  'modelUnavailable',
+]);
 
 /**
  * La respuesta del modelo de decisión, según la pregunta: a la de la causa, la probabilidad del sí;
@@ -151,13 +191,20 @@ export function latestRound(current: RoundAnswer[], incoming: RoundAnswer[]): Ro
  * La clase de un hallazgo y por qué (BE4): una de las reglas, la probabilidad de la causa frente al
  * umbral o las dos del alcance (change pr-reviewer-scope, decisión 1): solo llega P1 (`inScope`),
  * solo P2 (`outOfScope`), ninguna (`unclearScope`), las dos (`contradictoryScope`), o P2 en un
- * hallazgo de severidad alta (`highSeverity`). Las probabilidades se guardan siempre, también
- * cuando decide la regla de severidad alta, para que `MOO-76` elija el corte sobre ellas.
+ * hallazgo de severidad alta (`highSeverity`). Una incidencia de SonarQube de severidad alta que
+ * saldría *no aplica* también exige criterio por esa regla, con su única probabilidad (change
+ * pr-sonar-issue-triage, decisión 5). Las probabilidades se guardan siempre, también cuando decide
+ * la regla de severidad alta, para que `MOO-76` elija el corte sobre ellas.
  */
 export const verdictSchema = z.union([
   z.object({ class: z.literal('needsJudgment'), reason: unansweredSchema }),
   z.object({ class: z.literal('valid'), reason: z.literal('rule') }),
   z.object({ class: triageClassSchema, reason: z.literal('probability'), probability: z.number() }),
+  z.object({
+    class: z.literal('needsJudgment'),
+    reason: z.literal('highSeverity'),
+    probability: z.number(),
+  }),
   z.object({
     class: triageClassSchema,
     reason: z.enum(['inScope', 'outOfScope', 'unclearScope', 'contradictoryScope', 'highSeverity']),
@@ -170,22 +217,32 @@ export type Verdict = z.infer<typeof verdictSchema>;
 
 /**
  * La clase de un hallazgo (decisión 4): si lo decide la regla de las comprobaciones deterministas,
- * real; sin respuesta del modelo, exige criterio con su motivo; con la de la causa, por su
- * probabilidad (`byCause`), y con la del alcance, por las dos (`byScope`).
+ * real; sin respuesta del modelo, exige criterio con su motivo; con una sola probabilidad (la de la
+ * causa, o la de que se cumple la regla de una incidencia), por ella (`byProbability`), y con la
+ * del alcance, por las dos (`byScope`). Una incidencia de severidad alta que saldría no aplica exige
+ * criterio, por esa regla.
  */
 export function classify(finding: Finding, answer: TriageAnswer, threshold: number): Verdict {
   if (answer.kind === 'rule') return { class: 'valid', reason: 'rule' };
   if (answer.kind === 'scope') return byScope(finding, answer, threshold);
   if (answer.kind !== 'answered') return { class: 'needsJudgment', reason: answer.kind };
-  return byCause(answer.probability, threshold);
+  const verdict = byProbability(answer.probability, threshold);
+  if (
+    verdict.class === 'notApplicable' &&
+    finding.source === 'sonarIssue' &&
+    finding.severity === 'high'
+  ) {
+    return { class: 'needsJudgment', reason: 'highSeverity', probability: answer.probability };
+  }
+  return verdict;
 }
 
 /**
- * Por la probabilidad de que la causa la PR: real si llega al umbral, no aplica si no pasa de su
- * complemento y exige criterio entre los dos. El umbral es mayor que 0,5, así que los dos cortes no
- * se cruzan (lo valida la configuración).
+ * Por la probabilidad del sí: real si llega al umbral, no aplica si no pasa de su complemento y
+ * exige criterio entre los dos. El umbral es mayor que 0,5, así que los dos cortes no se cruzan (lo
+ * valida la configuración).
  */
-function byCause(probability: number, threshold: number): Verdict {
+function byProbability(probability: number, threshold: number): Verdict {
   if (probability >= threshold) return { class: 'valid', reason: 'probability', probability };
   // `1 - p >= umbral` y no `p <= 1 - umbral`: con coma flotante, 1 - 0,80 no llega a 0,20.
   if (1 - probability >= threshold) {
@@ -254,13 +311,18 @@ export function withinBudget(
 
 /**
  * Lo que el triador decide de cada hallazgo sin el modelo de decisión (change pr-check-triage,
- * decisión 6; change pr-reviewer-scope, decisión 4), en este orden: la regla, el alcance de la PR,
- * el contexto y el tope. La respuesta de cada uno, en su posición, o `undefined` si hay que
+ * decisión 6; change pr-reviewer-scope, decisión 4; change pr-sonar-issue-triage, decisión 5), en
+ * este orden: la regla, la comprobación de incidencias sin ninguna legible, el alcance de la PR, el
+ * contexto y el tope. La respuesta de cada uno, en su posición, o `undefined` si hay que
  * preguntar al modelo.
  *
  * La regla va primero porque no necesita contexto ni gasta del tope: una comprobación de
  * `ruleChecks` (las deterministas: fallan solo si algo de la PR incumple su regla) sale real aunque
  * su log no se pueda leer o el tope esté agotado, y no reserva nada.
+ *
+ * La comprobación que lista las incidencias de SonarQube solo es un hallazgo si no anota ninguna
+ * legible (si no, cada incidencia es el suyo): no hay nada que preguntar, y exige criterio sin
+ * gastar del tope.
  *
  * Una PR con la descripción vacía o solo con espacios no dice su alcance, que es lo que se pregunta
  * por un comentario del revisor: sus comentarios exigen criterio sin preguntar ni reservar tope. Va
@@ -270,6 +332,7 @@ export function withoutModel(
   findings: Finding[],
   {
     ruleChecks,
+    sonarIssuesCheck,
     description,
     spentUsd,
     budget,
@@ -277,6 +340,8 @@ export function withoutModel(
   }: {
     /** Los nombres de las comprobaciones que decide la regla, tal como las exige la rama base. */
     ruleChecks: string[];
+    /** El nombre de la comprobación que lista las incidencias nuevas de SonarQube. */
+    sonarIssuesCheck: string;
     /** La descripción de la PR, que dice su alcance. */
     description: string;
     spentUsd: number;
@@ -286,16 +351,22 @@ export function withoutModel(
 ): (TriageAnswer | undefined)[] {
   const byRule = (finding: Finding) =>
     finding.source === 'check' && ruleChecks.includes(finding.name);
+  const withoutIssues = (finding: Finding) =>
+    finding.source === 'check' && finding.name === sonarIssuesCheck;
   const withoutScope = (finding: Finding) =>
     finding.source === 'reviewer' && description.trim() === '';
   const { overBudget } = withinBudget(
-    findings.filter((finding) => !byRule(finding) && !withoutScope(finding) && hasContext(finding)),
+    findings.filter(
+      (finding) =>
+        !byRule(finding) && !withoutIssues(finding) && !withoutScope(finding) && hasContext(finding),
+    ),
     spentUsd,
     budget,
     estimate,
   );
   return findings.map((finding) => {
     if (byRule(finding)) return { kind: 'rule' };
+    if (withoutIssues(finding)) return { kind: 'noIssues' };
     if (withoutScope(finding)) return { kind: 'noScope' };
     if (!hasContext(finding)) return { kind: 'noContext' };
     if (overBudget.includes(finding)) return { kind: 'overBudget' };
@@ -305,16 +376,19 @@ export function withoutModel(
 
 /**
  * Qué se le pregunta al modelo de decisión sobre un hallazgo (change pr-check-triage, decisión 3;
- * D114 y D116): por una comprobación que falla, si la causa esta PR; por un comentario del revisor,
- * si su arreglo cae dentro del alcance de la PR y si es trabajo de otra tarea, las dos en una
- * petición. Cómo se formula cada una es del adaptador.
+ * D114, D116 y D118): por una comprobación que falla, si la causa esta PR; por un comentario del
+ * revisor, si su arreglo cae dentro del alcance de la PR y si es trabajo de otra tarea, las dos en
+ * una petición; por una incidencia de SonarQube, si su regla se cumple en ese código. Cómo se
+ * formula cada una es del adaptador.
  */
-export const questionSchema = z.enum(['cause', 'scope']);
+export const questionSchema = z.enum(['cause', 'scope', 'rule']);
 
 export type Question = z.infer<typeof questionSchema>;
 
+const QUESTIONS = { check: 'cause', reviewer: 'scope', sonarIssue: 'rule' } as const;
+
 export function questionFor(finding: Finding): Question {
-  return finding.source === 'check' ? 'cause' : 'scope';
+  return QUESTIONS[finding.source];
 }
 
 /** El gasto de la PR tras un triaje: lo que llevaba más los tokens de entrada cobrados. */
@@ -337,13 +411,16 @@ function slug(text: string): string {
 function identity(finding: Finding): string {
   if (finding.source === 'check') return slug(`check ${finding.name}`);
   const file = finding.file.split('/').at(-1) ?? finding.file;
-  const parts = [finding.reviewer, finding.badge, file, finding.line];
+  const parts =
+    finding.source === 'reviewer'
+      ? [finding.reviewer, finding.badge, file, finding.line]
+      : ['sonar', finding.rule, file, finding.line];
   return slug(parts.filter((part) => part !== null).join(' '));
 }
 
 /**
  * La clave de cada hallazgo en la petición al modelo (decisiones 2 y 5): su identidad (fuente,
- * fichero y línea, o el nombre de la comprobación), solo ASCII y como mucho 100 caracteres. Si dos
+ * fichero y línea, con la regla en una incidencia, o el nombre de la comprobación), solo ASCII y como mucho 100 caracteres. Si dos
  * coinciden, la segunda lleva `_2`, y así.
  */
 export function findingKeys(findings: Finding[]): string[] {

@@ -250,9 +250,9 @@ describe('las comprobaciones que fallan', () => {
 });
 
 /** Las anotaciones de `sonar-issues` en la #165 y un fichero de 200 líneas por cada ruta. */
-const withSonarAnnotations: Route = async ({ path }) => {
+const withSonarAnnotations: Route = ({ path }) => {
   if (path.endsWith(`/check-runs/${SONAR_ISSUES_JOB}/annotations`)) {
-    return json(await fixture('annotations-165-sonar-issues.json'));
+    return fixture('annotations-165-sonar-issues.json').then((body) => json(body));
   }
   if (path.includes('/contents/')) {
     return text(Array.from({ length: 200 }, (_, index) => `línea ${index + 1}`).join('\n'));
@@ -297,9 +297,10 @@ describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 
 
     const { findings: read } = await findings.read(88, PUSH_88, ['e2e', 'sonar-issues', 'lint']);
 
-    expect(read.filter((finding) => finding.source !== 'reviewer').map((finding) => finding.source)).toEqual(
-      ['check', 'sonarIssue', 'sonarIssue', 'sonarIssue', 'check'],
-    );
+    const sources = read
+      .filter((finding) => finding.source !== 'reviewer')
+      .map((finding) => finding.source);
+    expect(sources).toEqual(['check', 'sonarIssue', 'sonarIssue', 'sonarIssue', 'check']);
   });
 
   it('sin incidencias legibles (con el log), la comprobación es un hallazgo, y no hay recuento', async () => {
@@ -307,8 +308,8 @@ describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 
 
     const { findings: read, sonarIssues } = await findings.read(88, PUSH_88, ['sonar-issues']);
 
-    expect(read.filter((finding) => finding.source === 'check')).toEqual([
-      expect.objectContaining({ name: 'sonar-issues', context: expect.objectContaining({ origin: 'log' }) }),
+    expect(read.filter((finding) => finding.source === 'check')).toMatchObject([
+      { name: 'sonar-issues', context: { origin: 'log' } },
     ]);
     expect(read.some((finding) => finding.source === 'sonarIssue')).toBe(false);
     expect(sonarIssues).toBeNull();
@@ -325,12 +326,8 @@ describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 
 
     const { findings: read, sonarIssues } = await findings.read(88, PUSH_88, ['sonar-issues']);
 
-    expect(read.filter((finding) => finding.source !== 'reviewer')).toEqual([
-      expect.objectContaining({
-        source: 'check',
-        name: 'sonar-issues',
-        context: expect.objectContaining({ origin: 'annotations' }),
-      }),
+    expect(read.filter((finding) => finding.source !== 'reviewer')).toMatchObject([
+      { source: 'check', name: 'sonar-issues', context: { origin: 'annotations' } },
     ]);
     expect(sonarIssues).toBeNull();
   });
