@@ -95,7 +95,7 @@
   - `prompts.md`.
 
   Verificar: el README no contradice las specs.
-- [ ] 2.7 Prueba a mano, con el babysitter en local y LangSmith, contra una PR de prueba contra `main`
+- [x] 2.7 Prueba a mano, con el babysitter en local y LangSmith, contra una PR de prueba contra `main`
   con dos incidencias: una mecánica (p. ej., un ternario anidado) y un `await` dentro de un bucle que
   debe ir en orden, con el porqué en el código.
   - El resumen del push trae dos filas, una por incidencia, cada una con su clase. Se espera la
