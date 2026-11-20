@@ -42,8 +42,9 @@ export const checkContextSchema = z.discriminatedUnion('state', [
 export type CheckContext = z.infer<typeof checkContextSchema>;
 
 /**
- * Un hallazgo del último push (glosario de PB): un comentario del revisor, una comprobación que
- * falla o una incidencia nueva de SonarQube que anota la comprobación que las lista (change
+ * Un hallazgo de la PR (glosario de PB): un comentario del revisor cuyo hilo sigue sin resolver, de
+ * cualquier push (change pr-unresolved-threads, decisión 1); una comprobación que falla en el último
+ * push, o una incidencia nueva de SonarQube que anota la comprobación que las lista (change
  * pr-sonar-issue-triage, decisión 5). El contexto de un comentario es el trozo de diff que comenta,
  * `null` si no se ha podido reunir; el de una comprobación, un `CheckContext`; el de una incidencia,
  * el código de alrededor de su línea, `null` si no se ha podido leer.
@@ -63,6 +64,13 @@ export const findingSchema = z.discriminatedUnion('source', [
     title: z.string(),
     text: z.string(),
     diffHunk: z.string().nullable(),
+    /**
+     * Si el comentario es de un push anterior, ese push (`null` si GitHub ya no da su commit, tras
+     * un *force push*) y el código del último push alrededor de su línea, numerado y con `>>` en
+     * ella, o `null` si no se ha podido leer (change pr-unresolved-threads, decisiones 1 y 3).
+     * `null` si es del último push: su código es el que comentó.
+     */
+    earlierPush: z.object({ sha: z.string().nullable(), code: z.string().nullable() }).nullable(),
   }),
   z.object({
     source: z.literal('check'),
@@ -129,13 +137,15 @@ export type TriageClass = z.infer<typeof triageClassSchema>;
 
 /**
  * Por qué no se ha preguntado por un hallazgo, o no ha habido respuesta (reglas 1 a 3; la PR que
- * no dice su alcance: change pr-reviewer-scope, decisión 4; y la comprobación de incidencias de
- * SonarQube que no anota ninguna legible: change pr-sonar-issue-triage, decisión 5).
+ * no dice su alcance: change pr-reviewer-scope, decisión 4; la comprobación de incidencias de
+ * SonarQube que no anota ninguna legible: change pr-sonar-issue-triage, decisión 5; y el comentario
+ * de un push anterior sin el código del último push: change pr-unresolved-threads, decisión 4).
  */
 const unansweredSchema = z.enum([
   'noScope',
   'noIssues',
   'noContext',
+  'noCurrentCode',
   'overBudget',
   'modelUnavailable',
 ]);
@@ -143,11 +153,19 @@ const unansweredSchema = z.enum([
 /**
  * La respuesta del modelo de decisión, según la pregunta: a la de la causa, la probabilidad del sí;
  * a la del alcance (change pr-reviewer-scope, decisiones 1 y 2), la de que el arreglo cae dentro del
- * alcance de la PR (P1, `inside`) y la de que es trabajo de otra tarea o historia (P2, `outside`).
+ * alcance de la PR (P1, `inside`) y la de que es trabajo de otra tarea o historia (P2, `outside`); y
+ * a la de un comentario de un push anterior, además, la de que el último push ya lo arregla
+ * (`fixed`; change pr-unresolved-threads, decisión 3).
  */
 export const modelAnswerSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('answered'), probability: z.number() }),
   z.object({ kind: z.literal('scope'), inside: z.number(), outside: z.number() }),
+  z.object({
+    kind: z.literal('fixedScope'),
+    fixed: z.number(),
+    inside: z.number(),
+    outside: z.number(),
+  }),
 ]);
 
 export type ModelAnswer = z.infer<typeof modelAnswerSchema>;
@@ -193,9 +211,20 @@ export function latestRound(current: RoundAnswer[], incoming: RoundAnswer[]): Ro
  * solo P2 (`outOfScope`), ninguna (`unclearScope`), las dos (`contradictoryScope`), o P2 en un
  * hallazgo de severidad alta (`highSeverity`). Una incidencia de SonarQube de severidad alta que
  * saldría *no aplica* también exige criterio por esa regla, con su única probabilidad (change
- * pr-sonar-issue-triage, decisión 5). Las probabilidades se guardan siempre, también cuando decide
- * la regla de severidad alta, para que `MOO-76` elija el corte sobre ellas.
+ * pr-sonar-issue-triage, decisión 5). Un comentario de un push anterior lleva además la
+ * probabilidad de que el último push ya lo arregla (`fixed`), y es *no aplica* si llega
+ * (`alreadyFixed`), o exige criterio por la regla de severidad alta (change pr-unresolved-threads,
+ * decisión 4). Las probabilidades se guardan siempre, también cuando decide la regla de severidad
+ * alta, para que `MOO-76` elija el corte sobre ellas.
  */
+/** La clase por las dos probabilidades del alcance (change pr-reviewer-scope, decisión 1). */
+const scopeVerdictSchema = z.object({
+  class: triageClassSchema,
+  reason: z.enum(['inScope', 'outOfScope', 'unclearScope', 'contradictoryScope', 'highSeverity']),
+  inside: z.number(),
+  outside: z.number(),
+});
+
 export const verdictSchema = z.union([
   z.object({ class: z.literal('needsJudgment'), reason: unansweredSchema }),
   z.object({ class: z.literal('valid'), reason: z.literal('rule') }),
@@ -205,12 +234,22 @@ export const verdictSchema = z.union([
     reason: z.literal('highSeverity'),
     probability: z.number(),
   }),
+  // Antes que la de dos probabilidades: zod quitaría `fixed` al aceptarla con esa.
   z.object({
     class: triageClassSchema,
-    reason: z.enum(['inScope', 'outOfScope', 'unclearScope', 'contradictoryScope', 'highSeverity']),
+    reason: z.enum([
+      'alreadyFixed',
+      'inScope',
+      'outOfScope',
+      'unclearScope',
+      'contradictoryScope',
+      'highSeverity',
+    ]),
+    fixed: z.number(),
     inside: z.number(),
     outside: z.number(),
   }),
+  scopeVerdictSchema,
 ]);
 
 export type Verdict = z.infer<typeof verdictSchema>;
@@ -225,6 +264,7 @@ export type Verdict = z.infer<typeof verdictSchema>;
 export function classify(finding: Finding, answer: TriageAnswer, threshold: number): Verdict {
   if (answer.kind === 'rule') return { class: 'valid', reason: 'rule' };
   if (answer.kind === 'scope') return byScope(finding, answer, threshold);
+  if (answer.kind === 'fixedScope') return byFixedScope(finding, answer, threshold);
   if (answer.kind !== 'answered') return { class: 'needsJudgment', reason: answer.kind };
   const verdict = byProbability(answer.probability, threshold);
   if (
@@ -260,7 +300,7 @@ function byScope(
   finding: Finding,
   { inside, outside }: Extract<ModelAnswer, { kind: 'scope' }>,
   threshold: number,
-): Verdict {
+): z.infer<typeof scopeVerdictSchema> {
   const probabilities = { inside, outside };
   const isInside = inside >= threshold;
   const isOutside = outside >= threshold;
@@ -273,6 +313,27 @@ function byScope(
     return { class: 'needsJudgment', reason: 'highSeverity', ...probabilities };
   }
   return { class: 'notApplicable', reason: 'outOfScope', ...probabilities };
+}
+
+/**
+ * Un comentario de un push anterior (change pr-unresolved-threads, decisión 4): no aplica si llega
+ * que el último push ya lo arregla, salvo si es de severidad alta, que exige criterio por esa regla
+ * (descartaría un hallazgo de severidad alta, PB §4.1); si no llega, por el alcance. Con las tres
+ * probabilidades.
+ */
+function byFixedScope(
+  finding: Finding,
+  { fixed, inside, outside }: Extract<ModelAnswer, { kind: 'fixedScope' }>,
+  threshold: number,
+): Verdict {
+  const probabilities = { fixed, inside, outside };
+  if (fixed >= threshold) {
+    if (finding.source === 'reviewer' && finding.severity === 'high') {
+      return { class: 'needsJudgment', reason: 'highSeverity', ...probabilities };
+    }
+    return { class: 'notApplicable', reason: 'alreadyFixed', ...probabilities };
+  }
+  return { ...byScope(finding, { kind: 'scope', inside, outside }, threshold), fixed };
 }
 
 /** El tope de gasto de la PR y el precio del modelo, en dólares (decisión 6). */
@@ -327,6 +388,10 @@ export function withinBudget(
  * Una PR con la descripción vacía o solo con espacios no dice su alcance, que es lo que se pregunta
  * por un comentario del revisor: sus comentarios exigen criterio sin preguntar ni reservar tope. Va
  * antes que el contexto porque es de la PR entera, y lo arregla el mantenedor una vez.
+ *
+ * Un comentario de un push anterior sin el código del último push alrededor de su línea tampoco se
+ * pregunta, ni siquiera por el alcance: el modelo juzgaría con la misma seguridad sin ese contexto
+ * (change pr-unresolved-threads, decisión 4). Va después del contexto y antes del tope.
  */
 export function withoutModel(
   findings: Finding[],
@@ -355,10 +420,16 @@ export function withoutModel(
     finding.source === 'check' && finding.name === sonarIssuesCheck;
   const withoutScope = (finding: Finding) =>
     finding.source === 'reviewer' && description.trim() === '';
+  const withoutCurrentCode = (finding: Finding) =>
+    finding.source === 'reviewer' && finding.earlierPush !== null && finding.earlierPush.code === null;
   const { overBudget } = withinBudget(
     findings.filter(
       (finding) =>
-        !byRule(finding) && !withoutIssues(finding) && !withoutScope(finding) && hasContext(finding),
+        !byRule(finding) &&
+        !withoutIssues(finding) &&
+        !withoutScope(finding) &&
+        hasContext(finding) &&
+        !withoutCurrentCode(finding),
     ),
     spentUsd,
     budget,
@@ -369,6 +440,7 @@ export function withoutModel(
     if (withoutIssues(finding)) return { kind: 'noIssues' };
     if (withoutScope(finding)) return { kind: 'noScope' };
     if (!hasContext(finding)) return { kind: 'noContext' };
+    if (withoutCurrentCode(finding)) return { kind: 'noCurrentCode' };
     if (overBudget.includes(finding)) return { kind: 'overBudget' };
     return undefined;
   });
@@ -376,18 +448,20 @@ export function withoutModel(
 
 /**
  * Qué se le pregunta al modelo de decisión sobre un hallazgo (change pr-check-triage, decisión 3;
- * D114, D116 y D118): por una comprobación que falla, si la causa esta PR; por un comentario del
- * revisor, si su arreglo cae dentro del alcance de la PR y si es trabajo de otra tarea, las dos en
- * una petición; por una incidencia de SonarQube, si su regla se cumple en ese código. Cómo se
- * formula cada una es del adaptador.
+ * D114, D116, D118 y D120): por una comprobación que falla, si la causa esta PR; por un comentario
+ * del revisor, si su arreglo cae dentro del alcance de la PR y si es trabajo de otra tarea, las dos
+ * en una petición, y, si es de un push anterior, también si el último push ya lo arregla, las tres
+ * en una petición (`fixedScope`); por una incidencia de SonarQube, si su regla se cumple en ese
+ * código. Cómo se formula cada una es del adaptador.
  */
-export const questionSchema = z.enum(['cause', 'scope', 'rule']);
+export const questionSchema = z.enum(['cause', 'scope', 'fixedScope', 'rule']);
 
 export type Question = z.infer<typeof questionSchema>;
 
 const QUESTIONS = { check: 'cause', reviewer: 'scope', sonarIssue: 'rule' } as const;
 
 export function questionFor(finding: Finding): Question {
+  if (finding.source === 'reviewer' && finding.earlierPush !== null) return 'fixedScope';
   return QUESTIONS[finding.source];
 }
 

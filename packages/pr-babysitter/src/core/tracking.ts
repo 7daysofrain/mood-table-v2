@@ -25,11 +25,17 @@ export interface TrackedPush {
   rerunRejected?: string[];
 }
 
+/**
+ * De qué push son los hilos sin resolver del revisor: del último, de pushes anteriores o de los dos
+ * (change pr-unresolved-threads, decisión 2).
+ */
+export type FindingPushes = 'last' | 'earlier' | 'both';
+
 /** Por qué una PR necesita intervención. */
 export type InterventionReason =
   | { kind: 'checksFailed'; checks: string[] }
   | { kind: 'checksUnfinished'; checks: string[] }
-  | { kind: 'reviewFindings' }
+  | { kind: 'reviewFindings'; pushes: FindingPushes }
   | { kind: 'reviewUnfinished' }
   | { kind: 'rerunRejected'; checks: string[] };
 
@@ -78,8 +84,11 @@ export function reviewFinished({ review, headSha }: PullRequestSnapshot): boolea
  * El estado final con la última foto y el push que se sigue. Al terminar todo, los motivos son las
  * comprobaciones que fallan y los hallazgos del revisor; con el tiempo agotado, también lo que no
  * ha terminado. Que la revisión no ha terminado solo se dice si se esperaba, es decir, si las
- * comprobaciones pasaron (`reviewSince`); si no, solo cuenta la que ya terminó el último push
- * (change pr-review-request, decisión 4).
+ * comprobaciones pasaron (`reviewSince`; change pr-review-request, decisión 4).
+ *
+ * Los hallazgos del revisor son sus hilos sin resolver, de cualquier push, haya terminado o no la
+ * revisión del último (change pr-unresolved-threads, decisión 2): con las comprobaciones en verde
+ * solo se llega aquí con esa revisión terminada, y si falla una, los de un push anterior ya cuentan.
  */
 export function finalState(snapshot: PullRequestSnapshot, push: TrackedPush): FinalState {
   const named = (status: string) =>
@@ -90,13 +99,22 @@ export function finalState(snapshot: PullRequestSnapshot, push: TrackedPush): Fi
   if (failed.length > 0) reasons.push({ kind: 'checksFailed', checks: failed });
   if (push.rerunRejected) reasons.push({ kind: 'rerunRejected', checks: push.rerunRejected });
   if (unfinished.length > 0) reasons.push({ kind: 'checksUnfinished', checks: unfinished });
-  if (reviewFinished(snapshot)) {
-    if (snapshot.review?.hasFindings) reasons.push({ kind: 'reviewFindings' });
-  } else if (push.reviewSince !== undefined) {
+  const pushes = findingPushes(snapshot);
+  if (pushes !== null) reasons.push({ kind: 'reviewFindings', pushes });
+  if (!reviewFinished(snapshot) && push.reviewSince !== undefined) {
     reasons.push({ kind: 'reviewUnfinished' });
   }
   if (reasons.length === 0) return { status: 'readyToMerge' };
   return { status: 'needsIntervention', reasons };
+}
+
+/** De qué push son los hilos sin resolver del revisor, o `null` si no le queda ninguno. */
+function findingPushes({ reviewerThreads }: PullRequestSnapshot): FindingPushes | null {
+  const { lastPush, earlierPushes } = reviewerThreads;
+  if (lastPush > 0 && earlierPushes > 0) return 'both';
+  if (lastPush > 0) return 'last';
+  if (earlierPushes > 0) return 'earlier';
+  return null;
 }
 
 /**

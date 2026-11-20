@@ -46,6 +46,7 @@ const driver = createDriver({
   reviewer: createCodexReviewReader({
     reviewer: config.githubReviewer,
     listComments: (number) => github.listComments(number),
+    listReviewThreads: (number) => github.listReviewThreads(number),
   }),
   reviewRequests: createCodexReviewRequests({
     maintainer: config.githubMaintainer,

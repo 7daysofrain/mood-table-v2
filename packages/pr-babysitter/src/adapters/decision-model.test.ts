@@ -1,8 +1,12 @@
 /**
- * Con la respuesta grabada de Clef en la nube de Ollama (`test/fixtures/decision-model/`, paso 1.4
- * del change pr-reviewer-scope, 20-nov): `systemone-88-p2-scope.json` contesta las dos preguntas
- * del alcance sobre un solo hallazgo de la #88, el P2 de `tracking.ts:109`, que va solo en su
- * petición. Las demás respuestas se derivan de la petición, en cada test.
+ * Con respuestas grabadas de Clef en la nube de Ollama (`test/fixtures/decision-model/`):
+ * - `systemone-88-p2-scope.json` (paso 1.4 del change pr-reviewer-scope, 20-nov): las dos preguntas
+ *   del alcance sobre un solo hallazgo de la #88, el P2 de `tracking.ts:109`, que va solo en su
+ *   petición.
+ * - `systemone-166-p2-fixed-scope.json` (paso 1.10 del change pr-unresolved-threads, 20-nov): las
+ *   tres preguntas sobre el P2 de `findings.ts:54` de la #166, hecho sobre `576b496`, con el código
+ *   de `a4b9361`, que aún no lo arreglaba.
+ * Las demás respuestas se derivan de la petición, en cada test.
  */
 import { readFile } from 'node:fs/promises';
 
@@ -32,6 +36,7 @@ const p1: Finding = {
   title: 'Prevent pending-notice recovery from requesting a stopped PR review',
   text: 'If Linear rejects `avisarComprobaciones`…',
   diffHunk: '@@ -190,6 +190,20 @@',
+  earlierPush: null,
 };
 
 const p2: Finding = {
@@ -41,6 +46,22 @@ const p2: Finding = {
   file: 'packages/pr-babysitter/src/core/tracking.ts',
   line: 109,
   title: 'Route failed checks directly to the final notification',
+};
+
+/** El P2 de la #166, sobre un push anterior, con el código del último push. */
+const earlier: Finding = {
+  ...p1,
+  badge: 'P2',
+  severity: 'normal',
+  file: 'packages/pr-babysitter/src/adapters/findings.ts',
+  line: 54,
+  title: 'Split SonarQube annotations before applying the context size limit',
+  text: 'When the annotations exceed 16 KiB in aggregate, `readCheckContext()` discards annotations…',
+  diffHunk: '@@ -27,13 +31,37 @@ export interface FindingsReviewer {',
+  earlierPush: {
+    sha: '576b49636780068462fa4984e34a7c39902eba8a',
+    code: '>>   52 |     const check = await readCheckContext(github, sha, name);',
+  },
 };
 
 /** Una comprobación que falla, con el paso que falla de su log por contexto. */
@@ -370,6 +391,111 @@ describe('la respuesta', () => {
 
     await expect(failure).rejects.toBeInstanceOf(DecisionModelError);
     await expect(failure).rejects.toMatchObject({ inputTokens: 3100 });
+  });
+});
+
+describe('un comentario de un push anterior (change pr-unresolved-threads, decisión 3)', () => {
+  const KEY = 'codex_p2_findings_ts_54';
+
+  it('va en una petición con la pregunta de si el último push ya lo arregla y las dos del alcance', async () => {
+    const { decisionModel, calls } = model(answer);
+
+    await decisionModel.ask(context, earlier, 'fixedScope');
+
+    expect(calls).toHaveLength(1);
+    const { questions } = sent(calls[0]);
+    expect(Object.keys(questions)).toEqual([`${KEY}_fixed`, `${KEY}_inside`, `${KEY}_outside`]);
+    expect(questions[`${KEY}_fixed`]).toEqual({
+      type: 'noul',
+      instructions:
+        "Does the code at this PR's latest push already fix the P2 reviewer comment on findings.ts:54, titled 'Split SonarQube annotations before applying the context size limit'?",
+      criteria: {
+        true: 'The latest code no longer has the problem the comment describes: the lines it points at were changed or removed in a way that addresses it.',
+        false:
+          'The latest code still has the problem, the problem does not depend on these lines, or the code shown is not enough to tell.',
+      },
+    });
+    // Las dos del alcance, las mismas que en un comentario del último push.
+    expect(questions[`${KEY}_inside`]?.instructions).toMatch(/^Is fixing the P2 reviewer comment/);
+    expect(questions[`${KEY}_outside`]?.instructions).toMatch(/^Does fixing the P2 reviewer comment/);
+  });
+
+  it('el state lleva el comentario, su trozo de diff y el código del último push', async () => {
+    const { decisionModel, calls } = model(answer);
+
+    await decisionModel.ask(context, earlier, 'fixedScope');
+
+    expect(sent(calls[0]).state[KEY]).toEqual({
+      source: 'reviewer',
+      severity: 'normal',
+      file: earlier.file,
+      line: 54,
+      title: earlier.source === 'reviewer' ? earlier.title : '',
+      text: earlier.source === 'reviewer' ? earlier.text : '',
+      diff_hunk: '@@ -27,13 +31,37 @@ export interface FindingsReviewer {',
+      latest_push_code: '>>   52 |     const check = await readCheckContext(github, sha, name);',
+    });
+  });
+
+  it('la respuesta da si ya está arreglado, dentro y de otra tarea, y los tokens cobrados', async () => {
+    const { decisionModel } = model(async () =>
+      json(await recorded('systemone-166-p2-fixed-scope.json')),
+    );
+
+    expect(await decisionModel.ask(context, earlier, 'fixedScope')).toEqual({
+      answer: { kind: 'fixedScope', fixed: 0.3074, inside: 0.8262, outside: 0.2147 },
+      inputTokens: 4348,
+    });
+  });
+
+  it('si falta la respuesta de ya arreglado, lanza: sin las tres no se puede clasificar', async () => {
+    const { decisionModel } = model((call) => {
+      const { questions } = JSON.parse(call.body) as { questions: Record<string, unknown> };
+      const answers = Object.fromEntries(
+        Object.keys(questions)
+          .filter((key) => !key.endsWith('_fixed'))
+          .map((key) => [key, { type: 'noul', noul: 0.5 }]),
+      );
+      return json(JSON.stringify({ model: 'clef:27b', answers, usage: { input_tokens: 100 } }));
+    });
+
+    await expect(decisionModel.ask(context, earlier, 'fixedScope')).rejects.toMatchObject({
+      name: 'DecisionModelError',
+      inputTokens: 100,
+    });
+  });
+
+  it('las tres claves no pasan de 100 caracteres, también con un fichero de nombre largo', async () => {
+    const { decisionModel, calls } = model(answer);
+    const long: Finding = { ...earlier, file: `src/${'muy_largo_'.repeat(20)}.ts` };
+
+    await decisionModel.ask(context, long, 'fixedScope');
+
+    const keys = Object.keys(sent(calls[0]).questions);
+    expect(keys).toHaveLength(3);
+    for (const key of keys) expect(key.length).toBeLessThanOrEqual(100);
+  });
+
+  it('estimate cuenta las tres preguntas y el código del último push', () => {
+    const { decisionModel } = model(answer);
+    const asLastPush: Finding = { ...earlier, earlierPush: null };
+
+    const threeQuestions = decisionModel.estimate(context, earlier, 'fixedScope');
+    const twoQuestions = decisionModel.estimate(context, asLastPush, 'scope');
+
+    expect(threeQuestions).toBeGreaterThan(twoQuestions + 60);
+  });
+
+  it('un comentario del último push sigue con las dos del alcance, sin el código del último push', async () => {
+    const { decisionModel, calls } = model(answer);
+
+    await decisionModel.ask(context, p2, 'scope');
+
+    expect(Object.keys(sent(calls[0]).questions)).toEqual([
+      'codex_p2_tracking_ts_109_inside',
+      'codex_p2_tracking_ts_109_outside',
+    ]);
+    expect(sent(calls[0]).state['codex_p2_tracking_ts_109']).not.toHaveProperty('latest_push_code');
   });
 });
 

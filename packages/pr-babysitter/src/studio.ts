@@ -93,6 +93,21 @@ const findings: Findings = {
           title: 'Un hallazgo de ejemplo',
           text: 'Escrito por studio.ts.',
           diffHunk: '@@ -1 +1 @@',
+          earlierPush: null,
+        },
+        // Un hilo sin resolver de un push anterior: lleva la pregunta «ya arreglado» (change
+        // pr-unresolved-threads, decisión 3).
+        {
+          source: 'reviewer',
+          reviewer: 'Codex',
+          badge: 'P2',
+          severity: 'normal',
+          file: 'src/core/tracking.ts',
+          line: 2,
+          title: 'Un hallazgo de ejemplo de un push anterior',
+          text: 'Escrito por studio.ts.',
+          diffHunk: '@@ -2 +2 @@',
+          earlierPush: { sha: '0000000000000000000000000000000000000000', code: '>>    2 | ejemplo' },
         },
         ...failedChecks.map((name, i) => ({
           source: 'check' as const,
@@ -108,16 +123,20 @@ const findings: Findings = {
 /**
  * En lugar de preguntar al modelo, tarda un segundo y da una respuesta distinta por fuente, para ver
  * las ramas `preguntarModelo` en paralelo y las tres clases: el comentario del revisor es de otra
- * tarea (P1 0,10 y P2 0,90), así que no aplica y el resumen dice que se capturaría; las
- * comprobaciones, por turnos, real (0,90) y exige criterio (0,50).
+ * tarea (P1 0,10 y P2 0,90), así que no aplica y el resumen dice que se capturaría; el de un push
+ * anterior ya está arreglado (0,91), así que no aplica; las comprobaciones, por turnos, real (0,90)
+ * y exige criterio (0,50).
  */
 const CHECK_PROBABILITIES = [0.9, 0.5];
 let checksAsked = 0;
 
 const decisionModel: DecisionModel = {
   estimate: () => 0,
-  async ask(_pr, finding) {
+  async ask(_pr, finding, question) {
     await sleep(1000);
+    if (question === 'fixedScope') {
+      return { answer: { kind: 'fixedScope', fixed: 0.91, inside: 0.5, outside: 0.2 }, inputTokens: 0 };
+    }
     if (finding.source === 'reviewer') {
       return { answer: { kind: 'scope', inside: 0.1, outside: 0.9 }, inputTokens: 0 };
     }

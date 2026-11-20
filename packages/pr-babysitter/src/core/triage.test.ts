@@ -28,6 +28,7 @@ function reviewerFinding(overrides: Partial<Extract<Finding, { source: 'reviewer
     title: 'Route failed checks directly to the final state',
     text: 'When a check fails the graph still waits for the reviewer.',
     diffHunk: '@@ -100,6 +100,9 @@ export function finalState(',
+    earlierPush: null,
     ...overrides,
   };
 }
@@ -403,6 +404,108 @@ describe('la pregunta depende de la fuente del hallazgo (change pr-check-triage,
 
   it('por un comentario del revisor, por el alcance de la PR (change pr-reviewer-scope, decisión 2)', () => {
     expect(questionFor(reviewerFinding())).toBe('scope');
+  });
+});
+
+describe('un comentario de un push anterior (change pr-unresolved-threads, decisiones 3 y 4)', () => {
+  const earlier = (overrides: Partial<Extract<Finding, { source: 'reviewer' }>> = {}) =>
+    reviewerFinding({
+      earlierPush: { sha: '576b49636780068462fa4984e34a7c39902eba8a', code: '>>  109 |   return x;' },
+      ...overrides,
+    });
+  const earlierP1 = earlier({ badge: 'P1', severity: 'high' });
+  const noCode = earlier({ earlierPush: { sha: '576b496', code: null } });
+  const answer = (fixed: number, inside: number, outside: number) =>
+    ({ kind: 'fixedScope', fixed, inside, outside }) as const;
+
+  const budget: TriageBudget = { capUsd: 0.001, inputPricePerMTok: 1 };
+  const estimated: Finding[] = [];
+  const decide = (findings: Finding[], description = 'Arregla el aviso.') =>
+    withoutModel(findings, {
+      ruleChecks: ['lint'],
+      sonarIssuesCheck: 'sonar-issues',
+      description,
+      spentUsd: 0,
+      budget,
+      estimate: (finding) => {
+        estimated.push(finding);
+        return 400;
+      },
+    });
+
+  it('se le pregunta si el último push ya lo arregla, además del alcance', () => {
+    expect(questionFor(earlier())).toBe('fixedScope');
+  });
+
+  it('a uno del último push solo se le pregunta por el alcance', () => {
+    expect(questionFor(reviewerFinding())).toBe('scope');
+  });
+
+  it('sin el código del último push, exige criterio sin preguntar ni reservar tope', () => {
+    estimated.length = 0;
+    const withCode = earlier();
+
+    expect(decide([noCode, withCode])).toEqual([{ kind: 'noCurrentCode' }, undefined]);
+    expect(estimated).toEqual([withCode]);
+    expect(classify(noCode, { kind: 'noCurrentCode' }, THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'noCurrentCode',
+    });
+  });
+
+  it('noCurrentCode va después de noScope y de noContext', () => {
+    expect(decide([noCode], '')).toEqual([{ kind: 'noScope' }]);
+    expect(decide([earlier({ diffHunk: null, earlierPush: { sha: '576b496', code: null } })])).toEqual([
+      { kind: 'noContext' },
+    ]);
+  });
+
+  it('ya arreglado con 0,80 o más: no aplica, con las tres probabilidades', () => {
+    expect(classify(earlier(), answer(0.91, 0.85, 0.1), THRESHOLD)).toEqual({
+      class: 'notApplicable',
+      reason: 'alreadyFixed',
+      fixed: 0.91,
+      inside: 0.85,
+      outside: 0.1,
+    });
+    expect(classify(earlier(), answer(0.8, 0.85, 0.1), THRESHOLD)).toMatchObject({
+      reason: 'alreadyFixed',
+    });
+  });
+
+  it('un P1 ya arreglado exige criterio por la regla de severidad alta, con las tres probabilidades', () => {
+    expect(classify(earlierP1, answer(0.93, 0.2, 0.1), THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'highSeverity',
+      fixed: 0.93,
+      inside: 0.2,
+      outside: 0.1,
+    });
+  });
+
+  it.each([
+    ['solo llega P1: real', answer(0.4, 0.91, 0.11), 'valid', 'inScope'],
+    ['solo llega P2: no aplica', answer(0.4, 0.12, 0.85), 'notApplicable', 'outOfScope'],
+    ['no llega ninguna: exige criterio', answer(0.4, 0.58, 0.32), 'needsJudgment', 'unclearScope'],
+    ['llegan las dos: exige criterio', answer(0.4, 0.85, 0.82), 'needsJudgment', 'contradictoryScope'],
+  ] as const)('sin llegar ya arreglado, el alcance como siempre · %s', (_, given, klass, reason) => {
+    expect(classify(earlier(), given, THRESHOLD)).toEqual({
+      class: klass,
+      reason,
+      fixed: 0.4,
+      inside: given.inside,
+      outside: given.outside,
+    });
+  });
+
+  it('sin llegar ya arreglado, un P1 que llega por P2 exige criterio por la regla de severidad alta', () => {
+    expect(classify(earlierP1, answer(0.79, 0.1, 0.9), THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'highSeverity',
+      fixed: 0.79,
+      inside: 0.1,
+      outside: 0.9,
+    });
   });
 });
 
