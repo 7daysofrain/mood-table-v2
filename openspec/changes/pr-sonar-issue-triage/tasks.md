@@ -46,7 +46,7 @@
 
 ## 2. MOO-168 · infra
 
-- [ ] 2.1 Decisiones: D117 (*Contents* en lectura, matiza D64 y D71) y D118 (la pregunta de la premisa
+- [x] 2.1 Decisiones: D117 (*Contents* en lectura, matiza D64 y D71) y D118 (la pregunta de la premisa
   de la regla, con el código y criterios genéricos) en `docs/idea-mood-table.md` §10, y README §2.5
   (*Contents* en lectura, y que el código de las incidencias sale hacia el modelo de decisión).
   Verificar: las dos D# citan este change y `MOO-148`.
