@@ -6,6 +6,7 @@
  *
  * ```
  * ::error file=<ruta>,line=<línea>,title=<regla> · <severidad> · <nombre de la regla>::<mensaje>
+ * ::error file=<ruta>,title=<regla> · <severidad> · <nombre de la regla> · fichero::<mensaje>
  * ::notice title=Incidencias nuevas de SonarQube::<total> incidencias nuevas; se anotan <n>
  * ```
  *
@@ -42,6 +43,11 @@ const LINES_AFTER = 15;
 const FILE_LINES = LINES_BEFORE + LINES_AFTER;
 
 const SEPARATOR = ' · ';
+/**
+ * La marca de una incidencia del fichero entero, al final del título: GitHub da línea a toda
+ * anotación (la 1 si no se dice), así que la línea sola no lo distingue.
+ */
+const FILE_LEVEL = 'fichero';
 const HIGH_SEVERITIES = new Set(['BLOCKER', 'HIGH']);
 const NOTICE_TITLE = 'Incidencias nuevas de SonarQube';
 /** El mensaje del aviso con el total: anclado, para que no busque desde cada dígito. */
@@ -61,8 +67,9 @@ export async function readSonarIssues(
     if (annotation.level !== 'failure') return [];
     const issue = fromTitle(annotation.title);
     if (!issue) return [];
-    const { path: file, line, message } = annotation;
-    return [{ ...issue, file, line, message }];
+    const { fileLevel, ...rest } = issue;
+    const { path: file, message } = annotation;
+    return [{ ...rest, file, line: fileLevel ? null : annotation.line, message }];
   });
   if (parsed.length === 0) return null;
 
@@ -89,16 +96,22 @@ export async function readSonarIssues(
   return { issues, total: total === undefined ? issues.length : Number(total) };
 }
 
-/** La regla, su severidad y su nombre, del título; `null` si no es el de una incidencia. */
+/**
+ * La regla, su severidad, su nombre y si es del fichero entero, del título; `null` si no es el de
+ * una incidencia.
+ */
 function fromTitle(
   title: string | null,
-): Pick<SonarIssue, 'rule' | 'ruleName' | 'severity'> | null {
-  const [rule, severity, ...name] = title?.split(SEPARATOR) ?? [];
+): (Pick<SonarIssue, 'rule' | 'ruleName' | 'severity'> & { fileLevel: boolean }) | null {
+  const [rule, severity, ...rest] = title?.split(SEPARATOR) ?? [];
+  const fileLevel = rest.length > 1 && rest.at(-1) === FILE_LEVEL;
+  const name = fileLevel ? rest.slice(0, -1) : rest;
   if (!rule || !severity || name.length === 0) return null;
   return {
     rule,
     ruleName: name.join(SEPARATOR),
     severity: HIGH_SEVERITIES.has(severity) ? 'high' : 'normal',
+    fileLevel,
   };
 }
 

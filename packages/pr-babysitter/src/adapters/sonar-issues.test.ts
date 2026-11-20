@@ -125,6 +125,17 @@ describe('las incidencias de sonar-issues', () => {
     expect(read?.issues[0]?.severity).toBe(expected);
   });
 
+  it('«fichero» solo es la marca si va detrás del nombre', async () => {
+    const { github } = files({ 'a.ts': lines(5) });
+    const context = annotated([
+      { file: 'a.ts', line: 3, title: 'typescript:S1 · LOW · fichero' },
+    ]);
+
+    const read = await readSonarIssues(github, SHA, context);
+
+    expect(read?.issues[0]).toMatchObject({ ruleName: 'fichero', line: 3 });
+  });
+
   it('el nombre de la regla puede llevar el separador', async () => {
     const { github } = files({ 'a.ts': lines(5) });
     const context = annotated([
@@ -257,6 +268,25 @@ describe('el código de una incidencia', () => {
       '      5 | línea 5',
       '      6 | línea 6',
     ]);
+  });
+
+  it('una incidencia de fichero toma las 40 primeras líneas, sin marca', async () => {
+    const { github } = files({ 'a.ts': lines(100) });
+    // GitHub le da la línea 1; la marca del título dice que es del fichero.
+    const context = annotated([
+      { file: 'a.ts', line: 1, title: 'typescript:S1 · LOW · Regla · fichero' },
+    ]);
+
+    const issue = (await readSonarIssues(github, SHA, context))?.issues[0];
+    const code = issue?.code ?? '';
+
+    expect(issue).toMatchObject({ line: null, ruleName: 'Regla' });
+
+    const rows = code.split('\n');
+    expect(rows).toHaveLength(40);
+    expect(rows[0]).toBe('      1 | línea 1');
+    expect(rows.at(-1)).toBe('     40 | línea 40');
+    expect(code).not.toContain('>>');
   });
 
   it('una línea fuera del fichero da code null', async () => {

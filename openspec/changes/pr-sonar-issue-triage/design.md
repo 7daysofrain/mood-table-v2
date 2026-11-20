@@ -46,7 +46,9 @@ Por cada incidencia, `sonar-issues` emite, **antes** del bloque `::stop-commands
 ::error file=<ruta>,line=<línea>,title=<regla> · <severidad> · <nombre de la regla>::<mensaje>
 ```
 
-- **Una incidencia de fichero** (sin línea, p. ej. `S2187`) va sin `line`.
+- **Una incidencia de fichero** (sin línea, p. ej. `S2187`) va sin `line` y con ` · fichero` al final
+  del título. GitHub da línea a toda anotación (la 1 si no se dice), así que sin la marca el triador
+  no la distinguiría de una en la línea 1. *(Lo encontró Codex en la #166.)*
 - **La severidad** es la más alta de sus `impacts` (`BLOCKER` > `HIGH` > `MEDIUM` > `LOW` > `INFO`).
   Si no trae `impacts`, se traduce la heredada: `BLOCKER`→`BLOCKER`, `CRITICAL`→`HIGH`,
   `MAJOR`→`MEDIUM`, `MINOR`→`LOW`, `INFO`→`INFO`.
