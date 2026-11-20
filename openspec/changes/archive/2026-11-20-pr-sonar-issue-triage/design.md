@@ -193,3 +193,22 @@ de casos `hasContext`, `questionFor`, `classify` y el resumen.
 3. **`MOO-168`, en una rama que sale de `main`** después de integrar `MOO-167`.
 
 Para volver atrás, se revierte la PR de `MOO-168`. Las anotaciones de `MOO-167` no molestan a nadie.
+
+## Notas al archivar
+
+Lo que el código hace distinto de lo escrito arriba, sin cambiar el comportamiento de las specs (#166):
+
+- **El orden de las incidencias es el de las anotaciones que da GitHub,** que no coincide con el de
+  emisión (en la #165 venían al revés). Solo cambia el orden de las filas del resumen y el reparto del
+  tope.
+- **La línea de la lista cortada** dice «La comprobación de incidencias nuevas de SonarQube trae 12; se
+  han triado las 10 que anota.», no el texto de ejemplo de la decisión 5.
+- **`sonar-issues.ts` devuelve sus propias incidencias,** sin la marca de hallazgo, y `findings.ts` las
+  convierte. La comprobación `noIssues` no lleva en el resumen el origen de su contexto: no se ha
+  preguntado por ella.
+- **Hallazgos de Codex en la #166,** arreglados antes de integrar: el adaptador lee las anotaciones
+  enteras, sin el corte de 16 KiB (decisión 5), y la incidencia de fichero lleva ` · fichero` en el
+  título (decisión 1).
+- **Esos dos hallazgos no se triaron:** Codex revisó un push anterior cuando ya había otro, y el triaje
+  solo lee los del último. Es el hueco que ya anotaba `MOO-76` (visto en la #122) y que captura
+  `MOO-173`.
