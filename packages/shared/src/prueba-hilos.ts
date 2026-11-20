@@ -3,9 +3,9 @@
  * sin integrar.
  */
 
-/** El porcentaje entero de `part` sobre `total`: 1 de 4 es 25. */
+/** El porcentaje entero de `part` sobre `total`: 1 de 4 es 25; 0 si `total` es 0. */
 export function percent(part: number, total: number): number {
-  return Math.round((part / total) * 100);
+  return total === 0 ? 0 : Math.round((part / total) * 100);
 }
 
 /** Los `n` últimos elementos de una lista, en su orden; ninguno si `n` no es positivo. */
