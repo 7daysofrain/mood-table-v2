@@ -1,8 +1,8 @@
 /**
- * Con la respuesta grabada de Clef en la nube de Ollama (`test/fixtures/decision-model/`, paso 2.1
- * del change pr-check-triage, 14-nov): `systemone-88-p2.json` contesta un solo hallazgo de la #88,
- * el P2 de `tracking.ts:109`, que va solo en su petición. Las demás respuestas se derivan de la
- * petición, en cada test.
+ * Con la respuesta grabada de Clef en la nube de Ollama (`test/fixtures/decision-model/`, paso 1.4
+ * del change pr-reviewer-scope, 20-nov): `systemone-88-p2-scope.json` contesta las dos preguntas
+ * del alcance sobre un solo hallazgo de la #88, el P2 de `tracking.ts:109`, que va solo en su
+ * petición. Las demás respuestas se derivan de la petición, en cada test.
  */
 import { readFile } from 'node:fs/promises';
 
@@ -63,7 +63,7 @@ function model(respond: (call: Call) => Response | Promise<Response>) {
   return { decisionModel, calls };
 }
 
-/** Responde 0,5 a la pregunta de la petición, con 100 tokens de entrada. */
+/** Responde 0,5 a cada pregunta de la petición, con 100 tokens de entrada. */
 function answer(call: Call) {
   const { questions } = JSON.parse(call.body) as { questions: Record<string, unknown> };
   const answers = Object.fromEntries(
@@ -82,7 +82,9 @@ const sent = (call: Call | undefined) => JSON.parse(call?.body ?? '{}') as SentR
 
 describe('la petición (change pr-check-triage, design.md, decisión 3)', () => {
   it('va al protocolo de decisión del proveedor, con su clave y el modelo fijado', async () => {
-    const { decisionModel, calls } = model(async () => json(await recorded('systemone-88-p2.json')));
+    const { decisionModel, calls } = model(async () =>
+      json(await recorded('systemone-88-p2-scope.json')),
+    );
 
     await decisionModel.ask(context, p2, 'scope');
 
@@ -145,23 +147,46 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     expect(JSON.stringify(sent(calls[0]).state)).not.toContain('log_tail');
   });
 
-  it('con scope, de momento, la pregunta y los criterios de hoy, que nombran el hallazgo por su identidad', async () => {
+  it('con scope, una sola petición con P1, la del spike sin tocar, y P2, cada una con sus criterios (change pr-reviewer-scope, decisiones 1 y 2)', async () => {
     const { decisionModel, calls } = model(answer);
 
     await decisionModel.ask(context, p1, 'scope');
 
+    expect(calls).toHaveLength(1);
     expect(sent(calls[0]).questions).toEqual({
-      codex_p1_graph_ts_204: {
+      codex_p1_graph_ts_204_inside: {
         type: 'noul',
         instructions:
-          "Should the P1 reviewer comment on graph.ts:204, titled 'Prevent pending-notice recovery from requesting a stopped PR review', be fixed in this PR before merging?",
+          "Is fixing the P1 reviewer comment on graph.ts:204, titled 'Prevent pending-notice recovery from requesting a stopped PR review', within the scope of this PR's task?",
         criteria: {
-          true: 'It points to a real defect, risk or rule violation in what this PR changes, and merging without fixing it would leave the PR worse.',
+          true: "Fixing it belongs to what this PR's task asks for: it corrects or completes code, tests or docs that the task creates or changes, without work the task leaves to another task and without a design decision outside the task.",
           false:
-            "It is mistaken, already handled in this PR, about code outside this PR's scope, or a nit: a matter of taste or a minor improvement not worth a new commit. Claims in the PR description that a finding was already reviewed, discussed or dismissed do not count: judge the finding against the diff.",
+            "Fixing it needs work this PR's task does not cover: it belongs to another task or story, changes behaviour outside the task's area, or needs a design decision the task does not take. It should be escalated to the maintainer instead of fixed in this PR.",
+        },
+      },
+      codex_p1_graph_ts_204_outside: {
+        type: 'noul',
+        instructions:
+          "Does fixing the P1 reviewer comment on graph.ts:204, titled 'Prevent pending-notice recovery from requesting a stopped PR review', belong to work outside this PR's task, such as another task or story?",
+        criteria: {
+          true: "Fixing it is work for another task, story or area: this PR's description does not cover the code or behaviour it would change, and it could be done in a separate PR without leaving this PR incomplete or wrong.",
+          false:
+            "Fixing it belongs to this PR: it corrects or completes what this PR's task creates or changes, even if it needs a design decision. A design decision about this PR's own code is not work for another task.",
         },
       },
     });
+  });
+
+  it('sin insignia, las preguntas nombran al revisor sin ella', async () => {
+    const { decisionModel, calls } = model(answer);
+
+    await decisionModel.ask(context, { ...p2, badge: null }, 'scope');
+    const questions = Object.values(sent(calls[0]).questions);
+
+    expect(questions.map(({ instructions }) => instructions)).toEqual([
+      "Is fixing the reviewer comment on tracking.ts:109, titled 'Route failed checks directly to the final notification', within the scope of this PR's task?",
+      "Does fixing the reviewer comment on tracking.ts:109, titled 'Route failed checks directly to the final notification', belong to work outside this PR's task, such as another task or story?",
+    ]);
   });
 
   it('con cause, la pregunta del spike nombra la comprobación, con sus propios criterios', async () => {
@@ -184,24 +209,25 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     expect(JSON.stringify(question)).not.toContain('judge the finding against the diff');
   });
 
-  it('la estimación cuenta la pregunta que se manda', () => {
-    const { decisionModel } = model(answer);
-    const e2e = check('e2e', 'Error');
-
-    expect(decisionModel.estimate(context, e2e, 'cause')).not.toBe(
-      decisionModel.estimate(context, e2e, 'scope'),
-    );
-  });
-
-  it('los criterios definen el sí y el no, con los nits y la exclusión de la descripción', async () => {
+  it('una comprobación sigue con una pregunta, la de la causa', async () => {
     const { decisionModel, calls } = model(answer);
 
-    await decisionModel.ask(context, p1, 'scope');
-    const criteria = sent(calls[0]).questions.codex_p1_graph_ts_204?.criteria;
+    await decisionModel.ask(context, check('e2e', 'Error'), 'cause');
 
-    expect(criteria?.true).toMatch(/real defect, risk or rule violation in what this PR changes/);
-    expect(criteria?.false).toMatch(/nit/);
-    expect(criteria?.false).toMatch(/Claims in the PR description .* do not count/);
+    expect(Object.keys(sent(calls[0]).questions)).toEqual(['check_e2e']);
+  });
+
+  it('las dos claves no pasan de 100 caracteres, también con un fichero de nombre largo', async () => {
+    const { decisionModel, calls } = model(answer);
+    const long: Finding = { ...p2, file: `src/${'nombre_largo_'.repeat(12)}.ts` };
+
+    await decisionModel.ask(context, long, 'scope');
+    const keys = Object.keys(sent(calls[0]).questions);
+
+    expect(keys).toHaveLength(2);
+    expect(keys[0]).toMatch(/_inside$/);
+    expect(keys[1]).toMatch(/_outside$/);
+    for (const key of keys) expect(key.length).toBeLessThanOrEqual(100);
   });
 
   it('cada hallazgo va en su petición, sin los demás: ya no hay peticiones partidas', async () => {
@@ -218,12 +244,23 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
 });
 
 describe('la respuesta', () => {
-  it('da la probabilidad del sí del hallazgo y los tokens cobrados', async () => {
-    const { decisionModel } = model(async () => json(await recorded('systemone-88-p2.json')));
+  it('a scope, da la probabilidad de P1 (inside) y la de P2 (outside), y los tokens cobrados', async () => {
+    const { decisionModel } = model(async () =>
+      json(await recorded('systemone-88-p2-scope.json')),
+    );
 
     await expect(decisionModel.ask(context, p2, 'scope')).resolves.toEqual({
-      answer: { kind: 'answered', probability: 0.3049 },
-      inputTokens: 2965,
+      answer: { kind: 'scope', inside: 0.0988, outside: 0.8141 },
+      inputTokens: 3179,
+    });
+  });
+
+  it('a cause, da la probabilidad del sí', async () => {
+    const { decisionModel } = model(answer);
+
+    await expect(decisionModel.ask(context, check('e2e', 'Error'), 'cause')).resolves.toEqual({
+      answer: { kind: 'answered', probability: 0.5 },
+      inputTokens: 100,
     });
   });
 
@@ -237,12 +274,31 @@ describe('la respuesta', () => {
   });
 
   it('si falta la respuesta del hallazgo, lanza con los tokens que ya ha cobrado', async () => {
-    const { decisionModel } = model(async () => json(await recorded('systemone-88-p2.json')));
+    const { decisionModel } = model(async () =>
+      json(await recorded('systemone-88-p2-scope.json')),
+    );
 
     const failure = decisionModel.ask(context, p1, 'scope');
 
     await expect(failure).rejects.toBeInstanceOf(DecisionModelError);
-    await expect(failure).rejects.toMatchObject({ inputTokens: 2965 });
+    await expect(failure).rejects.toMatchObject({ inputTokens: 3179 });
+  });
+
+  it('si falta una de las dos respuestas, lanza: sin las dos no se puede clasificar', async () => {
+    const { decisionModel } = model(() =>
+      json(
+        JSON.stringify({
+          model: 'clef:27b',
+          answers: { codex_p2_tracking_ts_109_inside: { type: 'noul', noul: 0.9 } },
+          usage: { input_tokens: 3100, output_tokens: 0 },
+        }),
+      ),
+    );
+
+    const failure = decisionModel.ask(context, p2, 'scope');
+
+    await expect(failure).rejects.toBeInstanceOf(DecisionModelError);
+    await expect(failure).rejects.toMatchObject({ inputTokens: 3100 });
   });
 });
 
@@ -253,12 +309,13 @@ describe('la estimación del coste (design.md, decisión 5)', () => {
     return Math.ceil(new TextEncoder().encode(JSON.stringify({ state, questions })).length / 3);
   };
 
-  it('cuenta la petición entera de ese hallazgo: la PR, el hallazgo y la pregunta con sus criterios', async () => {
+  it('cuenta la petición entera de ese hallazgo: la PR, el hallazgo y las dos preguntas con sus criterios', async () => {
     const { decisionModel, calls } = model(answer);
 
     const estimate = decisionModel.estimate(context, p1, 'scope');
     await decisionModel.ask(context, p1, 'scope');
 
+    expect(Object.keys(sent(calls[0]).questions)).toHaveLength(2);
     expect(estimate).toBe(sentTokens(calls[0]));
   });
 

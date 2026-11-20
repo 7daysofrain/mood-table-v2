@@ -34,7 +34,7 @@
   tal como llega). `fixInThisPr` sale del núcleo.
   Verificar: los tests de 1.2 en verde y los que ya había; `pnpm typecheck` en verde (el adaptador y
   `studio.ts` se ajustan lo justo para compilar).
-- [ ] 1.4 **(test en rojo)** El adaptador del modelo de decisión (`design.md` decisiones 1, 2 y 5), en
+- [x] 1.4 **(test en rojo)** El adaptador del modelo de decisión (`design.md` decisiones 1, 2 y 5), en
   `adapters/decision-model.test.ts`, con una fixture de `systemone` de una respuesta con dos
   preguntas (`test/fixtures/decision-model/`):
   - un comentario del revisor va en una petición con las dos preguntas, con el texto exacto de P1 y P2
