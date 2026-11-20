@@ -82,7 +82,7 @@
   la identidad con `· de un push anterior (…)` solo en los de un push anterior, y una prueba por fila
   de su tabla (ya arreglado, ya arreglado con P1, ninguna llega con tres probabilidades, sin código).
   Las demás filas no cambian.
-- [ ] 1.13 Los textos en `core/triage-summary.ts`.
+- [x] 1.13 Los textos en `core/triage-summary.ts`.
   Verificar: los tests de 1.12 en verde y los que ya había.
 - [ ] 1.14 **(test en rojo)** Los escenarios de la spec de punta a punta en el grafo y el driver
   (`core/graph.test.ts`, `core/driver.test.ts`), con GitHub y el modelo de decisión falsos:

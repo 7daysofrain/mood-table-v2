@@ -56,8 +56,9 @@ function cutList(count: SonarIssueCount | undefined): string[] {
 }
 
 /**
- * El hallazgo por su identidad: quién y dónde, y su título; el nombre de la comprobación; o la
- * regla de la incidencia y dónde, y el nombre de la regla.
+ * El hallazgo por su identidad: quién y dónde, y su título, y si es de un push anterior, cuál
+ * (change pr-unresolved-threads, decisión 5); el nombre de la comprobación; o la regla de la
+ * incidencia y dónde, y el nombre de la regla.
  */
 function identity(finding: Finding): string {
   if (finding.source === 'check') return `Comprobación \`${finding.name}\``;
@@ -67,7 +68,11 @@ function identity(finding: Finding): string {
     return `SonarQube \`${finding.rule}\` en \`${where}\` · ${finding.ruleName}`;
   }
   const who = finding.badge === null ? finding.reviewer : `${finding.badge} de ${finding.reviewer}`;
-  return `${who} en \`${where}\` · ${finding.title}`;
+  const push =
+    finding.earlierPush === null
+      ? ''
+      : ` · de un push anterior (\`${finding.earlierPush.sha.slice(0, 7)}\`)`;
+  return `${who} en \`${where}\` · ${finding.title}${push}`;
 }
 
 /**
@@ -119,10 +124,11 @@ function reason(
       return 'el modelo de decisión no ha respondido';
     case 'noScope':
       return 'regla: la PR no dice su alcance';
-    // Los textos de un comentario de un push anterior llegan en el paso 1.13.
+    // Un comentario de un push anterior (change pr-unresolved-threads, decisión 5).
     case 'noCurrentCode':
+      return 'no se ha podido leer su código en el último push';
     case 'alreadyFixed':
-      return verdict.reason;
+      return `ya arreglado en el último push: p = ${decimal(verdict.fixed)} ≥ ${decimal(threshold)}`;
     case 'highSeverity':
       return 'regla: descartaría un hallazgo de severidad alta';
     // Por el alcance de la PR: la pregunta que llega al umbral, o las dos si no llega una sola. El
@@ -149,9 +155,21 @@ function reason(
   }
 }
 
-/** Las dos probabilidades del alcance, P1 y P2, para que se vea hacia qué lado iba. */
-function bothScopes({ inside, outside }: { inside: number; outside: number }): string {
-  return `dentro p = ${decimal(inside)}, de otra tarea p = ${decimal(outside)}`;
+/**
+ * Las dos probabilidades del alcance, P1 y P2, para que se vea hacia qué lado iba, y, en un
+ * comentario de un push anterior, delante, la de que ya está arreglado: todas las de su petición.
+ */
+function bothScopes({
+  fixed,
+  inside,
+  outside,
+}: {
+  fixed?: number;
+  inside: number;
+  outside: number;
+}): string {
+  const scope = `dentro p = ${decimal(inside)}, de otra tarea p = ${decimal(outside)}`;
+  return fixed === undefined ? scope : `ya arreglado p = ${decimal(fixed)}, ${scope}`;
 }
 
 /** Con dos decimales y coma, como se escribe en español. */
