@@ -47,7 +47,7 @@
   petición con dos preguntas y la respuesta `scope`; sin `fixInThisPr` ni su rama para una
   comprobación.
   Verificar: los tests de 1.4 en verde y los que ya había.
-- [ ] 1.6 **(test en rojo)** El resumen (`design.md` decisión 3), en `core/triage-summary.test.ts`: una
+- [x] 1.6 **(test en rojo)** El resumen (`design.md` decisión 3), en `core/triage-summary.test.ts`: una
   prueba por fila de su tabla (*real* por P1, *no aplica* con «se capturaría», ninguna llega, se
   contradicen, regla de severidad alta sin probabilidad, la PR no dice su alcance). Las filas de las
   comprobaciones no cambian.
