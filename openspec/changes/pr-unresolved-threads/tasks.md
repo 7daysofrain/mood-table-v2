@@ -101,7 +101,7 @@
   `prompts.md`.
   Verificar: el README ya no dice que el estado final use `has_any_findings` ni que los hallazgos del
   revisor sean solo los del último push.
-- [ ] 1.17 **Prueba a mano** (sin commit), con el sistema en marcha desde la rama, y una PR de prueba
+- [x] 1.17 **Prueba a mano** (sin commit), con el sistema en marcha desde la rama, y una PR de prueba
   lista para revisar con dos commits:
   - el primero con dos defectos, y `@codex review` a mano para que Codex comente los dos;
   - el segundo arregla uno de los dos y no toca el otro.
