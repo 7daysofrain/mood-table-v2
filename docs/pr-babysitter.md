@@ -207,7 +207,7 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Revisor** | `reviewer` | El servicio externo que revisa el código de la PR y deja comentarios (hoy, Codex). |
 | **Comprobación** | `check` | Cada puerta automática de la PR: `lint`, `typecheck`, `test`, `e2e` y SonarQube. |
 | **Alcance de la PR** | `prScope` | Lo que la PR debe cambiar: su tarea y su spec, el plan de la *chore* o la actualización de la dependencia. Un arreglo claramente fuera de él no se escala, se capturaría; si no está claro, sí (§4.1). |
-| **Hallazgo** | `finding` | Algo que una PR debe atender: un comentario del revisor, una incidencia nueva de SonarQube o una comprobación que falla. Cada incidencia es un hallazgo propio, con su fichero y su línea; la comprobación que las lista es un hallazgo solo cuando no lista ninguna (`MOO-148`). |
+| **Hallazgo** | `finding` | Algo que una PR debe atender: un comentario del revisor cuyo hilo sigue sin resolver, sea del push que sea, una incidencia nueva de SonarQube o una comprobación que falla. Un comentario de un push anterior se tría contra el código del último push (`MOO-173`). Cada incidencia es un hallazgo propio, con su fichero y su línea; la comprobación que las lista es un hallazgo solo cuando no lista ninguna (`MOO-148`). |
 | **Triaje** | `triage` | Clasificar un hallazgo en **real** (`valid`), **no aplica** (`notApplicable`) o **exige criterio** (`needsJudgment`). La pregunta es si hay que arreglarlo en esta PR antes de integrarla: *real* es que sí. |
 | **Triador** | `triager` | El agente del sistema que tría cada hallazgo: lo decide por una regla o se lo pregunta al modelo de decisión. |
 | **Modelo de decisión** | `decisionModel` | El modelo que responde, dentro del triador, la pregunta de cada hallazgo con la probabilidad de cada respuesta, que se compara con el umbral. No es un LLM generativo (D90). |
@@ -220,7 +220,8 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Modo ensayo** | `dryRun` | El sistema arregla en local y deja el arreglo en una rama para revisarlo, pero no publica. |
 | **Escalar** | `escalate` | Pausar una PR y pedir criterio al mantenedor. |
 | **Política de escalado** | `escalationPolicy` | Los casos en los que el sistema escala (§4.1). |
-| **Lista para integrar** | `readyToMerge` | Comprobaciones en verde, revisión del revisor del último push e hilos resueltos. |
-| **Necesita intervención** | `needsIntervention` | El otro estado final de una PR, cuando no está lista para integrar: falla una comprobación, el revisor tiene hallazgos o algo no termina a tiempo. El aviso dice el motivo, y la PR queda en manos del mantenedor. |
+| **Estado final** | `finalState` | El veredicto que el sistema da de un push cuando ha terminado de mirarlo: *lista para integrar* o *necesita intervención*. Un push nuevo lo reabre: mientras la PR sigue abierta, cada push tiene el suyo. |
+| **Lista para integrar** | `readyToMerge` | El *estado final* de un push con las comprobaciones en verde, la revisión del revisor de ese push terminada y ningún hilo del revisor sin resolver, de ningún push. Los hilos de otras personas, BH3. |
+| **Necesita intervención** | `needsIntervention` | El otro *estado final* de un push, cuando no está lista para integrar: falla una comprobación, el revisor tiene hallazgos (de ese push o de uno anterior) o algo no termina a tiempo. El aviso dice el motivo, y la PR queda en manos del mantenedor. |
 | **PR detenida** | `stopped` | PR cuyo seguimiento ha detenido alguien con permiso de escritura en el repo: el sistema no avanza en ella hasta que se reanuda. No es lo mismo que *escalar*, donde es el sistema quien pausa la PR. |
 | **Issue buzón** | `inboxIssue` | Issue fijo de Linear donde el sistema avisa de lo que no tiene tarea: una PR sin tarea enlazada o un fallo del propio sistema (`linear.md` §9). |

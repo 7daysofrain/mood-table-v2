@@ -15,6 +15,9 @@
  *   mantenedor con la marca de otro SHA.
  * Los casos que no se han dado (un JSON que no se entiende, un bloque falso de otra cuenta) se
  * derivan de estos, a mano, en cada test.
+ *
+ * Los hilos sin resolver salen de `review-threads-166.json` (20-nov): los dos hilos de Codex sobre
+ * `576b496`, por GraphQL. Al grabarlos ya estaban resueltos; los tests los abren a mano.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -50,10 +53,60 @@ async function reviewOf(pullRequest: number, recorded?: RecordedComment[]) {
   const reviewer = createCodexReviewReader({
     reviewer: REVIEWER,
     listComments: (number) => github.listComments(number),
+    listReviewThreads: () => Promise.reject(new Error('no se leen hilos')),
   });
   const review = await reviewer.review(pullRequest);
   return { review, calls };
 }
+
+/** El push sobre el que comentó Codex en la #166, y el siguiente, que el sistema ya seguía. */
+const PUSH_576 = '576b49636780068462fa4984e34a7c39902eba8a';
+const PUSH_A4B = 'a4b93616231a4a9b3dbe02aa4f2bd068e2418da8';
+
+interface RecordedThread {
+  isResolved: boolean;
+  comments: { nodes: { author: { __typename: string; login: string } }[] };
+}
+
+/** Los hilos de la #166 tal como se grabaron. */
+async function threads166(): Promise<RecordedThread[]> {
+  const recorded = JSON.parse(await fixture('review-threads-166.json')) as {
+    data: { repository: { pullRequest: { reviewThreads: { nodes: RecordedThread[] } } } };
+  };
+  return recorded.data.repository.pullRequest.reviewThreads.nodes;
+}
+
+/** Los hilos sin resolver del revisor con el último push `head`, leídos por el adaptador de GitHub. */
+async function unresolvedOf(head: string, recorded: RecordedThread[]) {
+  const body = JSON.stringify({
+    data: {
+      repository: {
+        pullRequest: {
+          reviewThreads: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: recorded },
+        },
+      },
+    },
+  });
+  const { fetch, calls } = fakeFetch(() => json(body));
+  const github = createGitHubReader({
+    owner: '7daysofrain',
+    repo: 'mood-table-v2',
+    baseBranch: 'main',
+    token: () => 'ghp_x',
+    fetch,
+  });
+  const reviewer = createCodexReviewReader({
+    reviewer: REVIEWER,
+    listComments: () => Promise.reject(new Error('no se leen comentarios')),
+    listReviewThreads: (number) => github.listReviewThreads(number),
+  });
+  const threads = await reviewer.unresolvedThreads(166, head);
+  return { threads, calls };
+}
+
+/** Abre (sin resolver) los hilos de la #166. */
+const open = (recorded: RecordedThread[]) =>
+  recorded.map((thread) => ({ ...thread, isResolved: false }));
 
 /** Cambia el bloque del comentario de Codex que lo lleva. */
 function editBlock(recorded: RecordedComment[], edit: (block: string) => string) {
@@ -79,28 +132,16 @@ describe('la revisión de Codex', () => {
     expect(review).toEqual({
       reviewedSha: 'fbdf556d307041f534202da3385cff93878dc567',
       completed: true,
-      hasFindings: false,
     });
   });
 
-  it('terminada con hallazgos (#62)', async () => {
+  it('terminada, con hallazgos en el bloque (#62)', async () => {
     const { review } = await reviewOf(62);
 
     expect(review).toEqual({
       reviewedSha: '590bd6e6e8faec0017cb6e63dbea43b5a15d5cba',
       completed: true,
-      hasFindings: true,
     });
-  });
-
-  it('con hallazgos aunque ya estén resueltos: cuenta has_any_findings, no has_unresolved_findings', async () => {
-    const resolved = editBlock(await comments(62), (block) =>
-      block.replace('"has_unresolved_findings":true', '"has_unresolved_findings":false'),
-    );
-
-    const { review } = await reviewOf(62, resolved);
-
-    expect(review).toMatchObject({ completed: true, hasFindings: true });
   });
 
   it('en marcha (#64)', async () => {
@@ -109,7 +150,6 @@ describe('la revisión de Codex', () => {
     expect(review).toEqual({
       reviewedSha: 'b9b25026e7b69a81e7a323b3740b5eb9c1dd0673',
       completed: false,
-      hasFindings: false,
     });
   });
 
@@ -119,7 +159,6 @@ describe('la revisión de Codex', () => {
     expect(review).toEqual({
       reviewedSha: '1cc67fa466e9d22eca3ad9f3e396147afa15e303',
       completed: true,
-      hasFindings: false,
     });
   });
 
@@ -148,12 +187,15 @@ describe('la revisión de Codex', () => {
     expect((await reviewOf(68, broken)).review).toBeNull();
   });
 
-  it('un bloque terminado sin saber si hay hallazgos no es una revisión', async () => {
+  it('del bloque solo se leen el commit y si ha terminado, aunque no diga si hay hallazgos', async () => {
     const unknown = editBlock(await comments(68), (block) =>
       block.replace('"has_any_findings":false', '"has_any_findings":null'),
     );
 
-    expect((await reviewOf(68, unknown)).review).toBeNull();
+    expect((await reviewOf(68, unknown)).review).toEqual({
+      reviewedSha: 'fbdf556d307041f534202da3385cff93878dc567',
+      completed: true,
+    });
   });
 
   it('ignora el bloque de cualquier otra cuenta (#64 con un bloque falso del mantenedor)', async () => {
@@ -174,6 +216,49 @@ describe('la revisión de Codex', () => {
   });
 });
 
+describe('los hilos sin resolver del revisor (change pr-unresolved-threads, decisión 2)', () => {
+  it('cuenta los de un push anterior: los dos de 576b496 cuando el último es a4b9361 (la #166)', async () => {
+    const { threads, calls } = await unresolvedOf(PUSH_A4B, open(await threads166()));
+
+    expect(threads).toEqual({ lastPush: 0, earlierPushes: 2 });
+    expect(new URL(calls[0]!.url).pathname).toBe('/graphql');
+  });
+
+  it('cuenta los del último push', async () => {
+    const { threads } = await unresolvedOf(PUSH_576, open(await threads166()));
+
+    expect(threads).toEqual({ lastPush: 2, earlierPushes: 0 });
+  });
+
+  it('no cuenta los resueltos (la #166, tal como se grabó)', async () => {
+    const { threads } = await unresolvedOf(PUSH_A4B, await threads166());
+
+    expect(threads).toEqual({ lastPush: 0, earlierPushes: 0 });
+  });
+
+  it('cuenta como de un push anterior uno cuyo commit ya no da GitHub (tras un force push)', async () => {
+    const [codex, other] = open(await threads166());
+    const forced = structuredClone(other!) as RecordedThread & {
+      comments: { nodes: { originalCommit: { oid: string } | null }[] };
+    };
+    forced.comments.nodes[0]!.originalCommit = null;
+
+    const { threads } = await unresolvedOf(PUSH_576, [codex!, forced]);
+
+    expect(threads).toEqual({ lastPush: 1, earlierPushes: 1 });
+  });
+
+  it('no cuenta los que abre otra cuenta', async () => {
+    const [codex, other] = open(await threads166());
+    const person = structuredClone(other!);
+    person.comments.nodes[0]!.author = { __typename: 'User', login: '7daysofrain' };
+
+    const { threads } = await unresolvedOf(PUSH_A4B, [codex!, person]);
+
+    expect(threads).toEqual({ lastPush: 0, earlierPushes: 1 });
+  });
+});
+
 describe('solo el revisor decide el estado final', () => {
   // #62 lleva, además del de Codex, los de Linear, SonarQube y el mantenedor.
   it('es el mismo con o sin los comentarios de otras cuentas (#62)', async () => {
@@ -189,6 +274,7 @@ describe('solo el revisor decide el estado final', () => {
       headSha: '590bd6e6e8faec0017cb6e63dbea43b5a15d5cba',
       labels: [],
       checks: [{ name: 'lint', status: 'passed' as const, conclusion: 'success' }],
+      reviewerThreads: { lastPush: 0, earlierPushes: 0 },
       reviewRequested: false,
       observedAt: 0,
     };
@@ -207,8 +293,7 @@ describe('solo el revisor decide el estado final', () => {
     expect(recorded.length).toBeGreaterThan(onlyCodex.length);
     expect(withOthers).toEqual(withoutOthers);
     expect(withOthers).toEqual({
-      status: 'needsIntervention',
-      reasons: [{ kind: 'reviewFindings' }],
+      status: 'readyToMerge',
     });
   });
 });

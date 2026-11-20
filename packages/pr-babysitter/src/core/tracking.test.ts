@@ -34,7 +34,10 @@ const failedIn = (
 /** Las relanzables por defecto (`RERUN_CHECKS`). */
 const RERUN = ['test', 'e2e'];
 
-/** Una PR con todas las comprobaciones superadas y revisada sin hallazgos en el último push. */
+/**
+ * Una PR con todas las comprobaciones superadas, revisada en el último push y sin hilos del revisor
+ * sin resolver.
+ */
 function snapshot(overrides: Partial<PullRequestSnapshot> = {}): PullRequestSnapshot {
   return {
     number: 74,
@@ -46,12 +49,16 @@ function snapshot(overrides: Partial<PullRequestSnapshot> = {}): PullRequestSnap
     headSha: HEAD,
     labels: [],
     checks: [passed('lint'), passed('e2e')],
-    review: { reviewedSha: HEAD, completed: true, hasFindings: false },
+    review: { reviewedSha: HEAD, completed: true },
+    reviewerThreads: { lastPush: 0, earlierPushes: 0 },
     reviewRequested: false,
     observedAt: 10 * MINUTE,
     ...overrides,
   };
 }
+
+/** Hilos del revisor sin resolver: `n` del último push y `m` de pushes anteriores. */
+const threads = (lastPush: number, earlierPushes = 0) => ({ lastPush, earlierPushes });
 
 /** El push que se sigue desde el minuto 0. */
 const push: TrackedPush = { sha: HEAD, seenAt: 0 };
@@ -74,12 +81,12 @@ describe('la revisión', () => {
   });
 
   it('no ha terminado si está en marcha', () => {
-    const review = { reviewedSha: HEAD, completed: false, hasFindings: false };
+    const review = { reviewedSha: HEAD, completed: false };
     expect(reviewFinished(snapshot({ review }))).toBe(false);
   });
 
   it('no ha terminado si revisó un push anterior', () => {
-    const review = { reviewedSha: 'push-anterior', completed: true, hasFindings: false };
+    const review = { reviewedSha: 'push-anterior', completed: true };
     expect(reviewFinished(snapshot({ review }))).toBe(false);
   });
 
@@ -102,28 +109,50 @@ describe('el estado final, con la revisión pedida', () => {
     });
   });
 
-  it('necesita intervención si el revisor tiene hallazgos', () => {
-    const review = { reviewedSha: HEAD, completed: true, hasFindings: true };
-
-    expect(finalState(snapshot({ review }), checked)).toEqual({
+  it('necesita intervención si el revisor tiene hilos sin resolver del último push', () => {
+    expect(finalState(snapshot({ reviewerThreads: threads(2) }), checked)).toEqual({
       status: 'needsIntervention',
-      reasons: [{ kind: 'reviewFindings' }],
+      reasons: [{ kind: 'reviewFindings', pushes: 'last' }],
+    });
+  });
+
+  it('necesita intervención si solo le quedan hilos sin resolver de un push anterior (la #122)', () => {
+    expect(finalState(snapshot({ reviewerThreads: threads(0, 1) }), checked)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'reviewFindings', pushes: 'earlier' }],
+    });
+  });
+
+  it('necesita intervención con hilos sin resolver del último push y de uno anterior', () => {
+    expect(finalState(snapshot({ reviewerThreads: threads(1, 2) }), checked)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'reviewFindings', pushes: 'both' }],
+    });
+  });
+
+  it('lista para integrar sin hilos sin resolver, aunque el bloque del revisor dijera hallazgos (la #62)', () => {
+    // El bloque de Codex ya no cuenta para los hallazgos: la foto solo trae el commit y si ha
+    // terminado, y los hilos resueltos no se cuentan.
+    expect(finalState(snapshot({ reviewerThreads: threads(0, 0) }), checked)).toEqual({
+      status: 'readyToMerge',
     });
   });
 
   it('da todos los motivos a la vez', () => {
     const checks = [failed('lint'), failed('e2e')];
-    const review = { reviewedSha: HEAD, completed: true, hasFindings: true };
 
-    expect(finalState(snapshot({ checks, review }), checked)).toEqual({
+    expect(finalState(snapshot({ checks, reviewerThreads: threads(1) }), checked)).toEqual({
       status: 'needsIntervention',
-      reasons: [{ kind: 'checksFailed', checks: ['lint', 'e2e'] }, { kind: 'reviewFindings' }],
+      reasons: [
+        { kind: 'checksFailed', checks: ['lint', 'e2e'] },
+        { kind: 'reviewFindings', pushes: 'last' },
+      ],
     });
   });
 
   it('con el tiempo agotado, dice qué comprobación no ha terminado', () => {
     const checks = [passed('lint'), pending('e2e')];
-    const review = { reviewedSha: HEAD, completed: false, hasFindings: false };
+    const review = { reviewedSha: HEAD, completed: false };
 
     expect(finalState(snapshot({ checks, review }), checked)).toEqual({
       status: 'needsIntervention',
@@ -132,7 +161,7 @@ describe('el estado final, con la revisión pedida', () => {
   });
 
   it('con el tiempo agotado y las comprobaciones terminadas, dice que la revisión no ha terminado', () => {
-    const review = { reviewedSha: 'push-anterior', completed: true, hasFindings: false };
+    const review = { reviewedSha: 'push-anterior', completed: true };
 
     expect(finalState(snapshot({ review }), checked)).toEqual({
       status: 'needsIntervention',
@@ -153,18 +182,35 @@ describe('el estado final, sin la revisión pedida', () => {
 
   it('con una comprobación fallida, dice también si el revisor ya terminó el último push con hallazgos', () => {
     const checks = [passed('lint'), failed('e2e')];
-    const review = { reviewedSha: HEAD, completed: true, hasFindings: true };
 
-    expect(finalState(snapshot({ checks, review }), push)).toEqual({
+    expect(finalState(snapshot({ checks, reviewerThreads: threads(1) }), push)).toEqual({
       status: 'needsIntervention',
-      reasons: [{ kind: 'checksFailed', checks: ['e2e'] }, { kind: 'reviewFindings' }],
+      reasons: [
+        { kind: 'checksFailed', checks: ['e2e'] },
+        { kind: 'reviewFindings', pushes: 'last' },
+      ],
     });
   });
 
-  it('con una comprobación fallida, no cuenta una revisión en marcha o de un push anterior', () => {
+  it('con una comprobación fallida, cuenta los hilos sin resolver de un push anterior, sin decir que la revisión no ha terminado', () => {
     const checks = [passed('lint'), failed('e2e')];
-    const running = { reviewedSha: HEAD, completed: false, hasFindings: false };
-    const previous = { reviewedSha: 'push-anterior', completed: true, hasFindings: true };
+    const previous = { reviewedSha: 'push-anterior', completed: true };
+
+    expect(
+      finalState(snapshot({ checks, review: previous, reviewerThreads: threads(0, 1) }), push),
+    ).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['e2e'] },
+        { kind: 'reviewFindings', pushes: 'earlier' },
+      ],
+    });
+  });
+
+  it('con una comprobación fallida, una revisión en marcha o de un push anterior sin hilos no cuenta', () => {
+    const checks = [passed('lint'), failed('e2e')];
+    const running = { reviewedSha: HEAD, completed: false };
+    const previous = { reviewedSha: 'push-anterior', completed: true };
     const failedOnly = {
       status: 'needsIntervention',
       reasons: [{ kind: 'checksFailed', checks: ['e2e'] }],
@@ -221,14 +267,14 @@ describe('al reanudar la espera de las comprobaciones', () => {
 });
 
 describe('si hay que pedir la revisión', () => {
-  const running = { reviewedSha: HEAD, completed: false, hasFindings: false };
+  const running = { reviewedSha: HEAD, completed: false };
 
   it('sí, con todas las comprobaciones pasadas y el revisor sin el último push', () => {
     expect(needsReviewRequest(snapshot({ review: null }))).toBe(true);
   });
 
   it('sí, si el revisor solo ha revisado un push anterior', () => {
-    const review = { reviewedSha: 'push-anterior', completed: true, hasFindings: false };
+    const review = { reviewedSha: 'push-anterior', completed: true };
 
     expect(needsReviewRequest(snapshot({ review }))).toBe(true);
   });
@@ -259,7 +305,7 @@ describe('si hay que pedir la revisión', () => {
 });
 
 describe('al reanudar la espera del revisor', () => {
-  const unreviewed = { reviewedSha: HEAD, completed: false, hasFindings: false };
+  const unreviewed = { reviewedSha: HEAD, completed: false };
 
   it('sigue esperando si no ha terminado y no se ha agotado el tiempo', () => {
     const now = snapshot({ review: unreviewed, observedAt: 29 * MINUTE });
@@ -301,7 +347,7 @@ describe('al reanudar la espera del revisor', () => {
   it('una revisión de un push anterior no termina la espera', () => {
     const now = snapshot({
       headSha: 'nuevo',
-      review: { reviewedSha: HEAD, completed: true, hasFindings: false },
+      review: { reviewedSha: HEAD, completed: true },
       observedAt: 12 * MINUTE,
     });
     const newPush = { sha: 'nuevo', seenAt: 12 * MINUTE };
@@ -313,7 +359,7 @@ describe('al reanudar la espera del revisor', () => {
 describe('el tiempo de espera de la revisión', () => {
   /** Las comprobaciones tardaron 20 min en pasar: la revisión cuenta desde ahí. */
   const checked: TrackedPush = { sha: HEAD, seenAt: 0, reviewSince: 20 * MINUTE };
-  const unreviewed = { reviewedSha: HEAD, completed: false, hasFindings: false };
+  const unreviewed = { reviewedSha: HEAD, completed: false };
 
   it('no se agota a los 30 min del push si la revisión empezó a contar después', () => {
     const now = snapshot({ review: unreviewed, observedAt: 40 * MINUTE });
@@ -345,7 +391,7 @@ describe('si hay que triar (change pr-shadow-triage, decisión 1)', () => {
   });
 
   it('sí, si necesita intervención porque el revisor tiene hallazgos', () => {
-    expect(needsTriage(intervention({ kind: 'reviewFindings' }), [])).toBe(true);
+    expect(needsTriage(intervention({ kind: 'reviewFindings', pushes: 'earlier' }), [])).toBe(true);
   });
 
   it('sí, si además algo no termina a tiempo', () => {

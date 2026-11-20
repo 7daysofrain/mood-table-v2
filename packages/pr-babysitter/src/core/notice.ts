@@ -4,7 +4,7 @@
  * aquí solo se decide qué se dice.
  */
 import { type OpenPullRequest, STOP_LABEL } from './pull-request.ts';
-import type { FinalState, InterventionReason } from './tracking.ts';
+import type { FinalState, FindingPushes, InterventionReason } from './tracking.ts';
 
 /** La PR de la que habla un aviso: lo justo para identificarla. */
 export interface NoticePullRequest {
@@ -125,13 +125,20 @@ function reasonSummary(reason: InterventionReason): string {
     case 'checksUnfinished':
       return `${reason.checks.length === 1 ? 'no ha' : 'no han'} terminado ${list(reason.checks)}`;
     case 'reviewFindings':
-      return 'el revisor tiene hallazgos';
+      return `el revisor tiene hallazgos${FINDING_PUSHES[reason.pushes]}`;
     case 'reviewUnfinished':
       return 'la revisión no ha terminado';
     case 'rerunRejected':
       return `no he podido relanzar ${list(reason.checks)}`;
   }
 }
+
+/** De qué push son los hallazgos del revisor (change pr-unresolved-threads, decisión 2). */
+const FINDING_PUSHES: Record<FindingPushes, string> = {
+  last: '',
+  earlier: ' de un push anterior',
+  both: ' de este push y de uno anterior',
+};
 
 /** «a», «a y b», «a, b y c». */
 function list(items: string[]): string {

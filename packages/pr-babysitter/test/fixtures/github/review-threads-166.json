@@ -1,0 +1,58 @@
+{
+  "data": {
+    "repository": {
+      "pullRequest": {
+        "reviewThreads": {
+          "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": "Y3Vyc29yOnYyOpK0MjAyNi0xMS0yMFQwNjozNTo0OVrOud2uzw=="
+          },
+          "nodes": [
+            {
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "author": {
+                      "__typename": "Bot",
+                      "login": "chatgpt-codex-connector"
+                    },
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve file-level issue identity through the annotation adapter**\n\nFor file-level SonarQube issues, copying `error.line` cannot preserve the intended `null` location: `github.annotations()` always supplies a numeric `start_line`, enforced by `annotationSchema` and `CheckAnnotation`. Consequently, the production path never reaches `around(text, null)`, despite the unit tests passing hand-built null lines. File-level issues are instead presented to the model as line-specific and receive the wrong context window rather than the first 40 lines. Preserve an explicit file-level marker in the annotation contract and normalize it before constructing the issue.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.\n\n<!-- codex-code-review-finding:v1 -->",
+                    "path": "packages/pr-babysitter/src/adapters/sonar-issues.ts",
+                    "originalLine": 59,
+                    "line": null,
+                    "diffHunk": "@@ -0,0 +1,113 @@\n+/**\n+ * Las incidencias nuevas de SonarQube de la comprobaci\u00f3n que las lista (change\n+ * pr-sonar-issue-triage, decisiones 4 y 5; D118): las saca de sus anotaciones, que `sonar-issues`\n+ * emite con este contrato (decisi\u00f3n 1), y les pone el c\u00f3digo de alrededor de su l\u00ednea en el commit\n+ * del push (D117).\n+ *\n+ * ```\n+ * ::error file=<ruta>,line=<l\u00ednea>,title=<regla> \u00b7 <severidad> \u00b7 <nombre de la regla>::<mensaje>\n+ * ::notice title=Incidencias nuevas de SonarQube::<total> incidencias nuevas; se anotan <n>\n+ * ```\n+ *\n+ * Es un m\u00f3dulo del adaptador de los hallazgos, como `check-context.ts`: lee el contexto que ese\n+ * m\u00f3dulo ya ha armado con las anotaciones.\n+ */\n+import type { CheckContext } from '../core/triage.ts';\n+\n+/** La lectura de GitHub que hace falta. Lanza si GitHub falla y se puede reintentar. */\n+export interface SonarIssuesGitHub {\n+  fileAt(sha: string, path: string): Promise<string | null>;\n+}\n+\n+/** Una incidencia, tal como la anota `sonar-issues`, con su c\u00f3digo. */\n+export interface SonarIssue {\n+  rule: string;\n+  ruleName: string;\n+  /** Alta es `BLOCKER` o `HIGH`: la que no se descarta sin criterio (PB \u00a74.1). */\n+  severity: 'high' | 'normal';\n+  file: string;\n+  /** `null` si la incidencia es del fichero entero. */\n+  line: number | null;\n+  message: string;\n+  /** Las l\u00edneas de alrededor, numeradas; `null` si no se ha podido leer. */\n+  code: string | null;\n+}\n+\n+/** Las l\u00edneas de antes y de despu\u00e9s de la de la incidencia *(asumido)*, como en la prueba. */\n+const LINES_BEFORE = 25;\n+const LINES_AFTER = 15;\n+/** Las que se toman de una incidencia de fichero: las mismas que la ventana. */\n+const FILE_LINES = LINES_BEFORE + LINES_AFTER;\n+\n+const SEPARATOR = ' \u00b7 ';\n+const HIGH_SEVERITIES = new Set(['BLOCKER', 'HIGH']);\n+const TOTAL = /(\\d+) incidencias nuevas; se anotan \\d+/;\n+\n+/**\n+ * Las incidencias de la comprobaci\u00f3n y cu\u00e1ntas trae, o `null` si no anota ninguna legible: sin\n+ * anotaciones (el contexto es el log, o no hay), o con anotaciones que no son de incidencias. El\n+ * total sale del aviso; sin \u00e9l, son las le\u00eddas.\n+ */\n+export async function readSonarIssues(\n+  github: SonarIssuesGitHub,\n+  sha: string,\n+  context: CheckContext,\n+): Promise<{ issues: SonarIssue[]; total: number } | null> {\n+  if (context.state !== 'available' || context.origin !== 'annotations') return null;\n+  const parsed = context.errors.flatMap((error) => {\n+    const issue = fromTitle(error.title);\n+    return issue ? [{ ...issue, file: error.file, line: error.line, message: error.message }] : [];",
+                    "originalCommit": {
+                      "oid": "576b49636780068462fa4984e34a7c39902eba8a"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "isResolved": true,
+              "comments": {
+                "nodes": [
+                  {
+                    "author": {
+                      "__typename": "Bot",
+                      "login": "chatgpt-codex-connector"
+                    },
+                    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Split SonarQube annotations before applying the context size limit**\n\nWhen the annotations exceed 16 KiB in aggregate, `readCheckContext()` discards annotations before this code splits them into findings. Reproducing with ten annotated issues whose messages are 2,000 characters long yields only eight findings, so two annotated issues never receive a verdict. If the total notice is also discarded, the fallback total hides the omission entirely. Read the complete annotations for this check before splitting, and apply any model-context limit separately to each issue instead of using the already-truncated generic check context.\n\nUseful? React with \ud83d\udc4d\u00a0/ \ud83d\udc4e.\n\n<!-- codex-code-review-finding:v1 -->",
+                    "path": "packages/pr-babysitter/src/adapters/findings.ts",
+                    "originalLine": 54,
+                    "line": null,
+                    "diffHunk": "@@ -27,13 +31,37 @@ export interface FindingsReviewer {\n \n export interface FindingsOptions {\n   reviewer: FindingsReviewer;\n-  github: CheckContextGitHub & {\n-    getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;\n-    listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]>;\n-  };\n+  /** El nombre de la comprobaci\u00f3n que lista las incidencias nuevas de SonarQube. */\n+  sonarIssuesCheck: string;\n+  github: CheckContextGitHub &\n+    SonarIssuesGitHub & {\n+      getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;\n+      listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]>;\n+    };\n }\n \n-export function createFindings({ reviewer, github }: FindingsOptions): Findings {\n+export function createFindings({ reviewer, sonarIssuesCheck, github }: FindingsOptions): Findings {\n+  /**\n+   * Los hallazgos de una comprobaci\u00f3n que falla: ella misma, o cada incidencia que anota si es la de\n+   * las incidencias de SonarQube, con cu\u00e1ntas trae y cu\u00e1ntas se tr\u00edan.\n+   */\n+  async function fromCheck(\n+    name: string,\n+    sha: string,\n+  ): Promise<{ findings: Finding[]; count: SonarIssueCount }> {\n+    const check = await readCheckContext(github, sha, name);\n+    if (name === sonarIssuesCheck) {\n+      const read = await readSonarIssues(github, sha, check.context);",
+                    "originalCommit": {
+                      "oid": "576b49636780068462fa4984e34a7c39902eba8a"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

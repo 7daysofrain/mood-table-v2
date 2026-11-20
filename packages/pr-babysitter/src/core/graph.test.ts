@@ -71,12 +71,12 @@ const E2E_FAILED_AGAIN: Check[] = [
   { name: 'lint', status: 'passed', conclusion: 'success' },
   failedIn('e2e', 2),
 ];
-const reviewed = (sha = HEAD, hasFindings = false): Review => ({
-  reviewedSha: sha,
-  completed: true,
-  hasFindings,
-});
-const running = (sha = HEAD): Review => ({ reviewedSha: sha, completed: false, hasFindings: false });
+const reviewed = (sha = HEAD): Review => ({ reviewedSha: sha, completed: true });
+const running = (sha = HEAD): Review => ({ reviewedSha: sha, completed: false });
+/** Sin hilos del revisor sin resolver. */
+const NO_THREADS = { lastPush: 0, earlierPushes: 0 };
+/** Un hilo del revisor sin resolver, sobre el último push: tiene hallazgos. */
+const FINDINGS = { lastPush: 1, earlierPushes: 0 };
 
 /** La foto de la PR en un minuto; por defecto, con una comprobación pendiente y sin revisión. */
 function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}) {
@@ -91,6 +91,7 @@ function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}) 
     labels: [],
     checks: PENDING,
     review: null,
+    reviewerThreads: NO_THREADS,
     reviewRequested: false,
     observedAt: minute * MINUTE,
     ...overrides,
@@ -299,13 +300,13 @@ describe('hasta el estado final', () => {
     const { notices } = await follow(
       snapshot(0),
       snapshot(5, { checks: PASSED }),
-      snapshot(9, { checks: PASSED, review: reviewed(HEAD, true) }),
+      snapshot(9, { checks: PASSED, review: reviewed(), reviewerThreads: FINDINGS }),
     );
 
     expect(summary(notices)).toEqual([
       'tracking',
       'checksFinished',
-      { status: 'needsIntervention', reasons: [{ kind: 'reviewFindings' }] },
+      { status: 'needsIntervention', reasons: [{ kind: 'reviewFindings', pushes: 'last' }] },
     ]);
   });
 
@@ -596,14 +597,14 @@ describe('si falla una comprobación, el sistema avisa del estado final sin espe
   it('si el revisor ya había revisado el último push con hallazgos, lo dice también', async () => {
     const { notices } = await follow(
       snapshot(0),
-      snapshot(5, { checks: FAILED, review: reviewed(HEAD, true) }),
+      snapshot(5, { checks: FAILED, review: reviewed(), reviewerThreads: FINDINGS }),
     );
 
     expect(summary(notices)).toEqual([
       'tracking',
       {
         status: 'needsIntervention',
-        reasons: [{ kind: 'checksFailed', checks: ['e2e'] }, { kind: 'reviewFindings' }],
+        reasons: [{ kind: 'checksFailed', checks: ['e2e'] }, { kind: 'reviewFindings', pushes: 'last' }],
       },
     ]);
   });
@@ -660,6 +661,7 @@ const codexP2: Finding = {
   title: 'Route failed checks directly to the final notification',
   text: 'When all checks finish with at least one failure…',
   diffHunk: '@@ -100,6 +100,12 @@',
+  earlierPush: null,
 };
 
 /** Una comprobación que falla, con el paso que falla de su log por contexto, si no se dice otro. */
@@ -680,12 +682,14 @@ const buildFailing = failingCheck('build');
 
 /**
  * La respuesta del modelo a la pregunta de la fuente del hallazgo, con `p` del lado del sí: a la de
- * la causa, `p`; a la del alcance, P1 = `p` y P2 = `1 - p`.
+ * la causa, `p`; a la del alcance, P1 = `p` y P2 = `1 - p`; y a la de un comentario de un push
+ * anterior, además, `fixed` de que ya está arreglado (0,30 si no se dice).
  */
-function modelAnswer(finding: Finding, p: number): ModelAnswer {
-  return finding.source === 'reviewer'
-    ? { kind: 'scope', inside: p, outside: Math.round((1 - p) * 100) / 100 }
-    : { kind: 'answered', probability: p };
+function modelAnswer(question: Question, p: number, fixed = 0.3): ModelAnswer {
+  const outside = Math.round((1 - p) * 100) / 100;
+  if (question === 'fixedScope') return { kind: 'fixedScope', fixed, inside: p, outside };
+  if (question === 'scope') return { kind: 'scope', inside: p, outside };
+  return { kind: 'answered', probability: p };
 }
 
 /**
@@ -696,7 +700,9 @@ function modelAnswer(finding: Finding, p: number): ModelAnswer {
  */
 function recordingTriage(
   found: Finding[],
-  answer: (finding: Finding) => Promise<{ probability: number; inputTokens: number }> = () =>
+  answer: (
+    finding: Finding,
+  ) => Promise<{ probability: number; inputTokens: number; fixed?: number }> = () =>
     Promise.resolve({ probability: 0.93, inputTokens: 12_000 }),
   context: PullRequestContext = CONTEXT,
   sonarIssues: { total: number; triaged: number } | null = null,
@@ -734,8 +740,8 @@ function recordingTriage(
         concurrency.inFlight += 1;
         concurrency.peak = Math.max(concurrency.peak, concurrency.inFlight);
         return answer(finding)
-          .then(({ probability, inputTokens }) => ({
-            answer: modelAnswer(finding, probability),
+          .then(({ probability, inputTokens, fixed }) => ({
+            answer: modelAnswer(question, probability, fixed),
             inputTokens,
           }))
           .finally(() => {
@@ -753,13 +759,15 @@ function recordingTriage(
       },
     },
   };
+  const notices: Notice[] = [];
   const notifier: Notifier = {
     notify(notice) {
+      notices.push(notice);
       events.push(notice.type === 'final' ? 'aviso final' : notice.type);
       return Promise.resolve();
     },
   };
-  return { ports, notifier, events, reads, asked, estimated, github, posted, concurrency };
+  return { ports, notifier, notices, events, reads, asked, estimated, github, posted, concurrency };
 }
 
 /** Sigue el hilo con un triaje que se puede seguir; `spentUsd` es el gasto de la PR al empezar. */
@@ -790,7 +798,7 @@ const failing = [snapshot(0), snapshot(5, { checks: BUILD_FAILED })];
 const withFindings = [
   snapshot(0),
   snapshot(5, { checks: PASSED }),
-  snapshot(9, { checks: PASSED, review: reviewed(HEAD, true) }),
+  snapshot(9, { checks: PASSED, review: reviewed(), reviewerThreads: FINDINGS }),
 ];
 
 describe('el sistema tría los hallazgos del último push cuando la PR necesita intervención', () => {
@@ -1274,6 +1282,127 @@ describe('un hallazgo del revisor se clasifica por el alcance de la PR (change p
   });
 });
 
+describe('los hilos sin resolver del revisor, de cualquier push (change pr-unresolved-threads)', () => {
+  type ReviewerFinding = Extract<Finding, { source: 'reviewer' }>;
+  const PUSH_576 = '576b49636780068462fa4984e34a7c39902eba8a';
+  const reviewerP2 = codexP2;
+  /** Los dos P2 que Codex dejó sobre `576b496` en la #166, sin resolver. */
+  const earlierFindings: ReviewerFinding[] = [
+    {
+      ...reviewerP2,
+      file: 'packages/pr-babysitter/src/adapters/sonar-issues.ts',
+      line: 59,
+      title: 'Preserve file-level issue identity through the annotation adapter',
+      earlierPush: { sha: PUSH_576, code: '>>   59 |       line: error.line,' },
+    },
+    {
+      ...reviewerP2,
+      file: 'packages/pr-babysitter/src/adapters/findings.ts',
+      line: 54,
+      title: 'Split SonarQube annotations before applying the context size limit',
+      earlierPush: { sha: PUSH_576, code: '>>   54 |     const check = await readCheckContext(…);' },
+    },
+  ];
+  /** El último push pasa todo y el revisor lo revisa sin hallazgos; le quedan dos de antes. */
+  const like166 = (threads = { lastPush: 0, earlierPushes: 2 }) => [
+    snapshot(0),
+    snapshot(5, { checks: PASSED }),
+    snapshot(9, { checks: PASSED, review: reviewed(), reviewerThreads: threads }),
+  ];
+
+  it('la #166: necesita intervención por hallazgos de un push anterior, y el resumen trae los dos, cada uno con su push y las tres preguntas', async () => {
+    const triage = recordingTriage(earlierFindings, () =>
+      Promise.resolve({ probability: 0.83, fixed: 0.31, inputTokens: 4_348 }),
+    );
+
+    const state = await followTriage(triage, like166());
+
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'reviewFindings', pushes: 'earlier' }],
+    });
+    expect(triage.asked.map(({ question }) => question)).toEqual(['fixedScope', 'fixedScope']);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: earlierFindings.map((finding) => ({
+          finding,
+          verdict: { class: 'valid', reason: 'inScope', fixed: 0.31, inside: 0.83, outside: 0.17 },
+        })),
+      },
+    });
+    const text = triage.posted.summaries[0]?.text ?? '';
+    expect(text).toContain(
+      '| P2 de Codex en `sonar-issues.ts:59` · Preserve file-level issue identity through the annotation adapter · de un push anterior (`576b496`) | real |',
+    );
+    expect(text).toContain(
+      '| P2 de Codex en `findings.ts:54` · Split SonarQube annotations before applying the context size limit · de un push anterior (`576b496`) | real |',
+    );
+  });
+
+  it('ya arreglado en el último push: no aplica, y la PR sigue necesitando intervención hasta que se resuelva el hilo', async () => {
+    const triage = recordingTriage([earlierFindings[0]!], () =>
+      Promise.resolve({ probability: 0.5, fixed: 0.91, inputTokens: 4_000 }),
+    );
+
+    await followTriage(triage, like166({ lastPush: 0, earlierPushes: 1 }));
+
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'reviewFindings', pushes: 'earlier' }],
+    });
+    expect(triage.posted.summaries[0]?.text).toContain(
+      '| no aplica | ya arreglado en el último push: p = 0,91 ≥ 0,80 |',
+    );
+  });
+
+  it('el mismo hilo sigue sin resolver en un push nuevo: vuelve a salir en el resumen de ese push', async () => {
+    const triage = recordingTriage([earlierFindings[0]!]);
+    const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
+    const config = threadConfig(74);
+    const [first, checked, done] = like166({ lastPush: 0, earlierPushes: 1 });
+    await graph.invoke({ snapshot: first! }, config);
+    await graph.invoke(new Command({ resume: checked! }), config);
+    await graph.invoke(new Command({ resume: done! }), config);
+
+    const again = { headSha: 'nuevo', reviewerThreads: { lastPush: 0, earlierPushes: 1 } };
+    await graph.invoke({ snapshot: snapshot(10, again) }, config);
+    await graph.invoke(new Command({ resume: snapshot(15, { ...again, checks: PASSED }) }), config);
+    await graph.invoke(
+      new Command({
+        resume: snapshot(19, { ...again, checks: PASSED, review: reviewed('nuevo') }),
+      }),
+      config,
+    );
+
+    expect(triage.posted.summaries.map(({ sha }) => sha)).toEqual([HEAD, 'nuevo']);
+    for (const { text } of triage.posted.summaries) {
+      expect(text).toContain('`sonar-issues.ts:59`');
+    }
+  });
+
+  it('con el hilo resuelto, lista para integrar y sin resumen', async () => {
+    const triage = recordingTriage([]);
+
+    await followTriage(triage, like166({ lastPush: 0, earlierPushes: 0 }));
+
+    expect(summary(triage.notices).at(-1)).toEqual({ status: 'readyToMerge' });
+    expect(triage.events).not.toContain('leer hallazgos');
+    expect(triage.posted.summaries).toEqual([]);
+  });
+
+  it('sin el código del último push, exige criterio sin preguntar, y lo demás se tría con el modelo', async () => {
+    const noCode: Finding = { ...earlierFindings[0]!, earlierPush: { sha: PUSH_576, code: null } };
+    const triage = recordingTriage([noCode, buildFailing]);
+
+    await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([buildFailing]);
+    expect(triage.posted.summaries[0]?.text).toContain(
+      '| exige criterio | no se ha podido leer su código en el último push |',
+    );
+  });
+});
+
 describe('el triaje no actúa sobre la PR', () => {
   it('si el modelo no responde, los hallazgos exigen criterio y el aviso final es el mismo', async () => {
     const triage = recordingTriage([codexP2, buildFailing], () =>
@@ -1482,7 +1611,7 @@ describe('el sistema solo escribe en GitHub sus peticiones de revisión y el res
       snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
       snapshot(6, { checks: E2E_RERUNNING }),
       snapshot(9, { checks: PASSED }),
-      snapshot(12, { checks: PASSED, review: reviewed(HEAD, true) }),
+      snapshot(12, { checks: PASSED, review: reviewed(), reviewerThreads: FINDINGS }),
     ];
     await graph.invoke({ snapshot: first }, threadConfig(74));
     for (const next of rest) {

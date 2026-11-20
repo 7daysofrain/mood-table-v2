@@ -13,7 +13,8 @@ import {
   type ReviewReader,
   type ReviewRequests,
 } from './ports.ts';
-import type { Check, OpenPullRequest, Review } from './pull-request.ts';
+import type { Check, OpenPullRequest, Review, ReviewerThreads } from './pull-request.ts';
+import type { Finding, Question } from './triage.ts';
 
 const MAINTAINER = '7daysofrain';
 const MINUTE = 60_000;
@@ -43,6 +44,10 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     checks: {} as Record<string, Check[]>,
     /** La revisión de cada PR. */
     reviews: {} as Record<number, Review>,
+    /** Los hilos sin resolver del revisor en cada PR. */
+    threads: {} as Record<number, ReviewerThreads>,
+    /** Las veces que se han leído los hilos del revisor, con el último push de la PR. */
+    threadReads: [] as { number: number; sha: string }[],
     /** Las peticiones de revisión del sistema, en orden: quedan en GitHub aunque se reinicie. */
     requests: [] as { number: number; sha: string }[],
     /** Las veces que se ha leído si el sistema ya ha pedido la revisión de un push. */
@@ -73,7 +78,13 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
       return read(github.checks[sha] ?? [{ name: 'lint', status: 'pending', conclusion: null }]);
     },
   };
-  const reviewer: ReviewReader = { review: (number) => read(github.reviews[number] ?? null) };
+  const reviewer: ReviewReader = {
+    review: (number) => read(github.reviews[number] ?? null),
+    unresolvedThreads(number, sha) {
+      github.threadReads.push({ number, sha });
+      return read(github.threads[number] ?? { lastPush: 0, earlierPushes: 0 });
+    },
+  };
   const reviewRequests: ReviewRequests = {
     requested(number, sha) {
       github.requestedReads.push({ number, sha });
@@ -344,7 +355,7 @@ const E2E_FIRST_ATTEMPT: Check = {
   runId: 42,
   runFinished: true,
 };
-const reviewed = (sha: string): Review => ({ reviewedSha: sha, completed: true, hasFindings: false });
+const reviewed = (sha: string): Review => ({ reviewedSha: sha, completed: true });
 
 describe('hasta el estado final', () => {
   it('sigue la PR por cada vuelta hasta avisar de su estado final', async () => {
@@ -853,6 +864,118 @@ describe('una PR detenida que se cierra', () => {
     github.pullRequests = [pullRequest(74)];
     await tick();
     expect(summary(notifier.notices).at(-1)).toEqual([74, 'tracking']);
+  });
+});
+
+describe('los hilos sin resolver del revisor (change pr-unresolved-threads, decisión 2)', () => {
+  it('se leen en cada foto, con el último push de la PR', async () => {
+    const { github, tick } = setup([pullRequest(74)]);
+    await tick();
+    await tick();
+
+    expect(github.threadReads).toEqual([
+      { number: 74, sha: 'sha-74' },
+      { number: 74, sha: 'sha-74' },
+    ]);
+  });
+
+  it('uno de un push anterior deja la PR en necesita intervención', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    github.threads[74] = { lastPush: 0, earlierPushes: 1 };
+    await ticks(tick, 3);
+
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
+  });
+});
+
+describe('de punta a punta, con los hilos sin resolver del revisor (change pr-unresolved-threads)', () => {
+  /** Un P2 de Codex sobre un push anterior, sin resolver. */
+  const earlier = (file: string, line: number): Finding => ({
+    source: 'reviewer',
+    reviewer: 'Codex',
+    badge: 'P2',
+    severity: 'normal',
+    file,
+    line,
+    title: `Fix ${file}`,
+    text: 'Details.',
+    diffHunk: '@@ -1 +1 @@',
+    earlierPush: { sha: '576b49636780068462fa4984e34a7c39902eba8a', code: `>> ${line} | x` },
+  });
+  const e2e: Finding = {
+    source: 'check',
+    name: 'e2e',
+    conclusion: 'failure',
+    context: { state: 'available', origin: 'log', summary: 'Error', errors: [], truncated: false },
+  };
+
+  /** Los puertos del triaje con estos hallazgos, que guardan las preguntas y los resúmenes. */
+  function triageWith(findings: Finding[]) {
+    const recorded = { questions: [] as Question[], summaries: [] as string[] };
+    const ports: TriageOverrides = {
+      findings: {
+        read: () =>
+          Promise.resolve({ context: { title: 'PR', description: 'Fixes MOO-1' }, findings, sonarIssues: null }),
+      },
+      decisionModel: {
+        estimate: () => 0,
+        ask(_context, _finding, question) {
+          recorded.questions.push(question);
+          return Promise.resolve({
+            answer:
+              question === 'fixedScope'
+                ? { kind: 'fixedScope', fixed: 0.31, inside: 0.83, outside: 0.21 }
+                : { kind: 'answered', probability: 0.93 },
+            inputTokens: 100,
+          });
+        },
+      },
+      summaries: {
+        published: () => Promise.resolve(false),
+        publish(_number, _sha, text) {
+          recorded.summaries.push(text);
+          return Promise.resolve();
+        },
+      },
+    };
+    return { ports, recorded };
+  }
+
+  const finalOf = (notices: Notice[]) => notices.findLast((notice) => notice.type === 'final');
+
+  it('la #166: el último push revisado sin hallazgos y dos hilos de un push anterior', async () => {
+    const found = [earlier('sonar-issues.ts', 59), earlier('findings.ts', 54)];
+    const { ports, recorded } = triageWith(found);
+    const { github, notifier, tick } = setup([pullRequest(74)], ports);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    github.threads[74] = { lastPush: 0, earlierPushes: 2 };
+
+    await ticks(tick, 3);
+
+    expect(finalOf(notifier.notices)).toMatchObject({
+      state: { status: 'needsIntervention', reasons: [{ kind: 'reviewFindings', pushes: 'earlier' }] },
+    });
+    expect(recorded.questions).toEqual(['fixedScope', 'fixedScope']);
+    expect(recorded.summaries).toHaveLength(1);
+    expect(recorded.summaries[0]?.match(/· de un push anterior \(`576b496`\)/g)).toHaveLength(2);
+  });
+
+  it('una comprobación que falla y el hilo resuelto: el resumen no lo trae, y el aviso no dice hallazgos', async () => {
+    // El hilo está resuelto: el revisor no lo cuenta, y los hallazgos no lo traen.
+    const { ports, recorded } = triageWith([e2e]);
+    const { github, notifier, tick } = setup([pullRequest(74)], ports);
+    github.checks['sha-74'] = [{ name: 'lint', status: 'failed', conclusion: 'failure' }];
+    github.threads[74] = { lastPush: 0, earlierPushes: 0 };
+
+    await ticks(tick, 2);
+
+    expect(finalOf(notifier.notices)).toMatchObject({
+      state: { status: 'needsIntervention', reasons: [{ kind: 'checksFailed', checks: ['lint'] }] },
+    });
+    expect(recorded.summaries[0]).not.toContain('push anterior');
   });
 });
 

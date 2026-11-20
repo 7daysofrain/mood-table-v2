@@ -4,7 +4,7 @@
  * falsos.
  */
 import type { Notice } from './notice.ts';
-import type { Check, OpenPullRequest, Review } from './pull-request.ts';
+import type { Check, OpenPullRequest, Review, ReviewerThreads } from './pull-request.ts';
 import type {
   Finding,
   ModelAnswer,
@@ -41,6 +41,11 @@ export interface GitHubReader {
  */
 export interface ReviewReader {
   review(pullRequestNumber: number): Promise<Review | null>;
+  /**
+   * Cuántos hilos sin resolver le quedan al revisor, los del último push (`headSha`) y los de pushes
+   * anteriores (change pr-unresolved-threads, decisión 2). Solo cuentan los que abre su cuenta.
+   */
+  unresolvedThreads(pullRequestNumber: number, headSha: string): Promise<ReviewerThreads>;
 }
 
 /**
@@ -85,10 +90,10 @@ export interface TriageSummaries {
 }
 
 /**
- * Los hallazgos de un push (change pr-shadow-triage, decisión 2): los comentarios del revisor hechos
- * sobre ese push y las comprobaciones que fallan, cada uno con su contexto, y el título y la
- * descripción de la PR. Solo los del revisor: un comentario de otra cuenta nunca es un hallazgo
- * (BE6). En lugar de la comprobación que lista las incidencias nuevas de SonarQube, cada incidencia
+ * Los hallazgos de la PR en un push (change pr-shadow-triage, decisión 2): los hilos sin resolver
+ * del revisor, de cualquier push (change pr-unresolved-threads, decisión 1), y las comprobaciones
+ * que fallan en ese push, cada uno con su contexto, y el título y la descripción de la PR. Solo los
+ * del revisor: un hilo que abre otra cuenta nunca es un hallazgo (BE6). En lugar de la comprobación que lista las incidencias nuevas de SonarQube, cada incidencia
  * que anota, y cuántas trae la comprobación y cuántas se trían (`sonarIssues`; `null` si no falla o
  * no anota ninguna legible: change pr-sonar-issue-triage, decisión 5).
  *
@@ -118,8 +123,10 @@ export interface DecisionModel {
    */
   estimate(pr: PullRequestContext, finding: Finding, question: Question): number;
   /**
-   * La respuesta a esa pregunta sobre el hallazgo, y los tokens de entrada cobrados: con `cause`,
-   * la probabilidad del sí (`answered`); con `scope`, las de P1 y P2 (`scope`). Qué se pregunta lo
+   * La respuesta a esa pregunta sobre el hallazgo, y los tokens de entrada cobrados: con `cause` o
+   * `rule`, la probabilidad del sí (`answered`); con `scope`, las de P1 y P2 (`scope`); con
+   * `fixedScope`, además la de que el último push ya lo arregla (`fixedScope`; change
+   * pr-unresolved-threads, decisión 3). Qué se pregunta lo
    * decide el núcleo (`questionFor`); cómo se formula, el adaptador.
    */
   ask(
