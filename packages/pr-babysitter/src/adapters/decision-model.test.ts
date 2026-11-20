@@ -51,6 +51,18 @@ const check = (name: string, summary: string): Finding => ({
   context: { state: 'available', origin: 'log', summary, errors: [], truncated: false },
 });
 
+/** Una incidencia de SonarQube con su código. */
+const sonarIssue: Finding = {
+  source: 'sonarIssue',
+  rule: 'typescript:S9382',
+  ruleName: 'Promises should not be awaited sequentially in a loop',
+  severity: 'normal',
+  file: 'tooling/ci/check-sonar-issues.ts',
+  line: 58,
+  message: 'Unexpected `await` inside a loop.',
+  code: '   57 |     for (;;) {\n>>   58 |       await sleep(POLL_INTERVAL_MS);',
+};
+
 function model(respond: (call: Call) => Response | Promise<Response>) {
   const { fetch, calls } = fakeFetch(respond);
   const decisionModel = createDecisionModel({
@@ -240,6 +252,65 @@ describe('la petición (change pr-check-triage, design.md, decisión 3)', () => 
     expect(calls).toHaveLength(2);
     expect(Object.keys(sent(calls[0]).state)).toEqual(['pr_author_description', 'codex_p1_graph_ts_204']);
     expect(Object.keys(sent(calls[1]).state)).toEqual(['pr_author_description', 'check_e2e']);
+  });
+});
+
+describe('la pregunta de una incidencia de SonarQube (change pr-sonar-issue-triage, decisión 3)', () => {
+  const KEY = 'sonar_typescript_s9382_check_sonar_issues_ts_58';
+
+  it('el state lleva la incidencia: su regla, su nombre, su fichero, su línea, su mensaje y su código', async () => {
+    const { decisionModel, calls } = model(answer);
+
+    await decisionModel.ask(context, sonarIssue, 'rule');
+
+    expect(Object.keys(sent(calls[0]).state)).toEqual(['pr_author_description', KEY]);
+    expect(sent(calls[0]).state[KEY]).toEqual({
+      source: 'sonarqube',
+      rule: 'typescript:S9382',
+      rule_name: 'Promises should not be awaited sequentially in a loop',
+      file: 'tooling/ci/check-sonar-issues.ts',
+      line: 58,
+      message: 'Unexpected `await` inside a loop.',
+      code: '   57 |     for (;;) {\n>>   58 |       await sleep(POLL_INTERVAL_MS);',
+    });
+  });
+
+  it('una pregunta: si el código tiene el problema que describe la regla, con criterios genéricos', async () => {
+    const { decisionModel, calls } = model(answer);
+
+    await decisionModel.ask(context, sonarIssue, 'rule');
+    const { questions } = sent(calls[0]);
+
+    expect(Object.keys(questions)).toEqual([KEY]);
+    expect(questions[KEY]?.type).toBe('noul');
+    expect(questions[KEY]?.instructions).toBe(
+      "Does the code that SonarQube rule typescript:S9382 ('Promises should not be awaited sequentially in a loop') flags on check-sonar-issues.ts:58 actually have the problem the rule describes?",
+    );
+    expect(questions[KEY]?.criteria.true).toMatch(/does what the rule warns against/);
+    expect(questions[KEY]?.criteria.true).toMatch(/even if the change takes work/);
+    expect(questions[KEY]?.criteria.false).toMatch(/premise does not hold/);
+    expect(questions[KEY]?.criteria.false).toMatch(/A comment saying it is intentional is not enough/);
+    // Genéricos: no nombran ninguna regla.
+    expect(JSON.stringify(questions[KEY]?.criteria)).not.toMatch(/await|S\d{4}/);
+  });
+
+  it('una incidencia de fichero se nombra sin línea', async () => {
+    const { decisionModel, calls } = model(answer);
+
+    await decisionModel.ask(context, { ...sonarIssue, line: null }, 'rule');
+
+    expect(Object.values(sent(calls[0]).questions)[0]?.instructions).toContain(
+      'flags on check-sonar-issues.ts actually',
+    );
+  });
+
+  it('da la probabilidad del sí', async () => {
+    const { decisionModel } = model(answer);
+
+    await expect(decisionModel.ask(context, sonarIssue, 'rule')).resolves.toEqual({
+      answer: { kind: 'answered', probability: 0.5 },
+      inputTokens: 100,
+    });
   });
 });
 

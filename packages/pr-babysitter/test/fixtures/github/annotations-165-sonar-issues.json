@@ -1,0 +1,47 @@
+[
+  {
+    "path": ".github",
+    "start_line": 20,
+    "end_line": 20,
+    "annotation_level": "failure",
+    "title": "",
+    "message": "Process completed with exit code 1.",
+    "raw_details": ""
+  },
+  {
+    "path": ".github",
+    "start_line": 12,
+    "end_line": 12,
+    "annotation_level": "notice",
+    "title": "Incidencias nuevas de SonarQube",
+    "message": "3 incidencias nuevas; se anotan 3",
+    "raw_details": ""
+  },
+  {
+    "path": "tooling/ci/sonar-issues.ts",
+    "start_line": 156,
+    "end_line": 156,
+    "annotation_level": "failure",
+    "title": "typescript:S6959 · MEDIUM · \"Array.reduce()\" calls should include an initial value",
+    "message": "Add an initial value to this \"reduce()\" call.",
+    "raw_details": ""
+  },
+  {
+    "path": "tooling/ci/prueba-await.ts",
+    "start_line": 4,
+    "end_line": 4,
+    "annotation_level": "failure",
+    "title": "typescript:S9382 · LOW · Promises should not be awaited sequentially in a loop",
+    "message": "Unexpected `await` inside a loop.",
+    "raw_details": ""
+  },
+  {
+    "path": "packages/shared/src/prueba-ternario.ts",
+    "start_line": 3,
+    "end_line": 3,
+    "annotation_level": "failure",
+    "title": "typescript:S3358 · MEDIUM · Ternary operators should not be nested",
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "raw_details": ""
+  }
+]

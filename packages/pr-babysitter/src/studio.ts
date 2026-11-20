@@ -80,6 +80,8 @@ const findings: Findings = {
     return Promise.resolve({
       // Con descripción: sin ella, el comentario del revisor exigiría criterio por regla.
       context: { title: `PR #${pullRequestNumber}`, description: 'La PR de ejemplo de studio.ts.' },
+      // Sin incidencias de SonarQube: cada comprobación es un hallazgo.
+      sonarIssues: null,
       findings: [
         {
           source: 'reviewer',
@@ -157,6 +159,8 @@ export const graph = createTrackingGraph(
       budget: { capUsd: 0.05, inputPricePerMTok: 0.24 },
       // La lista por defecto del contenedor (`TRIAGE_RULE_CHECKS`).
       ruleChecks: ['lint', 'typecheck', 'SonarCloud Code Analysis'],
+      // Ninguna: las comprobaciones de ejemplo se preguntan todas por la causa.
+      sonarIssuesCheck: '',
     },
   },
 );

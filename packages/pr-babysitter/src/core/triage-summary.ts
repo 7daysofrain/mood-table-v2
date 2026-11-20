@@ -8,12 +8,14 @@
  */
 import * as z from 'zod';
 
-import type { Finding, TriageClass, Verdict } from './triage.ts';
+import type { Finding, SonarIssueCount, TriageClass, Verdict } from './triage.ts';
 
 /** El triaje de un push, tal como queda en el estado del hilo. */
 export interface TriagedPush {
   sha: string;
   findings: { finding: Finding; verdict: Verdict }[];
+  /** Cuántas incidencias de SonarQube trae la comprobación que las lista y cuántas se han triado. */
+  sonarIssues?: SonarIssueCount;
 }
 
 const CLASS_NAMES: Record<TriageClass, string> = {
@@ -35,15 +37,35 @@ export function triageSummary(triage: TriagedPush, threshold: number): string {
     '|---|---|---|',
     ...rows,
     '',
+    ...cutList(triage.sonarIssues),
     summaryMark(triage.sha),
   ].join('\n');
 }
 
-/** El hallazgo por su identidad: quién y dónde, y su título; o el nombre de la comprobación. */
+/**
+ * Si la comprobación de incidencias trae más de las que anota, y por tanto de las triadas (change
+ * pr-sonar-issue-triage, decisión 5): las demás no salen en la tabla, y el resumen lo dice.
+ */
+function cutList(count: SonarIssueCount | undefined): string[] {
+  if (!count || count.triaged >= count.total) return [];
+  return [
+    `La comprobación de incidencias nuevas de SonarQube trae ${count.total}; ` +
+      `se han triado las ${count.triaged} que anota.`,
+    '',
+  ];
+}
+
+/**
+ * El hallazgo por su identidad: quién y dónde, y su título; el nombre de la comprobación; o la
+ * regla de la incidencia y dónde, y el nombre de la regla.
+ */
 function identity(finding: Finding): string {
   if (finding.source === 'check') return `Comprobación \`${finding.name}\``;
   const file = finding.file.split('/').at(-1) ?? finding.file;
   const where = finding.line === null ? file : `${file}:${finding.line}`;
+  if (finding.source === 'sonarIssue') {
+    return `SonarQube \`${finding.rule}\` en \`${where}\` · ${finding.ruleName}`;
+  }
   const who = finding.badge === null ? finding.reviewer : `${finding.badge} de ${finding.reviewer}`;
   return `${who} en \`${where}\` · ${finding.title}`;
 }
@@ -56,7 +78,9 @@ function identity(finding: Finding): string {
 function why(finding: Finding, verdict: Verdict, threshold: number): string {
   // La regla decide por el nombre de la comprobación: su contexto no ha contado.
   if (verdict.reason === 'rule') return 'regla: comprobación determinista';
-  return reason(finding, verdict, threshold) + contextOrigin(finding);
+  // Ni en la comprobación de incidencias que no anota ninguna legible: no se ha preguntado por ella.
+  const origin = verdict.reason === 'noIssues' ? '' : contextOrigin(finding);
+  return reason(finding, verdict, threshold) + origin;
 }
 
 const ORIGIN_NAMES = {
@@ -83,9 +107,12 @@ function reason(
   switch (verdict.reason) {
     case 'noContext':
       if (finding.source === 'reviewer') return 'no se ha podido leer el trozo de diff que comenta';
+      if (finding.source === 'sonarIssue') return 'no se ha podido leer su código';
       return finding.context.state === 'notProvided'
         ? 'la comprobación no da contexto'
         : 'no se ha podido leer su contexto';
+    case 'noIssues':
+      return 'no anota ninguna incidencia legible';
     case 'overBudget':
       return 'no cabe en el tope de gasto de la PR';
     case 'modelUnavailable':
@@ -108,7 +135,11 @@ function reason(
     case 'probability': {
       const p = `p = ${decimal(verdict.probability)}`;
       if (verdict.class === 'valid') return `${p} ≥ ${decimal(threshold)}`;
-      if (verdict.class === 'notApplicable') return `${p} ≤ ${decimal(1 - threshold)}`;
+      if (verdict.class === 'notApplicable') {
+        // Una incidencia que no aplica se aceptaría en SonarQube, con el motivo (BQ9).
+        const accepted = finding.source === 'sonarIssue' ? ' · se aceptaría en SonarQube' : '';
+        return `${p} ≤ ${decimal(1 - threshold)}${accepted}`;
+      }
       return `${p}: no llega al umbral de ${decimal(threshold)}`;
     }
   }

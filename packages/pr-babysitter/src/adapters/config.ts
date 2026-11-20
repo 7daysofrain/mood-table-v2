@@ -48,6 +48,11 @@ const envSchema = z.object({
   TRIAGE_BUDGET_USD: positiveNumber.default(0.05),
   // Separadas por comas. Sin ningún nombre (`,`), la regla no decide ninguna.
   TRIAGE_RULE_CHECKS: z.string().default('lint,typecheck,SonarCloud Code Analysis').transform(names),
+  // La comprobación que lista las incidencias nuevas de SonarQube, por su nombre en main.
+  TRIAGE_SONAR_ISSUES_CHECK: z
+    .string()
+    .default('sonar-issues')
+    .transform((name) => name.trim()),
   // Separadas por comas. Sin ningún nombre (`,`), no se relanza ninguna.
   RERUN_CHECKS: z.string().default('test,e2e').transform(names),
 });
@@ -56,8 +61,8 @@ export interface Config {
   /**
    * PAT fine-grained del mantenedor, limitado al repo (decisión 3): *Issues* y *Pull requests* en
    * escritura, para pedir la revisión, *Actions* en escritura, para relanzar (change pr-check-rerun),
-   * y sin *Contents*, así que no puede subir commits ni integrar (change pr-review-request, decisión
-   * 1).
+   * y *Contents* solo en lectura (D117), así que no puede subir commits ni integrar (change
+   * pr-review-request, decisión 1).
    */
   githubToken: string;
   /**
@@ -98,6 +103,11 @@ export interface Config {
    * regla, sin preguntar al modelo (change pr-check-triage, decisión 6).
    */
   triageRuleChecks: string[];
+  /**
+   * La comprobación que lista las incidencias nuevas de SonarQube: cada incidencia que anota es un
+   * hallazgo (change pr-sonar-issue-triage, decisión 2).
+   */
+  triageSonarIssuesCheck: string;
   /**
    * Las comprobaciones relanzables, por su nombre en la rama base: si fallan en su primer intento,
    * se relanzan una vez antes del estado final (change pr-check-rerun, decisión 7).
@@ -141,6 +151,7 @@ export function loadConfig(env: Record<string, string | undefined>): ConfigResul
       triageThreshold: vars.TRIAGE_THRESHOLD,
       triageBudgetUsd: vars.TRIAGE_BUDGET_USD,
       triageRuleChecks: vars.TRIAGE_RULE_CHECKS,
+      triageSonarIssuesCheck: vars.TRIAGE_SONAR_ISSUES_CHECK,
       rerunChecks: vars.RERUN_CHECKS,
     },
   };

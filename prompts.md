@@ -2462,7 +2462,32 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La PR de los tests del grafo y la de Studio tenían la descripción vacía, así que con la regla nueva todos sus comentarios del revisor salían* exige criterio*. La IA les dio una descripción para que siguieran probando lo mismo.*
 - *En la prueba a mano, Codex solo comentó el defecto que la PR de prueba introducía a propósito, y no el límite de una hora que la descripción dejaba para otra tarea. Así que no salió ningún «se capturaría» real, y la IA lo dejó anotado tal cual: la clasificación la cubren los tests.*
 
-#### 6.93 Relanzar una vez test y e2e que fallan y esperar su resultado (`MOO-170`)
+#### 6.93 Triar cada incidencia nueva de SonarQube como un hallazgo propio (`MOO-148`)
+
+**Prompt 1:**
+
+> Bueno aqui tengo dudas, yo creo que nos hemos encontrado ya con falsos positivos en sonar que me has hecho aceptar en el panel porque el arreglo no procedia, puedes mirar esto?
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en `/refine-story MOO-148`. La IA había propuesto triar cada incidencia con la pregunta del revisor, pero `poke-holes` vio que la de alcance (`MOO-160`) daría* real *a las incidencias aceptadas, que caen dentro de la PR. La IA buscó en SonarCloud las tres aceptadas a mano (un `await` en un bucle que debe ir en orden, en dos ficheros, y un `<canvas role="img">`) y se corrigió ante el usuario.*
+
+**Prompt 2:**
+
+> vamos a afinar la pregunta ya que tenemos detectado claramente los casos de uso, si necesitamos realizamos pruebas. ¿Cual crees que sería la mejor opción? No hace falta fijarse en otras o reutilizar nada, lo que buscamos es la pregunta optima para los casos detectados o similares
+
+*Claude Code (`claude-opus-5-5`, 20-nov). La IA propuso preguntar por la premisa de la regla («¿tiene el código el problema que describe la regla?») y la midió contra Clef con 12 filas: criterios genéricos o con ejemplos, con y sin el código alrededor de la línea. Con el código, 7 aciertos y ninguno con confianza del lado equivocado; sin él, 5, porque el mensaje de Sonar se lee igual en el caso bueno y en el malo. El usuario eligió los genéricos con el código. Para leerlo, el PAT necesitaba* Contents *en lectura, y lo añadió el usuario (D117). Estimada a 5: el usuario sacó 3 por similitud con `MOO-160` y `estimator` 5, porque la CI también tenía que anotar las incidencias. Resultado: D118 y dos tareas, `MOO-167` y `MOO-168`.*
+
+**Prompt 3:**
+
+> /opsx:apply
+
+*Claude Code (`claude-opus-5-5`, 20-nov). La IA implementó las dos secciones del change `pr-sonar-issue-triage`, cada una en su PR, con los tests en rojo antes de cada implementación. En `MOO-167`, `sonar-issues` anota cada incidencia en su línea, con el escapado del runner, y como mucho 10, el límite por paso que fija el código de `actions/runner`. En `MOO-168`, el triador parte la comprobación en un hallazgo por anotación, lee el código en el commit del push y pregunta por la regla.*
+
+*Ajustes:*
+- *En la PR de prueba de las anotaciones, SonarCloud encontró una incidencia real en el código de la propia tarea (un `reduce` sin valor inicial). La IA la arregló antes de integrar.*
+- *GitHub devolvió las anotaciones en otro orden que el emitido, así que el triaje sigue el que da GitHub. Las anotaciones grabadas de esa PR sirven de fixture en `MOO-168`.*
+- *El módulo que parte las incidencias devuelve las suyas sin la marca de hallazgo, para que el paso 2.3 no tuviera que tocar el núcleo antes de su paso.*
+
+#### 6.94 Relanzar una vez test y e2e que fallan y esperar su resultado (`MOO-170`)
 
 **Prompt 1:**
 

@@ -1,8 +1,10 @@
 /**
  * Adaptador del modelo de decisión (change pr-shadow-triage, decisiones 3 y 5; change
- * pr-check-triage, decisión 3; change pr-reviewer-scope, decisiones 1 y 2): pregunta por un hallazgo
- * lo que toca a su fuente (si una comprobación que falla la causa esta PR, o si el arreglo de un
- * comentario del revisor cae dentro del alcance de la PR y si es trabajo de otra tarea), con el
+ * pr-check-triage, decisión 3; change pr-reviewer-scope, decisiones 1 y 2; change
+ * pr-sonar-issue-triage, decisión 3): pregunta por un hallazgo lo que toca a su fuente (si una
+ * comprobación que falla la causa esta PR; si el arreglo de un comentario del revisor cae dentro del
+ * alcance de la PR y si es trabajo de otra tarea; o si la regla de una incidencia de SonarQube se
+ * cumple en ese código), con el
  * protocolo `POST /v1/systemone` y su cliente de LangChain, `@langchain/typesafe`. Hoy, Clef en la
  * nube de Ollama; otro modelo o proveedor del mismo protocolo es configuración.
  *
@@ -44,7 +46,9 @@ export interface DecisionModelOptions {
  * perdería la línea base medida. No piden juzgar contra el diff, porque el diff no llega al modelo
  * (D114). Los de P2 (`outside`) son nuevos (change pr-reviewer-scope, decisión 1): su *no* dice que
  * una decisión de diseño sobre el código de la PR no es de otra tarea, para que un hallazgo de diseño
- * no acabe capturado como trabajo aparte.
+ * no acabe capturado como trabajo aparte. Los de la regla de una incidencia de SonarQube (`rule`,
+ * D118) son genéricos, sin ejemplos de ninguna regla: con ejemplos se ganaba una fila, pero se
+ * escribieron conociendo los casos.
  */
 const CRITERIA = {
   cause: {
@@ -61,6 +65,11 @@ const CRITERIA = {
     true: "Fixing it is work for another task, story or area: this PR's description does not cover the code or behaviour it would change, and it could be done in a separate PR without leaving this PR incomplete or wrong.",
     false:
       "Fixing it belongs to this PR: it corrects or completes what this PR's task creates or changes, even if it needs a design decision. A design decision about this PR's own code is not work for another task.",
+  },
+  rule: {
+    true: "The flagged code does what the rule warns against, and following the rule's advice would keep the behaviour the code is meant to have, even if the change takes work.",
+    false:
+      "The rule's premise does not hold here: the code shows that following the rule's advice would break the behaviour it is meant to have, or that the alternative the rule suggests does not fit this code. A comment saying it is intentional is not enough on its own, and neither is preferring another style.",
   },
 } as const;
 
@@ -117,7 +126,7 @@ const MAX_KEY_LENGTH = 100;
  * él (`state` y `questions` son también lo que se estima antes de llamar); y cómo se lee la
  * respuesta.
  *
- * Con `cause`, una pregunta con la clave del hallazgo. Con `scope`, dos sobre el mismo `state`, con
+ * Con `cause` o `rule`, una pregunta con la clave del hallazgo. Con `scope`, dos sobre el mismo `state`, con
  * la clave del hallazgo y `_inside` (P1) o `_outside` (P2), cortada para que las dos quepan en el
  * límite (change pr-reviewer-scope, decisión 2).
  */
@@ -127,14 +136,20 @@ function request(pr: PullRequestContext, finding: Finding, question: Question) {
     pr_author_description: { title: pr.title, body: pr.description },
     ...Object.fromEntries([[key, wire(finding)]]),
   };
-  if (question === 'cause') {
+  if (question === 'cause' || question === 'rule') {
     return {
       state,
       questions: {
-        [key]: noul(
-          `Is the failure of ${subject(finding)} caused by the changes in this PR?`,
-          CRITERIA.cause,
-        ),
+        [key]:
+          question === 'cause'
+            ? noul(
+                `Is the failure of ${subject(finding)} caused by the changes in this PR?`,
+                CRITERIA.cause,
+              )
+            : noul(
+                `Does the code that ${subject(finding)} actually have the problem the rule describes?`,
+                CRITERIA.rule,
+              ),
       },
       answer: (answers: Record<string, Answer>): ModelAnswer => ({
         kind: 'answered',
@@ -178,6 +193,18 @@ function probability(answers: Record<string, Answer>, key: string): number {
 
 /** El hallazgo tal como lo lee el modelo en el `state`. */
 function wire(finding: Finding) {
+  if (finding.source === 'sonarIssue') {
+    // El formato que se probó al refinar `MOO-148`. Sin código no se pregunta (`hasContext`).
+    return {
+      source: 'sonarqube',
+      rule: finding.rule,
+      rule_name: finding.ruleName,
+      file: finding.file,
+      line: finding.line,
+      message: finding.message,
+      code: finding.code,
+    };
+  }
   if (finding.source === 'check') {
     const { name, conclusion, context } = finding;
     // Sin contexto no se pregunta por ella (`hasContext`); si llegara, va sin él.
@@ -204,13 +231,16 @@ function wire(finding: Finding) {
 }
 
 /**
- * El hallazgo por su identidad, como lo nombran las preguntas: el nombre de la comprobación, o la
- * insignia, el fichero y la línea, y el título del comentario.
+ * El hallazgo por su identidad, como lo nombran las preguntas: el nombre de la comprobación; la
+ * insignia, el fichero y la línea, y el título del comentario; o la regla, su nombre y dónde señala.
  */
 function subject(finding: Finding): string {
   if (finding.source === 'check') return `the required check '${finding.name}'`;
   const file = finding.file.split('/').at(-1) ?? finding.file;
   const where = finding.line === null ? file : `${file}:${finding.line}`;
+  if (finding.source === 'sonarIssue') {
+    return `SonarQube rule ${finding.rule} ('${finding.ruleName}') flags on ${where}`;
+  }
   const who = finding.badge === null ? 'reviewer' : `${finding.badge} reviewer`;
   return `the ${who} comment on ${where}, titled '${finding.title}'`;
 }
