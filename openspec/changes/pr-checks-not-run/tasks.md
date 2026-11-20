@@ -60,7 +60,7 @@
   (`TRACKING_NOT_RUN_MARGIN_SECONDS`, 120 por defecto, `adapters/config.ts` con su test, `main.ts` y
   `.env.example`) y en `src/studio.ts`, más lo que falte para que 1.6 pase.
   Verificar: `pnpm test` en verde; `pnpm studio` arranca.
-- [ ] 1.8 Documentación: README §2.2 (*PR Babysitter*: con una comprobación que falla, deja de esperar a
+- [x] 1.8 Documentación: README §2.2 (*PR Babysitter*: con una comprobación que falla, deja de esperar a
   las que no tienen *check run* tras el margen, y el motivo «no ha llegado a ejecutarse»); `prompts.md`.
   Verificar: el README no dice que se espere siempre hasta el plazo a una comprobación sin empezar.
 - [ ] 1.9 **Prueba a mano** (sin commit), con el sistema en marcha desde la rama, repitiendo las PR de
