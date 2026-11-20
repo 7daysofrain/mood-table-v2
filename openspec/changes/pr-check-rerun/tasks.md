@@ -29,7 +29,7 @@
   - `docs/idea-mood-table.md` §10: D119 (`design.md` decisión 1), y una nota en D114 de que la matiza.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
-- [ ] 1.2 **(test en rojo)** El intento y la conclusión de cada comprobación (`design.md` decisión 3):
+- [x] 1.2 **(test en rojo)** El intento y la conclusión de cada comprobación (`design.md` decisión 3):
   - **Fixtures** grabadas con `gh api` en `test/fixtures/github/`: las *check runs* de un commit con un
     *job* relanzado (dos *check runs* del mismo nombre) y el *job* de cada intento (`run_id`,
     `run_attempt`). Si no hay ninguno reciente, se graban en la prueba a mano de 1.7 y este paso se

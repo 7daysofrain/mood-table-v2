@@ -14,6 +14,10 @@
  * - `check-runs-116.json`, `annotations-116-e2e.json`, `check-runs-117.json` y
  *   `job-logs-112-e2e.txt` (14-nov): las comprobaciones que fallan en la #116, la #117 y la #112
  *   (detalle en `check-context.test.ts`).
+ * - `job-116-e2e.json` (20-nov): el *job* del `e2e` que falla en la #116, en su primer intento.
+ * - `check-runs-rerun.json` y `job-rerun-test.json` (20-nov): los *check runs* de un push de la
+ *   #151 con `filter=all`, relanzado entero (falló `lint`): dos de cada nombre, los del intento 2
+ *   primero; y el *job* de `test` en el intento 2.
  * Las respuestas a un comentario nuevo no se han grabado: los tests de la escritura solo miran el
  * código de estado.
  */
@@ -119,7 +123,7 @@ describe('las comprobaciones', () => {
     const sha = '4377f6572569b6a1afdd40675c4bca047122e307';
 
     await expect(reader(fetch).checks(sha, REQUIRED_CHECKS)).resolves.toEqual(
-      REQUIRED_CHECKS.map((name) => ({ name, status: 'passed' })),
+      REQUIRED_CHECKS.map((name) => ({ name, status: 'passed', conclusion: 'success' })),
     );
     expect(new URL(calls[0]!.url).pathname).toBe(
       `/repos/7daysofrain/mood-table-v2/commits/${sha}/check-runs`,
@@ -128,11 +132,13 @@ describe('las comprobaciones', () => {
 
   it('una con un check run que no es correcto, neutro ni saltado, falla', async () => {
     const body = await fixture('check-runs-failed.json');
-    const { fetch } = fakeFetch(() => json(body));
+    const { fetch } = fakeFetch(({ url }) =>
+      url.includes('/actions/jobs/') ? json('{"message":"Not Found"}', 404) : json(body),
+    );
 
     const checks = await reader(fetch).checks(FAILED_PUSH, REQUIRED_CHECKS);
 
-    expect(checks).toContainEqual({ name: 'sonar-issues', status: 'failed' });
+    expect(checks).toContainEqual({ name: 'sonar-issues', status: 'failed', conclusion: 'failure' });
     expect(checks.filter((check) => check.status === 'passed')).toHaveLength(5);
   });
 
@@ -141,12 +147,12 @@ describe('las comprobaciones', () => {
     const { fetch } = fakeFetch(() => json(body));
 
     await expect(reader(fetch).checks(FAILED_PUSH, REQUIRED_CHECKS)).resolves.toEqual([
-      { name: 'lint', status: 'passed' },
-      { name: 'test', status: 'passed' },
-      { name: 'SonarCloud Code Analysis', status: 'pending' },
-      { name: 'typecheck', status: 'passed' },
-      { name: 'sonar-issues', status: 'passed' },
-      { name: 'e2e', status: 'pending' },
+      { name: 'lint', status: 'passed', conclusion: 'neutral' },
+      { name: 'test', status: 'passed', conclusion: 'success' },
+      { name: 'SonarCloud Code Analysis', status: 'pending', conclusion: null },
+      { name: 'typecheck', status: 'passed', conclusion: 'success' },
+      { name: 'sonar-issues', status: 'passed', conclusion: 'skipped' },
+      { name: 'e2e', status: 'pending', conclusion: null },
     ]);
   });
 
@@ -155,8 +161,8 @@ describe('las comprobaciones', () => {
     const { fetch } = fakeFetch(() => json(body));
 
     await expect(reader(fetch).checks('4377f65', ['lint', 'e2e'])).resolves.toEqual([
-      { name: 'lint', status: 'passed' },
-      { name: 'e2e', status: 'passed' },
+      { name: 'lint', status: 'passed', conclusion: 'success' },
+      { name: 'e2e', status: 'passed', conclusion: 'success' },
     ]);
   });
 
@@ -169,6 +175,87 @@ describe('las comprobaciones', () => {
     await expect(github.checks('4377f65', REQUIRED_CHECKS)).rejects.toBeInstanceOf(
       GitHubUnauthorizedError,
     );
+  });
+});
+
+describe('el intento de una comprobación', () => {
+  const PUSH_116 = 'b4a47348bf49447cf62cb29d69299445a30f973f';
+  const PUSH_RERUN = '5f884fad37648758d2d61341ff698253175621e0';
+
+  it('una de Actions que falla da su intento y su run, leídos de su job', async () => {
+    const [runs, job] = await Promise.all([
+      fixture('check-runs-116.json'),
+      fixture('job-116-e2e.json'),
+    ]);
+    const { fetch, calls } = fakeFetch(({ url }) =>
+      url.includes('/actions/jobs/') ? json(job) : json(runs),
+    );
+
+    await expect(reader(fetch).checks(PUSH_116, ['e2e'])).resolves.toEqual([
+      { name: 'e2e', status: 'failed', conclusion: 'failure', attempt: 1, runId: 42082802927 },
+    ]);
+    expect(calls.map(({ url }) => new URL(url).pathname)).toContain(
+      '/repos/7daysofrain/mood-table-v2/actions/jobs/127439969583',
+    );
+  });
+
+  it('con dos check runs del mismo nombre, cuenta el del intento más reciente', async () => {
+    const body = await fixture('check-runs-rerun.json');
+    const { fetch, calls } = fakeFetch(() => json(body));
+
+    await expect(reader(fetch).checks(PUSH_RERUN, ['lint', 'test'])).resolves.toEqual([
+      { name: 'lint', status: 'passed', conclusion: 'success' },
+      { name: 'test', status: 'passed', conclusion: 'success' },
+    ]);
+    // Una que pasa no necesita su intento: no se lee su job.
+    expect(calls).toHaveLength(1);
+  });
+
+  it('una que vuelve a fallar en su intento 2 lo dice', async () => {
+    // Derivado a mano de `check-runs-rerun.json`: el `test` del intento 2, con `failure`.
+    const runs = JSON.stringify({
+      total_count: 1,
+      check_runs: [
+        {
+          id: 135781537852,
+          name: 'test',
+          status: 'completed',
+          conclusion: 'failure',
+          app: { slug: 'github-actions' },
+          output: { title: null, summary: null },
+        },
+      ],
+    });
+    const job = await fixture('job-rerun-test.json');
+    const { fetch } = fakeFetch(({ url }) =>
+      url.includes('/actions/jobs/') ? json(job) : json(runs),
+    );
+
+    await expect(reader(fetch).checks(PUSH_RERUN, ['test'])).resolves.toEqual([
+      { name: 'test', status: 'failed', conclusion: 'failure', attempt: 2, runId: 43634814409 },
+    ]);
+  });
+
+  it('una de otra app que falla no tiene intento: no se lee ningún job', async () => {
+    const body = await fixture('check-runs-117.json');
+    const { fetch, calls } = fakeFetch(() => json(body));
+    const push = '709a0582ace1b0e5c6a67edcb32d1d2db2ac4b6e';
+
+    await expect(reader(fetch).checks(push, ['SonarCloud Code Analysis'])).resolves.toEqual([
+      { name: 'SonarCloud Code Analysis', status: 'failed', conclusion: 'failure' },
+    ]);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('un job que GitHub no da deja el intento sin dato, y la comprobación sigue fallando', async () => {
+    const runs = await fixture('check-runs-116.json');
+    const { fetch } = fakeFetch(({ url }) =>
+      url.includes('/actions/jobs/') ? json('{"message":"Not Found"}', 404) : json(runs),
+    );
+
+    await expect(reader(fetch).checks(PUSH_116, ['e2e'])).resolves.toEqual([
+      { name: 'e2e', status: 'failed', conclusion: 'failure' },
+    ]);
   });
 });
 
