@@ -30,7 +30,7 @@
   `ReviewReader`, `finalState`, el motivo y su texto; el driver lee los hilos para la foto.
   Verificar: los tests de 1.2 en verde y los que ya había, ajustados a la foto nueva; `pnpm typecheck`
   en verde (los adaptadores se ajustan lo justo para compilar).
-- [ ] 1.4 **(test en rojo)** La lectura de los hilos (`design.md` decisiones 1 y 2), con una fixture
+- [x] 1.4 **(test en rojo)** La lectura de los hilos (`design.md` decisiones 1 y 2), con una fixture
   GraphQL grabada de la #166 (`test/fixtures/github/review-threads-166.json`, con sus dos hilos de
   `576b496`):
   - en `adapters/github.test.ts`: `listReviewThreads` da cada hilo con `isResolved` y su primer

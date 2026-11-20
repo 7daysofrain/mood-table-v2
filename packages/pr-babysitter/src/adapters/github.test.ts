@@ -16,6 +16,8 @@
  *   (detalle en `check-context.test.ts`).
  * - `annotations-165-sonar-issues.json` (20-nov): las de `sonar-issues` en la PR de prueba #165
  *   (`MOO-167`), con tres incidencias, su aviso y el `failure` de `.github`.
+ * - `review-threads-166.json` (20-nov): los hilos de revisión de la #166 por GraphQL, los dos de
+ *   Codex sobre `576b496`, ya resueltos al grabarlos.
  * El contenido de un fichero no se ha grabado: es el texto tal cual, y el test lo escribe.
  * Las respuestas a un comentario nuevo no se han grabado: los tests de la escritura solo miran el
  * código de estado.
@@ -319,6 +321,110 @@ describe('el código de un fichero en un commit', () => {
     const { fetch } = fakeFetch(() => json('{"message":"Server Error"}', 502));
 
     await expect(reader(fetch).fileAt(SHA, 'a.ts')).rejects.toThrow();
+  });
+});
+
+describe('los hilos de revisión de una PR (change pr-unresolved-threads, decisión 1)', () => {
+  /** Una página de hilos de la #166, con el cursor de la siguiente si la hay. */
+  async function page(nodes?: unknown[], endCursor: string | null = null) {
+    const recorded = JSON.parse(await fixture('review-threads-166.json')) as {
+      data: { repository: { pullRequest: { reviewThreads: { nodes: unknown[] } } } };
+    };
+    const threads = recorded.data.repository.pullRequest.reviewThreads;
+    return JSON.stringify({
+      data: {
+        repository: {
+          pullRequest: {
+            reviewThreads: {
+              pageInfo: { hasNextPage: endCursor !== null, endCursor },
+              nodes: nodes ?? threads.nodes,
+            },
+          },
+        },
+      },
+    });
+  }
+
+  it('da cada hilo, si está resuelto y su primer comentario, por GraphQL', async () => {
+    const { fetch, calls } = fakeFetch(async () => json(await page()));
+
+    const threads = await reader(fetch).listReviewThreads(166);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ method: 'POST', authorization: 'token ghp_x' });
+    expect(new URL(calls[0]!.url).pathname).toBe('/graphql');
+    expect(JSON.parse(calls[0]!.body)).toMatchObject({
+      variables: { owner: '7daysofrain', repo: 'mood-table-v2', number: 166 },
+    });
+    expect(threads).toHaveLength(2);
+    expect(threads[0]).toEqual({
+      isResolved: true,
+      comment: {
+        author: 'chatgpt-codex-connector[bot]',
+        body: expect.stringMatching(/^\*\*<sub><sub>!\[P2 Badge\].*Preserve file-level issue identity/),
+        path: 'packages/pr-babysitter/src/adapters/sonar-issues.ts',
+        originalLine: 59,
+        line: null,
+        originalSha: '576b49636780068462fa4984e34a7c39902eba8a',
+        diffHunk: expect.stringMatching(/^@@ /),
+      },
+    });
+    expect(threads[1]?.comment.path).toBe('packages/pr-babysitter/src/adapters/findings.ts');
+  });
+
+  it('el autor de un bot lleva [bot], como en REST; el de una persona, no', async () => {
+    const recorded = JSON.parse(await page()) as {
+      data: { repository: { pullRequest: { reviewThreads: { nodes: unknown[] } } } };
+    };
+    const [codex] = recorded.data.repository.pullRequest.reviewThreads.nodes as {
+      comments: { nodes: { author: { __typename: string; login: string } }[] };
+    }[];
+    const person = structuredClone(codex!);
+    person.comments.nodes[0]!.author = { __typename: 'User', login: '7daysofrain' };
+    const { fetch } = fakeFetch(async () => json(await page([codex, person])));
+
+    const threads = await reader(fetch).listReviewThreads(166);
+
+    expect(threads.map((thread) => thread.comment.author)).toEqual([
+      'chatgpt-codex-connector[bot]',
+      '7daysofrain',
+    ]);
+  });
+
+  it('pagina de 100 en 100 con el cursor de la página anterior', async () => {
+    const recorded = JSON.parse(await page()) as {
+      data: { repository: { pullRequest: { reviewThreads: { nodes: unknown[] } } } };
+    };
+    const [first, second] = recorded.data.repository.pullRequest.reviewThreads.nodes;
+    const { fetch, calls } = fakeFetch(async (call) => {
+      const { variables } = JSON.parse(call.body) as { variables: { cursor: string | null } };
+      return json(variables.cursor === null ? await page([first], 'c1') : await page([second]));
+    });
+
+    const threads = await reader(fetch).listReviewThreads(166);
+
+    expect(threads).toHaveLength(2);
+    expect(calls.map((call) => (JSON.parse(call.body) as { variables: object }).variables)).toEqual([
+      { owner: '7daysofrain', repo: 'mood-table-v2', number: 166, cursor: null },
+      { owner: '7daysofrain', repo: 'mood-table-v2', number: 166, cursor: 'c1' },
+    ]);
+    expect((JSON.parse(calls[0]!.body) as { query: string }).query).toMatch(/reviewThreads\(first: 100/);
+  });
+
+  it('un hilo sin comentarios no se da', async () => {
+    const { fetch } = fakeFetch(async () =>
+      json(await page([{ isResolved: false, comments: { nodes: [] } }])),
+    );
+
+    expect(await reader(fetch).listReviewThreads(166)).toEqual([]);
+  });
+
+  it('un 401 da el error de token rechazado', async () => {
+    const { fetch } = fakeFetch(async () => json(await fixture('bad-credentials.json'), 401));
+
+    await expect(reader(fetch).listReviewThreads(166)).rejects.toBeInstanceOf(
+      GitHubUnauthorizedError,
+    );
   });
 });
 
