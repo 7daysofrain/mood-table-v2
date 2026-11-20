@@ -10,8 +10,10 @@ import {
   type InterventionReason,
   needsReviewRequest,
   needsTriage,
+  rerunPassed,
   reviewFinished,
   type TrackedPush,
+  unfinishedReruns,
 } from './tracking.ts';
 
 const MINUTE = 60_000;
@@ -385,11 +387,11 @@ describe('si hay que triar (change pr-shadow-triage, decisión 1)', () => {
   });
 
   it('sí, si necesita intervención porque falla una comprobación', () => {
-    expect(needsTriage(intervention({ kind: 'checksFailed', checks: ['e2e'] }))).toBe(true);
+    expect(needsTriage(intervention({ kind: 'checksFailed', checks: ['e2e'] }), [])).toBe(true);
   });
 
   it('sí, si necesita intervención porque el revisor tiene hallazgos', () => {
-    expect(needsTriage(intervention({ kind: 'reviewFindings', pushes: 'earlier' }))).toBe(true);
+    expect(needsTriage(intervention({ kind: 'reviewFindings', pushes: 'earlier' }), [])).toBe(true);
   });
 
   it('sí, si además algo no termina a tiempo', () => {
@@ -398,11 +400,11 @@ describe('si hay que triar (change pr-shadow-triage, decisión 1)', () => {
       { kind: 'checksUnfinished', checks: ['e2e'] },
     );
 
-    expect(needsTriage(state)).toBe(true);
+    expect(needsTriage(state, [])).toBe(true);
   });
 
   it('no, si está lista para integrar', () => {
-    expect(needsTriage({ status: 'readyToMerge' })).toBe(false);
+    expect(needsTriage({ status: 'readyToMerge' }, [])).toBe(false);
   });
 
   it('no, si solo es porque algo no termina a tiempo', () => {
@@ -411,7 +413,40 @@ describe('si hay que triar (change pr-shadow-triage, decisión 1)', () => {
       { kind: 'reviewUnfinished' },
     );
 
-    expect(needsTriage(state)).toBe(false);
+    expect(needsTriage(state, [])).toBe(false);
+  });
+
+  it('sí, si lo que no termina a tiempo es un relanzamiento (change pr-check-rerun, decisión 1)', () => {
+    const state = intervention({ kind: 'checksUnfinished', checks: ['e2e'] });
+
+    expect(needsTriage(state, ['e2e'])).toBe(true);
+  });
+});
+
+describe('lo relanzado, con la foto (change pr-check-rerun, decisiones 1 y 8)', () => {
+  const rerun = { sha: 'abc', seenAt: 0, rerunSince: 5 * MINUTE, rerunNames: ['lint', 'e2e'] };
+  const now = (checks: Check[]) => snapshot({ checks });
+
+  it('sin terminar: las que el sistema relanzó y siguen pendientes', () => {
+    expect(unfinishedReruns(now([passed('lint'), pending('e2e')]), rerun, RERUN)).toEqual(['e2e']);
+  });
+
+  it('sin terminar: solo las relanzables, no una que se relanzó con ellas porque fallaba en su run', () => {
+    expect(unfinishedReruns(now([pending('lint'), pending('e2e')]), rerun, RERUN)).toEqual(['e2e']);
+  });
+
+  it('sin relanzamiento pedido, ninguna, aunque haya pendientes', () => {
+    expect(unfinishedReruns(now([pending('e2e')]), { sha: 'abc', seenAt: 0 }, RERUN)).toEqual([]);
+  });
+
+  it('pasadas: las que el sistema relanzó y han pasado, no las que siguen fallando', () => {
+    expect(rerunPassed(now([failedIn('lint', 2), passed('e2e'), passed('test')]), rerun)).toEqual([
+      'e2e',
+    ]);
+  });
+
+  it('sin relanzar nada, ninguna pasada', () => {
+    expect(rerunPassed(now([passed('e2e')]), { sha: 'abc', seenAt: 0 })).toEqual([]);
   });
 });
 

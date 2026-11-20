@@ -118,7 +118,7 @@
 
 ## 2. MOO-171 · infra
 
-- [ ] 2.1 **(test en rojo)** Las reglas del triaje tras el relanzamiento (`design.md` decisiones 1, 6
+- [x] 2.1 **(test en rojo)** Las reglas del triaje tras el relanzamiento (`design.md` decisiones 1, 6
   y 7):
   - **`core/triage.test.ts`:**
     - un relanzable fallido con intento 2 o más sale *real* por la regla nueva, que registra que ha
@@ -129,11 +129,11 @@
     - `questionFor` ya no pregunta por la causa a un relanzable.
   - **`core/triage-summary.test.ts`:** el porqué «ha fallado dos veces» con el caso evidente o sin él;
     los tres motivos de *exige criterio*; las líneas «se relanzó y pasó», con hallazgos y sin ellos.
-- [ ] 2.2 El hallazgo de una comprobación con su intento y el resultado del relanzamiento, y las reglas
+- [x] 2.2 El hallazgo de una comprobación con su intento y el resultado del relanzamiento, y las reglas
   en `core/triage.ts`: la regla nueva, la función del caso evidente y los tres motivos; el porqué en
   `core/triage-summary.ts`.
   Verificar: los tests de 2.1 y todos los que ya había en verde; `pnpm typecheck` en verde.
-- [ ] 2.3 **(test en rojo)** El triaje y el resumen en el grafo (`design.md` decisión 8), en
+- [x] 2.3 **(test en rojo)** El triaje y el resumen en el grafo (`design.md` decisión 8), en
   `core/graph.test.ts`, un `describe` por requisito nuevo o cambiado de `pr-triage`:
   - vuelve a fallar: el resumen da *real* por regla, sin ninguna pregunta al modelo falso;
   - rechazado, no terminado o cancelado: *exige criterio* con su motivo, sin pregunta al modelo;
@@ -142,18 +142,18 @@
   - relanzado y pasado junto a un `lint` que falla: el resumen lleva las dos cosas;
   - una PR que pasa a la primera no tiene resumen;
   - un solo resumen por push, también en el camino de *lista para integrar*.
-- [ ] 2.4 `needsTriage` con el relanzamiento que no termina, el resultado del relanzamiento hasta el
+- [x] 2.4 `needsTriage` con el relanzamiento que no termina, el resultado del relanzamiento hasta el
   triaje, y `publicarResumen` en el camino de *lista para integrar* (`core/graph.ts`,
   `core/tracking.ts`); las respuestas falsas de `src/studio.ts`.
   Verificar: los tests de 2.3 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 2.5 Documentación:
+- [x] 2.5 Documentación:
   - README §2.2 (*PR Babysitter*: la regla tras el relanzamiento y el resumen en una PR lista para
     integrar) y §2.5 (`test` y `e2e` ya no envían su contexto al modelo de decisión);
   - `prompts.md`, si la sección 1 dejó algo por contar.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
-- [ ] 2.6 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 2.6 **Prueba a mano** (sin commit), con el sistema en marcha:
   - las dos PR de prueba de 1.7, otra vez;
   - una tercera con un `e2e` que falla solo en el primer intento y un `lint` roto.
 

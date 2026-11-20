@@ -2546,6 +2546,24 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El change borraba la lectura por REST en el paso 1.5, pero los hallazgos la usaban hasta el 1.7. La IA la borró en el 1.7, para que cada commit quedara en verde.*
 - *Los escenarios de punta a punta del paso 1.14 pasaron desde el principio. La IA lo dejó dicho en el commit.*
 
+#### 6.96 Triar por regla tras el relanzamiento y contarlo en el resumen (`MOO-171`)
+
+**Prompt 1:**
+
+> Sí, empieza
+
+*Claude Code (`claude-opus-5-5`, 20-nov), la sección de `MOO-171` del change `pr-check-rerun`, en una rama nueva desde `main` tras integrar la de `MOO-170`. La IA siguió los pasos del `tasks.md` con un commit por paso y los tests en rojo antes de cada implementación: las reglas del triaje y el caso evidente en funciones puras, una prueba por fila de la tabla de la decisión 6, y después el grafo.*
+
+**Prompt 2:**
+
+> Apuntarlo al relanzar
+
+*La respuesta del usuario a la única pregunta de la IA. Al conectar el resumen, la IA vio que la decisión 8 no se podía cumplir tal cual: decía que lo relanzado y pasado salía del intento en la foto, pero el adaptador solo lee el intento de las comprobaciones que fallan. Le planteó dos opciones: leer el intento de todas (unas 4 lecturas más de GitHub por PR y vuelta) o apuntar al relanzar qué fallaba en ese run. El usuario eligió la segunda, que pierde solo el relanzamiento a mano que pasa. Cambiaron la decisión 8 y el requisito del resumen.*
+
+*Ajustes:*
+- *Los tests del grafo que usaban `e2e` como la comprobación que se pregunta al modelo pasaron a `build`, que no es determinista ni relanzable: con la regla nueva, `e2e` ya no llega al modelo.*
+- *El paso 2.2 dejó el grafo pasando la lista de relanzables vacía al triaje, para que cada commit quedara en verde; el 2.4 pasa la real.*
+
 ---
 
 ### 7. Pull Requests

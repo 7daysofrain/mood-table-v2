@@ -16,7 +16,13 @@ import {
   type TriageSummaries,
 } from './ports.ts';
 import type { Check, PullRequestSnapshot, Review } from './pull-request.ts';
-import type { Finding, ModelAnswer, PullRequestContext, Question } from './triage.ts';
+import type {
+  CheckFinding,
+  Finding,
+  ModelAnswer,
+  PullRequestContext,
+  Question,
+} from './triage.ts';
 import { type TriagedPush, triageSummary } from './triage-summary.ts';
 
 const MINUTE = 60_000;
@@ -34,6 +40,14 @@ const FAILED: Check[] = [
   { name: 'lint', status: 'passed', conclusion: 'success' },
   { name: 'e2e', status: 'failed', conclusion: 'failure' },
 ];
+/**
+ * Falla `build`, una comprobación que no es determinista ni relanzable: la que se pregunta al modelo
+ * por la causa (change pr-check-rerun: `test` y `e2e` ya no).
+ */
+const BUILD_FAILED: Check[] = [
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  { name: 'build', status: 'failed', conclusion: 'failure' },
+];
 /** El run de CI de las comprobaciones de estos tests. */
 const RUN = 42;
 /** Una de Actions que falla en un intento del run. */
@@ -45,6 +59,8 @@ const failedIn = (name: string, attempt: number, conclusion = 'failure'): Check 
   runId: RUN,
   runFinished: true,
 });
+/** Una que aún no ha terminado. */
+const pending = (name: string): Check => ({ name, status: 'pending', conclusion: null });
 /** `e2e` falla en su primer intento. */
 const E2E_FIRST_ATTEMPT: Check[] = [
   { name: 'lint', status: 'passed', conclusion: 'success' },
@@ -138,7 +154,8 @@ const noFindings: TriagePorts = {
   },
   summaries: {
     published: () => Promise.resolve(false),
-    publish: () => Promise.reject(new Error('no hay resumen que publicar')),
+    // Sin hallazgos, solo se publica lo que el sistema relanzó y pasó (change pr-check-rerun).
+    publish: () => Promise.resolve(),
   },
 };
 
@@ -663,7 +680,7 @@ function failingCheck(
   return { source: 'check', name, conclusion: 'failure', context };
 }
 
-const e2eFailing = failingCheck('e2e');
+const buildFailing = failingCheck('build');
 
 /**
  * La respuesta del modelo a la pregunta de la fuente del hallazgo, con `p` del lado del sí: a la de
@@ -760,8 +777,15 @@ async function followTriage(
   triage: ReturnType<typeof recordingTriage>,
   snapshots: PullRequestSnapshot[],
   spentUsd?: number,
+  checkReruns = recordingReruns().checkReruns,
 ) {
-  const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
+  const graph = trackingGraph(
+    triage.notifier,
+    recordingRequests().reviewRequests,
+    triage.ports,
+    undefined,
+    checkReruns,
+  );
   const [first, ...rest] = snapshots;
   await graph.invoke({ snapshot: first!, spentUsd }, threadConfig(74));
   for (const next of rest) {
@@ -771,7 +795,7 @@ async function followTriage(
 }
 
 /** El push con una comprobación que falla. */
-const failing = [snapshot(0), snapshot(5, { checks: FAILED })];
+const failing = [snapshot(0), snapshot(5, { checks: BUILD_FAILED })];
 /** El push con las comprobaciones pasadas y hallazgos del revisor. */
 const withFindings = [
   snapshot(0),
@@ -798,7 +822,7 @@ describe('el sistema tría los hallazgos del último push cuando la PR necesita 
   });
 
   it('con una comprobación que falla, lee los hallazgos con ella y los tría antes del aviso final', async () => {
-    const triage = recordingTriage([e2eFailing]);
+    const triage = recordingTriage([buildFailing]);
 
     await followTriage(triage, failing);
 
@@ -809,17 +833,17 @@ describe('el sistema tría los hallazgos del último push cuando la PR necesita 
       'publicar resumen',
       'aviso final',
     ]);
-    expect(triage.reads).toEqual([{ number: 74, sha: HEAD, failedChecks: ['e2e'] }]);
+    expect(triage.reads).toEqual([{ number: 74, sha: HEAD, failedChecks: ['build'] }]);
   });
 
   it('al modelo llegan la PR y los hallazgos que da GitHub, y nada más', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing]);
+    const triage = recordingTriage([codexP2, buildFailing]);
 
     await followTriage(triage, failing);
 
     expect(triage.asked).toEqual([
       { context: CONTEXT, finding: codexP2, question: 'scope' },
-      { context: CONTEXT, finding: e2eFailing, question: 'cause' },
+      { context: CONTEXT, finding: buildFailing, question: 'cause' },
     ]);
   });
 
@@ -846,7 +870,7 @@ describe('el sistema tría los hallazgos del último push cuando la PR necesita 
 
 describe('cada hallazgo sale real, no aplica o exige criterio según la probabilidad del modelo', () => {
   it('deja en el estado del hilo la clase, la probabilidad y el porqué de cada hallazgo, y el gasto', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing], (finding) =>
+    const triage = recordingTriage([codexP2, buildFailing], (finding) =>
       Promise.resolve({ probability: finding.source === 'reviewer' ? 0.93 : 0.07, inputTokens: 6_000 }),
     );
 
@@ -861,7 +885,7 @@ describe('cada hallazgo sale real, no aplica o exige criterio según la probabil
             verdict: { class: 'valid', reason: 'inScope', inside: 0.93, outside: 0.07 },
           },
           {
-            finding: e2eFailing,
+            finding: buildFailing,
             verdict: { class: 'notApplicable', reason: 'probability', probability: 0.07 },
           },
         ],
@@ -874,7 +898,7 @@ describe('cada hallazgo sale real, no aplica o exige criterio según la probabil
   });
 
   it('el coste se suma al gasto que ya llevaba la PR', async () => {
-    const triage = recordingTriage([e2eFailing]);
+    const triage = recordingTriage([buildFailing]);
 
     const state = await followTriage(triage, failing, 0.01);
 
@@ -885,16 +909,16 @@ describe('cada hallazgo sale real, no aplica o exige criterio según la probabil
 describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () => {
   it('un comentario del revisor sin su trozo de diff no llega al modelo, y el resto sí', async () => {
     const noDiff: Finding = { ...codexP2, diffHunk: null };
-    const triage = recordingTriage([noDiff, e2eFailing]);
+    const triage = recordingTriage([noDiff, buildFailing]);
 
     const state = await followTriage(triage, failing);
 
-    expect(triage.asked.map(({ finding }) => finding)).toEqual([e2eFailing]);
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([buildFailing]);
     expect(state.values).toMatchObject({
       triage: {
         findings: [
           { finding: noDiff, verdict: { class: 'needsJudgment', reason: 'noContext' } },
-          { finding: e2eFailing, verdict: { class: 'valid' } },
+          { finding: buildFailing, verdict: { class: 'valid' } },
         ],
       },
     });
@@ -919,7 +943,7 @@ describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () =
   });
 
   it('no se puede leer el contexto de una comprobación: no llega al modelo, y el resto sí', async () => {
-    const unreadable = failingCheck('e2e', { state: 'unreadable' });
+    const unreadable = failingCheck('build', { state: 'unreadable' });
     const triage = recordingTriage([codexP2, unreadable]);
 
     const state = await followTriage(triage, failing);
@@ -939,7 +963,7 @@ describe('un hallazgo sin contexto exige criterio sin preguntar al modelo', () =
 
 describe('el triaje no pasa del tope de gasto de la PR', () => {
   it('con el gasto cerca del tope, solo llegan al modelo los que caben', async () => {
-    const longLog = failingCheck('e2e', {
+    const longLog = failingCheck('build', {
       state: 'available',
       origin: 'log',
       summary: 'x'.repeat(3000),
@@ -980,10 +1004,10 @@ describe('el triaje no pasa del tope de gasto de la PR', () => {
 });
 
 describe('cada hallazgo se pregunta al modelo de decisión en una petición propia', () => {
-  const testFailing = failingCheck('test');
-  const three = [codexP2, testFailing, e2eFailing];
+  const browserFailing = failingCheck('vitest-browser');
+  const three = [codexP2, browserFailing, buildFailing];
   // Por su nombre: el hallazgo llega a cada rama en su `Send`, copiado.
-  const isTest = (finding: Finding) => finding.source === 'check' && finding.name === 'test';
+  const isBrowser = (finding: Finding) => finding.source === 'check' && finding.name === 'vitest-browser';
   /** El estado del reparto: la ronda del último triaje y las respuestas que guarda el hilo. */
   interface FanOutState {
     triageRound: { number: number };
@@ -1000,8 +1024,8 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
 
     expect(triage.asked).toEqual([
       { context: CONTEXT, finding: codexP2, question: 'scope' },
-      { context: CONTEXT, finding: testFailing, question: 'cause' },
-      { context: CONTEXT, finding: e2eFailing, question: 'cause' },
+      { context: CONTEXT, finding: browserFailing, question: 'cause' },
+      { context: CONTEXT, finding: buildFailing, question: 'cause' },
     ]);
     expect(triage.concurrency.peak).toBe(3);
     expect(state.values).toMatchObject({
@@ -1014,7 +1038,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
 
   it('si falla la petición de uno, ese exige criterio, los demás salen con su clase y lo cobrado cuenta', async () => {
     const triage = recordingTriage(three, (finding) =>
-      isTest(finding)
+      isBrowser(finding)
         ? Promise.reject(new DecisionModelError('La respuesta no trae el hallazgo', 3_000))
         : Promise.resolve({ probability: finding.source === 'reviewer' ? 0.93 : 0.07, inputTokens: 4_000 }),
     );
@@ -1026,15 +1050,15 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
       (line) => lines.push(line),
     );
     await graph.invoke({ snapshot: snapshot(0) }, threadConfig(74));
-    await graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), threadConfig(74));
+    await graph.invoke(new Command({ resume: snapshot(5, { checks: BUILD_FAILED }) }), threadConfig(74));
     const state = await graph.getState(threadConfig(74));
 
     expect(state.values).toMatchObject({
       triage: {
         findings: [
           { finding: codexP2, verdict: { class: 'valid', reason: 'inScope' } },
-          { finding: testFailing, verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
-          { finding: e2eFailing, verdict: { class: 'notApplicable', reason: 'probability' } },
+          { finding: browserFailing, verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
+          { finding: buildFailing, verdict: { class: 'notApplicable', reason: 'probability' } },
         ],
         inputTokens: 11_000,
       },
@@ -1045,7 +1069,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
 
   it('sin nada que preguntar, el triaje termina y publica el resumen igual', async () => {
     const noDiff: Finding = { ...codexP2, diffHunk: null };
-    const unreadable = failingCheck('e2e', { state: 'unreadable' });
+    const unreadable = failingCheck('build', { state: 'unreadable' });
     const triage = recordingTriage([noDiff, unreadable]);
 
     const state = await followTriage(triage, failing);
@@ -1064,21 +1088,21 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
   });
 
   it('dos pushes seguidos en el mismo hilo: el segundo triaje no lleva respuestas del primero', async () => {
-    const found = [codexP2, e2eFailing];
+    const found = [codexP2, buildFailing];
     const triage = recordingTriage(found, (finding) =>
-      Promise.resolve({ probability: isTest(finding) ? 0.07 : 0.93, inputTokens: 4_000 }),
+      Promise.resolve({ probability: isBrowser(finding) ? 0.07 : 0.93, inputTokens: 4_000 }),
     );
     const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
     const config = threadConfig(74);
     await graph.invoke({ snapshot: snapshot(0) }, config);
-    await graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), config);
+    await graph.invoke(new Command({ resume: snapshot(5, { checks: BUILD_FAILED }) }), config);
     const first = (await graph.getState(config)).values as FanOutState;
 
     // El push nuevo trae un solo hallazgo, y otro.
-    found.splice(0, found.length, testFailing);
+    found.splice(0, found.length, browserFailing);
     await graph.invoke({ snapshot: snapshot(10, { headSha: 'nuevo' }) }, config);
     await graph.invoke(
-      new Command({ resume: snapshot(15, { headSha: 'nuevo', checks: FAILED }) }),
+      new Command({ resume: snapshot(15, { headSha: 'nuevo', checks: BUILD_FAILED }) }),
       config,
     );
     const state = await graph.getState(config);
@@ -1096,7 +1120,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
     expect(state.values).toMatchObject({
       triage: {
         sha: 'nuevo',
-        findings: [{ finding: testFailing, verdict: { class: 'notApplicable', probability: 0.07 } }],
+        findings: [{ finding: browserFailing, verdict: { class: 'notApplicable', probability: 0.07 } }],
         inputTokens: 4_000,
       },
     });
@@ -1138,7 +1162,7 @@ describe('las comprobaciones deterministas salen reales por regla', () => {
 
   it('la regla no gasta del tope: con el tope agotado, SonarCloud sale real y lo demás exige criterio', async () => {
     const sonar = failingCheck('SonarCloud Code Analysis');
-    const triage = recordingTriage([sonar, e2eFailing]);
+    const triage = recordingTriage([sonar, buildFailing]);
 
     const state = await followTriage(triage, failing, 0.05);
 
@@ -1147,7 +1171,7 @@ describe('las comprobaciones deterministas salen reales por regla', () => {
       triage: {
         findings: [
           { finding: sonar, verdict: byRule },
-          { finding: e2eFailing, verdict: { class: 'needsJudgment', reason: 'overBudget' } },
+          { finding: buildFailing, verdict: { class: 'needsJudgment', reason: 'overBudget' } },
         ],
         inputTokens: 0,
       },
@@ -1157,16 +1181,16 @@ describe('las comprobaciones deterministas salen reales por regla', () => {
 
   it('con una determinista y otra que no lo es, solo la segunda llega al modelo', async () => {
     const lint = failingCheck('lint');
-    const triage = recordingTriage([lint, e2eFailing]);
+    const triage = recordingTriage([lint, buildFailing]);
 
     const state = await followTriage(triage, failing);
 
-    expect(triage.asked.map(({ finding }) => finding)).toEqual([e2eFailing]);
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([buildFailing]);
     expect(state.values).toMatchObject({
       triage: {
         findings: [
           { finding: lint, verdict: byRule },
-          { finding: e2eFailing, verdict: { class: 'valid', reason: 'probability' } },
+          { finding: buildFailing, verdict: { class: 'valid', reason: 'probability' } },
         ],
       },
     });
@@ -1174,8 +1198,8 @@ describe('las comprobaciones deterministas salen reales por regla', () => {
 });
 
 describe('la pregunta al modelo depende de la fuente del hallazgo', () => {
-  it('`e2e` llega al modelo con la pregunta de la causa, y un comentario del revisor, con la del alcance', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing]);
+  it('`build` llega al modelo con la pregunta de la causa, y un comentario del revisor, con la del alcance', async () => {
+    const triage = recordingTriage([codexP2, buildFailing]);
 
     await followTriage(triage, failing);
 
@@ -1195,7 +1219,7 @@ describe('la pregunta al modelo depende de la fuente del hallazgo', () => {
   });
 
   it('el tope se reserva con la estimación de la pregunta que se va a hacer', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing]);
+    const triage = recordingTriage([codexP2, buildFailing]);
 
     await followTriage(triage, failing);
 
@@ -1206,7 +1230,7 @@ describe('la pregunta al modelo depende de la fuente del hallazgo', () => {
 describe('un hallazgo del revisor se clasifica por el alcance de la PR (change pr-reviewer-scope)', () => {
   it('el comentario llega al modelo con la pregunta del alcance y la comprobación con la de la causa, y el resumen da cada uno con su clase', async () => {
     // El comentario: P1 0,10 y P2 0,90, de otra tarea. La comprobación: 0,93, la causa la PR.
-    const triage = recordingTriage([codexP2, e2eFailing], (finding) =>
+    const triage = recordingTriage([codexP2, buildFailing], (finding) =>
       Promise.resolve({ probability: finding.source === 'reviewer' ? 0.1 : 0.93, inputTokens: 3_000 }),
     );
 
@@ -1214,7 +1238,7 @@ describe('un hallazgo del revisor se clasifica por el alcance de la PR (change p
 
     expect(triage.asked.map(({ finding, question }) => [finding, question])).toEqual([
       [codexP2, 'scope'],
-      [e2eFailing, 'cause'],
+      [buildFailing, 'cause'],
     ]);
     expect(state.values).toMatchObject({
       triage: {
@@ -1223,7 +1247,7 @@ describe('un hallazgo del revisor se clasifica por el alcance de la PR (change p
             finding: codexP2,
             verdict: { class: 'notApplicable', reason: 'outOfScope', inside: 0.1, outside: 0.9 },
           },
-          { finding: e2eFailing, verdict: { class: 'valid', reason: 'probability', probability: 0.93 } },
+          { finding: buildFailing, verdict: { class: 'valid', reason: 'probability', probability: 0.93 } },
         ],
         inputTokens: 6_000,
       },
@@ -1232,25 +1256,25 @@ describe('un hallazgo del revisor se clasifica por el alcance de la PR (change p
       '| P2 de Codex en `tracking.ts:109` · Route failed checks directly to the final notification | no aplica | de otra tarea: p = 0,90 ≥ 0,80 · se capturaría |',
     );
     expect(triage.posted.summaries[0]?.text).toContain(
-      '| Comprobación `e2e` | real | p = 0,93 ≥ 0,80 · contexto: log |',
+      '| Comprobación `build` | real | p = 0,93 ≥ 0,80 · contexto: log |',
     );
   });
 
   it('con la descripción de la PR vacía, el comentario exige criterio sin ninguna petición, y la comprobación se tría con el modelo', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing], undefined, {
+    const triage = recordingTriage([codexP2, buildFailing], undefined, {
       title: CONTEXT.title,
       description: ' \n ',
     });
 
     const state = await followTriage(triage, failing);
 
-    expect(triage.asked.map(({ finding }) => finding)).toEqual([e2eFailing]);
-    expect(triage.estimated.map(({ finding }) => finding)).toEqual([e2eFailing]);
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([buildFailing]);
+    expect(triage.estimated.map(({ finding }) => finding)).toEqual([buildFailing]);
     expect(state.values).toMatchObject({
       triage: {
         findings: [
           { finding: codexP2, verdict: { class: 'needsJudgment', reason: 'noScope' } },
-          { finding: e2eFailing, verdict: { class: 'valid' } },
+          { finding: buildFailing, verdict: { class: 'valid' } },
         ],
       },
     });
@@ -1370,11 +1394,11 @@ describe('los hilos sin resolver del revisor, de cualquier push (change pr-unres
 
   it('sin el código del último push, exige criterio sin preguntar, y lo demás se tría con el modelo', async () => {
     const noCode: Finding = { ...earlierFindings[0]!, earlierPush: { sha: PUSH_576, code: null } };
-    const triage = recordingTriage([noCode, e2eFailing]);
+    const triage = recordingTriage([noCode, buildFailing]);
 
     await followTriage(triage, failing);
 
-    expect(triage.asked.map(({ finding }) => finding)).toEqual([e2eFailing]);
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([buildFailing]);
     expect(triage.posted.summaries[0]?.text).toContain(
       '| exige criterio | no se ha podido leer su código en el último push |',
     );
@@ -1383,7 +1407,7 @@ describe('los hilos sin resolver del revisor, de cualquier push (change pr-unres
 
 describe('el triaje no actúa sobre la PR', () => {
   it('si el modelo no responde, los hallazgos exigen criterio y el aviso final es el mismo', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing], () =>
+    const triage = recordingTriage([codexP2, buildFailing], () =>
       Promise.reject(new Error('El modelo no responde')),
     );
     const lines: string[] = [];
@@ -1400,12 +1424,12 @@ describe('el triaje no actúa sobre la PR', () => {
       return notify(notice);
     };
     await graph.invoke({ snapshot: snapshot(0) }, threadConfig(74));
-    await graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), threadConfig(74));
+    await graph.invoke(new Command({ resume: snapshot(5, { checks: BUILD_FAILED }) }), threadConfig(74));
     const state = await graph.getState(threadConfig(74));
 
     expect(summary(notices).at(-1)).toEqual({
       status: 'needsIntervention',
-      reasons: [{ kind: 'checksFailed', checks: ['e2e'] }],
+      reasons: [{ kind: 'checksFailed', checks: ['build'] }],
     });
     expect(state.values).toMatchObject({
       triage: {
@@ -1423,7 +1447,7 @@ describe('el triaje no actúa sobre la PR', () => {
   });
 
   it('si el modelo falla después de cobrar parte del triaje, eso suma al gasto de la PR', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing], () =>
+    const triage = recordingTriage([codexP2, buildFailing], () =>
       Promise.reject(new DecisionModelError('La respuesta no trae el hallazgo', 6_000)),
     );
 
@@ -1444,14 +1468,14 @@ describe('el triaje no actúa sobre la PR', () => {
   });
 
   it('si GitHub falla al leer los hallazgos, el nodo queda pendiente y se reintenta', async () => {
-    const triage = recordingTriage([e2eFailing]);
+    const triage = recordingTriage([buildFailing]);
     triage.github.failure = new Error('fetch failed');
     const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
     const config = threadConfig(74);
     await graph.invoke({ snapshot: snapshot(0) }, config);
 
     await expect(
-      graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), config),
+      graph.invoke(new Command({ resume: snapshot(5, { checks: BUILD_FAILED }) }), config),
     ).rejects.toThrow('fetch failed');
     expect((await graph.getState(config)).next).toEqual(['triar']);
     expect(triage.events).toEqual(['tracking']);
@@ -1471,7 +1495,7 @@ describe('el triaje no actúa sobre la PR', () => {
 
 describe('el resumen del triaje es un comentario del sistema por push', () => {
   it('tras triar, publica una vez el resumen del push y sigue al aviso final', async () => {
-    const triage = recordingTriage([codexP2, e2eFailing]);
+    const triage = recordingTriage([codexP2, buildFailing]);
 
     const state = await followTriage(triage, failing);
 
@@ -1483,7 +1507,7 @@ describe('el resumen del triaje es un comentario del sistema por push', () => {
   });
 
   it('si ya está el resumen de ese push, no lo repite y sigue al aviso final', async () => {
-    const triage = recordingTriage([e2eFailing]);
+    const triage = recordingTriage([buildFailing]);
     triage.posted.existing.push(HEAD);
 
     await followTriage(triage, failing);
@@ -1493,14 +1517,14 @@ describe('el resumen del triaje es un comentario del sistema por push', () => {
   });
 
   it('si GitHub falla por la red, el nodo queda pendiente y se reintenta sin volver a triar', async () => {
-    const triage = recordingTriage([e2eFailing]);
+    const triage = recordingTriage([buildFailing]);
     triage.posted.failure = new Error('fetch failed');
     const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
     const config = threadConfig(74);
     await graph.invoke({ snapshot: snapshot(0) }, config);
 
     await expect(
-      graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), config),
+      graph.invoke(new Command({ resume: snapshot(5, { checks: BUILD_FAILED }) }), config),
     ).rejects.toThrow('fetch failed');
     expect((await graph.getState(config)).next).toEqual(['publicarResumen']);
 
@@ -1513,15 +1537,15 @@ describe('el resumen del triaje es un comentario del sistema por push', () => {
   });
 
   it('un push nuevo tiene su propio resumen', async () => {
-    const triage = recordingTriage([e2eFailing]);
+    const triage = recordingTriage([buildFailing]);
     const graph = trackingGraph(triage.notifier, recordingRequests().reviewRequests, triage.ports);
     const config = threadConfig(74);
     await graph.invoke({ snapshot: snapshot(0) }, config);
-    await graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), config);
+    await graph.invoke(new Command({ resume: snapshot(5, { checks: BUILD_FAILED }) }), config);
 
     await graph.invoke({ snapshot: snapshot(10, { headSha: 'nuevo' }) }, config);
     await graph.invoke(
-      new Command({ resume: snapshot(15, { headSha: 'nuevo', checks: FAILED }) }),
+      new Command({ resume: snapshot(15, { headSha: 'nuevo', checks: BUILD_FAILED }) }),
       config,
     );
 
@@ -1540,7 +1564,7 @@ describe('el resumen del triaje es un comentario del sistema por push', () => {
 
 describe('si GitHub rechaza el resumen del triaje', () => {
   it('lo deja en el log y el aviso final llega igual', async () => {
-    const triage = recordingTriage([e2eFailing]);
+    const triage = recordingTriage([buildFailing]);
     triage.posted.failure = new GitHubRequestRejectedError('403 Resource not accessible');
     const lines: string[] = [];
     const graph = trackingGraph(
@@ -1550,7 +1574,7 @@ describe('si GitHub rechaza el resumen del triaje', () => {
       (line) => lines.push(line),
     );
     await graph.invoke({ snapshot: snapshot(0) }, threadConfig(74));
-    await graph.invoke(new Command({ resume: snapshot(5, { checks: FAILED }) }), threadConfig(74));
+    await graph.invoke(new Command({ resume: snapshot(5, { checks: BUILD_FAILED }) }), threadConfig(74));
 
     expect(triage.events.at(-1)).toBe('aviso final');
     expect(lines).toEqual([expect.stringContaining('403 Resource not accessible') as string]);
@@ -1822,6 +1846,240 @@ function sonarIssue(file: string, line: number, code: string | null = `>> ${line
     code,
   };
 }
+
+/** Las filas de la tabla del resumen publicado, sin la cabecera. */
+function summaryRows(triage: ReturnType<typeof recordingTriage>): string[] {
+  const text = triage.posted.summaries[0]?.text ?? '';
+  return text.split('\n').filter((line) => line.startsWith('| ') && !line.startsWith('| Hallazgo'));
+}
+
+/** `e2e` falla, se relanza y su segundo intento acaba con estas comprobaciones, a los 9 min. */
+const rerunThen = (checks: Check[]) => [
+  snapshot(0),
+  snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+  snapshot(6, { checks: E2E_RERUNNING }),
+  snapshot(9, { checks }),
+];
+
+describe('una comprobación relanzable que ha fallado dos veces sale real por regla (change pr-check-rerun)', () => {
+  it('el relanzamiento vuelve a fallar: real por la regla, que dice que ha fallado dos veces, sin preguntar al modelo', async () => {
+    const triage = recordingTriage([failingCheck('e2e')]);
+
+    await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
+
+    expect(triage.asked).toEqual([]);
+    expect(summaryRows(triage)).toEqual(['| Comprobación `e2e` | real | regla: ha fallado dos veces |']);
+    expect(triage.events.slice(-2)).toEqual(['publicar resumen', 'aviso final']);
+  });
+
+  it('un relanzamiento a mano cuenta: `test` en su segundo intento sale real sin relanzarla', async () => {
+    const triage = recordingTriage([failingCheck('test')]);
+    const reruns = recordingReruns();
+
+    await followTriage(
+      triage,
+      [snapshot(0), snapshot(5, { checks: [PASSED[0]!, failedIn('test', 2)] })],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    expect(reruns.recorded.reruns).toEqual([]);
+    expect(triage.asked).toEqual([]);
+    expect(summaryRows(triage)).toEqual(['| Comprobación `test` | real | regla: ha fallado dos veces |']);
+  });
+
+  it('el error del último intento es un timeout: lo dice como caso evidente', async () => {
+    const timeout = failingCheck('e2e', {
+      state: 'available',
+      origin: 'annotations',
+      summary: '',
+      errors: [
+        {
+          file: 'e2e/effects.spec.ts',
+          line: 81,
+          title: null,
+          message: 'Test timeout of 30000ms exceeded.',
+        },
+      ],
+      truncated: false,
+    });
+    const triage = recordingTriage([timeout]);
+
+    await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
+
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | real | regla: ha fallado dos veces · caso evidente: timeout |',
+    ]);
+  });
+
+  it('la regla no necesita contexto: con el log ilegible, real y no exige criterio', async () => {
+    const triage = recordingTriage([failingCheck('e2e', { state: 'unreadable' })]);
+
+    await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
+
+    expect(summaryRows(triage)).toEqual(['| Comprobación `e2e` | real | regla: ha fallado dos veces |']);
+  });
+});
+
+describe('una comprobación relanzable sin resultado tras relanzarla exige criterio (change pr-check-rerun)', () => {
+  it('GitHub rechaza el relanzamiento: exige criterio porque no se ha podido relanzar', async () => {
+    const triage = recordingTriage([failingCheck('e2e')]);
+    const reruns = recordingReruns();
+    reruns.recorded.failure = new GitHubRequestRejectedError('403 Resource not accessible');
+
+    await followTriage(
+      triage,
+      [snapshot(0), snapshot(5, { checks: E2E_FIRST_ATTEMPT })],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    expect(triage.asked).toEqual([]);
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | exige criterio | regla: no se ha podido relanzar |',
+    ]);
+  });
+
+  it('el relanzamiento no termina en 30 min: se tría, y exige criterio porque no ha terminado', async () => {
+    // GitHub no da ninguna comprobación que falle: la que no ha terminado la añade el sistema.
+    const triage = recordingTriage([]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+      snapshot(6, { checks: E2E_RERUNNING }),
+      snapshot(35, { checks: E2E_RERUNNING }),
+    ]);
+
+    expect(triage.asked).toEqual([]);
+    expect(triage.events).toEqual(['tracking', 'leer hallazgos', 'publicar resumen', 'aviso final']);
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | exige criterio | regla: el relanzamiento no ha terminado |',
+    ]);
+  });
+
+  it('una no relanzable que se relanzó con ella y no ha terminado no se tría: solo dice que no ha terminado', async () => {
+    // GitHub relanza los *jobs* fallidos del run, `lint` incluido (decisión 2); `e2e` vuelve a fallar.
+    const triage = recordingTriage([failingCheck('e2e')]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: [failedIn('lint', 1), failedIn('e2e', 1)] }),
+      snapshot(6, { checks: [pending('lint'), pending('e2e')] }),
+      snapshot(35, { checks: [pending('lint'), failedIn('e2e', 2)] }),
+    ]);
+
+    expect(summaryRows(triage)).toEqual(['| Comprobación `e2e` | real | regla: ha fallado dos veces |']);
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['e2e'] },
+        { kind: 'checksUnfinished', checks: ['lint'] },
+      ],
+    });
+  });
+
+  it('una no relanzable que se relanzó con ella y no ha terminado, con la relanzable pasada: no se tría', async () => {
+    const triage = recordingTriage([]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: [failedIn('lint', 1), failedIn('e2e', 1)] }),
+      snapshot(6, { checks: [pending('lint'), pending('e2e')] }),
+      snapshot(35, { checks: [pending('lint'), PASSED[1]!] }),
+    ]);
+
+    expect(triage.reads).toEqual([]);
+    expect(summaryRows(triage)).toEqual([]);
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksUnfinished', checks: ['lint'] }],
+    });
+  });
+
+  it('una comprobación que no ha terminado sin haberse relanzado no se tría, como antes', async () => {
+    const triage = recordingTriage([]);
+
+    await followTriage(triage, [snapshot(0), snapshot(29), snapshot(30)]);
+
+    expect(triage.events).toEqual(['tracking', 'aviso final']);
+  });
+
+  it('la comprobación se ha cancelado: exige criterio con ese motivo, sin preguntar al modelo', async () => {
+    const triage = recordingTriage([{ ...(failingCheck('e2e') as CheckFinding), conclusion: 'cancelled' }]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: [PASSED[0]!, failedIn('e2e', 1, 'cancelled')] }),
+    ]);
+
+    expect(triage.asked).toEqual([]);
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | exige criterio | regla: se ha cancelado |',
+    ]);
+  });
+});
+
+describe('el resumen dice lo que se relanzó y pasó (change pr-check-rerun)', () => {
+  /** Tras pasar las comprobaciones, el revisor termina sin hallazgos a los 12 min. */
+  const reviewedAfter = (checks: Check[]) => [
+    ...rerunThen(checks),
+    snapshot(12, { checks, review: reviewed() }),
+  ];
+
+  it('relanzada y pasada en una PR lista para integrar: un resumen sin hallazgos que lo dice, y el aviso de siempre', async () => {
+    const triage = recordingTriage([]);
+
+    await followTriage(triage, reviewedAfter(PASSED));
+
+    expect(triage.reads).toEqual([]);
+    expect(triage.events).toEqual(['tracking', 'checksFinished', 'publicar resumen', 'aviso final']);
+    expect(triage.posted.summaries).toEqual([
+      {
+        number: 74,
+        sha: HEAD,
+        text: triageSummary({ sha: HEAD, findings: [], rerunPassed: ['e2e'] }, 0.8),
+      },
+    ]);
+  });
+
+  it('relanzada y pasada junto a un `lint` que falla: el resumen lleva las dos cosas', async () => {
+    const triage = recordingTriage([failingCheck('lint')]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: [failedIn('lint', 1), failedIn('e2e', 1)] }),
+      snapshot(9, { checks: [failedIn('lint', 2), PASSED[1]!] }),
+    ]);
+
+    const text = triage.posted.summaries[0]?.text ?? '';
+    expect(summaryRows(triage)).toEqual(['| Comprobación `lint` | real | regla: comprobación determinista |']);
+    expect(text).toContain('La comprobación `e2e` se relanzó y pasó.');
+    expect(text).not.toContain('`lint` se relanzó');
+  });
+
+  it('una PR que pasa a la primera no tiene resumen', async () => {
+    const triage = recordingTriage([]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: PASSED }),
+      snapshot(9, { checks: PASSED, review: reviewed() }),
+    ]);
+
+    expect(triage.posted.summaries).toEqual([]);
+  });
+
+  it('un solo resumen por push, también en el camino de lista para integrar', async () => {
+    const triage = recordingTriage([]);
+    triage.posted.existing.push(HEAD);
+
+    await followTriage(triage, reviewedAfter(PASSED));
+
+    expect(triage.posted.summaries).toEqual([]);
+    expect(triage.events.at(-1)).toBe('aviso final');
+  });
+});
 
 describe('cada incidencia nueva de SonarQube se tría como un hallazgo propio', () => {
   it('dos incidencias dan dos peticiones al modelo, cada una con la suya y la pregunta de la regla', async () => {

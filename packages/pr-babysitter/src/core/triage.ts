@@ -78,6 +78,13 @@ export const findingSchema = z.discriminatedUnion('source', [
     /** Cómo acabó: `failure`, `timed_out`, `cancelled`… `null` si GitHub no da su *check run*. */
     conclusion: z.string().nullable(),
     context: checkContextSchema,
+    /**
+     * El intento de GitHub Actions en que ha fallado: 2 o más si se ha relanzado, a mano o por el
+     * sistema (change pr-check-rerun, decisión 3). Sin él, no es de Actions o no se ha podido leer.
+     */
+    attempt: z.number().int().optional(),
+    /** Si no ha terminado: el relanzamiento sigue en marcha cuando se agota el tiempo. */
+    unfinished: z.boolean().optional(),
   }),
   z.object({
     source: z.literal('sonarIssue'),
@@ -96,6 +103,8 @@ export const findingSchema = z.discriminatedUnion('source', [
 ]);
 
 export type Finding = z.infer<typeof findingSchema>;
+
+export type CheckFinding = Extract<Finding, { source: 'check' }>;
 
 /**
  * Cuántas incidencias nuevas de SonarQube trae la comprobación que las lista y cuántas se trían
@@ -148,7 +157,21 @@ const unansweredSchema = z.enum([
   'noCurrentCode',
   'overBudget',
   'modelUnavailable',
+  // Una relanzable sin resultado tras relanzarla (change pr-check-rerun, decisión 1): no se ha
+  // podido relanzar, el relanzamiento no ha terminado o se ha cancelado.
+  'notRerun',
+  'rerunUnfinished',
+  'cancelled',
 ]);
+
+/**
+ * Un error que dice por sí solo que el fallo es transitorio (glosario de PB, *caso evidente*;
+ * change pr-check-rerun, decisión 6): un *timeout*, la infraestructura, la red o un *runner*
+ * perdido. Solo cambia el porqué, no la clase.
+ */
+export const evidentCaseSchema = z.enum(['timeout', 'infrastructure', 'network', 'runnerLost']);
+
+export type EvidentCase = z.infer<typeof evidentCaseSchema>;
 
 /**
  * La respuesta del modelo de decisión, según la pregunta: a la de la causa, la probabilidad del sí;
@@ -175,6 +198,8 @@ export const triageAnswerSchema = z.union([
   z.object({ kind: unansweredSchema }),
   /** La decide la regla de las comprobaciones deterministas, sin preguntar. */
   z.object({ kind: z.literal('rule') }),
+  /** Una relanzable que ha fallado dos veces: la decide su regla, con el caso evidente si lo hay. */
+  z.object({ kind: z.literal('failedTwice'), evidentCase: evidentCaseSchema.nullable() }),
   modelAnswerSchema,
 ]);
 
@@ -228,6 +253,11 @@ const scopeVerdictSchema = z.object({
 export const verdictSchema = z.union([
   z.object({ class: z.literal('needsJudgment'), reason: unansweredSchema }),
   z.object({ class: z.literal('valid'), reason: z.literal('rule') }),
+  z.object({
+    class: z.literal('valid'),
+    reason: z.literal('failedTwice'),
+    evidentCase: evidentCaseSchema.nullable(),
+  }),
   z.object({ class: triageClassSchema, reason: z.literal('probability'), probability: z.number() }),
   z.object({
     class: z.literal('needsJudgment'),
@@ -263,6 +293,9 @@ export type Verdict = z.infer<typeof verdictSchema>;
  */
 export function classify(finding: Finding, answer: TriageAnswer, threshold: number): Verdict {
   if (answer.kind === 'rule') return { class: 'valid', reason: 'rule' };
+  if (answer.kind === 'failedTwice') {
+    return { class: 'valid', reason: 'failedTwice', evidentCase: answer.evidentCase };
+  }
   if (answer.kind === 'scope') return byScope(finding, answer, threshold);
   if (answer.kind === 'fixedScope') return byFixedScope(finding, answer, threshold);
   if (answer.kind !== 'answered') return { class: 'needsJudgment', reason: answer.kind };
@@ -381,6 +414,10 @@ export function withinBudget(
  * `ruleChecks` (las deterministas: fallan solo si algo de la PR incumple su regla) sale real aunque
  * su log no se pueda leer o el tope esté agotado, y no reserva nada.
  *
+ * Una de `rerunChecks` (las relanzables) tampoco llega al modelo (change pr-check-rerun, decisión
+ * 1): el sistema ya la ha relanzado, y lo que decide es cómo acabó el relanzamiento
+ * (`afterRerun`). Va justo después de la regla, por lo mismo.
+ *
  * La comprobación que lista las incidencias de SonarQube solo es un hallazgo si no anota ninguna
  * legible (si no, cada incidencia es el suyo): no hay nada que preguntar, y exige criterio sin
  * gastar del tope.
@@ -398,6 +435,7 @@ export function withoutModel(
   {
     ruleChecks,
     sonarIssuesCheck,
+    rerunChecks,
     description,
     spentUsd,
     budget,
@@ -407,6 +445,8 @@ export function withoutModel(
     ruleChecks: string[];
     /** El nombre de la comprobación que lista las incidencias nuevas de SonarQube. */
     sonarIssuesCheck: string;
+    /** Los nombres de las comprobaciones relanzables, tal como las exige la rama base. */
+    rerunChecks: string[];
     /** La descripción de la PR, que dice su alcance. */
     description: string;
     spentUsd: number;
@@ -416,6 +456,8 @@ export function withoutModel(
 ): (TriageAnswer | undefined)[] {
   const byRule = (finding: Finding) =>
     finding.source === 'check' && ruleChecks.includes(finding.name);
+  const rerunnable = (finding: Finding): finding is CheckFinding =>
+    finding.source === 'check' && rerunChecks.includes(finding.name);
   const withoutIssues = (finding: Finding) =>
     finding.source === 'check' && finding.name === sonarIssuesCheck;
   const withoutScope = (finding: Finding) =>
@@ -426,6 +468,7 @@ export function withoutModel(
     findings.filter(
       (finding) =>
         !byRule(finding) &&
+        !rerunnable(finding) &&
         !withoutIssues(finding) &&
         !withoutScope(finding) &&
         hasContext(finding) &&
@@ -437,6 +480,7 @@ export function withoutModel(
   );
   return findings.map((finding) => {
     if (byRule(finding)) return { kind: 'rule' };
+    if (rerunnable(finding)) return afterRerun(finding);
     if (withoutIssues(finding)) return { kind: 'noIssues' };
     if (withoutScope(finding)) return { kind: 'noScope' };
     if (!hasContext(finding)) return { kind: 'noContext' };
@@ -444,6 +488,72 @@ export function withoutModel(
     if (overBudget.includes(finding)) return { kind: 'overBudget' };
     return undefined;
   });
+}
+
+/**
+ * Lo que dice de una relanzable cómo acabó su relanzamiento (change pr-check-rerun, decisión 1): si
+ * ha fallado dos veces, real, con el caso evidente del último intento; si no ha terminado o se ha
+ * cancelado, exige criterio con ese motivo; y si sigue en su primer intento (GitHub no dejó
+ * relanzarla, la petición no llegó a tiempo o no se sabe su intento), exige criterio porque no se
+ * ha podido relanzar.
+ */
+function afterRerun(finding: CheckFinding): TriageAnswer {
+  if (finding.unfinished) return { kind: 'rerunUnfinished' };
+  if (finding.conclusion === 'cancelled') return { kind: 'cancelled' };
+  if ((finding.attempt ?? 0) >= 2) return { kind: 'failedTwice', evidentCase: evidentCase(finding) };
+  return { kind: 'notRerun' };
+}
+
+const TIMEOUT_MESSAGES = [/Test timeout of \d+ms exceeded/, /Timeout \d+ms exceeded/, /Test timed out in/];
+
+const NETWORK_MESSAGES = [
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'socket hang up',
+  '502 Bad Gateway',
+  '503 Service Unavailable',
+];
+
+const RUNNER_LOST_MESSAGES = [
+  'The runner has received a shutdown signal',
+  'lost communication with the server',
+];
+
+/** Cómo empieza en el log de GitHub Actions cada paso del *job*: `##[group]Run <paso>`. */
+const STEP_START = '##[group]Run ';
+
+/** Los pasos que preparan el *job*: si falla uno, el fallo es de la infraestructura. */
+const INFRASTRUCTURE_STEPS = ['pnpm install', 'actions/checkout@', 'actions/setup-node@'];
+
+/**
+ * El caso evidente del error de una comprobación (change pr-check-rerun, decisión 6), con su
+ * conclusión y el texto de su contexto: el paso que falla del log, las anotaciones o el resumen de
+ * su app. `null` si no es ninguno de la tabla, o no hay texto que mirar.
+ */
+export function evidentCase(finding: CheckFinding): EvidentCase | null {
+  if (finding.conclusion === 'timed_out') return 'timeout';
+  const { context } = finding;
+  if (context.state !== 'available') return null;
+  const text = [
+    context.summary,
+    ...context.errors.map(({ title, message }) => `${title ?? ''}\n${message}`),
+  ].join('\n');
+  if (TIMEOUT_MESSAGES.some((pattern) => pattern.test(text))) return 'timeout';
+  if (context.origin === 'log' && infrastructureStep(context.summary)) return 'infrastructure';
+  if (NETWORK_MESSAGES.some((message) => text.includes(message))) return 'network';
+  if (RUNNER_LOST_MESSAGES.some((message) => text.includes(message))) return 'runnerLost';
+  return null;
+}
+
+/** Si el paso que falla del log, su primera línea, prepara el *job*. */
+function infrastructureStep(failingStep: string): boolean {
+  const [first = ''] = failingStep.split('\n', 1);
+  if (!first.startsWith(STEP_START)) return false;
+  const step = first.slice(STEP_START.length);
+  return (
+    INFRASTRUCTURE_STEPS.some((prefix) => step.startsWith(prefix)) ||
+    step.includes('playwright install')
+  );
 }
 
 /**

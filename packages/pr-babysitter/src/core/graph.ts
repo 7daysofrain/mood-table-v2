@@ -14,7 +14,9 @@
  * `relanzar` lo pide y vuelve a la espera de las comprobaciones.
  *
  * Antes del aviso final, si la PR necesita intervención con hallazgos, se trían en modo sombra
- * (change pr-shadow-triage, decisión 1): ya están todos los del push. `triar` es el único nodo que
+ * (change pr-shadow-triage, decisión 1): ya están todos los del push. Si no hay nada que triar pero
+ * el sistema relanzó algo que pasó, el aviso final va igual por `publicarResumen`, que lo cuenta
+ * (change pr-check-rerun, decisión 8). `triar` es el único nodo que
  * lee GitHub, y solo para esas PR (decisión 2, que matiza D73). Reparte las preguntas con un
  * *fan-out* de `Send` (change pr-check-triage, decisión 4): una rama `preguntarModelo` por hallazgo,
  * todas a la vez, y `reunirTriaje` junta las respuestas y clasifica. El resultado se queda en el
@@ -60,8 +62,10 @@ import {
   finalState,
   needsReviewRequest,
   needsTriage,
+  rerunPassed,
   type ReviewStep,
   type TrackedPush,
+  unfinishedReruns,
 } from './tracking.ts';
 import {
   classify,
@@ -95,6 +99,8 @@ const TrackingState = new StateSchema({
       reviewSince: z.number().optional(),
       /** Cuándo pidió el sistema relanzar sus comprobaciones (change pr-check-rerun, decisión 3). */
       rerunSince: z.number().optional(),
+      /** Las que fallaban en el run que relanzó (change pr-check-rerun, decisión 8). */
+      rerunNames: z.array(z.string()).optional(),
       /** Las relanzables que GitHub no ha dejado relanzar (change pr-check-rerun, decisión 5). */
       rerunRejected: z.array(z.string()).optional(),
     })
@@ -220,6 +226,8 @@ const ASK_NODE = 'preguntarModelo';
 
 const GATHER_NODE = 'reunirTriaje';
 
+const SUMMARY_NODE = 'publicarResumen';
+
 /**
  * Lo que recibe una rama `preguntarModelo` en su `Send`: un hallazgo de una ronda, la PR y la
  * pregunta que toca a su fuente, que así queda en la traza, en la entrada de la rama.
@@ -262,8 +270,6 @@ function fanOut({ triageRound, triageAnswers }: State): Send[] | typeof GATHER_N
   return sends.length > 0 ? sends : GATHER_NODE;
 }
 
-const SUMMARY_NODE = 'publicarResumen';
-
 /** La última foto que guarda un hilo, validada: `getState` da sus valores sin tipo. */
 export function lastSnapshot(values: unknown): PullRequestSnapshot {
   return z.object({ snapshot: pullRequestSnapshotSchema }).parse(values).snapshot;
@@ -289,22 +295,57 @@ const AFTER_REVIEW = {
   newPush: 'esperarComprobaciones',
 } as const satisfies Record<ReviewStep, string>;
 
-type AfterChecks = (typeof AFTER_CHECKS)[ChecksStep] | typeof TRIAGE_NODE;
-type AfterReview = (typeof AFTER_REVIEW)[ReviewStep] | typeof TRIAGE_NODE;
+type AfterChecks = (typeof AFTER_CHECKS)[ChecksStep] | typeof TRIAGE_NODE | typeof SUMMARY_NODE;
+type AfterReview = (typeof AFTER_REVIEW)[ReviewStep] | typeof TRIAGE_NODE | typeof SUMMARY_NODE;
 
 /** El push que se sigue; antes del primer aviso de seguimiento, el de la foto. */
 function pushIn({ push, snapshot }: State): TrackedPush {
   return push ?? { sha: snapshot.headSha, seenAt: snapshot.observedAt };
 }
 
-/** Camino del aviso final: antes, el triaje, si necesita intervención con hallazgos. */
+/**
+ * Camino del aviso final: antes, el triaje, si necesita intervención con hallazgos o con un
+ * relanzamiento que no ha terminado; si no, el resumen, si el sistema relanzó algo que pasó (change
+ * pr-check-rerun, decisión 8).
+ */
 function viaTriage<Node extends string>(
   node: Node,
   snapshot: PullRequestSnapshot,
   push: TrackedPush,
-): Node | typeof TRIAGE_NODE {
+  rerunChecks: string[],
+): Node | typeof TRIAGE_NODE | typeof SUMMARY_NODE {
   if (node !== 'avisarEstadoFinal') return node;
-  return needsTriage(finalState(snapshot, push)) ? TRIAGE_NODE : node;
+  const unfinished = unfinishedReruns(snapshot, push, rerunChecks);
+  if (needsTriage(finalState(snapshot, push), unfinished)) return TRIAGE_NODE;
+  return rerunPassed(snapshot, push).length > 0 ? SUMMARY_NODE : node;
+}
+
+/**
+ * Los hallazgos del push con lo que sabe el seguimiento de su relanzamiento (change pr-check-rerun,
+ * decisión 1): el intento de cada comprobación, de la foto, y las relanzables que el sistema relanzó
+ * y no han terminado, que GitHub no da como fallidas y no tienen contexto que leer.
+ */
+function withReruns(
+  findings: Finding[],
+  snapshot: PullRequestSnapshot,
+  push: TrackedPush,
+  rerunChecks: string[],
+): Finding[] {
+  const attempts = new Map(snapshot.checks.map(({ name, attempt }) => [name, attempt]));
+  const withAttempt = findings.map((finding) => {
+    const attempt = finding.source === 'check' ? attempts.get(finding.name) : undefined;
+    return attempt === undefined ? finding : { ...finding, attempt };
+  });
+  const unfinished = unfinishedReruns(snapshot, push, rerunChecks).map(
+    (name): Finding => ({
+      source: 'check',
+      name,
+      conclusion: null,
+      context: { state: 'notProvided' },
+      unfinished: true,
+    }),
+  );
+  return [...withAttempt, ...unfinished];
 }
 
 /** Para a esperar al driver y valida la foto con la que reanuda. */
@@ -336,7 +377,7 @@ export function createTrackingGraph(
   }> = (state) => {
     const snapshot = waitFor('checks');
     const { push, next } = afterChecksWait(pushIn(state), snapshot, timeoutMs, rerunChecks);
-    const goto = viaTriage(AFTER_CHECKS[next], snapshot, push);
+    const goto = viaTriage(AFTER_CHECKS[next], snapshot, push, rerunChecks);
     return new Command({ update: { snapshot, push }, goto });
   };
 
@@ -374,7 +415,11 @@ export function createTrackingGraph(
     if (!ready) return {};
     try {
       await checkReruns.rerun(ready.runId);
-      return { push: { ...push, rerunSince: snapshot.observedAt } };
+      // Las que fallan en ese run: GitHub las relanza todas, relanzables o no (decisión 2).
+      const rerunNames = snapshot.checks
+        .filter((check) => check.status === 'failed' && check.runId === ready.runId)
+        .map((check) => check.name);
+      return { push: { ...push, rerunSince: snapshot.observedAt, rerunNames } };
     } catch (error) {
       if (!(error instanceof GitHubRequestRejectedError)) throw error;
       const rejected = toRerun.map(({ name }) => name);
@@ -391,7 +436,7 @@ export function createTrackingGraph(
   ) => {
     const snapshot = waitFor('review');
     const { push, next } = afterReviewWait(pushIn(state), snapshot, timeoutMs);
-    const goto = viaTriage(AFTER_REVIEW[next], snapshot, push);
+    const goto = viaTriage(AFTER_REVIEW[next], snapshot, push, rerunChecks);
     return new Command({ update: { snapshot, push }, goto });
   };
 
@@ -403,16 +448,19 @@ export function createTrackingGraph(
   // fuente. Si GitHub falla al leerlos, lanza, y el nodo queda pendiente para la vuelta siguiente.
   const triar: GraphNode<typeof TrackingState> = async (state) => {
     const { snapshot } = state;
-    const final = finalState(snapshot, pushIn(state));
+    const push = pushIn(state);
+    const final = finalState(snapshot, push);
     const failedChecks =
       final.status === 'needsIntervention'
         ? final.reasons.flatMap((reason) => (reason.kind === 'checksFailed' ? reason.checks : []))
         : [];
     const read = await findings.read(snapshot.number, snapshot.headSha, failedChecks);
+    const found = withReruns(read.findings, snapshot, push, rerunChecks);
     const round = (state.triageRound?.number ?? 0) + 1;
-    const decided = withoutModel(read.findings, {
+    const decided = withoutModel(found, {
       ruleChecks: triage.ruleChecks,
       sonarIssuesCheck: triage.sonarIssuesCheck,
+      rerunChecks,
       description: read.context.description,
       spentUsd: state.spentUsd ?? 0,
       budget: triage.budget,
@@ -424,7 +472,7 @@ export function createTrackingGraph(
       triageRound: {
         number: round,
         pr: read.context,
-        findings: read.findings,
+        findings: found,
         sonarIssues: read.sonarIssues,
       },
       triageAnswers: decided,
@@ -482,16 +530,30 @@ export function createTrackingGraph(
     };
   };
 
-  // Publica en la PR el triaje del push (decisión 7), una vez: si ya está el de ese SHA (un
-  // reintento tras una respuesta que no llegó), no lo repite. Si GitHub lo rechaza, queda en el log
-  // y el aviso final sale igual (decisión 8); otro fallo deja el nodo pendiente, y el reintento no
-  // vuelve a triar. Sin hallazgos no hay nada que contar.
-  const publicarResumen: GraphNode<typeof TrackingState> = async ({ snapshot, triage: triaged }) => {
-    if (!triaged || triaged.findings.length === 0) return {};
-    if (await summaries.published(snapshot.number, triaged.sha)) return {};
+  // Publica en la PR el triaje del push (decisión 7) y lo que el sistema relanzó y pasó (change
+  // pr-check-rerun, decisión 8), una vez: si ya está el de ese SHA (un reintento tras una respuesta
+  // que no llegó), no lo repite. Si GitHub lo rechaza, queda en el log y el aviso final sale igual
+  // (decisión 8); otro fallo deja el nodo pendiente, y el reintento no vuelve a triar. Sin
+  // hallazgos ni nada relanzado que pasara, no hay nada que contar.
+  const publicarResumen: GraphNode<typeof TrackingState> = async (state) => {
+    const { snapshot } = state;
+    // El triaje de este push, si lo ha habido: el hilo guarda también el de uno anterior.
+    const triaged = state.triage?.sha === snapshot.headSha ? state.triage : undefined;
+    const found = triaged?.findings ?? [];
+    const passed = rerunPassed(snapshot, pushIn(state));
+    if (found.length === 0 && passed.length === 0) return {};
+    if (await summaries.published(snapshot.number, snapshot.headSha)) return {};
     try {
-      const text = triageSummary(triaged, triage.threshold);
-      await summaries.publish(snapshot.number, triaged.sha, text);
+      const text = triageSummary(
+        {
+          sha: snapshot.headSha,
+          findings: found,
+          sonarIssues: triaged?.sonarIssues,
+          rerunPassed: passed,
+        },
+        triage.threshold,
+      );
+      await summaries.publish(snapshot.number, snapshot.headSha, text);
     } catch (error) {
       if (!(error instanceof GitHubRequestRejectedError)) throw error;
       log(
@@ -512,13 +574,13 @@ export function createTrackingGraph(
     .addNode('avisarSeguimiento', avisarSeguimiento)
     .addNode('empezarSinAviso', empezarSinAviso)
     .addNode('esperarComprobaciones', esperarComprobaciones, {
-      ends: [...Object.values(AFTER_CHECKS), TRIAGE_NODE],
+      ends: [...Object.values(AFTER_CHECKS), TRIAGE_NODE, SUMMARY_NODE],
     })
     .addNode('avisarComprobaciones', avisarComprobaciones)
     .addNode(REVIEW_REQUEST_NODE, pedirRevision)
     .addNode(RERUN_NODE, relanzar)
     .addNode('esperarRevisor', esperarRevisor, {
-      ends: [...Object.values(AFTER_REVIEW), TRIAGE_NODE],
+      ends: [...Object.values(AFTER_REVIEW), TRIAGE_NODE, SUMMARY_NODE],
     })
     .addNode(TRIAGE_NODE, triar)
     .addNode(ASK_NODE, preguntarModelo)
@@ -548,9 +610,9 @@ export function createTrackingGraph(
       RERUN_NODE,
       (state) =>
         state.push?.rerunRejected
-          ? viaTriage('avisarEstadoFinal', state.snapshot, pushIn(state))
+          ? viaTriage('avisarEstadoFinal', state.snapshot, pushIn(state), rerunChecks)
           : 'esperarComprobaciones',
-      ['esperarComprobaciones', TRIAGE_NODE, 'avisarEstadoFinal'],
+      ['esperarComprobaciones', TRIAGE_NODE, SUMMARY_NODE, 'avisarEstadoFinal'],
     )
     .addConditionalEdges(TRIAGE_NODE, fanOut, [ASK_NODE, GATHER_NODE])
     .addEdge(ASK_NODE, GATHER_NODE)

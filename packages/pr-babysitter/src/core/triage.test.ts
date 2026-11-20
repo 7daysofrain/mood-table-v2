@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type CheckFinding,
   classify,
+  evidentCase,
   type Finding,
   findingKeys,
   hasContext,
@@ -289,6 +291,7 @@ describe('lo que se decide sin el modelo (change pr-check-triage, decisión 6)',
     withoutModel(findings, {
       ruleChecks,
       sonarIssuesCheck: 'sonar-issues',
+      rerunChecks: [],
       description,
       spentUsd,
       budget,
@@ -356,6 +359,7 @@ describe('una PR sin descripción no dice su alcance (change pr-reviewer-scope, 
     withoutModel(findings, {
       ruleChecks: ['lint'],
       sonarIssuesCheck: 'sonar-issues',
+      rerunChecks: [],
       description,
       spentUsd: 0,
       budget,
@@ -424,6 +428,7 @@ describe('un comentario de un push anterior (change pr-unresolved-threads, decis
     withoutModel(findings, {
       ruleChecks: ['lint'],
       sonarIssuesCheck: 'sonar-issues',
+      rerunChecks: [],
       description,
       spentUsd: 0,
       budget,
@@ -576,6 +581,7 @@ describe('una incidencia de SonarQube (change pr-sonar-issue-triage, decisiones 
     withoutModel(findings, {
       ruleChecks,
       sonarIssuesCheck: 'sonar-issues',
+      rerunChecks: [],
       description: 'Tría cada incidencia de SonarQube.',
       spentUsd: 0,
       budget,
@@ -664,5 +670,207 @@ describe('una incidencia de SonarQube (change pr-sonar-issue-triage, decisiones 
       'sonar_typescript_s9382_check_sonar_issues_ts_58',
       'sonar_typescript_s9382_check_sonar_issues_ts',
     ]);
+  });
+});
+
+describe('una comprobación relanzable, tras el relanzamiento (change pr-check-rerun, decisiones 1, 6 y 7)', () => {
+  const budget: TriageBudget = { capUsd: 0.001, inputPricePerMTok: 1 };
+  const estimated: Finding[] = [];
+  const decide = (findings: Finding[], spentUsd = 0, rerunChecks = ['test', 'e2e']) =>
+    withoutModel(findings, {
+      ruleChecks: ['lint'],
+      sonarIssuesCheck: 'sonar-issues',
+      rerunChecks,
+      description: 'Relanza una vez test y e2e.',
+      spentUsd,
+      budget,
+      estimate: (finding) => {
+        estimated.push(finding);
+        return 400;
+      },
+    });
+  /** Una relanzable que falla, en el intento que se diga, con el error de una aserción. */
+  const rerunnable = (
+    name: string,
+    attempt: number | undefined,
+    overrides: Partial<Extract<Finding, { source: 'check' }>> = {},
+  ): Finding => ({ ...(checkFinding(name) as CheckFinding), attempt, ...overrides });
+
+  it('una relanzable que ha fallado dos veces sale real por la regla nueva, que lo registra', () => {
+    const e2e = rerunnable('e2e', 2);
+
+    expect(decide([e2e])).toEqual([{ kind: 'failedTwice', evidentCase: null }]);
+    expect(classify(e2e, { kind: 'failedTwice', evidentCase: null }, THRESHOLD)).toEqual({
+      class: 'valid',
+      reason: 'failedTwice',
+      evidentCase: null,
+    });
+  });
+
+  it('cuenta el intento de GitHub: también relanzada a mano, y en un intento posterior', () => {
+    expect(decide([rerunnable('test', 2), rerunnable('test', 3)])).toEqual([
+      { kind: 'failedTwice', evidentCase: null },
+      { kind: 'failedTwice', evidentCase: null },
+    ]);
+  });
+
+  it('va antes que la regla de sin contexto y que el tope, y no reserva nada', () => {
+    estimated.length = 0;
+    const unreadable = rerunnable('e2e', 2, { context: { state: 'unreadable' } });
+
+    expect(decide([unreadable, rerunnable('test', 2)], 0.001)).toEqual([
+      { kind: 'failedTwice', evidentCase: null },
+      { kind: 'failedTwice', evidentCase: null },
+    ]);
+    expect(estimated).toEqual([]);
+  });
+
+  it('registra el caso evidente del error del último intento', () => {
+    const timedOut = rerunnable('e2e', 2, { conclusion: 'timed_out' });
+
+    expect(decide([timedOut])).toEqual([{ kind: 'failedTwice', evidentCase: 'timeout' }]);
+    expect(classify(timedOut, { kind: 'failedTwice', evidentCase: 'timeout' }, THRESHOLD)).toEqual({
+      class: 'valid',
+      reason: 'failedTwice',
+      evidentCase: 'timeout',
+    });
+  });
+
+  it('sin resultado tras relanzarla exige criterio, con su motivo y sin reservar tope', () => {
+    estimated.length = 0;
+    const findings = [
+      // Sigue en su primer intento: GitHub no dejó relanzarla, o la petición no llegó a tiempo.
+      rerunnable('e2e', 1),
+      // Sin intento: no se ha podido leer su *job*, así que no se ha relanzado.
+      rerunnable('test', undefined),
+      rerunnable('e2e', undefined, { conclusion: null, context: { state: 'notProvided' }, unfinished: true }),
+      rerunnable('test', 1, { conclusion: 'cancelled' }),
+      rerunnable('e2e', 2, { conclusion: 'cancelled' }),
+    ];
+
+    expect(decide(findings)).toEqual([
+      { kind: 'notRerun' },
+      { kind: 'notRerun' },
+      { kind: 'rerunUnfinished' },
+      { kind: 'cancelled' },
+      { kind: 'cancelled' },
+    ]);
+    expect(estimated).toEqual([]);
+    for (const reason of ['notRerun', 'rerunUnfinished', 'cancelled'] as const) {
+      expect(classify(findings[0]!, { kind: reason }, THRESHOLD)).toEqual({
+        class: 'needsJudgment',
+        reason,
+      });
+    }
+  });
+
+  it('ninguna relanzable llega al modelo; las demás comprobaciones siguen con la pregunta de la causa', () => {
+    const build = checkFinding('build');
+
+    expect(decide([rerunnable('test', 1), rerunnable('e2e', 2), build])).toEqual([
+      { kind: 'notRerun' },
+      { kind: 'failedTwice', evidentCase: null },
+      undefined,
+    ]);
+    expect(questionFor(build)).toBe('cause');
+  });
+
+  it('con la lista de relanzables vacía, test y e2e van al modelo como antes', () => {
+    expect(decide([rerunnable('test', 2), rerunnable('e2e', 1)], 0, [])).toEqual([
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it('una determinista sigue saliendo por su regla, aunque también sea relanzable', () => {
+    expect(decide([rerunnable('lint', 2)], 0, ['lint'])).toEqual([{ kind: 'rule' }]);
+  });
+});
+
+describe('el caso evidente del error del último intento (change pr-check-rerun, decisión 6)', () => {
+  /** Una comprobación que falla con este texto en su contexto, del origen que se diga. */
+  const failing = (
+    summary: string,
+    origin: 'annotations' | 'log' | 'appSummary' = 'log',
+    conclusion = 'failure',
+  ) =>
+    ({
+      source: 'check',
+      name: 'e2e',
+      conclusion,
+      attempt: 2,
+      context: { state: 'available', origin, summary, errors: [], truncated: false },
+    }) satisfies Finding;
+  /** Con el error en una anotación, como lo publican Playwright y Vitest. */
+  const annotated = (message: string) =>
+    ({
+      ...failing('', 'annotations'),
+      context: {
+        state: 'available',
+        origin: 'annotations',
+        summary: '',
+        errors: [{ file: 'e2e/effects.spec.ts', line: 81, title: null, message }],
+        truncated: false,
+      },
+    }) satisfies Finding;
+
+  it('timeout: la conclusión timed_out, aunque no se pueda leer su contexto', () => {
+    expect(evidentCase({ ...failing('', 'log', 'timed_out'), context: { state: 'unreadable' } })).toBe(
+      'timeout',
+    );
+  });
+
+  it.each([
+    ['Playwright', 'Test timeout of 30000ms exceeded.'],
+    ['Playwright, en una espera', 'Error: page.waitForSelector: Timeout 5000ms exceeded.'],
+    ['Vitest', 'Error: Test timed out in 5000ms.'],
+  ])('timeout: el mensaje de %s', (_, message) => {
+    expect(evidentCase(annotated(message))).toBe('timeout');
+  });
+
+  it.each([
+    'pnpm install --frozen-lockfile',
+    'pnpm --filter @moodtable/e2e exec playwright install --with-deps chromium',
+    'actions/checkout@v7',
+    'actions/setup-node@v7',
+  ])('infraestructura: falla el paso «%s»', (step) => {
+    expect(evidentCase(failing(`##[group]Run ${step}\n##[error]Process completed with exit code 1.`))).toBe(
+      'infrastructure',
+    );
+  });
+
+  it.each([
+    'Error: read ECONNRESET',
+    'Error: connect ETIMEDOUT 140.82.112.4:443',
+    'Error: socket hang up',
+    'ERR_PNPM_FETCH_502  GET https://registry.npmjs.org/vitest: 502 Bad Gateway',
+    'HttpError: 503 Service Unavailable',
+  ])('red: %s', (message) => {
+    expect(evidentCase(annotated(message))).toBe('network');
+  });
+
+  it.each([
+    'The runner has received a shutdown signal. This can happen when the runner service is stopped, or a manually started runner is canceled.',
+    'The self-hosted runner: moodtable-1 lost communication with the server.',
+  ])('runner perdido: %s', (message) => {
+    expect(evidentCase(failing(message))).toBe('runnerLost');
+  });
+
+  it('sin caso evidente: una aserción (el error real de la PR #112)', () => {
+    expect(
+      evidentCase(
+        annotated(
+          '  1) [chromium] › effects.spec.ts:81:1 › el DJ cambia el efecto de la tira desde el panel ──────────\n    Error: expect(received).toBeLessThan(expected)\n\n    Expected: < 100\n    Received:   104.7000000',
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it('sin caso evidente: un paso de tests que falla, aunque lo prepare la infraestructura', () => {
+    expect(evidentCase(failing('##[group]Run pnpm test:coverage\n FAIL  src/core/graph.test.ts'))).toBeNull();
+  });
+
+  it('sin contexto y sin timed_out, no hay caso evidente', () => {
+    expect(evidentCase({ ...failing(''), context: { state: 'notProvided' } })).toBeNull();
   });
 });
