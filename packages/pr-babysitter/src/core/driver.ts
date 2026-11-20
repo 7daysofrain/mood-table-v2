@@ -21,6 +21,7 @@ import {
   isPrActionNode,
   lastSnapshot,
   PR_ACTION_NODES,
+  RERUN_NODE,
   threadConfig,
   type TrackingOptions,
 } from './graph.ts';
@@ -207,15 +208,22 @@ export function createDriver({
    * Entonces termina el aviso pendiente, pero se salta `pedirRevision` o `relanzar` como si hubiera
    * corrido, y el hilo sigue a la espera, que con la foto siguiente verá el push nuevo (change
    * pr-review-request, decisión 6; change pr-check-rerun, decisión 4).
+   *
+   * `relanzar` no se reintenta nunca con la foto que tenía, tampoco en el mismo push: GitHub pudo
+   * aceptar la petición aunque se perdiera la respuesta, o el mantenedor pudo relanzar a mano, y
+   * repetirla pediría un tercer intento o la rechazaría con el segundo en marcha. Se salta, y la
+   * foto siguiente decide: con el intento 1 aún fallido vuelve a `relanzar`, y con el 2 espera
+   * (change pr-check-rerun, decisión 5).
    */
   async function retryPending(pullRequest: OpenPullRequest) {
     const config = runConfig(pullRequest.number);
     const state = await graph.getState(config);
-    if (lastSnapshot(state.values).headSha === pullRequest.headSha) {
+    const samePush = lastSnapshot(state.values).headSha === pullRequest.headSha;
+    if (samePush && !state.next.includes(RERUN_NODE)) {
       await graph.invoke(null, config);
       return;
     }
-    if (!actingNext(state)) {
+    if (!samePush && !actingNext(state)) {
       await graph.invoke(null, { ...config, interruptBefore: [...PR_ACTION_NODES] });
     }
     const acting = actingNext(await graph.getState(config));

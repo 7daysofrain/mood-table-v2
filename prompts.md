@@ -2512,6 +2512,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El puerto quedó como `rerun(runId)`, y no `rerun(sha, checks)`: el núcleo elige el run.*
 - *Para no relanzar ninguna, `RERUN_CHECKS` lleva una coma sola, como `TRIAGE_RULE_CHECKS`: una variable vacía es la lista por defecto.*
 - *La prueba a mano encontró un hueco que ni el spec ni los tests habían visto: el sistema esperaba a que terminaran todas las comprobaciones exigidas para relanzar, y con `test` roja SonarCloud Code Analysis no llega nunca, así que la PR esperaba hasta el tiempo límite sin relanzar. La IA lo diagnosticó con el estado de los runs y propuso relanzar en cuanto termina el run de la que falla; el usuario lo aprobó («Sí, así»). Cambió el requisito, con un escenario nuevo, y la decisión 3 del `design.md`.*
+- *La revisión de Codex encontró otro: si GitHub aceptaba el relanzamiento pero se perdía la respuesta, el sistema lo reintentaba con la foto vieja y pedía un tercer intento, o GitHub lo rechazaba con el segundo en marcha. La IA propuso que el adaptador leyera el intento del run antes de pedirlo; el usuario prefirió decidir con la foto nueva («no sería mejor relanzar con la foto nueva?»), que deja el núcleo como único sitio de la regla. Cambiaron el escenario del fallo pasajero, con uno nuevo, y la decisión 5 del `design.md`.*
 
 ---
 

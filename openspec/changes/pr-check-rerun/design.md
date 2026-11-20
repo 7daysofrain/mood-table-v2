@@ -126,8 +126,19 @@ implementar `MOO-170`).
 
 Un `GitHubRequestRejectedError` (403 sin permiso, 422) deja en el estado que el relanzamiento fue
 rechazado, y la PR va al estado final por `triar`. Cualquier otro error hace fallar el nodo, y el
-*driver* lo reintenta en la siguiente vuelta, como hoy con cualquier nodo; el reloj de 30 min, que no
-se ha puesto en marcha, sigue contando desde el push.
+reloj de 30 min, que no se ha puesto en marcha, sigue contando desde el push.
+
+El *driver* no reintenta `relanzar` con la foto que tenía, como hace con los demás nodos: se lo salta,
+y el hilo vuelve a esperar la foto siguiente. GitHub pudo aceptar la petición aunque se perdiera la
+respuesta, o el mantenedor pudo relanzar a mano entretanto. Repetirla con la foto vieja pediría un
+tercer intento, o GitHub la rechazaría con el segundo en marcha y la PR iría a «necesita
+intervención» sin motivo. Con la foto nueva, el intento 1 aún fallido vuelve a `relanzar`, y el 2
+espera como un relanzamiento a mano, con el reloj desde el push (hallado en la revisión de la PR de
+`MOO-170`, 20-nov).
+
+- **Alternativa:** que el adaptador lea el intento del run antes de pedirlo y no lo pida si ya va por
+  el 2. Conserva el reloj desde el relanzamiento en ese caso raro, pero hace una lectura más en cada
+  relanzamiento y da al puerto una regla que ya decide el núcleo con la foto.
 
 ### 6. El caso evidente se calcula con el error del último intento, en el triaje
 

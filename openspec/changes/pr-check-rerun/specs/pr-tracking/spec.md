@@ -8,7 +8,8 @@ primer intento, el sistema SHALL relanzar una vez los *jobs* fallidos de ese run
 commit, en cuanto el run termina y sin esperar a las demás comprobaciones, y esperar su resultado sin
 avisar. MUST NOT relanzar una cancelada ni
 una ya relanzada en ese push. Si GitHub lo rechaza, SHALL avisar «necesita intervención» con ese
-motivo; un fallo pasajero SHALL reintentarse en la siguiente vuelta.
+motivo; tras un fallo pasajero SHALL volver a decidir con la foto siguiente, y MUST NOT repetir la
+petición si esa foto ya trae el segundo intento.
 
 > Traza: `MOO-155`, caso feliz (*se relanza una vez, sobre el mismo commit, sin preguntar al modelo de
 > decisión*) y criterios *el relanzamiento pasa y la PR sigue su camino*, *un push nuevo deja sin efecto
@@ -16,7 +17,8 @@ motivo; un fallo pasajero SHALL reintentarse en la siguiente vuelta.
 > relanzada en ese push no se vuelve a relanzar* y *una comprobación cancelada no se relanza*; D114.
 > Relanzar los *jobs* que han fallado del run, y no uno a uno, y reintentar el fallo pasajero: decidido
 > al explorar el change (20-nov), `design.md` decisiones 2 y 5. No esperar a las demás: hallado en la
-> prueba a mano (20-nov), `design.md` decisión 3.
+> prueba a mano (20-nov), `design.md` decisión 3. Decidir el reintento con la foto siguiente: hallado
+> en la revisión de la PR de `MOO-170` (20-nov), `design.md` decisión 5.
 
 #### Scenario: Falla un e2e en su primer intento
 - **GIVEN** el sistema sigue una PR
@@ -55,8 +57,15 @@ motivo; un fallo pasajero SHALL reintentarse en la siguiente vuelta.
 
 #### Scenario: Un fallo pasajero al relanzar se reintenta (asumido)
 - **GIVEN** `e2e` ha fallado en su primer intento en el último push de una PR
-- **WHEN** GitHub no responde a la petición de relanzarlo
-- **THEN** el sistema vuelve a pedir el relanzamiento en la siguiente vuelta, sin avisar
+- **WHEN** GitHub no responde a la petición de relanzarlo, y la siguiente vuelta lo ve aún en su
+  primer intento
+- **THEN** el sistema vuelve a pedir el relanzamiento, sin avisar
+
+#### Scenario: Un relanzamiento que llegó a GitHub sin respuesta no se repite
+- **GIVEN** `e2e` ha fallado en su primer intento en el último push de una PR
+- **WHEN** la petición de relanzarlo falla sin respuesta, y la siguiente vuelta lo ve ya en su
+  segundo intento, porque la petición llegó a GitHub o porque el mantenedor lo ha relanzado a mano
+- **THEN** el sistema no vuelve a pedir el relanzamiento y espera el resultado de ese intento
 
 #### Scenario: Una comprobación ya relanzada a mano no se vuelve a relanzar
 - **GIVEN** el mantenedor ha relanzado a mano `test` en el último push de una PR

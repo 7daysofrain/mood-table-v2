@@ -88,6 +88,15 @@
   - El requisito y su escenario en `specs/pr-tracking/spec.md`.
 
   Verificar: `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
+- [x] 1.6b **(hallado en la revisión de la PR)** Tras un fallo pasajero de `relanzar`, decidir con la
+  foto siguiente y no con la que tenía (`design.md` decisión 5): GitHub pudo aceptar la petición
+  aunque se perdiera la respuesta.
+  - **Test en rojo primero,** en `core/driver.test.ts`: la foto siguiente trae el intento 2 y no se
+    vuelve a pedir; con el intento 1, se pide con la foto nueva.
+  - `retryPending` en `core/driver.ts` se salta `relanzar` también en el mismo push.
+  - El requisito y su escenario en `specs/pr-tracking/spec.md`.
+
+  Verificar: `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
 - [x] 1.7 **Prueba a mano** (sin commit), con el sistema en marcha y el PAT con *Actions: write*:
   - una PR de prueba con un test de Vitest que falla solo en el primer intento
     (`process.env.GITHUB_RUN_ATTEMPT === '1'`);

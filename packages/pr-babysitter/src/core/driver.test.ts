@@ -1011,7 +1011,7 @@ describe('un nodo pendiente que se reintenta tras un push nuevo', () => {
     expect(summary(notifier.notices)).toEqual([[74, 'tracking']]);
   });
 
-  it('con el mismo push, reintenta el relanzamiento que falló por la red (change pr-check-rerun)', async () => {
+  it('con el mismo push, vuelve a pedir con la foto nueva el relanzamiento que falló por la red (change pr-check-rerun)', async () => {
     const { github, tick } = setup([pullRequest(74)]);
     await tick();
     github.checks['sha-74'] = [E2E_FIRST_ATTEMPT];
@@ -1019,9 +1019,31 @@ describe('un nodo pendiente que se reintenta tras un push nuevo', () => {
     await tick();
 
     github.rerunFailure = undefined;
-    await tick();
+    await ticks(tick, 2);
 
     expect(github.reruns).toEqual([42]);
+  });
+
+  it('no vuelve a pedirlo si la foto nueva ya trae el intento 2: llegó a GitHub aunque fallara la respuesta, o se relanzó a mano (change pr-check-rerun)', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = [...PASSED, E2E_FIRST_ATTEMPT];
+    github.rerunFailure = new Error('fetch failed');
+    await tick();
+
+    github.rerunFailure = undefined;
+    github.checks['sha-74'] = [
+      ...PASSED,
+      { name: 'e2e', status: 'pending', conclusion: null, attempt: 2, runId: 42, runFinished: false },
+    ];
+    await ticks(tick, 3);
+    expect(github.reruns).toEqual([]);
+
+    github.checks['sha-74'] = [...PASSED, { ...E2E_FIRST_ATTEMPT, attempt: 2 }];
+    await ticks(tick, 2);
+
+    expect(github.reruns).toEqual([]);
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
   });
 
   it('con el mismo push, reintenta la petición que falló por la red', async () => {
