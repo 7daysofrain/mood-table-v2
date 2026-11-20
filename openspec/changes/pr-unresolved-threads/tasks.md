@@ -75,7 +75,7 @@
   - `estimate` cuenta las tres preguntas y el código;
   - las tres claves de un título largo no pasan de 100 caracteres;
   - un comentario del último push sigue con dos preguntas.
-- [ ] 1.11 El adaptador: la pregunta «ya arreglado» en `CRITERIA` e `instructions`, la petición con
+- [x] 1.11 El adaptador: la pregunta «ya arreglado» en `CRITERIA` e `instructions`, la petición con
   tres preguntas y su respuesta.
   Verificar: los tests de 1.10 en verde y los que ya había.
 - [ ] 1.12 **(test en rojo)** El resumen (`design.md` decisión 5), en `core/triage-summary.test.ts`:
