@@ -5,6 +5,8 @@
  */
 export const SHARED_PACKAGE_NAME = '@moodtable/shared';
 
+export { formatDuration } from './format-duration.ts';
+
 export {
   type ApiError,
   ApiErrorSchema,
