@@ -41,7 +41,8 @@ const FILE_LINES = LINES_BEFORE + LINES_AFTER;
 
 const SEPARATOR = ' · ';
 const HIGH_SEVERITIES = new Set(['BLOCKER', 'HIGH']);
-const TOTAL = /(\d+) incidencias nuevas; se anotan \d+/;
+/** El aviso con el total, en su propia línea del resumen: anclado, para que no busque desde cada dígito. */
+const TOTAL = /^(\d+) incidencias nuevas; se anotan \d+$/m;
 
 /**
  * Las incidencias de la comprobación y cuántas trae, o `null` si no anota ninguna legible: sin
