@@ -30,24 +30,6 @@ export interface PullRequestComment {
   body: string;
 }
 
-/** Un comentario de revisión en línea, tal como se hizo: en qué push, fichero y línea. */
-export interface ReviewComment {
-  /** Login de GitHub de la cuenta que lo escribe. */
-  author: string;
-  body: string;
-  /**
-   * El push sobre el que se hizo. No el `commit_id`, que GitHub mueve al push siguiente si la línea
-   * no cambia (la #88).
-   */
-  originalSha: string;
-  path: string;
-  /** La línea en ese push, o `null` si el comentario es del fichero entero. */
-  originalLine: number | null;
-  diffHunk: string | null;
-  /** El comentario al que contesta, si es una respuesta en un hilo. */
-  inReplyTo: number | null;
-}
-
 /**
  * Un hilo de revisión de una PR (change pr-unresolved-threads, decisión 1): si está resuelto y el
  * comentario que lo abre, el único que se mira; las respuestas no.
@@ -131,17 +113,6 @@ const commentSchema = z.object({
 
 /** Lo que se lee de una PR de `GET /repos/{owner}/{repo}/pulls/{number}`, para el triaje. */
 const pullTextSchema = z.object({ title: z.string(), body: z.string().nullable() });
-
-/** Lo que se lee de cada comentario de `GET /repos/{owner}/{repo}/pulls/{number}/comments`. */
-const reviewCommentSchema = z.object({
-  user: z.object({ login: z.string() }),
-  body: z.string(),
-  original_commit_id: z.string(),
-  path: z.string(),
-  original_line: z.number().nullable().optional(),
-  diff_hunk: z.string().nullable().optional(),
-  in_reply_to_id: z.number().nullable().optional(),
-});
 
 /**
  * Los hilos de revisión de una PR, de 100 en 100, con el comentario que abre cada uno (change
@@ -264,8 +235,6 @@ export function createGitHubReader({
   createComment(pullRequestNumber: number, body: string): Promise<void>;
   /** El título y la descripción de una PR. Para el triaje. */
   getPullRequest(pullRequestNumber: number): Promise<{ title: string; body: string }>;
-  /** Los comentarios de revisión en línea de una PR, del primero al último. Para el triaje. */
-  listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]>;
   /**
    * Los hilos de revisión de una PR, con el comentario que abre cada uno, por GraphQL. Para el
    * revisor y el triaje (change pr-unresolved-threads, decisión 1).
@@ -396,29 +365,6 @@ export function createGitHubReader({
       );
       const pull = pullTextSchema.parse(data);
       return { title: pull.title, body: pull.body ?? '' };
-    },
-
-    async listReviewComments(pullRequestNumber: number): Promise<ReviewComment[]> {
-      const comments = await read(() =>
-        octokit.paginate(octokit.rest.pulls.listReviewComments, {
-          owner,
-          repo,
-          pull_number: pullRequestNumber,
-          per_page: 100,
-        }),
-      );
-      return z
-        .array(reviewCommentSchema)
-        .parse(comments)
-        .map((comment) => ({
-          author: comment.user.login,
-          body: comment.body,
-          originalSha: comment.original_commit_id,
-          path: comment.path,
-          originalLine: comment.original_line ?? null,
-          diffHunk: comment.diff_hunk ?? null,
-          inReplyTo: comment.in_reply_to_id ?? null,
-        }));
     },
 
     async listReviewThreads(pullRequestNumber: number): Promise<ReviewThread[]> {

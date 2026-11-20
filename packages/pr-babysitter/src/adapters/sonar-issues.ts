@@ -118,9 +118,10 @@ function fromTitle(
 /**
  * Las líneas de alrededor de la de la incidencia, numeradas y con `>>` en la suya: el formato que
  * se probó. Si es del fichero entero, las primeras, sin marca. `null` si la línea no está en el
- * fichero.
+ * fichero. También da el código del último push de un comentario del revisor de un push anterior
+ * (change pr-unresolved-threads, decisión 3).
  */
-function around(text: string, line: number | null): string | null {
+export function around(text: string, line: number | null): string | null {
   const lines = text.replace(/\r?\n$/, '').split(/\r?\n/);
   if (line !== null && (line < 1 || line > lines.length)) return null;
   const from = line === null ? 1 : Math.max(1, line - LINES_BEFORE);

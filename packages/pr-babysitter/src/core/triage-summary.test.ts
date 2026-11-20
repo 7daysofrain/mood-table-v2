@@ -15,6 +15,7 @@ const p1: Finding = {
   title: 'Prevent pending-notice recovery from requesting a stopped PR review',
   text: 'If Linear rejects…',
   diffHunk: '@@ -190,6 +190,20 @@',
+  earlierPush: null,
 };
 
 const p2: Finding = {

@@ -92,6 +92,7 @@ const findings: Findings = {
           title: 'Un hallazgo de ejemplo',
           text: 'Escrito por studio.ts.',
           diffHunk: '@@ -1 +1 @@',
+          earlierPush: null,
         },
         ...failedChecks.map((name, i) => ({
           source: 'check' as const,

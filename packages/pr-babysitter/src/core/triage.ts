@@ -42,8 +42,9 @@ export const checkContextSchema = z.discriminatedUnion('state', [
 export type CheckContext = z.infer<typeof checkContextSchema>;
 
 /**
- * Un hallazgo del último push (glosario de PB): un comentario del revisor, una comprobación que
- * falla o una incidencia nueva de SonarQube que anota la comprobación que las lista (change
+ * Un hallazgo de la PR (glosario de PB): un comentario del revisor cuyo hilo sigue sin resolver, de
+ * cualquier push (change pr-unresolved-threads, decisión 1); una comprobación que falla en el último
+ * push, o una incidencia nueva de SonarQube que anota la comprobación que las lista (change
  * pr-sonar-issue-triage, decisión 5). El contexto de un comentario es el trozo de diff que comenta,
  * `null` si no se ha podido reunir; el de una comprobación, un `CheckContext`; el de una incidencia,
  * el código de alrededor de su línea, `null` si no se ha podido leer.
@@ -63,6 +64,12 @@ export const findingSchema = z.discriminatedUnion('source', [
     title: z.string(),
     text: z.string(),
     diffHunk: z.string().nullable(),
+    /**
+     * Si el comentario es de un push anterior, ese push y el código del último push alrededor de
+     * su línea, numerado y con `>>` en ella, o `null` si no se ha podido leer (change
+     * pr-unresolved-threads, decisión 3). `null` si es del último push: su código es el que comentó.
+     */
+    earlierPush: z.object({ sha: z.string(), code: z.string().nullable() }).nullable(),
   }),
   z.object({
     source: z.literal('check'),

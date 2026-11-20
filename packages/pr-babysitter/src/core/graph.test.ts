@@ -603,6 +603,7 @@ const codexP2: Finding = {
   title: 'Route failed checks directly to the final notification',
   text: 'When all checks finish with at least one failure…',
   diffHunk: '@@ -100,6 +100,12 @@',
+  earlierPush: null,
 };
 
 /** Una comprobación que falla, con el paso que falla de su log por contexto, si no se dice otro. */

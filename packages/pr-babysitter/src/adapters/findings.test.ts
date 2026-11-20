@@ -36,6 +36,8 @@ const PUSH_88_P1 = '5ccb86c438a75ea0a1214633c6f04ec43dcbefeb';
 const PUSH_88_GRAPH = '68ea335';
 const GRAPH = 'packages/pr-babysitter/src/core/graph.ts';
 const TRACKING = 'packages/pr-babysitter/src/core/tracking.ts';
+/** La ruta con que se pide el contenido de un fichero: octokit codifica las `/`. */
+const contents = (file: string) => `/contents/${encodeURIComponent(file)}`;
 
 interface RecordedThread {
   isResolved: boolean;
@@ -191,12 +193,12 @@ describe('los hallazgos del revisor (change pr-unresolved-threads, decisiones 1 
       earlierPush: null,
     });
     // Su código es el que comentó el revisor: no se lee el del último push.
-    expect(calls.filter((call) => call.url.includes(`/contents/${TRACKING}`))).toEqual([]);
+    expect(calls.filter((call) => call.url.includes(contents(TRACKING)))).toEqual([]);
   });
 
   it('uno de un push anterior lleva su push y el código del último push alrededor de su línea en ese push', async () => {
     const { findings, calls } = github(({ path }) =>
-      path.endsWith(`/contents/${GRAPH}`) ? text(numbered(300)) : undefined,
+      path.endsWith(contents(GRAPH)) ? text(numbered(300)) : undefined,
     );
 
     const { findings: read } = await findings.read(88, PUSH_88, []);
@@ -206,17 +208,17 @@ describe('los hallazgos del revisor (change pr-unresolved-threads, decisiones 1 
     expect(graph163?.earlierPush?.sha).toMatch(new RegExp(`^${PUSH_88_GRAPH}`));
     const rows = graph163?.earlierPush?.code?.split('\n') ?? [];
     expect(rows).toHaveLength(41);
-    expect(rows[0]).toBe('     138 | línea 138');
+    expect(rows[0]).toBe('    138 | línea 138');
     expect(rows[25]).toBe('>>  163 | línea 163');
-    expect(rows.at(-1)).toBe('     178 | línea 178');
-    // El código se lee en el último push.
-    const reads = calls.filter((call) => call.url.includes(`/contents/${GRAPH}`));
-    expect(reads.map((call) => new URL(call.url).searchParams.get('ref'))).toContain(PUSH_88);
+    expect(rows.at(-1)).toBe('    178 | línea 178');
+    // El código se lee en el último push, una vez por fichero.
+    const reads = calls.filter((call) => call.url.includes(contents(GRAPH)));
+    expect(reads.map((call) => new URL(call.url).searchParams.get('ref'))).toEqual([PUSH_88]);
   });
 
   it('si GitHub ya no sabe su línea en el último push, toma la del push en que se hizo', async () => {
     const { findings } = github(({ path }) =>
-      path.endsWith(`/contents/${GRAPH}`) ? text(numbered(300)) : undefined,
+      path.endsWith(contents(GRAPH)) ? text(numbered(300)) : undefined,
     );
 
     const { findings: read } = await findings.read(88, PUSH_88, []);
@@ -237,7 +239,7 @@ describe('los hallazgos del revisor (change pr-unresolved-threads, decisiones 1 
 
   it('si su línea cae fuera del fichero en el último push, va sin código', async () => {
     const { findings } = github(({ path }) =>
-      path.endsWith(`/contents/${GRAPH}`) ? text(numbered(100)) : undefined,
+      path.endsWith(contents(GRAPH)) ? text(numbered(100)) : undefined,
     );
 
     const { findings: read } = await findings.read(88, PUSH_88, []);
@@ -388,11 +390,11 @@ describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 
     ]);
     expect(sonarIssues).toEqual({ total: 3, triaged: 3 });
     // El código, del commit del push. Los hilos de la #88 de pushes anteriores leen `graph.ts`.
-    const contents = calls.filter(
-      (call) => call.url.includes('/contents/') && !call.url.includes(`/contents/${GRAPH}`),
+    const sonarReads = calls.filter(
+      (call) => call.url.includes('/contents/') && !call.url.includes(contents(GRAPH)),
     );
-    expect(contents).toHaveLength(3);
-    for (const call of contents) expect(new URL(call.url).searchParams.get('ref')).toBe(PUSH_88);
+    expect(sonarReads).toHaveLength(3);
+    for (const call of sonarReads) expect(new URL(call.url).searchParams.get('ref')).toBe(PUSH_88);
   });
 
   it('tría las 10 anotadas aunque sus mensajes pasen del corte del contexto', async () => {

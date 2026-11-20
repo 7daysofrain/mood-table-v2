@@ -28,6 +28,7 @@ function reviewerFinding(overrides: Partial<Extract<Finding, { source: 'reviewer
     title: 'Route failed checks directly to the final state',
     text: 'When a check fails the graph still waits for the reviewer.',
     diffHunk: '@@ -100,6 +100,9 @@ export function finalState(',
+    earlierPush: null,
     ...overrides,
   };
 }

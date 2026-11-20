@@ -51,7 +51,7 @@
   - uno de un push anterior lleva su push y el código del último push alrededor de `line` (25 antes,
     15 después) o, si `line` es `null`, de `originalLine`; si el fichero no existe en el último push,
     sin código.
-- [ ] 1.7 El adaptador de los hallazgos y el esquema del hallazgo del revisor en `core/triage.ts` (su
+- [x] 1.7 El adaptador de los hallazgos y el esquema del hallazgo del revisor en `core/triage.ts` (su
   push y el código del último push).
   Verificar: los tests de 1.6 en verde y los que ya había.
 - [ ] 1.8 **(test en rojo)** Las reglas del núcleo (`design.md` decisiones 3 y 4), en
