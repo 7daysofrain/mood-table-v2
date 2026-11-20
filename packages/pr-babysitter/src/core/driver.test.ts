@@ -334,6 +334,7 @@ const E2E_FIRST_ATTEMPT: Check = {
   conclusion: 'failure',
   attempt: 1,
   runId: 42,
+  runFinished: true,
 };
 const reviewed = (sha: string): Review => ({ reviewedSha: sha, completed: true, hasFindings: false });
 

@@ -144,6 +144,9 @@ const checkRunSchema = z.object({
 /** Lo que se lee de un *job* de `GET /repos/{owner}/{repo}/actions/jobs/{job_id}`. */
 const jobSchema = z.object({ run_id: z.number(), run_attempt: z.number() });
 
+/** Lo que se lee de `GET /repos/{owner}/{repo}/actions/runs/{id}`: si el run ha terminado. */
+const workflowRunSchema = z.object({ status: z.string().nullable() });
+
 /** Lo que se lee de cada anotación de `GET /repos/{owner}/{repo}/check-runs/{id}/annotations`. */
 const annotationSchema = z.object({
   path: z.string(),
@@ -225,6 +228,14 @@ export function createGitHubReader({
     return response && jobSchema.parse(response.data);
   }
 
+  /** Si el run ha terminado; si GitHub no lo da (4xx), se cuenta como no terminado. */
+  async function runFinished(runId: number) {
+    const response = await readable(() =>
+      octokit.rest.actions.getWorkflowRun({ owner, repo, run_id: runId }),
+    );
+    return response !== null && workflowRunSchema.parse(response.data).status === 'completed';
+  }
+
   async function checkRuns(sha: string) {
     const runs = await read(() =>
       octokit.paginate(octokit.rest.checks.listForRef, {
@@ -297,11 +308,14 @@ export function createGitHubReader({
           }
           // El intento solo hace falta para relanzar: el de una de Actions que falla (decisión 3).
           const job = run.app?.slug === ACTIONS_APP ? await jobOf(run.id) : null;
+          if (!job) return { name, status: 'failed', conclusion };
           return {
             name,
             status: 'failed',
             conclusion,
-            ...(job && { attempt: job.run_attempt, runId: job.run_id }),
+            attempt: job.run_attempt,
+            runId: job.run_id,
+            runFinished: await runFinished(job.run_id),
           };
         }),
       );

@@ -3,9 +3,10 @@
 ## ADDED Requirements
 
 ### Requirement: Una comprobación relanzable que falla en su primer intento se relanza una vez
-Si al terminar las comprobaciones del último push una relanzable (por defecto `test` y `e2e`;
-configurable) ha fallado en su primer intento, el sistema SHALL relanzar una vez los *jobs* fallidos de
-ese run, sobre el mismo commit, y esperar su resultado sin avisar. MUST NOT relanzar una cancelada ni
+Si en el último push una relanzable (por defecto `test` y `e2e`; configurable) ha fallado en su
+primer intento, el sistema SHALL relanzar una vez los *jobs* fallidos de ese run, sobre el mismo
+commit, en cuanto el run termina y sin esperar a las demás comprobaciones, y esperar su resultado sin
+avisar. MUST NOT relanzar una cancelada ni
 una ya relanzada en ese push. Si GitHub lo rechaza, SHALL avisar «necesita intervención» con ese
 motivo; un fallo pasajero SHALL reintentarse en la siguiente vuelta.
 
@@ -14,14 +15,20 @@ motivo; un fallo pasajero SHALL reintentarse en la siguiente vuelta.
 > el relanzamiento del anterior*, *el relanzamiento no llega a dar resultado*, *una comprobación ya
 > relanzada en ese push no se vuelve a relanzar* y *una comprobación cancelada no se relanza*; D114.
 > Relanzar los *jobs* que han fallado del run, y no uno a uno, y reintentar el fallo pasajero: decidido
-> al explorar el change (20-nov), `design.md` decisiones 2 y 5.
+> al explorar el change (20-nov), `design.md` decisiones 2 y 5. No esperar a las demás: hallado en la
+> prueba a mano (20-nov), `design.md` decisión 3.
 
 #### Scenario: Falla un e2e en su primer intento
 - **GIVEN** el sistema sigue una PR
-- **WHEN** terminan las comprobaciones de su último push y `e2e` ha fallado en su primer intento
+- **WHEN** termina el run de su último push y `e2e` ha fallado en su primer intento
 - **THEN** el sistema relanza los *jobs* que han fallado de ese run, sobre el mismo commit
 - **AND** el mantenedor no recibe ningún aviso
 - **AND** el sistema no pide la revisión al revisor todavía
+
+#### Scenario: No espera a una comprobación que depende de la que falla
+- **GIVEN** el sistema sigue una PR y *SonarCloud Code Analysis* solo se ejecuta si `test` pasa
+- **WHEN** termina el run de su último push y `test` ha fallado en su primer intento
+- **THEN** el sistema relanza los *jobs* que han fallado de ese run sin esperar a *SonarCloud Code Analysis*
 
 #### Scenario: El relanzamiento pasa y la PR sigue su camino
 - **GIVEN** el sistema ha relanzado `e2e` en el último push de una PR, con las demás comprobaciones en verde

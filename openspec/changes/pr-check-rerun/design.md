@@ -86,6 +86,14 @@ relanzable, ha fallado (`failure` o `timed_out`), no está cancelada y `attempt`
 guarda `rerunSince` al pedir el relanzamiento: entre la petición y que GitHub cree el intento 2, un
 *tick* puede ver todavía el intento 1 fallido, y sin esa marca lo pediría otra vez.
 
+Se relanza **en cuanto termina el run** de la que falla, sin esperar a que terminen las demás
+exigidas. Lo enseñó la prueba a mano (20-nov): con `test` roja, *SonarCloud Code Analysis* no se
+analiza nunca, así que esperar a todas dejaba la PR esperando hasta el tiempo límite y sin relanzar. Y
+hay que esperar al run, no solo al *job*: GitHub no relanza los *jobs* fallidos de un run en marcha, y
+el rechazo acabaría en «necesita intervención». Por eso el adaptador lee también el run
+(`GET …/actions/runs/{id}`) y el `Check` lleva `runFinished`; si no se puede leer, cuenta como no
+terminado, y la PR sigue el camino de antes.
+
 - **Alternativas:** solo estado propio (no ve el relanzamiento a mano y duplica lo que dice GitHub,
   contra D66); solo `run_attempt` (la carrera de arriba).
 

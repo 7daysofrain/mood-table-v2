@@ -2486,6 +2486,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La IA cambió el diseño en un punto al implementar: `relanzar` sale por una arista condicional y no por un `Command`, para que el* driver *pueda saltárselo, como ya hace con `pedirRevision`, si llega un push nuevo o se detiene la PR. Lo anotó en el `design.md`.*
 - *El puerto quedó como `rerun(runId)`, y no `rerun(sha, checks)`: el núcleo elige el run.*
 - *Para no relanzar ninguna, `RERUN_CHECKS` lleva una coma sola, como `TRIAGE_RULE_CHECKS`: una variable vacía es la lista por defecto.*
+- *La prueba a mano encontró un hueco que ni el spec ni los tests habían visto: el sistema esperaba a que terminaran todas las comprobaciones exigidas para relanzar, y con `test` roja SonarCloud Code Analysis no llega nunca, así que la PR esperaba hasta el tiempo límite sin relanzar. La IA lo diagnosticó con el estado de los runs y propuso relanzar en cuanto termina el run de la que falla; el usuario lo aprobó («Sí, así»). Cambió el requisito, con un escenario nuevo, y la decisión 3 del `design.md`.*
 
 ---
 

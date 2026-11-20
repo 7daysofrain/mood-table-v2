@@ -79,6 +79,15 @@
     formato de `course.md` §5.
 
   Verificar: `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde; los enlaces llevan a su sitio.
+- [x] 1.6a **(hallado en 1.7)** Relanzar en cuanto termina el run de la que falla, sin esperar a las
+  demás exigidas (`design.md` decisión 3): con `test` roja, *SonarCloud Code Analysis* no llega nunca.
+  - **Tests en rojo primero:** `adapters/github.test.ts` (el run terminado, en marcha y que no se puede
+    leer, con la fixture `run-116.json`), `core/tracking.test.ts` y `core/graph.test.ts` (relanza con
+    SonarCloud pendiente; con el run en marcha, espera).
+  - El `Check` lleva `runFinished`; el adaptador lo lee de `GET …/actions/runs/{id}`.
+  - El requisito y su escenario en `specs/pr-tracking/spec.md`.
+
+  Verificar: `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
 - [ ] 1.7 **Prueba a mano** (sin commit), con el sistema en marcha y el PAT con *Actions: write*:
   - una PR de prueba con un test de Vitest que falla solo en el primer intento
     (`process.env.GITHUB_RUN_ATTEMPT === '1'`);

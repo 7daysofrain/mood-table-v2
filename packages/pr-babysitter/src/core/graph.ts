@@ -351,7 +351,7 @@ export function createTrackingGraph(
     return {};
   };
 
-  // Relanza los *jobs* fallidos del run de la primera relanzable que falla, con una llamada: GitHub
+  // Relanza los *jobs* fallidos del run terminado de una relanzable que falla, con una llamada: GitHub
   // relanza con ellos los de las demás que fallan en el mismo run (change pr-check-rerun, decisión
   // 2). Si GitHub lo rechaza (p. ej. el token no tiene *Actions: write*), reintentarlo no lo arregla:
   // la PR va al estado final con ese motivo (decisión 5). Cualquier otro fallo lanza, y el nodo
@@ -360,10 +360,10 @@ export function createTrackingGraph(
     const { snapshot } = state;
     const push = pushIn(state);
     const toRerun = checksToRerun(snapshot, rerunChecks);
-    const [first] = toRerun;
-    if (!first) return {};
+    const ready = toRerun.find((check) => check.runFinished);
+    if (!ready) return {};
     try {
-      await checkReruns.rerun(first.runId);
+      await checkReruns.rerun(ready.runId);
       return { push: { ...push, rerunSince: snapshot.observedAt } };
     } catch (error) {
       if (!(error instanceof GitHubRequestRejectedError)) throw error;

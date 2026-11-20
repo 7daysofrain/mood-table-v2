@@ -21,14 +21,13 @@ const HEAD = 'a1b2c3d';
 const passed = (name: string): Check => ({ name, status: 'passed', conclusion: 'success' });
 const failed = (name: string): Check => ({ name, status: 'failed', conclusion: 'failure' });
 const pending = (name: string): Check => ({ name, status: 'pending', conclusion: null });
-/** Una de GitHub Actions que falla en un intento del run 42. */
-const failedIn = (name: string, attempt: number, conclusion = 'failure'): Check => ({
-  name,
-  status: 'failed',
-  conclusion,
-  attempt,
-  runId: 42,
-});
+/** Una de GitHub Actions que falla en un intento del run 42, terminado salvo que se diga. */
+const failedIn = (
+  name: string,
+  attempt: number,
+  conclusion = 'failure',
+  runFinished = true,
+): Check => ({ name, status: 'failed', conclusion, attempt, runId: 42, runFinished });
 
 /** Las relanzables por defecto (`RERUN_CHECKS`). */
 const RERUN = ['test', 'e2e'];
@@ -383,6 +382,29 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
     const now = snapshot({ checks: [failedIn('lint', 1), failedIn('e2e', 1)] });
 
     expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'rerun' });
+  });
+
+  it('se relanza sin esperar a las demás: con test roja, SonarCloud no llega nunca', () => {
+    const now = snapshot({
+      checks: [passed('lint'), failedIn('test', 1), pending('SonarCloud Code Analysis')],
+    });
+
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'rerun' });
+  });
+
+  it('con su run aún en marcha, espera a que termine para relanzar', () => {
+    const running = failedIn('test', 1, 'failure', false);
+
+    for (const checks of [
+      [passed('lint'), running, pending('e2e')],
+      // Las exigidas han terminado, pero un job no exigido del run sigue corriendo.
+      [passed('lint'), running, passed('e2e')],
+    ]) {
+      expect(afterChecksWait(push, snapshot({ checks }), TIMEOUT, RERUN)).toEqual({
+        push,
+        next: 'waiting',
+      });
+    }
   });
 
   it('no se relanza una cancelada', () => {

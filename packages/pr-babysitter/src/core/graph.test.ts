@@ -43,6 +43,7 @@ const failedIn = (name: string, attempt: number, conclusion = 'failure'): Check 
   conclusion,
   attempt,
   runId: RUN,
+  runFinished: true,
 });
 /** `e2e` falla en su primer intento. */
 const E2E_FIRST_ATTEMPT: Check[] = [
@@ -1480,6 +1481,31 @@ describe('una comprobación relanzable que falla en su primer intento se relanza
     expect(summary(notices)).toEqual(['tracking']);
     expect(requests).toEqual([]);
     expect(state.next).toEqual(['esperarComprobaciones']);
+  });
+
+  it('falla `test` y SonarCloud, que depende de ella, no llega: relanza sin esperarla', async () => {
+    const sonar: Check = { name: 'SonarCloud Code Analysis', status: 'pending', conclusion: null };
+    const { reruns } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: [failedIn('test', 1), sonar] }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+  });
+
+  it('con el run de la que falla aún en marcha, espera a que termine para relanzar', async () => {
+    const running: Check = { ...failedIn('e2e', 1), runFinished: false };
+    const waiting = await follow(snapshot(0), snapshot(5, { checks: [running] }));
+    const finished = await follow(
+      snapshot(0),
+      snapshot(5, { checks: [running] }),
+      snapshot(6, { checks: [failedIn('e2e', 1)] }),
+    );
+
+    expect(waiting.reruns).toEqual([]);
+    expect(summary(waiting.notices)).toEqual(['tracking']);
+    expect(finished.reruns).toEqual([RUN]);
+    expect(summary(finished.notices)).toEqual(['tracking']);
   });
 
   it('el relanzamiento pasa: pide la revisión y la PR llega a lista para integrar', async () => {

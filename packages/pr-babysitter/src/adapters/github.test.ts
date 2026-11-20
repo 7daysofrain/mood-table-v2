@@ -182,21 +182,69 @@ describe('el intento de una comprobación', () => {
   const PUSH_116 = 'b4a47348bf49447cf62cb29d69299445a30f973f';
   const PUSH_RERUN = '5f884fad37648758d2d61341ff698253175621e0';
 
+  /** GitHub con los check runs, el job y el run de una de Actions que falla. */
+  function actionsFetch(runs: string, job: string, run: string) {
+    return fakeFetch(({ url }) => {
+      if (url.includes('/actions/jobs/')) return json(job);
+      if (url.includes('/actions/runs/')) return json(run);
+      return json(runs);
+    });
+  }
+
   it('una de Actions que falla da su intento y su run, leídos de su job', async () => {
+    const [runs, job, run] = await Promise.all([
+      fixture('check-runs-116.json'),
+      fixture('job-116-e2e.json'),
+      fixture('run-116.json'),
+    ]);
+    const { fetch, calls } = actionsFetch(runs, job, run);
+
+    await expect(reader(fetch).checks(PUSH_116, ['e2e'])).resolves.toEqual([
+      {
+        name: 'e2e',
+        status: 'failed',
+        conclusion: 'failure',
+        attempt: 1,
+        runId: 42082802927,
+        runFinished: true,
+      },
+    ]);
+    expect(calls.map(({ url }) => new URL(url).pathname)).toEqual(
+      expect.arrayContaining([
+        '/repos/7daysofrain/mood-table-v2/actions/jobs/127439969583',
+        '/repos/7daysofrain/mood-table-v2/actions/runs/42082802927',
+      ]),
+    );
+  });
+
+  it('con su run aún en marcha, el run no ha terminado', async () => {
+    // Derivado a mano de `run-116.json`: otro job del mismo run sigue corriendo.
+    const run = JSON.stringify({ id: 42082802927, status: 'in_progress', conclusion: null });
     const [runs, job] = await Promise.all([
       fixture('check-runs-116.json'),
       fixture('job-116-e2e.json'),
     ]);
-    const { fetch, calls } = fakeFetch(({ url }) =>
-      url.includes('/actions/jobs/') ? json(job) : json(runs),
-    );
+    const { fetch } = actionsFetch(runs, job, run);
 
     await expect(reader(fetch).checks(PUSH_116, ['e2e'])).resolves.toEqual([
-      { name: 'e2e', status: 'failed', conclusion: 'failure', attempt: 1, runId: 42082802927 },
+      expect.objectContaining({ attempt: 1, runId: 42082802927, runFinished: false }),
     ]);
-    expect(calls.map(({ url }) => new URL(url).pathname)).toContain(
-      '/repos/7daysofrain/mood-table-v2/actions/jobs/127439969583',
-    );
+  });
+
+  it('un run que GitHub no da cuenta como no terminado', async () => {
+    const [runs, job] = await Promise.all([
+      fixture('check-runs-116.json'),
+      fixture('job-116-e2e.json'),
+    ]);
+    const { fetch } = fakeFetch(({ url }) => {
+      if (url.includes('/actions/jobs/')) return json(job);
+      if (url.includes('/actions/runs/')) return json('{"message":"Not Found"}', 404);
+      return json(runs);
+    });
+
+    await expect(reader(fetch).checks(PUSH_116, ['e2e'])).resolves.toEqual([
+      expect.objectContaining({ attempt: 1, runFinished: false }),
+    ]);
   });
 
   it('con dos check runs del mismo nombre, cuenta el del intento más reciente', async () => {
@@ -227,12 +275,18 @@ describe('el intento de una comprobación', () => {
       ],
     });
     const job = await fixture('job-rerun-test.json');
-    const { fetch } = fakeFetch(({ url }) =>
-      url.includes('/actions/jobs/') ? json(job) : json(runs),
-    );
+    const run = JSON.stringify({ id: 43634814409, status: 'completed', conclusion: 'failure' });
+    const { fetch } = actionsFetch(runs, job, run);
 
     await expect(reader(fetch).checks(PUSH_RERUN, ['test'])).resolves.toEqual([
-      { name: 'test', status: 'failed', conclusion: 'failure', attempt: 2, runId: 43634814409 },
+      {
+        name: 'test',
+        status: 'failed',
+        conclusion: 'failure',
+        attempt: 2,
+        runId: 43634814409,
+        runFinished: true,
+      },
     ]);
   });
 
