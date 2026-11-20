@@ -54,7 +54,7 @@
 - [x] 1.7 El adaptador de los hallazgos y el esquema del hallazgo del revisor en `core/triage.ts` (su
   push y el código del último push).
   Verificar: los tests de 1.6 en verde y los que ya había.
-- [ ] 1.8 **(test en rojo)** Las reglas del núcleo (`design.md` decisiones 3 y 4), en
+- [x] 1.8 **(test en rojo)** Las reglas del núcleo (`design.md` decisiones 3 y 4), en
   `core/triage.test.ts`:
   - `withoutModel`: un comentario de un push anterior sin código del último push sale
     `noCurrentCode`, sin reservar tope, después de `noScope` y `noContext`;
