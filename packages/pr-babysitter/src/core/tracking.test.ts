@@ -466,6 +466,14 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
     });
   });
 
+  it('sin relanzamiento aceptado, no se vuelve a pedir pasados 30 min desde el push: se agota el tiempo', () => {
+    const at = (minute: number) =>
+      snapshot({ checks: [passed('lint'), failedIn('e2e', 1)], observedAt: minute * MINUTE });
+
+    expect(afterChecksWait(push, at(29), TIMEOUT, RERUN).next).toBe('rerun');
+    expect(afterChecksWait(push, at(30), TIMEOUT, RERUN)).toEqual({ push, next: 'timedOut' });
+  });
+
   it('con el relanzamiento pedido, el tiempo cuenta desde él', () => {
     const rerun = { ...push, rerunSince: 20 * MINUTE };
     const at = (minute: number) =>

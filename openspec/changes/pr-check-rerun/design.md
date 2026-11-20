@@ -134,7 +134,9 @@ respuesta, o el mantenedor pudo relanzar a mano entretanto. Repetirla con la fot
 tercer intento, o GitHub la rechazaría con el segundo en marcha y la PR iría a «necesita
 intervención» sin motivo. Con la foto nueva, el intento 1 aún fallido vuelve a `relanzar`, y el 2
 espera como un relanzamiento a mano, con el reloj desde el push (hallado en la revisión de la PR de
-`MOO-170`, 20-nov).
+`MOO-170`, 20-nov). Mientras no haya un relanzamiento aceptado, el reloj del push manda también
+sobre volver a pedirlo: si la petición sigue fallando 30 min, la PR se agota y avisa, en vez de
+reintentarlo para siempre (hallado en la misma revisión).
 
 - **Alternativa:** que el adaptador lea el intento del run antes de pedirlo y no lo pida si ya va por
   el 2. Conserva el reloj desde el relanzamiento en ese caso raro, pero hace una lectura más en cada

@@ -151,8 +151,8 @@ export function checksToRerun(
  * si alguna falla, no se espera la revisión.
  *
  * Si la que falla es relanzable y está en su primer intento, se relanza, una vez por push, en cuanto
- * termina su run, sin esperar a las demás (change pr-check-rerun, decisiones 3 y 4). Con el
- * relanzamiento pedido, el tiempo cuenta desde él, y se
+ * termina su run, sin esperar a las demás, y dentro de los 30 min del push (change pr-check-rerun,
+ * decisiones 3 a 5). Con el relanzamiento pedido, el tiempo cuenta desde él, y se
  * sigue esperando mientras la foto aún traiga el primer intento: GitHub tarda en crear el segundo.
  */
 export function afterChecksWait(
@@ -164,9 +164,14 @@ export function afterChecksWait(
   const push = pushOf(current, snapshot);
   const since = push.rerunSince ?? push.seenAt;
   // Una relanzable que falla se relanza en cuanto termina su run, sin esperar a las demás: alguna
-  // puede depender de ella y no llegar nunca (con `test` roja, SonarCloud no se analiza).
+  // puede depender de ella y no llegar nunca (con `test` roja, SonarCloud no se analiza). Dentro
+  // del plazo del push: si la petición sigue fallando (la red, un 5xx), la PR acaba avisando.
   const toRerun = push.rerunRejected ? [] : checksToRerun(snapshot, rerunChecks);
-  if (push.rerunSince === undefined && toRerun.some((check) => check.runFinished)) {
+  if (
+    push.rerunSince === undefined &&
+    toRerun.some((check) => check.runFinished) &&
+    !timedOut(since, snapshot, timeoutMs)
+  ) {
     return { push, next: 'rerun' };
   }
   if (checksFinished(snapshot)) {

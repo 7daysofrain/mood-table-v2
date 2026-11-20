@@ -95,6 +95,8 @@
     vuelve a pedir; con el intento 1, se pide con la foto nueva.
   - `retryPending` en `core/driver.ts` se salta `relanzar` también en el mismo push.
   - El requisito y su escenario en `specs/pr-tracking/spec.md`.
+  - Sin un relanzamiento aceptado, no se vuelve a pedir pasados los 30 min del push
+    (`core/tracking.ts`, con su test en rojo primero en `core/tracking.test.ts`).
 
   Verificar: `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
 - [x] 1.7 **Prueba a mano** (sin commit), con el sistema en marcha y el PAT con *Actions: write*:

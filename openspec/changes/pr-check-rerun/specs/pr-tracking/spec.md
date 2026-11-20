@@ -9,7 +9,7 @@ commit, en cuanto el run termina y sin esperar a las demás comprobaciones, y es
 avisar. MUST NOT relanzar una cancelada ni
 una ya relanzada en ese push. Si GitHub lo rechaza, SHALL avisar «necesita intervención» con ese
 motivo; tras un fallo pasajero SHALL volver a decidir con la foto siguiente, y MUST NOT repetir la
-petición si esa foto ya trae el segundo intento.
+petición si esa foto ya trae el segundo intento ni pasado el tiempo de espera de las comprobaciones.
 
 > Traza: `MOO-155`, caso feliz (*se relanza una vez, sobre el mismo commit, sin preguntar al modelo de
 > decisión*) y criterios *el relanzamiento pasa y la PR sigue su camino*, *un push nuevo deja sin efecto
@@ -66,6 +66,14 @@ petición si esa foto ya trae el segundo intento.
 - **WHEN** la petición de relanzarlo falla sin respuesta, y la siguiente vuelta lo ve ya en su
   segundo intento, porque la petición llegó a GitHub o porque el mantenedor lo ha relanzado a mano
 - **THEN** el sistema no vuelve a pedir el relanzamiento y espera el resultado de ese intento
+
+#### Scenario: Un relanzamiento que sigue fallando sin respuesta no espera para siempre
+- **GIVEN** `e2e` ha fallado en su primer intento en el último push de una PR
+- **WHEN** las peticiones de relanzarlo fallan sin respuesta durante 30 min desde que el sistema vio el
+  push
+- **THEN** el sistema deja de pedirlo
+- **AND** el mantenedor recibe el aviso del estado final «necesita intervención», porque las
+  comprobaciones no han terminado a tiempo
 
 #### Scenario: Una comprobación ya relanzada a mano no se vuelve a relanzar
 - **GIVEN** el mantenedor ha relanzado a mano `test` en el último push de una PR
