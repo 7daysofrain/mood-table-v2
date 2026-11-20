@@ -66,7 +66,7 @@
   del modelo de decisión: las dos preguntas del revisor, la regla de la descripción vacía y el porqué
   de «se capturaría») y §2.5 (qué sale hacia el proveedor: la pregunta del revisor). `prompts.md`.
   Verificar: ninguna mención a «hay que arreglarlo en esta PR» para el revisor en el README.
-- [ ] 1.11 **Prueba a mano** (sin commit), con el sistema en marcha desde la rama, y una PR de prueba
+- [x] 1.11 **Prueba a mano** (sin commit), con el sistema en marcha desde la rama, y una PR de prueba
   en borrador con `@codex review` a mano (como en `pr-check-triage`):
   - una PR que dice en su descripción lo que cubre, con un defecto en lo que cambia y otro en código
     que no toca, para que Codex comente los dos;

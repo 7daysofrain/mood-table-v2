@@ -2460,6 +2460,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 *Ajustes:*
 - *Los tests del grafo del paso 1.8, que el change pedía en rojo, pasaron desde el principio: el grafo ya lo hacía desde el núcleo. La IA lo dejó dicho en el commit en lugar de forzar un fallo.*
 - *La PR de los tests del grafo y la de Studio tenían la descripción vacía, así que con la regla nueva todos sus comentarios del revisor salían* exige criterio*. La IA les dio una descripción para que siguieran probando lo mismo.*
+- *En la prueba a mano, Codex solo comentó el defecto que la PR de prueba introducía a propósito, y no el límite de una hora que la descripción dejaba para otra tarea. Así que no salió ningún «se capturaría» real, y la IA lo dejó anotado tal cual: la clasificación la cubren los tests.*
 
 ---
 
