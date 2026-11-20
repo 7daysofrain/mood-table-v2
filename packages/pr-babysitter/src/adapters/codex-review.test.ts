@@ -79,28 +79,16 @@ describe('la revisión de Codex', () => {
     expect(review).toEqual({
       reviewedSha: 'fbdf556d307041f534202da3385cff93878dc567',
       completed: true,
-      hasFindings: false,
     });
   });
 
-  it('terminada con hallazgos (#62)', async () => {
+  it('terminada, con hallazgos en el bloque (#62)', async () => {
     const { review } = await reviewOf(62);
 
     expect(review).toEqual({
       reviewedSha: '590bd6e6e8faec0017cb6e63dbea43b5a15d5cba',
       completed: true,
-      hasFindings: true,
     });
-  });
-
-  it('con hallazgos aunque ya estén resueltos: cuenta has_any_findings, no has_unresolved_findings', async () => {
-    const resolved = editBlock(await comments(62), (block) =>
-      block.replace('"has_unresolved_findings":true', '"has_unresolved_findings":false'),
-    );
-
-    const { review } = await reviewOf(62, resolved);
-
-    expect(review).toMatchObject({ completed: true, hasFindings: true });
   });
 
   it('en marcha (#64)', async () => {
@@ -109,7 +97,6 @@ describe('la revisión de Codex', () => {
     expect(review).toEqual({
       reviewedSha: 'b9b25026e7b69a81e7a323b3740b5eb9c1dd0673',
       completed: false,
-      hasFindings: false,
     });
   });
 
@@ -119,7 +106,6 @@ describe('la revisión de Codex', () => {
     expect(review).toEqual({
       reviewedSha: '1cc67fa466e9d22eca3ad9f3e396147afa15e303',
       completed: true,
-      hasFindings: false,
     });
   });
 
@@ -189,6 +175,7 @@ describe('solo el revisor decide el estado final', () => {
       headSha: '590bd6e6e8faec0017cb6e63dbea43b5a15d5cba',
       labels: [],
       checks: [{ name: 'lint', status: 'passed' as const }],
+      reviewerThreads: { lastPush: 0, earlierPushes: 0 },
       reviewRequested: false,
       observedAt: 0,
     };
@@ -207,8 +194,7 @@ describe('solo el revisor decide el estado final', () => {
     expect(recorded.length).toBeGreaterThan(onlyCodex.length);
     expect(withOthers).toEqual(withoutOthers);
     expect(withOthers).toEqual({
-      status: 'needsIntervention',
-      reasons: [{ kind: 'reviewFindings' }],
+      status: 'readyToMerge',
     });
   });
 });

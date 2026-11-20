@@ -37,25 +37,37 @@ export const checkSchema = z.object({
 export type Check = z.infer<typeof checkSchema>;
 
 /**
- * La última revisión del revisor (decisión 7): el commit que revisó, si ha terminado y si ha tenido
- * hallazgos. `null` en la foto si no hay revisión o no se entiende.
+ * La última revisión del revisor (decisión 7): el commit que revisó y si ha terminado. `null` en la
+ * foto si no hay revisión o no se entiende. Si tiene hallazgos no lo dice la revisión, sino sus
+ * hilos sin resolver (change pr-unresolved-threads, decisión 2).
  */
 export const reviewSchema = z.object({
   reviewedSha: z.string().min(1),
   completed: z.boolean(),
-  hasFindings: z.boolean(),
 });
 
 export type Review = z.infer<typeof reviewSchema>;
 
 /**
- * Lo que recibe un hilo al reanudarse: la PR, sus comprobaciones, la revisión, si el sistema ya ha
- * pedido la revisión del último push (change pr-review-request, decisión 2) y cuándo la vio el
- * driver (ms desde epoch).
+ * Cuántos hilos sin resolver le quedan al revisor (change pr-unresolved-threads, decisión 2): los
+ * de comentarios sobre el último push y los de pushes anteriores. Son sus hallazgos.
+ */
+export const reviewerThreadsSchema = z.object({
+  lastPush: z.number().int().nonnegative(),
+  earlierPushes: z.number().int().nonnegative(),
+});
+
+export type ReviewerThreads = z.infer<typeof reviewerThreadsSchema>;
+
+/**
+ * Lo que recibe un hilo al reanudarse: la PR, sus comprobaciones, la revisión, los hilos sin
+ * resolver del revisor, si el sistema ya ha pedido la revisión del último push (change
+ * pr-review-request, decisión 2) y cuándo la vio el driver (ms desde epoch).
  */
 export const pullRequestSnapshotSchema = openPullRequestSchema.extend({
   checks: z.array(checkSchema),
   review: reviewSchema.nullable(),
+  reviewerThreads: reviewerThreadsSchema,
   reviewRequested: z.boolean(),
   observedAt: z.number(),
 });

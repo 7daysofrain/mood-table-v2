@@ -26,7 +26,7 @@
     un hilo de un push anterior → `checksFailed` y `reviewFindings` con `earlier`, sin
     `reviewUnfinished`;
   - el motivo de cada `pushes`, con los textos de la tabla de la decisión 2.
-- [ ] 1.3 El núcleo: `reviewerThreads` en la foto, `Review` sin `hasFindings`, el método nuevo de
+- [x] 1.3 El núcleo: `reviewerThreads` en la foto, `Review` sin `hasFindings`, el método nuevo de
   `ReviewReader`, `finalState`, el motivo y su texto; el driver lee los hilos para la foto.
   Verificar: los tests de 1.2 en verde y los que ya había, ajustados a la foto nueva; `pnpm typecheck`
   en verde (los adaptadores se ajustan lo justo para compilar).

@@ -33,12 +33,12 @@ const FAILED: Check[] = [
   { name: 'lint', status: 'passed' },
   { name: 'e2e', status: 'failed' },
 ];
-const reviewed = (sha = HEAD, hasFindings = false): Review => ({
-  reviewedSha: sha,
-  completed: true,
-  hasFindings,
-});
-const running = (sha = HEAD): Review => ({ reviewedSha: sha, completed: false, hasFindings: false });
+const reviewed = (sha = HEAD): Review => ({ reviewedSha: sha, completed: true });
+const running = (sha = HEAD): Review => ({ reviewedSha: sha, completed: false });
+/** Sin hilos del revisor sin resolver. */
+const NO_THREADS = { lastPush: 0, earlierPushes: 0 };
+/** Un hilo del revisor sin resolver, sobre el último push: tiene hallazgos. */
+const FINDINGS = { lastPush: 1, earlierPushes: 0 };
 
 /** La foto de la PR en un minuto; por defecto, con una comprobación pendiente y sin revisión. */
 function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}) {
@@ -53,6 +53,7 @@ function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}) 
     labels: [],
     checks: PENDING,
     review: null,
+    reviewerThreads: NO_THREADS,
     reviewRequested: false,
     observedAt: minute * MINUTE,
     ...overrides,
@@ -241,13 +242,13 @@ describe('hasta el estado final', () => {
     const { notices } = await follow(
       snapshot(0),
       snapshot(5, { checks: PASSED }),
-      snapshot(9, { checks: PASSED, review: reviewed(HEAD, true) }),
+      snapshot(9, { checks: PASSED, review: reviewed(), reviewerThreads: FINDINGS }),
     );
 
     expect(summary(notices)).toEqual([
       'tracking',
       'checksFinished',
-      { status: 'needsIntervention', reasons: [{ kind: 'reviewFindings' }] },
+      { status: 'needsIntervention', reasons: [{ kind: 'reviewFindings', pushes: 'last' }] },
     ]);
   });
 
@@ -538,14 +539,14 @@ describe('si falla una comprobación, el sistema avisa del estado final sin espe
   it('si el revisor ya había revisado el último push con hallazgos, lo dice también', async () => {
     const { notices } = await follow(
       snapshot(0),
-      snapshot(5, { checks: FAILED, review: reviewed(HEAD, true) }),
+      snapshot(5, { checks: FAILED, review: reviewed(), reviewerThreads: FINDINGS }),
     );
 
     expect(summary(notices)).toEqual([
       'tracking',
       {
         status: 'needsIntervention',
-        reasons: [{ kind: 'checksFailed', checks: ['e2e'] }, { kind: 'reviewFindings' }],
+        reasons: [{ kind: 'checksFailed', checks: ['e2e'] }, { kind: 'reviewFindings', pushes: 'last' }],
       },
     ]);
   });
@@ -725,7 +726,7 @@ const failing = [snapshot(0), snapshot(5, { checks: FAILED })];
 const withFindings = [
   snapshot(0),
   snapshot(5, { checks: PASSED }),
-  snapshot(9, { checks: PASSED, review: reviewed(HEAD, true) }),
+  snapshot(9, { checks: PASSED, review: reviewed(), reviewerThreads: FINDINGS }),
 ];
 
 describe('el sistema tría los hallazgos del último push cuando la PR necesita intervención', () => {

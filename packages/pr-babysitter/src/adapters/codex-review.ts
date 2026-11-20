@@ -48,6 +48,11 @@ export function createCodexReviewReader({
       const last = blocks.at(-1);
       return last === undefined ? null : parseBlock(last);
     },
+
+    unresolvedThreads() {
+      // Los hilos se leen por GraphQL en el paso 1.5 del change pr-unresolved-threads.
+      return Promise.reject(new Error('Sin implementar: los hilos del revisor'));
+    },
   };
 }
 
@@ -64,7 +69,7 @@ function parseBlock(text: string): Review | null {
   const completed = status === 'completed';
   // Terminada sin decir si hay hallazgos: no se sabe qué ha pasado.
   if (completed && has_any_findings === null) return null;
-  return { reviewedSha: commit_sha, completed, hasFindings: has_any_findings === true };
+  return { reviewedSha: commit_sha, completed };
 }
 
 export interface CodexReviewRequestsOptions {

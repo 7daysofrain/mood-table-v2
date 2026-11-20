@@ -4,7 +4,7 @@
  * falsos.
  */
 import type { Notice } from './notice.ts';
-import type { Check, OpenPullRequest, Review } from './pull-request.ts';
+import type { Check, OpenPullRequest, Review, ReviewerThreads } from './pull-request.ts';
 import type {
   Finding,
   ModelAnswer,
@@ -41,6 +41,11 @@ export interface GitHubReader {
  */
 export interface ReviewReader {
   review(pullRequestNumber: number): Promise<Review | null>;
+  /**
+   * Cuántos hilos sin resolver le quedan al revisor, los del último push (`headSha`) y los de pushes
+   * anteriores (change pr-unresolved-threads, decisión 2). Solo cuentan los que abre su cuenta.
+   */
+  unresolvedThreads(pullRequestNumber: number, headSha: string): Promise<ReviewerThreads>;
 }
 
 /**

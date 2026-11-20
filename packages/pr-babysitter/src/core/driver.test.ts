@@ -12,7 +12,7 @@ import {
   type ReviewReader,
   type ReviewRequests,
 } from './ports.ts';
-import type { Check, OpenPullRequest, Review } from './pull-request.ts';
+import type { Check, OpenPullRequest, Review, ReviewerThreads } from './pull-request.ts';
 
 const MAINTAINER = '7daysofrain';
 const MINUTE = 60_000;
@@ -42,6 +42,10 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     checks: {} as Record<string, Check[]>,
     /** La revisión de cada PR. */
     reviews: {} as Record<number, Review>,
+    /** Los hilos sin resolver del revisor en cada PR. */
+    threads: {} as Record<number, ReviewerThreads>,
+    /** Las veces que se han leído los hilos del revisor, con el último push de la PR. */
+    threadReads: [] as { number: number; sha: string }[],
     /** Las peticiones de revisión del sistema, en orden: quedan en GitHub aunque se reinicie. */
     requests: [] as { number: number; sha: string }[],
     /** Las veces que se ha leído si el sistema ya ha pedido la revisión de un push. */
@@ -68,7 +72,13 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
       return read(github.checks[sha] ?? [{ name: 'lint', status: 'pending' }]);
     },
   };
-  const reviewer: ReviewReader = { review: (number) => read(github.reviews[number] ?? null) };
+  const reviewer: ReviewReader = {
+    review: (number) => read(github.reviews[number] ?? null),
+    unresolvedThreads(number, sha) {
+      github.threadReads.push({ number, sha });
+      return read(github.threads[number] ?? { lastPush: 0, earlierPushes: 0 });
+    },
+  };
   const reviewRequests: ReviewRequests = {
     requested(number, sha) {
       github.requestedReads.push({ number, sha });
@@ -321,7 +331,7 @@ function summary(notices: Notice[]) {
 }
 
 const PASSED: Check[] = [{ name: 'lint', status: 'passed' }];
-const reviewed = (sha: string): Review => ({ reviewedSha: sha, completed: true, hasFindings: false });
+const reviewed = (sha: string): Review => ({ reviewedSha: sha, completed: true });
 
 describe('hasta el estado final', () => {
   it('sigue la PR por cada vuelta hasta avisar de su estado final', async () => {
@@ -830,6 +840,29 @@ describe('una PR detenida que se cierra', () => {
     github.pullRequests = [pullRequest(74)];
     await tick();
     expect(summary(notifier.notices).at(-1)).toEqual([74, 'tracking']);
+  });
+});
+
+describe('los hilos sin resolver del revisor (change pr-unresolved-threads, decisión 2)', () => {
+  it('se leen en cada foto, con el último push de la PR', async () => {
+    const { github, tick } = setup([pullRequest(74)]);
+    await tick();
+    await tick();
+
+    expect(github.threadReads).toEqual([
+      { number: 74, sha: 'sha-74' },
+      { number: 74, sha: 'sha-74' },
+    ]);
+  });
+
+  it('uno de un push anterior deja la PR en necesita intervención', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    github.checks['sha-74'] = PASSED;
+    github.reviews[74] = reviewed('sha-74');
+    github.threads[74] = { lastPush: 0, earlierPushes: 1 };
+    await ticks(tick, 3);
+
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
   });
 });
 

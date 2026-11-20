@@ -345,12 +345,20 @@ export function createDriver({
         let required: Promise<string[]> | undefined;
         const snapshotOf = async (pullRequest: OpenPullRequest): Promise<PullRequestSnapshot> => {
           required ??= github.requiredChecks();
-          const [checks, review, reviewRequested] = await Promise.all([
+          const [checks, review, reviewerThreads, reviewRequested] = await Promise.all([
             required.then((names) => github.checks(pullRequest.headSha, names)),
             reviewer.review(pullRequest.number),
+            reviewer.unresolvedThreads(pullRequest.number, pullRequest.headSha),
             reviewRequests.requested(pullRequest.number, pullRequest.headSha),
           ]);
-          return { ...pullRequest, checks, review, reviewRequested, observedAt: now };
+          return {
+            ...pullRequest,
+            checks,
+            review,
+            reviewerThreads,
+            reviewRequested,
+            observedAt: now,
+          };
         };
 
         // Cada PR tiene su hilo: se avanzan a la vez, y el fallo de una no frena a las demás.
