@@ -18,7 +18,7 @@
 
 ## 1. MOO-167 · infra
 
-- [ ] 1.1 **(test en rojo)** Las anotaciones de `sonar-issues` (`design.md` decisión 1), en
+- [x] 1.1 **(test en rojo)** Las anotaciones de `sonar-issues` (`design.md` decisión 1), en
   `tooling/ci/sonar-issues.test.ts`:
   - una incidencia con línea da `::error file=…,line=…,title=<regla> · <severidad> · <nombre>::<mensaje>`;
     una de fichero, sin `line`;
