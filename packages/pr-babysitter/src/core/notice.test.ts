@@ -122,7 +122,7 @@ describe('el aviso del estado final', () => {
       reasons: [
         { kind: 'checksFailed', checks: ['e2e'] },
         { kind: 'checksUnfinished', checks: ['test'] },
-        { kind: 'reviewFindings' },
+        { kind: 'reviewFindings', pushes: 'last' },
       ],
     });
 
@@ -130,6 +130,19 @@ describe('el aviso del estado final', () => {
       'Necesita intervención: falla e2e; no ha terminado test; el revisor tiene hallazgos. ' +
         'Dejo de seguirla.',
     );
+  });
+
+  it.each([
+    ['last', 'el revisor tiene hallazgos'],
+    ['earlier', 'el revisor tiene hallazgos de un push anterior'],
+    ['both', 'el revisor tiene hallazgos de este push y de uno anterior'],
+  ] as const)('necesita intervención: los hallazgos del revisor dicen de qué push son (%s)', (pushes, reason) => {
+    const notice = finalNotice(pullRequest, {
+      status: 'needsIntervention',
+      reasons: [{ kind: 'reviewFindings', pushes }],
+    });
+
+    expect(noticeSummary(notice)).toBe(`Necesita intervención: ${reason}. Dejo de seguirla.`);
   });
 
   it('necesita intervención: varias comprobaciones van en plural y en una lista', () => {

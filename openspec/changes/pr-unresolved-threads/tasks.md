@@ -18,7 +18,7 @@
   `docs/idea-mood-table.md` §10, que matiza D114 y D116 (`design.md` decisiones 2 a 4).
   Verificar: el glosario define *Estado final* como el de un push; *Hallazgo* y *Lista para integrar*
   hablan de los hilos del revisor sin resolver de cualquier push; D120 enlaza este change.
-- [ ] 1.2 **(test en rojo)** El estado final con los hilos (`design.md` decisión 2), en
+- [x] 1.2 **(test en rojo)** El estado final con los hilos (`design.md` decisión 2), en
   `core/tracking.test.ts` y `core/notice.test.ts`:
   - `finalState` con `reviewerThreads`: sin hilos y revisión terminada → *lista para integrar*,
     aunque antes el bloque dijera hallazgos (la #62); hilos solo de un push anterior → `reviewFindings`
