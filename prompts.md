@@ -2487,6 +2487,38 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *GitHub devolvió las anotaciones en otro orden que el emitido, así que el triaje sigue el que da GitHub. Las anotaciones grabadas de esa PR sirven de fixture en `MOO-168`.*
 - *El módulo que parte las incidencias devuelve las suyas sin la marca de hallazgo, para que el paso 2.3 no tuviera que tocar el núcleo antes de su paso.*
 
+#### 6.94 Triar los hilos sin resolver del revisor de cualquier push (`MOO-173`)
+
+**Prompt 1:**
+
+> Todos los no resueltos en cada push
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en `/refine-story MOO-173`. La captura venía de la #166: Codex comentó dos P2 sobre un push cuando el sistema ya seguía el siguiente, y el triaje corrió con 0 hallazgos. La IA preguntó qué comentarios del revisor debían volver al triador. El usuario respondió primero que todos, y lo precisó así: los no resueltos, en cada push, porque un comentario puede triarse en un push y resolverse en otro.*
+
+**Prompt 2:**
+
+> es que no entiendo bien esto del "estado final" no hay un estado final como tal. porque la PR, mientras siga abierta, puede recibir nuevos push
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en `/opsx:explore`. La IA había encontrado una segunda causa: el estado final miraba el `has_any_findings` del bloque de Codex, que arrastraba hallazgos de otro push (#166) y no seguía a los hilos (#62), mientras el triaje miraba los comentarios del último push. Propuso que los dos miraran los hilos sin resolver (opción B), y el usuario la eligió. A su duda, la IA explicó que «estado final» es el veredicto de un push, y que un push nuevo lo reabre. Acordaron definirlo en el glosario de PB sin renombrar el término.*
+
+**Prompt 3:**
+
+> /opsx:propose
+
+*Claude Code (`claude-opus-5-5`, 20-nov). Faltaba decidir qué pasa con un comentario de un push anterior que el último push ya arregla. La IA lo planteó como decisión y el usuario eligió una pregunta nueva a Clef en la misma petición, sin medirla antes: solo había dos casos reales, y la calibra `MOO-76`. Resultado: el change `pr-unresolved-threads`, D120 y una sola tarea, `MOO-175`.*
+
+**Prompt 4:**
+
+> /opsx:apply
+
+*Claude Code (`claude-opus-5-5`, 20-nov). La IA implementó la sección de `MOO-175` con un commit por paso y los tests en rojo antes de cada implementación: el estado final con los hilos, su lectura por GraphQL, los hallazgos, la pregunta «ya arreglado» en el núcleo y en el adaptador, y el resumen. Grabó los hilos de la #85, la #88 y la #166 por GraphQL, y la respuesta real de Clef para el P2 de `findings.ts:54` de la #166 contra el código de `a4b9361`. Clef dio 0,31 a «ya arreglado», y el código aún no lo arreglaba; con 0,83 de que cae dentro, el comentario sale* real*, lo que era. Lo comprobó con `pnpm studio`.*
+
+*Ajustes:*
+- *GraphQL da el login de un bot sin `[bot]`, al revés que REST, que es como se configura el revisor. El adaptador de GitHub se lo añade según el tipo de cuenta, así que un usuario sigue sin poder suplantarlo.*
+- *Al grabarlos, los hilos de las tres PR ya estaban resueltos. Los tests los abren a mano.*
+- *El change borraba la lectura por REST en el paso 1.5, pero los hallazgos la usaban hasta el 1.7. La IA la borró en el 1.7, para que cada commit quedara en verde.*
+- *Los escenarios de punta a punta del paso 1.14 pasaron desde el principio. La IA lo dejó dicho en el commit.*
+
 ---
 
 ### 7. Pull Requests

@@ -95,7 +95,7 @@
 - [x] 1.15 Lo que falte para que 1.14 pase, si falta algo, y `studio.ts` con un hallazgo de un push
   anterior.
   Verificar: `pnpm test` en verde; `pnpm studio` arranca y el hilo de ejemplo llega al resumen.
-- [ ] 1.16 Documentación: README §2.2 (el adaptador de GitHub con los hilos por GraphQL, el del
+- [x] 1.16 Documentación: README §2.2 (el adaptador de GitHub con los hilos por GraphQL, el del
   revisor sin `has_any_findings`, el de los hallazgos, la foto, la pregunta «ya arreglado» y sus
   reglas) y §2.5 (qué sale hacia el proveedor: el código del último push de un comentario anterior).
   `prompts.md`.
