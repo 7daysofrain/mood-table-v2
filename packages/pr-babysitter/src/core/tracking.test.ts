@@ -18,9 +18,9 @@ const MINUTE = 60_000;
 const TIMEOUT = 30 * MINUTE;
 const HEAD = 'a1b2c3d';
 
-const passed = (name: string): Check => ({ name, status: 'passed' });
-const failed = (name: string): Check => ({ name, status: 'failed' });
-const pending = (name: string): Check => ({ name, status: 'pending' });
+const passed = (name: string): Check => ({ name, status: 'passed', conclusion: 'success' });
+const failed = (name: string): Check => ({ name, status: 'failed', conclusion: 'failure' });
+const pending = (name: string): Check => ({ name, status: 'pending', conclusion: null });
 
 /** Una PR con todas las comprobaciones superadas y revisada sin hallazgos en el último push. */
 function snapshot(overrides: Partial<PullRequestSnapshot> = {}): PullRequestSnapshot {

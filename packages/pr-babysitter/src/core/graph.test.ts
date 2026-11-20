@@ -22,16 +22,16 @@ const MINUTE = 60_000;
 const HEAD = 'a1b2c3d';
 
 const PENDING: Check[] = [
-  { name: 'lint', status: 'passed' },
-  { name: 'e2e', status: 'pending' },
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  { name: 'e2e', status: 'pending', conclusion: null },
 ];
 const PASSED: Check[] = [
-  { name: 'lint', status: 'passed' },
-  { name: 'e2e', status: 'passed' },
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  { name: 'e2e', status: 'passed', conclusion: 'success' },
 ];
 const FAILED: Check[] = [
-  { name: 'lint', status: 'passed' },
-  { name: 'e2e', status: 'failed' },
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  { name: 'e2e', status: 'failed', conclusion: 'failure' },
 ];
 const reviewed = (sha = HEAD, hasFindings = false): Review => ({
   reviewedSha: sha,
@@ -230,7 +230,7 @@ describe('hasta el estado final', () => {
   it('una comprobación exigida que aún no ha empezado no da el aviso de comprobaciones terminadas', async () => {
     const { notices } = await follow(
       snapshot(0),
-      snapshot(2, { checks: [...PASSED, { name: 'sonar-issues', status: 'pending' }] }),
+      snapshot(2, { checks: [...PASSED, { name: 'sonar-issues', status: 'pending', conclusion: null }] }),
     );
 
     expect(summary(notices)).toEqual(['tracking']);

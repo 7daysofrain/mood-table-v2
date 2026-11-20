@@ -140,6 +140,9 @@ const checkRunSchema = z.object({
     .optional(),
 });
 
+/** Lo que se lee de un *job* de `GET /repos/{owner}/{repo}/actions/jobs/{job_id}`. */
+const jobSchema = z.object({ run_id: z.number(), run_attempt: z.number() });
+
 /** Lo que se lee de cada anotación de `GET /repos/{owner}/{repo}/check-runs/{id}/annotations`. */
 const annotationSchema = z.object({
   path: z.string(),
@@ -148,6 +151,22 @@ const annotationSchema = z.object({
   title: z.string().nullable().optional(),
   message: z.string().nullable(),
 });
+
+/** La app de GitHub Actions: sus *check runs* son *jobs*, con log, intento y run. */
+const ACTIONS_APP = 'github-actions';
+
+/**
+ * El *check run* más reciente de una comprobación: GitHub ya da solo ese (`filter=latest`), pero un
+ * relanzamiento deja dos del mismo nombre si se piden todos, y el más reciente tiene el id mayor.
+ */
+function latest<Run extends { id: number; name: string }>(runs: Run[], name: string) {
+  return runs
+    .filter((run) => run.name === name)
+    .reduce<Run | undefined>(
+      (newest, run) => (newest && newest.id > run.id ? newest : run),
+      undefined,
+    );
+}
 
 /** Las conclusiones que cuentan como superadas (`sonar-issues` se salta: `linear.md` §7). */
 const PASSING_CONCLUSIONS = new Set(['success', 'neutral', 'skipped']);
@@ -188,6 +207,17 @@ export function createGitHubReader({
   octokit.hook.before('request', async (options) => {
     options.headers.authorization = `token ${await token()}`;
   });
+
+  /**
+   * El *job* de un *check run* de GitHub Actions, que tiene su mismo id, o `null` si GitHub no lo da
+   * (un 4xx que no se arregla solo): la comprobación se queda sin intento, y no se relanza.
+   */
+  async function jobOf(jobId: number) {
+    const response = await readable(() =>
+      octokit.rest.actions.getJobForWorkflowRun({ owner, repo, job_id: jobId }),
+    );
+    return response && jobSchema.parse(response.data);
+  }
 
   async function checkRuns(sha: string) {
     const runs = await read(() =>
@@ -251,13 +281,24 @@ export function createGitHubReader({
 
     async checks(sha: string, required: string[]): Promise<Check[]> {
       const runs = await checkRuns(sha);
-      return required.map((name) => {
-        // GitHub da el *check run* más reciente de cada nombre (`filter=latest`).
-        const run = runs.find((checkRun) => checkRun.name === name);
-        if (run?.status !== 'completed') return { name, status: 'pending' };
-        const passed = PASSING_CONCLUSIONS.has(run.conclusion ?? '');
-        return { name, status: passed ? 'passed' : 'failed' };
-      });
+      return Promise.all(
+        required.map(async (name): Promise<Check> => {
+          const run = latest(runs, name);
+          if (run?.status !== 'completed') return { name, status: 'pending', conclusion: null };
+          const { conclusion } = run;
+          if (PASSING_CONCLUSIONS.has(conclusion ?? '')) {
+            return { name, status: 'passed', conclusion };
+          }
+          // El intento solo hace falta para relanzar: el de una de Actions que falla (decisión 3).
+          const job = run.app?.slug === ACTIONS_APP ? await jobOf(run.id) : null;
+          return {
+            name,
+            status: 'failed',
+            conclusion,
+            ...(job && { attempt: job.run_attempt, runId: job.run_id }),
+          };
+        }),
+      );
     },
 
     async listComments(pullRequestNumber: number): Promise<PullRequestComment[]> {
@@ -313,8 +354,7 @@ export function createGitHubReader({
     },
 
     async checkRun(sha: string, checkName: string): Promise<CheckRun | null> {
-      // GitHub da el *check run* más reciente de cada nombre (`filter=latest`).
-      const run = (await checkRuns(sha)).find((checkRun) => checkRun.name === checkName);
+      const run = latest(await checkRuns(sha), checkName);
       if (!run) return null;
       return {
         id: run.id,

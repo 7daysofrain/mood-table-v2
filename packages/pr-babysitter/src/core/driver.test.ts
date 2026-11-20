@@ -65,7 +65,7 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     checks(sha) {
       github.checksReads += 1;
       if (github.checksFailure) return Promise.reject(github.checksFailure);
-      return read(github.checks[sha] ?? [{ name: 'lint', status: 'pending' }]);
+      return read(github.checks[sha] ?? [{ name: 'lint', status: 'pending', conclusion: null }]);
     },
   };
   const reviewer: ReviewReader = { review: (number) => read(github.reviews[number] ?? null) };
@@ -312,7 +312,7 @@ function summary(notices: Notice[]) {
   });
 }
 
-const PASSED: Check[] = [{ name: 'lint', status: 'passed' }];
+const PASSED: Check[] = [{ name: 'lint', status: 'passed', conclusion: 'success' }];
 const reviewed = (sha: string): Review => ({ reviewedSha: sha, completed: true, hasFindings: false });
 
 describe('hasta el estado final', () => {
@@ -1019,7 +1019,7 @@ describe('las peticiones al modelo de decisión en paralelo (change pr-check-tri
     });
 
     await tick();
-    github.checks['sha-74'] = [{ name: 'lint', status: 'failed' }];
+    github.checks['sha-74'] = [{ name: 'lint', status: 'failed', conclusion: 'failure' }];
     await tick();
 
     expect(concurrency.calls).toBe(6);

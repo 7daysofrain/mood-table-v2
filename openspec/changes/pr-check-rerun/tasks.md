@@ -39,7 +39,7 @@
       run;
     - con dos *check runs* del mismo nombre, la del intento más reciente;
     - un *job* que no se puede leer deja el intento sin dato y no rompe la lectura.
-- [ ] 1.3 El `Check` del *snapshot* con `conclusion`, `attempt` y `runId` (`core/pull-request.ts`), y
+- [x] 1.3 El `Check` del *snapshot* con `conclusion`, `attempt` y `runId` (`core/pull-request.ts`), y
   su lectura en `adapters/github.ts`.
   Verificar: los tests de 1.2 en verde, y los que ya había; `pnpm typecheck` en verde.
 - [ ] 1.4 **(test en rojo)** Cuándo se relanza y el reloj (`design.md` decisiones 3 y 4):
