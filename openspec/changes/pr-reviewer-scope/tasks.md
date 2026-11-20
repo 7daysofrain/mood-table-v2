@@ -62,7 +62,7 @@
 - [x] 1.9 Lo que falte para que 1.8 pase, si falta algo, y `studio.ts` con un hallazgo del revisor que
   muestre «se capturaría».
   Verificar: `pnpm test` en verde; `pnpm studio` arranca y el hilo de ejemplo llega al resumen.
-- [ ] 1.10 Documentación: README §2.2 (el grafo, las reglas, el puerto `DecisionModel` y el adaptador
+- [x] 1.10 Documentación: README §2.2 (el grafo, las reglas, el puerto `DecisionModel` y el adaptador
   del modelo de decisión: las dos preguntas del revisor, la regla de la descripción vacía y el porqué
   de «se capturaría») y §2.5 (qué sale hacia el proveedor: la pregunta del revisor). `prompts.md`.
   Verificar: ninguna mención a «hay que arreglarlo en esta PR» para el revisor en el README.

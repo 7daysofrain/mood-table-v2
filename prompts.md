@@ -2437,6 +2437,30 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Claude Code (`claude-fable-5-2`, 19-nov). La IA comprobó en Linear que las tres tareas de la historia estaban en* Done*, archivó el change con la CLI de OpenSpec, que llevó su delta a la spec `pr-triage` (tres requisitos nuevos y tres modificados), y anotó en el `design.md` archivado las tres desviaciones de la implementación. No lanzó `/opsx:verify`: lo dijo en la PR, con la tabla de escenarios y tests de las tres PR como comprobación.*
 
+#### 6.92 Preguntar por el alcance de la PR los hallazgos del revisor (`MOO-165`)
+
+**Prompt 1:**
+
+> Quiero que dado un hallazgo encontrado por el revisor Codex el triador sea capaz de identificar si el arreglo cae dentro del alcance del la historia o fuera. En caso de que haya un 80% de que entra en alcance la marcará como a arreglar. Si tiene 80% de que no entra en alcance mandará una captura del problema al triage. Cualquier otra opción lo manda a exige criterio
+
+*Claude Code (`claude-opus-5-5`, 19-nov), el caso feliz de `/refine-story MOO-160`. La IA lo tradujo a GIVEN/WHEN/THEN y lanzó `poke-holes`. El usuario decidió que en modo sombra el resumen solo dijera que se capturaría, y la captura de verdad quedó en `MOO-166` (`/capture`). Estimada a 3 por los dos (planning poker con `estimator`).*
+
+**Prompt 2:**
+
+> No lo tengo claro, porque asi visto parecen valores sacados de la misma pregunta cuando yo creo que serían dos preguntas y funcionaría algo asi: ¿Entra dentro del alcance de la PR? => 0,80 marca real <= pasa a la siguiente pregunta / ¿Está fuera del alcance de la PR? => 0,80 marca capturar <= exige criterio. Es decir, quiero una alta confianza en los extremos, tiene sentido?
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en `/opsx:explore`. La IA había propuesto una sola probabilidad con dos cortes, pero así un hallazgo que pide una decisión de diseño sobre el código de la PR podía acabar capturado como trabajo aparte. El usuario propuso dos preguntas. La IA las juntó en una sola petición, porque el `state` es el mismo, y redactó P2 para que el diseño saliera bajo en las dos. Antes de escribir el change, midió con Clef las 10 filas del* spike *`MOO-120`: 6 de 10, sin errores con confianza ni contradicciones, P1 casi sin moverse y un 6 % más de tokens. Resultado: D116, que matiza D114.*
+
+**Prompt 3:**
+
+> /opsx:apply
+
+*Claude Code (`claude-opus-5-5`, 20-nov). La IA implementó la sección de `MOO-165` con un commit por paso y los tests en rojo antes de cada implementación. Primero el núcleo (la respuesta con `inside` y `outside` y la regla de la PR sin descripción), luego el adaptador, con la respuesta real de Clef grabada para la fixture, y después el resumen y `studio.ts`. Lo comprobó con `pnpm studio`.*
+
+*Ajustes:*
+- *Los tests del grafo del paso 1.8, que el change pedía en rojo, pasaron desde el principio: el grafo ya lo hacía desde el núcleo. La IA lo dejó dicho en el commit en lugar de forzar un fallo.*
+- *La PR de los tests del grafo y la de Studio tenían la descripción vacía, así que con la regla nueva todos sus comentarios del revisor salían* exige criterio*. La IA les dio una descripción para que siguieran probando lo mismo.*
+
 ---
 
 ### 7. Pull Requests
