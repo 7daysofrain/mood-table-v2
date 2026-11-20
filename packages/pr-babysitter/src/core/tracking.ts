@@ -122,8 +122,8 @@ function findingPushes({ reviewerThreads }: PullRequestSnapshot): FindingPushes 
 /**
  * Si hay que triar antes de avisar del estado final (change pr-shadow-triage, decisión 1): necesita
  * intervención porque falla una comprobación o el revisor tiene hallazgos. Lo que no termina a
- * tiempo no deja hallazgos que triar, salvo un relanzamiento que no ha terminado (`unfinishedReruns`;
- * change pr-check-rerun, decisión 1), que exige criterio.
+ * tiempo no deja hallazgos que triar, salvo una relanzable relanzada que no ha terminado
+ * (`unfinishedReruns`; change pr-check-rerun, decisión 1), que exige criterio.
  */
 export function needsTriage(state: FinalState, unfinishedReruns: string[]): boolean {
   return (
@@ -134,12 +134,17 @@ export function needsTriage(state: FinalState, unfinishedReruns: string[]): bool
 }
 
 /**
- * Las comprobaciones que el sistema relanzó en el push y aún no han terminado con esta foto (change
- * pr-check-rerun, decisión 1).
+ * Las relanzables (`rerunChecks`) que el sistema relanzó en el push y aún no han terminado con esta
+ * foto (change pr-check-rerun, decisión 1). Una no relanzable que se relanzó con ellas porque fallaba
+ * en su run (decisión 2) y no ha terminado no sale: queda como cualquier pendiente.
  */
-export function unfinishedReruns(snapshot: PullRequestSnapshot, push: TrackedPush): string[] {
+export function unfinishedReruns(
+  snapshot: PullRequestSnapshot,
+  push: TrackedPush,
+  rerunChecks: string[],
+): string[] {
   if (push.rerunSince === undefined) return [];
-  return rerunNamed(snapshot, push, 'pending');
+  return rerunNamed(snapshot, push, 'pending').filter((name) => rerunChecks.includes(name));
 }
 
 /**

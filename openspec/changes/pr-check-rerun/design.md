@@ -73,7 +73,9 @@ a BH3. Con esto BQ8 queda resuelta sin una clase nueva.
 
 `rerun-failed-jobs` sobre el run del primer relanzable que falla. Relanza también una determinista que
 haya fallado en el mismo run (sigue saliendo *real* por su regla, y cuesta ~1 min de CI) y los *jobs*
-que dependen de los relanzados (`sonar-issues` tras `test`).
+que dependen de los relanzados (`sonar-issues` tras `test`). Si esa no relanzable no ha terminado al
+vencer el plazo, queda como cualquier pendiente: sale en «no ha terminado» y no deja hallazgo; el
+hallazgo «el relanzamiento no ha terminado» es solo de las relanzables (hallazgo de Codex en la #173).
 
 - **Alternativas:** relanzar *job* a *job* (si fallan `test` y `e2e`, GitHub rechaza el segundo
   mientras corre el primero); relanzar el workflow entero (repite lo que ya pasó).

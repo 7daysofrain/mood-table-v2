@@ -428,11 +428,15 @@ describe('lo relanzado, con la foto (change pr-check-rerun, decisiones 1 y 8)', 
   const now = (checks: Check[]) => snapshot({ checks });
 
   it('sin terminar: las que el sistema relanzó y siguen pendientes', () => {
-    expect(unfinishedReruns(now([passed('lint'), pending('e2e')]), rerun)).toEqual(['e2e']);
+    expect(unfinishedReruns(now([passed('lint'), pending('e2e')]), rerun, RERUN)).toEqual(['e2e']);
+  });
+
+  it('sin terminar: solo las relanzables, no una que se relanzó con ellas porque fallaba en su run', () => {
+    expect(unfinishedReruns(now([pending('lint'), pending('e2e')]), rerun, RERUN)).toEqual(['e2e']);
   });
 
   it('sin relanzamiento pedido, ninguna, aunque haya pendientes', () => {
-    expect(unfinishedReruns(now([pending('e2e')]), { sha: 'abc', seenAt: 0 })).toEqual([]);
+    expect(unfinishedReruns(now([pending('e2e')]), { sha: 'abc', seenAt: 0 }, RERUN)).toEqual([]);
   });
 
   it('pasadas: las que el sistema relanzó y han pasado, no las que siguen fallando', () => {

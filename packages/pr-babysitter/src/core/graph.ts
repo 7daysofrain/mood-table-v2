@@ -312,28 +312,31 @@ function viaTriage<Node extends string>(
   node: Node,
   snapshot: PullRequestSnapshot,
   push: TrackedPush,
+  rerunChecks: string[],
 ): Node | typeof TRIAGE_NODE | typeof SUMMARY_NODE {
   if (node !== 'avisarEstadoFinal') return node;
-  if (needsTriage(finalState(snapshot, push), unfinishedReruns(snapshot, push))) return TRIAGE_NODE;
+  const unfinished = unfinishedReruns(snapshot, push, rerunChecks);
+  if (needsTriage(finalState(snapshot, push), unfinished)) return TRIAGE_NODE;
   return rerunPassed(snapshot, push).length > 0 ? SUMMARY_NODE : node;
 }
 
 /**
  * Los hallazgos del push con lo que sabe el seguimiento de su relanzamiento (change pr-check-rerun,
- * decisión 1): el intento de cada comprobación, de la foto, y las que el sistema relanzó y no han
- * terminado, que GitHub no da como fallidas y no tienen contexto que leer.
+ * decisión 1): el intento de cada comprobación, de la foto, y las relanzables que el sistema relanzó
+ * y no han terminado, que GitHub no da como fallidas y no tienen contexto que leer.
  */
 function withReruns(
   findings: Finding[],
   snapshot: PullRequestSnapshot,
   push: TrackedPush,
+  rerunChecks: string[],
 ): Finding[] {
   const attempts = new Map(snapshot.checks.map(({ name, attempt }) => [name, attempt]));
   const withAttempt = findings.map((finding) => {
     const attempt = finding.source === 'check' ? attempts.get(finding.name) : undefined;
     return attempt === undefined ? finding : { ...finding, attempt };
   });
-  const unfinished = unfinishedReruns(snapshot, push).map(
+  const unfinished = unfinishedReruns(snapshot, push, rerunChecks).map(
     (name): Finding => ({
       source: 'check',
       name,
@@ -374,7 +377,7 @@ export function createTrackingGraph(
   }> = (state) => {
     const snapshot = waitFor('checks');
     const { push, next } = afterChecksWait(pushIn(state), snapshot, timeoutMs, rerunChecks);
-    const goto = viaTriage(AFTER_CHECKS[next], snapshot, push);
+    const goto = viaTriage(AFTER_CHECKS[next], snapshot, push, rerunChecks);
     return new Command({ update: { snapshot, push }, goto });
   };
 
@@ -433,7 +436,7 @@ export function createTrackingGraph(
   ) => {
     const snapshot = waitFor('review');
     const { push, next } = afterReviewWait(pushIn(state), snapshot, timeoutMs);
-    const goto = viaTriage(AFTER_REVIEW[next], snapshot, push);
+    const goto = viaTriage(AFTER_REVIEW[next], snapshot, push, rerunChecks);
     return new Command({ update: { snapshot, push }, goto });
   };
 
@@ -452,7 +455,7 @@ export function createTrackingGraph(
         ? final.reasons.flatMap((reason) => (reason.kind === 'checksFailed' ? reason.checks : []))
         : [];
     const read = await findings.read(snapshot.number, snapshot.headSha, failedChecks);
-    const found = withReruns(read.findings, snapshot, push);
+    const found = withReruns(read.findings, snapshot, push, rerunChecks);
     const round = (state.triageRound?.number ?? 0) + 1;
     const decided = withoutModel(found, {
       ruleChecks: triage.ruleChecks,
@@ -607,7 +610,7 @@ export function createTrackingGraph(
       RERUN_NODE,
       (state) =>
         state.push?.rerunRejected
-          ? viaTriage('avisarEstadoFinal', state.snapshot, pushIn(state))
+          ? viaTriage('avisarEstadoFinal', state.snapshot, pushIn(state), rerunChecks)
           : 'esperarComprobaciones',
       ['esperarComprobaciones', TRIAGE_NODE, SUMMARY_NODE, 'avisarEstadoFinal'],
     )

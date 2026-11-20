@@ -59,6 +59,8 @@ const failedIn = (name: string, attempt: number, conclusion = 'failure'): Check 
   runId: RUN,
   runFinished: true,
 });
+/** Una que aún no ha terminado. */
+const pending = (name: string): Check => ({ name, status: 'pending', conclusion: null });
 /** `e2e` falla en su primer intento. */
 const E2E_FIRST_ATTEMPT: Check[] = [
   { name: 'lint', status: 'passed', conclusion: 'success' },
@@ -1954,6 +1956,45 @@ describe('una comprobación relanzable sin resultado tras relanzarla exige crite
     expect(summaryRows(triage)).toEqual([
       '| Comprobación `e2e` | exige criterio | regla: el relanzamiento no ha terminado |',
     ]);
+  });
+
+  it('una no relanzable que se relanzó con ella y no ha terminado no se tría: solo dice que no ha terminado', async () => {
+    // GitHub relanza los *jobs* fallidos del run, `lint` incluido (decisión 2); `e2e` vuelve a fallar.
+    const triage = recordingTriage([failingCheck('e2e')]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: [failedIn('lint', 1), failedIn('e2e', 1)] }),
+      snapshot(6, { checks: [pending('lint'), pending('e2e')] }),
+      snapshot(35, { checks: [pending('lint'), failedIn('e2e', 2)] }),
+    ]);
+
+    expect(summaryRows(triage)).toEqual(['| Comprobación `e2e` | real | regla: ha fallado dos veces |']);
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['e2e'] },
+        { kind: 'checksUnfinished', checks: ['lint'] },
+      ],
+    });
+  });
+
+  it('una no relanzable que se relanzó con ella y no ha terminado, con la relanzable pasada: no se tría', async () => {
+    const triage = recordingTriage([]);
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: [failedIn('lint', 1), failedIn('e2e', 1)] }),
+      snapshot(6, { checks: [pending('lint'), pending('e2e')] }),
+      snapshot(35, { checks: [pending('lint'), PASSED[1]!] }),
+    ]);
+
+    expect(triage.reads).toEqual([]);
+    expect(summaryRows(triage)).toEqual([]);
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksUnfinished', checks: ['lint'] }],
+    });
   });
 
   it('una comprobación que no ha terminado sin haberse relanzado no se tría, como antes', async () => {
