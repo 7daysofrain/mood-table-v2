@@ -8,7 +8,7 @@
  */
 import * as z from 'zod';
 
-import type { Finding, SonarIssueCount, TriageClass, Verdict } from './triage.ts';
+import type { EvidentCase, Finding, SonarIssueCount, TriageClass, Verdict } from './triage.ts';
 
 /** El triaje de un push, tal como queda en el estado del hilo. */
 export interface TriagedPush {
@@ -16,6 +16,11 @@ export interface TriagedPush {
   findings: { finding: Finding; verdict: Verdict }[];
   /** Cuántas incidencias de SonarQube trae la comprobación que las lista y cuántas se han triado. */
   sonarIssues?: SonarIssueCount;
+  /**
+   * Las comprobaciones que el sistema relanzó en el push y han pasado (change pr-check-rerun,
+   * decisión 8): no son hallazgos, pero el mantenedor ve que hubo un fallo transitorio.
+   */
+  rerunPassed?: string[];
 }
 
 const CLASS_NAMES: Record<TriageClass, string> = {
@@ -24,22 +29,30 @@ const CLASS_NAMES: Record<TriageClass, string> = {
   needsJudgment: 'exige criterio',
 };
 
-/** El texto del resumen, con la marca del push al final. */
+/**
+ * El texto del resumen, con la marca del push al final: la tabla de hallazgos, si hay alguno, y
+ * debajo lo que se relanzó y pasó (change pr-check-rerun, decisión 8).
+ */
 export function triageSummary(triage: TriagedPush, threshold: number): string {
   const rows = triage.findings.map(
     ({ finding, verdict }) =>
       `| ${cell(identity(finding))} | ${CLASS_NAMES[verdict.class]} | ${why(finding, verdict, threshold)} |`,
   );
+  const table = rows.length === 0 ? [] : ['| Hallazgo | Clase | Por qué |', '|---|---|---|', ...rows, ''];
   return [
     `**Triaje del PR Babysitter** (modo sombra: no actúa) · push \`${triage.sha.slice(0, 7)}\``,
     '',
-    '| Hallazgo | Clase | Por qué |',
-    '|---|---|---|',
-    ...rows,
-    '',
+    ...table,
     ...cutList(triage.sonarIssues),
+    ...rerunPassedLines(triage.rerunPassed ?? []),
     summaryMark(triage.sha),
   ].join('\n');
+}
+
+/** Una línea por comprobación relanzada que ha pasado. */
+function rerunPassedLines(names: string[]): string[] {
+  if (names.length === 0) return [];
+  return [...names.map((name) => `La comprobación \`${name}\` se relanzó y pasó.`), ''];
 }
 
 /**
@@ -78,10 +91,27 @@ function identity(finding: Finding): string {
 function why(finding: Finding, verdict: Verdict, threshold: number): string {
   // La regla decide por el nombre de la comprobación: su contexto no ha contado.
   if (verdict.reason === 'rule') return 'regla: comprobación determinista';
-  // Ni en la comprobación de incidencias que no anota ninguna legible: no se ha preguntado por ella.
-  const origin = verdict.reason === 'noIssues' ? '' : contextOrigin(finding);
+  // Ni en una relanzable, que decide cómo acabó el relanzamiento (change pr-check-rerun, decisión
+  // 1); el contexto solo da el caso evidente, que lo dice.
+  if (verdict.reason === 'failedTwice') {
+    const evident = verdict.evidentCase ? ` · caso evidente: ${EVIDENT_CASES[verdict.evidentCase]}` : '';
+    return `regla: ha fallado dos veces${evident}`;
+  }
+  // Ni en la comprobación de incidencias que no anota ninguna legible, ni en una relanzable sin
+  // resultado: no se ha preguntado por ellas.
+  const origin = WITHOUT_ORIGIN.has(verdict.reason) ? '' : contextOrigin(finding);
   return reason(finding, verdict, threshold) + origin;
 }
+
+const WITHOUT_ORIGIN = new Set<Verdict['reason']>(['noIssues', 'notRerun', 'rerunUnfinished', 'cancelled']);
+
+/** Cada caso evidente con las palabras del glosario de PB. */
+const EVIDENT_CASES: Record<EvidentCase, string> = {
+  timeout: 'timeout',
+  infrastructure: 'infraestructura',
+  network: 'red',
+  runnerLost: 'runner perdido',
+};
 
 const ORIGIN_NAMES = {
   annotations: 'anotaciones',
@@ -101,10 +131,16 @@ function contextOrigin(finding: Finding): string {
 
 function reason(
   finding: Finding,
-  verdict: Exclude<Verdict, { reason: 'rule' }>,
+  verdict: Exclude<Verdict, { reason: 'rule' | 'failedTwice' }>,
   threshold: number,
 ): string {
   switch (verdict.reason) {
+    case 'notRerun':
+      return 'regla: no se ha podido relanzar';
+    case 'rerunUnfinished':
+      return 'regla: el relanzamiento no ha terminado';
+    case 'cancelled':
+      return 'regla: se ha cancelado';
     case 'noContext':
       if (finding.source === 'reviewer') return 'no se ha podido leer el trozo de diff que comenta';
       if (finding.source === 'sonarIssue') return 'no se ha podido leer su código';

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type CheckFinding,
   classify,
   evidentCase,
   type Finding,
@@ -589,7 +590,7 @@ describe('una comprobación relanzable, tras el relanzamiento (change pr-check-r
     name: string,
     attempt: number | undefined,
     overrides: Partial<Extract<Finding, { source: 'check' }>> = {},
-  ): Finding => ({ ...checkFinding(name), attempt, ...overrides });
+  ): Finding => ({ ...(checkFinding(name) as CheckFinding), attempt, ...overrides });
 
   it('una relanzable que ha fallado dos veces sale real por la regla nueva, que lo registra', () => {
     const e2e = rerunnable('e2e', 2);

@@ -413,6 +413,7 @@ export function createTrackingGraph(
     const decided = withoutModel(read.findings, {
       ruleChecks: triage.ruleChecks,
       sonarIssuesCheck: triage.sonarIssuesCheck,
+      rerunChecks: [],
       description: read.context.description,
       spentUsd: state.spentUsd ?? 0,
       budget: triage.budget,

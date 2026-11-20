@@ -129,7 +129,7 @@
     - `questionFor` ya no pregunta por la causa a un relanzable.
   - **`core/triage-summary.test.ts`:** el porqué «ha fallado dos veces» con el caso evidente o sin él;
     los tres motivos de *exige criterio*; las líneas «se relanzó y pasó», con hallazgos y sin ellos.
-- [ ] 2.2 El hallazgo de una comprobación con su intento y el resultado del relanzamiento, y las reglas
+- [x] 2.2 El hallazgo de una comprobación con su intento y el resultado del relanzamiento, y las reglas
   en `core/triage.ts`: la regla nueva, la función del caso evidente y los tres motivos; el porqué en
   `core/triage-summary.ts`.
   Verificar: los tests de 2.1 y todos los que ya había en verde; `pnpm typecheck` en verde.
