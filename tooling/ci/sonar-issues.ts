@@ -149,11 +149,12 @@ export function toAnnotations(response: IssuesSearchResponse): string[] {
 
 /** La más alta de sus impactos; sin impactos, la heredada traducida. */
 export function issueSeverity(issue: SonarIssue): string {
-  const impacts = issue.impacts ?? [];
-  if (impacts.length === 0) return LEGACY_SEVERITIES[issue.severity] ?? issue.severity;
-  return impacts
-    .map((impact) => impact.severity)
-    .reduce((highest, severity) => (rank(severity) < rank(highest) ? severity : highest));
+  const [first, ...rest] = (issue.impacts ?? []).map((impact) => impact.severity);
+  if (first === undefined) return LEGACY_SEVERITIES[issue.severity] ?? issue.severity;
+  return rest.reduce(
+    (highest, severity) => (rank(severity) < rank(highest) ? severity : highest),
+    first,
+  );
 }
 
 /** Una severidad desconocida va detrás de todas las conocidas. */
