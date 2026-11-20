@@ -302,6 +302,89 @@ describe('el porqué de cada hallazgo del revisor (change pr-reviewer-scope, dec
   });
 });
 
+describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 5)', () => {
+  const issue: Finding = {
+    source: 'sonarIssue',
+    rule: 'typescript:S9382',
+    ruleName: 'Promises should not be awaited sequentially in a loop',
+    severity: 'normal',
+    file: 'tooling/ci/check-sonar-issues.ts',
+    line: 58,
+    message: 'Unexpected `await` inside a loop.',
+    code: '>>   58 | await x;',
+  };
+  const sonarCheck: Finding = { ...e2e, name: 'sonar-issues' };
+
+  it('una fila por incidencia, con su regla, su fichero y su línea, y el nombre de la regla', () => {
+    const text = triageSummary(
+      { sha: SHA, findings: [{ finding: issue, verdict: probability('valid', 0.93) }] },
+      0.8,
+    );
+
+    expect(rows(text)).toEqual([
+      '| SonarQube `typescript:S9382` en `check-sonar-issues.ts:58` · Promises should not be awaited sequentially in a loop | real | p = 0,93 ≥ 0,80 |',
+    ]);
+  });
+
+  it('no aplica dice que se aceptaría en SonarQube; la regla de severidad alta, no', () => {
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [
+          { finding: issue, verdict: probability('notApplicable', 0.1) },
+          {
+            finding: { ...issue, severity: 'high' },
+            verdict: { class: 'needsJudgment', reason: 'highSeverity', probability: 0.1 },
+          },
+        ],
+      },
+      0.8,
+    );
+
+    expect(rows(text).map((row) => row.split(' | ').slice(1).join(' | '))).toEqual([
+      'no aplica | p = 0,10 ≤ 0,20 · se aceptaría en SonarQube |',
+      'exige criterio | regla: descartaría un hallazgo de severidad alta |',
+    ]);
+  });
+
+  it('sin código, o la comprobación sin ninguna incidencia legible, dicen por qué exigen criterio', () => {
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [
+          { finding: { ...issue, code: null }, verdict: { class: 'needsJudgment', reason: 'noContext' } },
+          { finding: sonarCheck, verdict: { class: 'needsJudgment', reason: 'noIssues' } },
+        ],
+      },
+      0.8,
+    );
+
+    expect(rows(text).map((row) => row.split(' | ').slice(1).join(' | '))).toEqual([
+      'exige criterio | no se ha podido leer su código |',
+      'exige criterio | no anota ninguna incidencia legible |',
+    ]);
+  });
+
+  it('si la comprobación trae más incidencias de las triadas, lo dice bajo la tabla', () => {
+    const findings = [{ finding: issue, verdict: probability('valid', 0.93) }];
+    const cut = triageSummary({ sha: SHA, findings, sonarIssues: { total: 12, triaged: 10 } }, 0.8);
+
+    const lines = cut.split('\n');
+    const line = 'La comprobación de incidencias nuevas de SonarQube trae 12; se han triado las 10 que anota.';
+    expect(lines).toContain(line);
+    expect(lines.indexOf(line)).toBeGreaterThan(lines.findLastIndex((row) => row.startsWith('| ')));
+    expect(lines.at(-1)).toMatch(/^<!-- pr-babysitter:triage /);
+  });
+
+  it('si se han triado todas, o no hay recuento, no dice nada', () => {
+    const findings = [{ finding: issue, verdict: probability('valid', 0.93) }];
+
+    for (const sonarIssues of [{ total: 3, triaged: 3 }, null, undefined]) {
+      expect(triageSummary({ sha: SHA, findings, sonarIssues }, 0.8)).not.toContain('se han triado');
+    }
+  });
+});
+
 describe('las marcas de un comentario', () => {
   it('no hay ninguna en un comentario cualquiera', () => {
     expect(summaryMarks('Buen trabajo')).toEqual([]);

@@ -90,7 +90,7 @@ interface TriagePorts {
 }
 
 const noFindings: TriagePorts = {
-  findings: { read: () => Promise.resolve({ context: CONTEXT, findings: [] }) },
+  findings: { read: () => Promise.resolve({ context: CONTEXT, findings: [], sonarIssues: null }) },
   decisionModel: {
     estimate: () => 0,
     ask: () => Promise.reject(new Error('no hay hallazgos que triar')),
@@ -130,6 +130,7 @@ function trackingGraph(
         threshold: 0.8,
         budget: { capUsd: 0.05, inputPricePerMTok: 0.24 },
         ruleChecks: RULE_CHECKS,
+        sonarIssuesCheck: 'sonar-issues',
       },
     },
   );
@@ -624,13 +625,14 @@ const e2eFailing = failingCheck('e2e');
  * la causa, `p`; a la del alcance, P1 = `p` y P2 = `1 - p`.
  */
 function modelAnswer(finding: Finding, p: number): ModelAnswer {
-  return finding.source === 'check'
-    ? { kind: 'answered', probability: p }
-    : { kind: 'scope', inside: p, outside: Math.round((1 - p) * 100) / 100 };
+  return finding.source === 'reviewer'
+    ? { kind: 'scope', inside: p, outside: Math.round((1 - p) * 100) / 100 }
+    : { kind: 'answered', probability: p };
 }
 
 /**
- * Un triaje que se puede seguir: los hallazgos que da GitHub con la PR (`CONTEXT`, si no se dice), la
+ * Un triaje que se puede seguir: los hallazgos que da GitHub con la PR (`CONTEXT`, si no se dice) y
+ * cuántas incidencias de SonarQube trae la comprobación que las lista (ninguna, si no se dice), la
  * probabilidad que da el modelo de cada uno (0,93 con 12.000 tokens, si no se dice; `modelAnswer`),
  * cada llamada al modelo, y el orden de lo que pasa, con los avisos.
  */
@@ -639,6 +641,7 @@ function recordingTriage(
   answer: (finding: Finding) => Promise<{ probability: number; inputTokens: number }> = () =>
     Promise.resolve({ probability: 0.93, inputTokens: 12_000 }),
   context: PullRequestContext = CONTEXT,
+  sonarIssues: { total: number; triaged: number } | null = null,
 ) {
   const events: string[] = [];
   const reads: { number: number; sha: string; failedChecks: string[] }[] = [];
@@ -659,7 +662,7 @@ function recordingTriage(
         if (github.failure) return Promise.reject(github.failure);
         events.push('leer hallazgos');
         reads.push({ number, sha, failedChecks });
-        return Promise.resolve({ context, findings: found });
+        return Promise.resolve({ context, findings: found, sonarIssues });
       },
     },
     decisionModel: {
@@ -1396,5 +1399,91 @@ describe('el sistema solo escribe en GitHub sus peticiones de revisión y el res
 
     expect(recorded.requests).toEqual([{ number: 74, sha: HEAD }]);
     expect(triage.posted.summaries.map(({ sha }) => sha)).toEqual([HEAD]);
+  });
+});
+
+/** Una incidencia de SonarQube con su código. */
+function sonarIssue(file: string, line: number, code: string | null = `>> ${line} | x`): Finding {
+  return {
+    source: 'sonarIssue',
+    rule: 'typescript:S3358',
+    ruleName: 'Ternary operators should not be nested',
+    severity: 'normal',
+    file,
+    line,
+    message: 'Extract this nested ternary operation into an independent statement.',
+    code,
+  };
+}
+
+describe('cada incidencia nueva de SonarQube se tría como un hallazgo propio', () => {
+  it('dos incidencias dan dos peticiones al modelo, cada una con la suya y la pregunta de la regla', async () => {
+    const first = sonarIssue('packages/shared/src/a.ts', 3);
+    const second = sonarIssue('tooling/ci/b.ts', 4);
+    const triage = recordingTriage([first, second]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked).toHaveLength(2);
+    expect(triage.asked).toEqual(
+      expect.arrayContaining([
+        { context: CONTEXT, finding: first, question: 'rule' },
+        { context: CONTEXT, finding: second, question: 'rule' },
+      ]),
+    );
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: first, verdict: { class: 'valid' } },
+          { finding: second, verdict: { class: 'valid' } },
+        ],
+      },
+    });
+  });
+
+  it('una incidencia sin código no llega al modelo y exige criterio, y la otra sí llega', async () => {
+    const noCode = sonarIssue('packages/shared/src/a.ts', 999, null);
+    const withCode = sonarIssue('tooling/ci/b.ts', 4);
+    const triage = recordingTriage([noCode, withCode]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([withCode]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: noCode, verdict: { class: 'needsJudgment', reason: 'noContext' } },
+          { finding: withCode, verdict: { class: 'valid' } },
+        ],
+      },
+    });
+    expect(triage.posted.summaries[0]?.text).toContain('no se ha podido leer su código');
+  });
+
+  it('la comprobación de incidencias sin ninguna legible exige criterio sin preguntar al modelo', async () => {
+    const sonarCheck = failingCheck('sonar-issues');
+    const triage = recordingTriage([sonarCheck]);
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked).toEqual([]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [{ finding: sonarCheck, verdict: { class: 'needsJudgment', reason: 'noIssues' } }],
+      },
+    });
+  });
+
+  it('si la comprobación trae más incidencias de las triadas, el resumen lo dice', async () => {
+    const triage = recordingTriage(
+      [sonarIssue('tooling/ci/b.ts', 4)],
+      undefined,
+      CONTEXT,
+      { total: 12, triaged: 10 },
+    );
+
+    await followTriage(triage, failing);
+
+    expect(triage.posted.summaries[0]?.text).toContain('trae 12; se han triado las 10 que anota');
   });
 });

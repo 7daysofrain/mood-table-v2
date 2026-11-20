@@ -62,7 +62,7 @@
 - [x] 2.3 `fileAt` en `adapters/github.ts` y el módulo `adapters/sonar-issues.ts`. Todavía no los usa
   nadie.
   Verificar: los tests de 2.2 en verde; `pnpm typecheck` en verde.
-- [ ] 2.4 **(test en rojo)** El triaje de una incidencia:
+- [x] 2.4 **(test en rojo)** El triaje de una incidencia:
   - **`core/triage.test.ts`:**
     - `questionFor` da `rule` para una incidencia;
     - `classify`: real, no aplica y exige criterio por la probabilidad; `high` que saldría no aplica da

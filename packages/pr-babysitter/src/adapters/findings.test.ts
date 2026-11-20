@@ -11,6 +11,9 @@
  *   el del *check run* `sonar-issues` de `check-runs-failed.json` (de la #69), que ya no se puede
  *   descargar. Sus anotaciones tampoco: se sirven vacías, y el contexto sale del log. Cómo se arma
  *   el contexto de cada app se prueba en `check-context.test.ts`.
+ * - `annotations-165-sonar-issues.json` (20-nov): las anotaciones de `sonar-issues` en la PR de
+ *   prueba #165, con tres incidencias. Se sirven como las del mismo *check run* cuando un test lo
+ *   pide, y el código de cada fichero lo escribe el test.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -33,8 +36,11 @@ const SONAR_ISSUES_JOB = 121264937094;
 /** Responde a una petición por su ruta, sin la *query*; `undefined` deja la grabada. */
 type Route = (call: Call & { path: string }) => Response | Promise<Response> | undefined;
 
-/** Un GitHub falso con las respuestas grabadas; `override` responde antes que ellas. */
-function github(override: Route = () => undefined) {
+/**
+ * Un GitHub falso con las respuestas grabadas; `override` responde antes que ellas. La comprobación
+ * que lista las incidencias de SonarQube es `sonar-issues`, si no se dice otra.
+ */
+function github(override: Route = () => undefined, sonarIssuesCheck = 'sonar-issues') {
   const { fetch, calls } = fakeFetch(async (call) => {
     const path = new URL(call.url).pathname;
     const answer = await override({ ...call, path });
@@ -61,6 +67,7 @@ function github(override: Route = () => undefined) {
   const findings = createFindings({
     reviewer: { login: REVIEWER, name: 'Codex', parse: parseCodexFinding },
     github: reader,
+    sonarIssuesCheck,
   });
   return { findings, reader, calls };
 }
@@ -239,6 +246,93 @@ describe('las comprobaciones que fallan', () => {
     ]);
     // La de SonarCloud no es un job de GitHub Actions: no tiene log que pedir.
     expect(calls.filter((call) => call.url.includes('/actions/jobs/'))).toHaveLength(1);
+  });
+});
+
+/** Las anotaciones de `sonar-issues` en la #165 y un fichero de 200 líneas por cada ruta. */
+const withSonarAnnotations: Route = async ({ path }) => {
+  if (path.endsWith(`/check-runs/${SONAR_ISSUES_JOB}/annotations`)) {
+    return json(await fixture('annotations-165-sonar-issues.json'));
+  }
+  if (path.includes('/contents/')) {
+    return text(Array.from({ length: 200 }, (_, index) => `línea ${index + 1}`).join('\n'));
+  }
+  return undefined;
+};
+
+describe('las incidencias de SonarQube (change pr-sonar-issue-triage, decisión 5)', () => {
+  it('la comprobación de incidencias se parte en un hallazgo por incidencia anotada, y no es hallazgo', async () => {
+    const { findings, calls } = github(withSonarAnnotations);
+
+    const { findings: read, sonarIssues } = await findings.read(88, PUSH_88, ['sonar-issues']);
+
+    expect(read.filter((finding) => finding.source === 'check')).toEqual([]);
+    expect(read.filter((finding) => finding.source === 'sonarIssue')).toEqual([
+      {
+        source: 'sonarIssue',
+        rule: 'typescript:S6959',
+        ruleName: '"Array.reduce()" calls should include an initial value',
+        severity: 'normal',
+        file: 'tooling/ci/sonar-issues.ts',
+        line: 156,
+        message: 'Add an initial value to this "reduce()" call.',
+        code: expect.stringContaining('>>  156 | línea 156') as string,
+      },
+      expect.objectContaining({ rule: 'typescript:S9382', file: 'tooling/ci/prueba-await.ts', line: 4 }),
+      expect.objectContaining({
+        rule: 'typescript:S3358',
+        file: 'packages/shared/src/prueba-ternario.ts',
+        line: 3,
+      }),
+    ]);
+    expect(sonarIssues).toEqual({ total: 3, triaged: 3 });
+    // El código, del commit del push.
+    const contents = calls.filter((call) => call.url.includes('/contents/'));
+    expect(contents).toHaveLength(3);
+    for (const call of contents) expect(new URL(call.url).searchParams.get('ref')).toBe(PUSH_88);
+  });
+
+  it('las incidencias van en el sitio de la comprobación, entre las demás', async () => {
+    const { findings } = github(withSonarAnnotations);
+
+    const { findings: read } = await findings.read(88, PUSH_88, ['e2e', 'sonar-issues', 'lint']);
+
+    expect(read.filter((finding) => finding.source !== 'reviewer').map((finding) => finding.source)).toEqual(
+      ['check', 'sonarIssue', 'sonarIssue', 'sonarIssue', 'check'],
+    );
+  });
+
+  it('sin incidencias legibles (con el log), la comprobación es un hallazgo, y no hay recuento', async () => {
+    const { findings } = github();
+
+    const { findings: read, sonarIssues } = await findings.read(88, PUSH_88, ['sonar-issues']);
+
+    expect(read.filter((finding) => finding.source === 'check')).toEqual([
+      expect.objectContaining({ name: 'sonar-issues', context: expect.objectContaining({ origin: 'log' }) }),
+    ]);
+    expect(read.some((finding) => finding.source === 'sonarIssue')).toBe(false);
+    expect(sonarIssues).toBeNull();
+  });
+
+  it('sin la comprobación de incidencias entre las que fallan, no hay recuento', async () => {
+    const { findings } = github(withSonarAnnotations);
+
+    await expect(findings.read(88, PUSH_88, ['e2e'])).resolves.toMatchObject({ sonarIssues: null });
+  });
+
+  it('otra comprobación con anotaciones no se parte', async () => {
+    const { findings } = github(withSonarAnnotations, 'otra');
+
+    const { findings: read, sonarIssues } = await findings.read(88, PUSH_88, ['sonar-issues']);
+
+    expect(read.filter((finding) => finding.source !== 'reviewer')).toEqual([
+      expect.objectContaining({
+        source: 'check',
+        name: 'sonar-issues',
+        context: expect.objectContaining({ origin: 'annotations' }),
+      }),
+    ]);
+    expect(sonarIssues).toBeNull();
   });
 });
 
