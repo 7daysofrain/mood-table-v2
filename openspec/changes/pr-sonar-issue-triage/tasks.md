@@ -50,7 +50,7 @@
   de la regla, con el código y criterios genéricos) en `docs/idea-mood-table.md` §10, y README §2.5
   (*Contents* en lectura, y que el código de las incidencias sale hacia el modelo de decisión).
   Verificar: las dos D# citan este change y `MOO-148`.
-- [ ] 2.2 **(test en rojo)** Lecturas y recorte (`design.md` decisiones 4 y 5):
+- [x] 2.2 **(test en rojo)** Lecturas y recorte (`design.md` decisiones 4 y 5):
   - **`adapters/github.test.ts`:** `fileAt(sha, path)` da el texto; un 404 da `null` y un 5xx lanza.
   - **`adapters/sonar-issues.test.ts`** (nuevo), con las anotaciones grabadas en 1.4 como fixture:
     - de cada `failure` saca regla, nombre, severidad (`high` con `BLOCKER` y `HIGH`), fichero, línea
