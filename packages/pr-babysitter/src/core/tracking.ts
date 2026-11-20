@@ -7,16 +7,22 @@
  * la fecha del commit; el de la revisión, desde que las ve pasar, que es cuando la pide. Un push
  * nuevo los reinicia.
  */
-import type { PullRequestSnapshot } from './pull-request.ts';
+import type { Check, PullRequestSnapshot } from './pull-request.ts';
 
 /**
  * El push que se sigue: su SHA, cuándo lo vio el sistema por primera vez y, si sus comprobaciones
  * han pasado, cuándo lo vio (ms desde epoch). Desde `reviewSince` cuenta la espera de la revisión.
+ *
+ * Si el sistema ha relanzado sus comprobaciones (change pr-check-rerun, decisiones 3 y 4),
+ * `rerunSince` es cuándo lo pidió, y desde ahí cuenta la espera de las comprobaciones; si GitHub lo
+ * rechazó, `rerunRejected` dice cuáles no ha podido relanzar. Un push nuevo no lleva ninguno.
  */
 export interface TrackedPush {
   sha: string;
   seenAt: number;
   reviewSince?: number;
+  rerunSince?: number;
+  rerunRejected?: string[];
 }
 
 /**
@@ -30,7 +36,8 @@ export type InterventionReason =
   | { kind: 'checksFailed'; checks: string[] }
   | { kind: 'checksUnfinished'; checks: string[] }
   | { kind: 'reviewFindings'; pushes: FindingPushes }
-  | { kind: 'reviewUnfinished' };
+  | { kind: 'reviewUnfinished' }
+  | { kind: 'rerunRejected'; checks: string[] };
 
 /** El estado final de una PR (`specs/pr-tracking`; glosario de PB, *lista para integrar*). */
 export type FinalState =
@@ -39,9 +46,10 @@ export type FinalState =
 
 /**
  * Qué toca al reanudar la espera de las comprobaciones: si pasan todas, avisar y esperar al
- * revisor; si alguna falla, el estado final sin esperarlo (change pr-review-request, decisión 4).
+ * revisor; si alguna falla, el estado final sin esperarlo (change pr-review-request, decisión 4),
+ * salvo si hay que relanzarla (change pr-check-rerun, decisión 4).
  */
-export type ChecksStep = 'waiting' | 'checksFinished' | 'checksFailed' | 'timedOut';
+export type ChecksStep = 'waiting' | 'checksFinished' | 'checksFailed' | 'timedOut' | 'rerun';
 
 /** Qué toca al reanudar la espera del revisor. */
 export type ReviewStep = 'waiting' | 'finished' | 'timedOut' | 'newPush';
@@ -89,6 +97,7 @@ export function finalState(snapshot: PullRequestSnapshot, push: TrackedPush): Fi
   const unfinished = named('pending');
   const reasons: InterventionReason[] = [];
   if (failed.length > 0) reasons.push({ kind: 'checksFailed', checks: failed });
+  if (push.rerunRejected) reasons.push({ kind: 'rerunRejected', checks: push.rerunRejected });
   if (unfinished.length > 0) reasons.push({ kind: 'checksUnfinished', checks: unfinished });
   const pushes = findingPushes(snapshot);
   if (pushes !== null) reasons.push({ kind: 'reviewFindings', pushes });
@@ -131,22 +140,65 @@ function timedOut(since: number, snapshot: PullRequestSnapshot, timeoutMs: numbe
   return snapshot.observedAt - since >= timeoutMs;
 }
 
+/** Las conclusiones de un fallo que puede ser transitorio; una cancelada no lo dice (decisión 3). */
+const RERUNNABLE_CONCLUSIONS = new Set(['failure', 'timed_out']);
+
+/**
+ * Las comprobaciones que se relanzarían con esta foto (change pr-check-rerun, decisión 3): las
+ * relanzables (`rerunChecks`, por su nombre) que han fallado en su primer intento, con su run. Sin
+ * intento (no es de GitHub Actions o no se ha leído su *job*), no se sabe si ya se relanzó, y no se
+ * relanza.
+ */
+export function checksToRerun(
+  snapshot: PullRequestSnapshot,
+  rerunChecks: string[],
+): (Check & { runId: number })[] {
+  return snapshot.checks.filter(
+    (check): check is Check & { runId: number } =>
+      rerunChecks.includes(check.name) &&
+      check.status === 'failed' &&
+      RERUNNABLE_CONCLUSIONS.has(check.conclusion ?? '') &&
+      check.attempt === 1 &&
+      check.runId !== undefined,
+  );
+}
+
 /**
  * Al reanudar la espera de las comprobaciones con una foto: un push nuevo reinicia el tiempo y se
  * sigue con la foto que lo trae. Si han pasado todas, la espera de la revisión empieza a contar;
  * si alguna falla, no se espera la revisión.
+ *
+ * Si la que falla es relanzable y está en su primer intento, se relanza, una vez por push, en cuanto
+ * termina su run, sin esperar a las demás, y dentro de los 30 min del push (change pr-check-rerun,
+ * decisiones 3 a 5). Con el relanzamiento pedido, el tiempo cuenta desde él, y se
+ * sigue esperando mientras la foto aún traiga el primer intento: GitHub tarda en crear el segundo.
  */
 export function afterChecksWait(
   current: TrackedPush,
   snapshot: PullRequestSnapshot,
   timeoutMs: number,
+  rerunChecks: string[],
 ): { push: TrackedPush; next: ChecksStep } {
   const push = pushOf(current, snapshot);
-  if (checksFinished(snapshot)) {
-    if (!checksPassed(snapshot)) return { push, next: 'checksFailed' };
-    return { push: { ...push, reviewSince: snapshot.observedAt }, next: 'checksFinished' };
+  const since = push.rerunSince ?? push.seenAt;
+  // Una relanzable que falla se relanza en cuanto termina su run, sin esperar a las demás: alguna
+  // puede depender de ella y no llegar nunca (con `test` roja, SonarCloud no se analiza). Dentro
+  // del plazo del push: si la petición sigue fallando (la red, un 5xx), la PR acaba avisando.
+  const toRerun = push.rerunRejected ? [] : checksToRerun(snapshot, rerunChecks);
+  if (
+    push.rerunSince === undefined &&
+    toRerun.some((check) => check.runFinished) &&
+    !timedOut(since, snapshot, timeoutMs)
+  ) {
+    return { push, next: 'rerun' };
   }
-  if (timedOut(push.seenAt, snapshot, timeoutMs)) return { push, next: 'timedOut' };
+  if (checksFinished(snapshot)) {
+    if (checksPassed(snapshot)) {
+      return { push: { ...push, reviewSince: snapshot.observedAt }, next: 'checksFinished' };
+    }
+    if (toRerun.length === 0) return { push, next: 'checksFailed' };
+  }
+  if (timedOut(since, snapshot, timeoutMs)) return { push, next: 'timedOut' };
   return { push, next: 'waiting' };
 }
 

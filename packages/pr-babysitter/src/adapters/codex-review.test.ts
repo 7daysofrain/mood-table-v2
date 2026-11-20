@@ -261,7 +261,7 @@ describe('solo el revisor decide el estado final', () => {
       draft: false,
       headSha: '590bd6e6e8faec0017cb6e63dbea43b5a15d5cba',
       labels: [],
-      checks: [{ name: 'lint', status: 'passed' as const }],
+      checks: [{ name: 'lint', status: 'passed' as const, conclusion: 'success' }],
       reviewerThreads: { lastPush: 0, earlierPushes: 0 },
       reviewRequested: false,
       observedAt: 0,

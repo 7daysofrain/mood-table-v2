@@ -18,8 +18,10 @@ import { type BaseCheckpointSaver, Command } from '@langchain/langgraph';
 
 import {
   createTrackingGraph,
+  isPrActionNode,
   lastSnapshot,
-  REVIEW_REQUEST_NODE,
+  PR_ACTION_NODES,
+  RERUN_NODE,
   threadConfig,
   type TrackingOptions,
 } from './graph.ts';
@@ -31,6 +33,7 @@ import {
   type SystemNotice,
 } from './notice.ts';
 import {
+  type CheckReruns,
   type DecisionModel,
   type Findings,
   GitHubUnauthorizedError,
@@ -53,6 +56,8 @@ export interface DriverOptions {
   reviewer: ReviewReader;
   /** Las peticiones de revisión del sistema: si ya la ha pedido, para la foto, y pedirla. */
   reviewRequests: ReviewRequests;
+  /** Relanzar las comprobaciones que fallan (change pr-check-rerun). */
+  checkReruns: CheckReruns;
   notifier: Notifier;
   /** Los hallazgos de un push y el modelo que los tría (change pr-shadow-triage). */
   findings: Findings;
@@ -69,6 +74,8 @@ export interface DriverOptions {
    * pasan (change pr-review-request, decisión 5).
    */
   timeoutMs: number;
+  /** Las comprobaciones relanzables (change pr-check-rerun, decisión 7). */
+  rerunChecks: string[];
   /** Una línea por fallo, para el log de errores. */
   log: (line: string) => void;
 }
@@ -94,6 +101,7 @@ export function createDriver({
   github,
   reviewer,
   reviewRequests,
+  checkReruns,
   notifier,
   findings,
   decisionModel,
@@ -102,12 +110,13 @@ export function createDriver({
   checkpointer,
   policy,
   timeoutMs,
+  rerunChecks,
   log,
 }: DriverOptions): Driver {
   const graph = createTrackingGraph(
-    { notifier, reviewRequests, findings, decisionModel, summaries },
+    { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns },
     checkpointer,
-    { timeoutMs, log, triage },
+    { timeoutMs, rerunChecks, log, triage },
   );
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();
@@ -194,23 +203,32 @@ export function createDriver({
 
   /**
    * Reintenta el nodo que falló en el hilo de la PR, con la foto que tenía. Si entretanto ha llegado
-   * un push, la petición de revisión de esa foto ya no vale: `@codex review` revisaría el push
-   * nuevo, quizá con sus comprobaciones sin terminar. Entonces termina el aviso pendiente, pero se
-   * salta `pedirRevision` como si hubiera corrido, y el hilo sigue a la espera del revisor, que con
-   * la foto siguiente verá el push nuevo (change pr-review-request, decisión 6).
+   * un push, lo que esa foto pedía hacer en GitHub ya no vale: `@codex review` revisaría el push
+   * nuevo, quizá con sus comprobaciones sin terminar, y relanzar repetiría el run de un push viejo.
+   * Entonces termina el aviso pendiente, pero se salta `pedirRevision` o `relanzar` como si hubiera
+   * corrido, y el hilo sigue a la espera, que con la foto siguiente verá el push nuevo (change
+   * pr-review-request, decisión 6; change pr-check-rerun, decisión 4).
+   *
+   * `relanzar` no se reintenta nunca con la foto que tenía, tampoco en el mismo push: GitHub pudo
+   * aceptar la petición aunque se perdiera la respuesta, o el mantenedor pudo relanzar a mano, y
+   * repetirla pediría un tercer intento o la rechazaría con el segundo en marcha. Se salta, y la
+   * foto siguiente decide: con el intento 1 aún fallido vuelve a `relanzar`, y con el 2 espera
+   * (change pr-check-rerun, decisión 5).
    */
   async function retryPending(pullRequest: OpenPullRequest) {
     const config = runConfig(pullRequest.number);
     const state = await graph.getState(config);
-    if (lastSnapshot(state.values).headSha === pullRequest.headSha) {
+    const samePush = lastSnapshot(state.values).headSha === pullRequest.headSha;
+    if (samePush && !state.next.includes(RERUN_NODE)) {
       await graph.invoke(null, config);
       return;
     }
-    if (!state.next.includes(REVIEW_REQUEST_NODE)) {
-      await graph.invoke(null, { ...config, interruptBefore: [REVIEW_REQUEST_NODE] });
+    if (!samePush && !actingNext(state)) {
+      await graph.invoke(null, { ...config, interruptBefore: [...PR_ACTION_NODES] });
     }
-    if ((await graph.getState(config)).next.includes(REVIEW_REQUEST_NODE)) {
-      await graph.updateState(config, {}, REVIEW_REQUEST_NODE);
+    const acting = actingNext(await graph.getState(config));
+    if (acting) {
+      await graph.updateState(config, {}, acting);
       await graph.invoke(null, config);
     }
   }
@@ -221,16 +239,17 @@ export function createDriver({
    * conserva para comparar su SHA al reanudar. Si el aviso pendiente falla, lanza, y la parada se
    * termina en la vuelta siguiente, también si para entonces le han quitado la etiqueta.
    *
-   * Solo termina el aviso: el hilo se para antes de pedir la revisión, y una petición pendiente no
-   * se reintenta. Pedirla sería una acción nueva en una PR detenida (change pr-review-request).
+   * Solo termina el aviso: el hilo se para antes de pedir la revisión o de relanzar, y una petición
+   * o un relanzamiento pendientes no se reintentan. Serían una acción nueva en una PR detenida
+   * (change pr-review-request; change pr-check-rerun).
    */
   async function finishStopping(pullRequest: OpenPullRequest) {
     const { number } = pullRequest;
     if (!stopping.has(number)) return;
     const config = runConfig(number);
     let state = await graph.getState(config);
-    if (state.next.length > 0 && !waiting(state) && !state.next.includes(REVIEW_REQUEST_NODE)) {
-      await graph.invoke(null, { ...config, interruptBefore: [REVIEW_REQUEST_NODE] });
+    if (state.next.length > 0 && !waiting(state) && !actingNext(state)) {
+      await graph.invoke(null, { ...config, interruptBefore: [...PR_ACTION_NODES] });
       state = await graph.getState(config);
     }
     stopping.delete(number);
@@ -405,6 +424,11 @@ export function runDriver(driver: Driver, { cadenceMs, clock, sleep }: RunOption
       running = false;
     },
   };
+}
+
+/** El nodo que actúa sobre la PR en el que va a entrar el hilo, si va a entrar en uno. */
+function actingNext(state: { next: string[] }) {
+  return state.next.find(isPrActionNode);
 }
 
 /** Si el hilo está parado en un `interrupt()`, esperando la foto siguiente. */

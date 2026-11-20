@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
 import type { Notice } from './notice.ts';
 import {
+  type CheckReruns,
   type DecisionModel,
   DecisionModelError,
   type Findings,
@@ -22,16 +23,39 @@ const MINUTE = 60_000;
 const HEAD = 'a1b2c3d';
 
 const PENDING: Check[] = [
-  { name: 'lint', status: 'passed' },
-  { name: 'e2e', status: 'pending' },
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  { name: 'e2e', status: 'pending', conclusion: null },
 ];
 const PASSED: Check[] = [
-  { name: 'lint', status: 'passed' },
-  { name: 'e2e', status: 'passed' },
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  { name: 'e2e', status: 'passed', conclusion: 'success' },
 ];
 const FAILED: Check[] = [
-  { name: 'lint', status: 'passed' },
-  { name: 'e2e', status: 'failed' },
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  { name: 'e2e', status: 'failed', conclusion: 'failure' },
+];
+/** El run de CI de las comprobaciones de estos tests. */
+const RUN = 42;
+/** Una de Actions que falla en un intento del run. */
+const failedIn = (name: string, attempt: number, conclusion = 'failure'): Check => ({
+  name,
+  status: 'failed',
+  conclusion,
+  attempt,
+  runId: RUN,
+  runFinished: true,
+});
+/** `e2e` falla en su primer intento. */
+const E2E_FIRST_ATTEMPT: Check[] = [
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  failedIn('e2e', 1),
+];
+/** `e2e` relanzado, en marcha. */
+const E2E_RERUNNING: Check[] = PENDING;
+/** `e2e` vuelve a fallar al relanzarlo. */
+const E2E_FAILED_AGAIN: Check[] = [
+  { name: 'lint', status: 'passed', conclusion: 'success' },
+  failedIn('e2e', 2),
 ];
 const reviewed = (sha = HEAD): Review => ({ reviewedSha: sha, completed: true });
 const running = (sha = HEAD): Review => ({ reviewedSha: sha, completed: false });
@@ -77,6 +101,22 @@ function recordingRequests() {
   return { reviewRequests, recorded };
 }
 
+/** Los relanzamientos que pide el grafo, por run, o el error con que falla mientras se le dé. */
+function recordingReruns() {
+  const recorded = { reruns: [] as number[], failure: undefined as Error | undefined };
+  const checkReruns: CheckReruns = {
+    rerun(runId) {
+      if (recorded.failure) return Promise.reject(recorded.failure);
+      recorded.reruns.push(runId);
+      return Promise.resolve();
+    },
+  };
+  return { checkReruns, recorded };
+}
+
+/** Las comprobaciones relanzables en estos tests: las de por defecto (`RERUN_CHECKS`). */
+const RERUN_CHECKS = ['test', 'e2e'];
+
 /** El título y la descripción de la PR, para el triaje. */
 const CONTEXT: PullRequestContext = {
   title: 'Avisar de cada PR lista para revisar',
@@ -111,22 +151,24 @@ function sizeInTokens(context: PullRequestContext, finding: Finding): number {
 const RULE_CHECKS = ['lint', 'typecheck', 'SonarCloud Code Analysis'];
 
 /**
- * El grafo con un `Notifier`, sin fallos al pedir la revisión, con 30 min de tiempo de espera, el
- * umbral de 0,80, un tope de 0,05 $ por PR a 0,24 $ el millón de tokens y la regla de las
- * comprobaciones deterministas.
+ * El grafo con un `Notifier`, sin fallos al pedir la revisión ni al relanzar, con 30 min de tiempo
+ * de espera, `test` y `e2e` relanzables, el umbral de 0,80, un tope de 0,05 $ por PR a 0,24 $ el
+ * millón de tokens y la regla de las comprobaciones deterministas.
  */
 function trackingGraph(
   notifier: Notifier,
   reviewRequests = recordingRequests().reviewRequests,
   { findings, decisionModel, summaries }: TriagePorts = noFindings,
   log: (line: string) => void = () => undefined,
+  checkReruns = recordingReruns().checkReruns,
 ) {
   return createTrackingGraph(
-    { notifier, reviewRequests, findings, decisionModel, summaries },
+    { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns },
     new MemorySaver(),
     {
       timeoutMs: 30 * MINUTE,
       log,
+      rerunChecks: RERUN_CHECKS,
       triage: {
         threshold: 0.8,
         budget: { capUsd: 0.05, inputPricePerMTok: 0.24 },
@@ -152,14 +194,15 @@ function recordingNotifier() {
 async function follow(...snapshots: PullRequestSnapshot[]) {
   const { notifier, notices } = recordingNotifier();
   const { reviewRequests, recorded } = recordingRequests();
-  const graph = trackingGraph(notifier, reviewRequests);
+  const reruns = recordingReruns();
+  const graph = trackingGraph(notifier, reviewRequests, noFindings, undefined, reruns.checkReruns);
   const [first, ...rest] = snapshots;
   await graph.invoke({ snapshot: first! }, threadConfig(74));
   for (const next of rest) {
     await graph.invoke(new Command({ resume: next }), threadConfig(74));
   }
   const state = await graph.getState(threadConfig(74));
-  return { notices, requests: recorded.requests, state };
+  return { notices, requests: recorded.requests, reruns: reruns.recorded.reruns, state };
 }
 
 /** Los avisos en corto: su tipo y, el del estado final, con el estado. */
@@ -232,7 +275,7 @@ describe('hasta el estado final', () => {
   it('una comprobación exigida que aún no ha empezado no da el aviso de comprobaciones terminadas', async () => {
     const { notices } = await follow(
       snapshot(0),
-      snapshot(2, { checks: [...PASSED, { name: 'sonar-issues', status: 'pending' }] }),
+      snapshot(2, { checks: [...PASSED, { name: 'sonar-issues', status: 'pending', conclusion: null }] }),
     );
 
     expect(summary(notices)).toEqual(['tracking']);
@@ -1528,6 +1571,241 @@ describe('el sistema solo escribe en GitHub sus peticiones de revisión y el res
 
     expect(recorded.requests).toEqual([{ number: 74, sha: HEAD }]);
     expect(triage.posted.summaries.map(({ sha }) => sha)).toEqual([HEAD]);
+  });
+
+  it('con un relanzamiento, una petición, un resumen y un relanzamiento del push (change pr-check-rerun)', async () => {
+    const triage = recordingTriage([codexP2]);
+    const { reviewRequests, recorded } = recordingRequests();
+    const reruns = recordingReruns();
+    const graph = trackingGraph(
+      triage.notifier,
+      reviewRequests,
+      triage.ports,
+      undefined,
+      reruns.checkReruns,
+    );
+    const [first, ...rest] = [
+      snapshot(0),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+      snapshot(6, { checks: E2E_RERUNNING }),
+      snapshot(9, { checks: PASSED }),
+      snapshot(12, { checks: PASSED, review: reviewed(), reviewerThreads: FINDINGS }),
+    ];
+    await graph.invoke({ snapshot: first }, threadConfig(74));
+    for (const next of rest) {
+      await graph.invoke(new Command({ resume: next }), threadConfig(74));
+    }
+
+    expect(reruns.recorded.reruns).toEqual([RUN]);
+    expect(recorded.requests).toEqual([{ number: 74, sha: HEAD }]);
+    expect(triage.posted.summaries.map(({ sha }) => sha)).toEqual([HEAD]);
+  });
+});
+
+describe('una comprobación relanzable que falla en su primer intento se relanza una vez (change pr-check-rerun)', () => {
+  it('falla un `e2e`: relanza los jobs fallidos de su run, sin avisar ni pedir la revisión', async () => {
+    const { notices, requests, reruns, state } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+    expect(summary(notices)).toEqual(['tracking']);
+    expect(requests).toEqual([]);
+    expect(state.next).toEqual(['esperarComprobaciones']);
+  });
+
+  it('falla `test` y SonarCloud, que depende de ella, no llega: relanza sin esperarla', async () => {
+    const sonar: Check = { name: 'SonarCloud Code Analysis', status: 'pending', conclusion: null };
+    const { reruns } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: [failedIn('test', 1), sonar] }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+  });
+
+  it('con el run de la que falla aún en marcha, espera a que termine para relanzar', async () => {
+    const running: Check = { ...failedIn('e2e', 1), runFinished: false };
+    const waiting = await follow(snapshot(0), snapshot(5, { checks: [running] }));
+    const finished = await follow(
+      snapshot(0),
+      snapshot(5, { checks: [running] }),
+      snapshot(6, { checks: [failedIn('e2e', 1)] }),
+    );
+
+    expect(waiting.reruns).toEqual([]);
+    expect(summary(waiting.notices)).toEqual(['tracking']);
+    expect(finished.reruns).toEqual([RUN]);
+    expect(summary(finished.notices)).toEqual(['tracking']);
+  });
+
+  it('el relanzamiento pasa: pide la revisión y la PR llega a lista para integrar', async () => {
+    const { notices, requests, reruns } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+      snapshot(6, { checks: E2E_RERUNNING }),
+      snapshot(9, { checks: PASSED }),
+      snapshot(12, { checks: PASSED, review: reviewed() }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+    expect(requests).toEqual([{ number: 74, sha: HEAD }]);
+    expect(summary(notices)).toEqual(['tracking', 'checksFinished', { status: 'readyToMerge' }]);
+  });
+
+  it('vuelve a fallar: necesita intervención, con qué falla, sin otro relanzamiento', async () => {
+    const { notices, reruns, state } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+      snapshot(6, { checks: E2E_RERUNNING }),
+      snapshot(9, { checks: E2E_FAILED_AGAIN }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+    expect(summary(notices)).toEqual([
+      'tracking',
+      { status: 'needsIntervention', reasons: [{ kind: 'checksFailed', checks: ['e2e'] }] },
+    ]);
+    expect(state.next).toEqual([]);
+  });
+
+  it('mientras GitHub aún no ha creado el intento 2, no lo vuelve a pedir ni avisa', async () => {
+    const { notices, reruns } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+      snapshot(6, { checks: E2E_FIRST_ATTEMPT }),
+      snapshot(7, { checks: E2E_RERUNNING }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+    expect(summary(notices)).toEqual(['tracking']);
+  });
+
+  it('un push nuevo durante el relanzamiento: el resultado no cuenta y los avisos son del push nuevo', async () => {
+    const { notices, requests, reruns } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+      snapshot(8, { headSha: 'nuevo', checks: PENDING }),
+      snapshot(9, { headSha: 'nuevo', checks: PASSED }),
+      snapshot(12, { headSha: 'nuevo', checks: PASSED, review: reviewed('nuevo') }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+    expect(requests).toEqual([{ number: 74, sha: 'nuevo' }]);
+    expect(summary(notices)).toEqual(['tracking', 'checksFinished', { status: 'readyToMerge' }]);
+  });
+
+  it('GitHub rechaza el relanzamiento: lo deja en el log y avisa de que no ha podido relanzar', async () => {
+    const { notifier, notices } = recordingNotifier();
+    const reruns = recordingReruns();
+    reruns.recorded.failure = new GitHubRequestRejectedError('403 Resource not accessible');
+    const lines: string[] = [];
+    const graph = trackingGraph(
+      notifier,
+      recordingRequests().reviewRequests,
+      noFindings,
+      (line) => lines.push(line),
+      reruns.checkReruns,
+    );
+    await graph.invoke({ snapshot: snapshot(0) }, threadConfig(74));
+    await graph.invoke(
+      new Command({ resume: snapshot(5, { checks: E2E_FIRST_ATTEMPT }) }),
+      threadConfig(74),
+    );
+
+    expect(summary(notices)).toEqual([
+      'tracking',
+      {
+        status: 'needsIntervention',
+        reasons: [
+          { kind: 'checksFailed', checks: ['e2e'] },
+          { kind: 'rerunRejected', checks: ['e2e'] },
+        ],
+      },
+    ]);
+    expect(lines).toEqual([expect.stringContaining('403 Resource not accessible') as string]);
+    expect((await graph.getState(threadConfig(74))).next).toEqual([]);
+  });
+
+  it('si falla por la red, el nodo queda pendiente y se vuelve a pedir, sin avisar', async () => {
+    const { notifier, notices } = recordingNotifier();
+    const reruns = recordingReruns();
+    reruns.recorded.failure = new TypeError('fetch failed');
+    const graph = trackingGraph(
+      notifier,
+      recordingRequests().reviewRequests,
+      noFindings,
+      undefined,
+      reruns.checkReruns,
+    );
+    await graph.invoke({ snapshot: snapshot(0) }, threadConfig(74));
+
+    await expect(
+      graph.invoke(
+        new Command({ resume: snapshot(5, { checks: E2E_FIRST_ATTEMPT }) }),
+        threadConfig(74),
+      ),
+    ).rejects.toThrow('fetch failed');
+    expect((await graph.getState(threadConfig(74))).next).toEqual(['relanzar']);
+
+    reruns.recorded.failure = undefined;
+    await graph.invoke(null, threadConfig(74));
+
+    expect(reruns.recorded.reruns).toEqual([RUN]);
+    expect(summary(notices)).toEqual(['tracking']);
+    expect((await graph.getState(threadConfig(74))).next).toEqual(['esperarComprobaciones']);
+  });
+
+  it('no relanza una ya relanzada a mano, una cancelada ni una que no es relanzable', async () => {
+    const lint: Check = { name: 'lint', status: 'passed', conclusion: 'success' };
+    for (const [checks, name] of [
+      [[lint, failedIn('test', 2)], 'test'],
+      [[lint, failedIn('e2e', 1, 'cancelled')], 'e2e'],
+      [[failedIn('lint', 1), { name: 'e2e', status: 'passed', conclusion: 'success' }], 'lint'],
+    ] as const) {
+      const { notices, reruns } = await follow(snapshot(0), snapshot(5, { checks: [...checks] }));
+
+      expect(reruns).toEqual([]);
+      expect(summary(notices)).toEqual([
+        'tracking',
+        { status: 'needsIntervention', reasons: [{ kind: 'checksFailed', checks: [name] }] },
+      ]);
+    }
+  });
+
+  it('`lint` y `e2e` fallan en su primer intento: una sola petición, para su run', async () => {
+    const { reruns } = await follow(
+      snapshot(0),
+      snapshot(5, { checks: [failedIn('lint', 1), failedIn('e2e', 1)] }),
+    );
+
+    expect(reruns).toEqual([RUN]);
+  });
+});
+
+describe('si el relanzamiento no termina en 30 minutos (change pr-check-rerun)', () => {
+  const rerunAt20 = [
+    snapshot(0),
+    snapshot(20, { checks: E2E_FIRST_ATTEMPT }),
+    snapshot(21, { checks: E2E_RERUNNING }),
+  ];
+
+  it('a los 30 min desde que se pide, necesita intervención con qué no ha terminado', async () => {
+    const before = await follow(...rerunAt20, snapshot(49, { checks: E2E_RERUNNING }));
+    const after = await follow(...rerunAt20, snapshot(50, { checks: E2E_RERUNNING }));
+
+    expect(summary(before.notices)).toEqual(['tracking']);
+    expect(summary(after.notices)).toEqual([
+      'tracking',
+      { status: 'needsIntervention', reasons: [{ kind: 'checksUnfinished', checks: ['e2e'] }] },
+    ]);
+  });
+
+  it('tras comprobaciones de 20 min, un relanzamiento que pasa 15 min después llega a tiempo', async () => {
+    const { notices } = await follow(...rerunAt20, snapshot(35, { checks: PASSED }));
+
+    expect(summary(notices)).toEqual(['tracking', 'checksFinished']);
   });
 });
 

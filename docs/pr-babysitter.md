@@ -117,7 +117,8 @@ Sale de `workflow.md` §4.4. El sistema escala al mantenedor cuando:
 - no está claro si el arreglo cae dentro del alcance de la PR, o el diff crece por encima de un
   umbral. Si cae claramente fuera, no se escala: el hallazgo es *no aplica* y se capturaría
   (`MOO-160`, `MOO-166`);
-- se agotan N iteraciones o la misma comprobación falla dos veces seguidas;
+- se agotan N iteraciones o la misma comprobación falla dos veces seguidas, tras un arreglo cada
+  vez: fallar al relanzarla no cuenta (`MOO-155`);
 - Codex no revisa el último push o hay un comentario humano en la PR.
 
 ## 5. Alcance
@@ -192,7 +193,7 @@ cada historia.
 | BQ5 | Los umbrales de BE3, BE8 y de la política (§4.1) | La spec de cada historia. **13-nov (`MOO-120`):** el tope de 0,05 $ por PR no cambia: el diff no entra en el contexto y un hallazgo por petición cuesta unos 0,0004 $ más por hallazgo ([spike](spikes/moo-120-contexto-triaje.md)) |
 | BQ6 | ¿Refleja el sistema en Linear el estado de cada PR (mover la historia o la tarea), además de comentar? Hoy los estados los mueve la integración de GitHub, y dos escritores sobre el mismo estado se pisarían | Una historia propia de PB |
 | BQ7 | Cómo hace push el sistema sin poder integrar: en GitHub, el permiso `Contents: write` del token que hace falta para subir commits también deja integrar PR por la API, y BE2 y D64 piden que no pueda | BH3 |
-| BQ8 | Qué clase sale cuando una comprobación que falla no la causa la PR, y cómo se nombra para el mantenedor: *no aplica* no encaja (no está equivocada, ni resuelta, ni fuera de alcance, ni es un nit) y, sin pasar la comprobación exigida, la PR no se integra (`MOO-159`) | `MOO-155` |
+| BQ8 | Qué clase sale cuando una comprobación que falla no la causa la PR, y cómo se nombra para el mantenedor: *no aplica* no encaja (no está equivocada, ni resuelta, ni fuera de alcance, ni es un nit) y, sin pasar la comprobación exigida, la PR no se integra (`MOO-159`) | `MOO-155`. ✅ **Resuelta (20-nov, `MOO-155`):** no hace falta una clase nueva. Una relanzable que vuelve a fallar al relanzarla sale *real* por regla: en rojo bloquea el merge, así que hay que atenderla en la PR aunque no la cause; quién y cómo la arregla es de BH3 (D119) |
 | BQ9 | Qué clase sale cuando una incidencia nueva de SonarQube habría que aceptarla en SonarQube porque su regla no se cumple en ese código: *no aplica* encaja con el triaje, pero aceptarla es motivo para escalar (§4.1), así que quizá deba *exigir criterio*. Hasta resolverla, sale *no aplica* y el resumen dice que se aceptaría en SonarQube (`MOO-148`) | BH4 |
 
 ## 8. Glosario
@@ -212,8 +213,10 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Modelo de decisión** | `decisionModel` | El modelo que responde, dentro del triador, la pregunta de cada hallazgo con la probabilidad de cada respuesta, que se compara con el umbral. No es un LLM generativo (D90). |
 | **No aplica** | `notApplicable` | Hallazgo que no hay que arreglar en esta PR: está equivocado, ya está resuelto, cae fuera del alcance de la PR o es un nit (una cuestión de gusto o una mejora menor que no merece un commit). Un comentario del revisor cuyo arreglo es trabajo de otra tarea o historia es *no aplica*, y se capturaría (`MOO-160`). |
 | **Exige criterio** | `needsJudgment` | Hallazgo que el sistema no decide solo. Sale cuando su confianza no llega al umbral, o por una regla: descartaría un hallazgo de severidad alta, no ha podido reunir su contexto o se ha llegado al tope de gasto de la PR. |
+| **Relanzar** | `rerun` | Volver a ejecutar una comprobación que falla sobre el mismo commit, sin cambios. El sistema relanza una vez `test` y `e2e` antes de triarlos (`MOO-155`). |
+| **Caso evidente** | `evidentCase` | Un error que dice por sí solo que el fallo es transitorio: un *timeout*, la infraestructura, la red o un *runner* perdido. No cambia la clase del hallazgo, solo su porqué (`MOO-155`). |
 | **Arreglo** | `fix` | Cambio que atiende un hallazgo. |
-| **Modo sombra** | `shadowMode` | El sistema decide y registra, pero no actúa. |
+| **Modo sombra** | `shadowMode` | El sistema decide y registra, pero no arregla. |
 | **Modo ensayo** | `dryRun` | El sistema arregla en local y deja el arreglo en una rama para revisarlo, pero no publica. |
 | **Escalar** | `escalate` | Pausar una PR y pedir criterio al mantenedor. |
 | **Política de escalado** | `escalationPolicy` | Los casos en los que el sistema escala (§4.1). |

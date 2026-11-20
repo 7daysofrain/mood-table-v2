@@ -18,9 +18,19 @@ const MINUTE = 60_000;
 const TIMEOUT = 30 * MINUTE;
 const HEAD = 'a1b2c3d';
 
-const passed = (name: string): Check => ({ name, status: 'passed' });
-const failed = (name: string): Check => ({ name, status: 'failed' });
-const pending = (name: string): Check => ({ name, status: 'pending' });
+const passed = (name: string): Check => ({ name, status: 'passed', conclusion: 'success' });
+const failed = (name: string): Check => ({ name, status: 'failed', conclusion: 'failure' });
+const pending = (name: string): Check => ({ name, status: 'pending', conclusion: null });
+/** Una de GitHub Actions que falla en un intento del run 42, terminado salvo que se diga. */
+const failedIn = (
+  name: string,
+  attempt: number,
+  conclusion = 'failure',
+  runFinished = true,
+): Check => ({ name, status: 'failed', conclusion, attempt, runId: 42, runFinished });
+
+/** Las relanzables por defecto (`RERUN_CHECKS`). */
+const RERUN = ['test', 'e2e'];
 
 /**
  * Una PR con todas las comprobaciones superadas, revisada en el último push y sin hilos del revisor
@@ -222,11 +232,11 @@ describe('al reanudar la espera de las comprobaciones', () => {
   it('sigue esperando si no han terminado y no se ha agotado el tiempo', () => {
     const now = snapshot({ checks: [pending('e2e')], observedAt: 29 * MINUTE });
 
-    expect(afterChecksWait(push, now, TIMEOUT)).toEqual({ push, next: 'waiting' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'waiting' });
   });
 
   it('pasa a avisar cuando han terminado, y la revisión cuenta desde esta foto si pasan todas', () => {
-    expect(afterChecksWait(push, snapshot(), TIMEOUT)).toEqual({
+    expect(afterChecksWait(push, snapshot(), TIMEOUT, RERUN)).toEqual({
       push: { ...push, reviewSince: 10 * MINUTE },
       next: 'checksFinished',
     });
@@ -235,19 +245,19 @@ describe('al reanudar la espera de las comprobaciones', () => {
   it('si alguna falla, pasa al estado final y la revisión no empieza a contar', () => {
     const now = snapshot({ checks: [passed('lint'), failed('e2e')] });
 
-    expect(afterChecksWait(push, now, TIMEOUT)).toEqual({ push, next: 'checksFailed' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
   });
 
   it('se agota el tiempo a los 30 min desde la primera foto con ese SHA', () => {
     const now = snapshot({ checks: [pending('e2e')], observedAt: 30 * MINUTE });
 
-    expect(afterChecksWait(push, now, TIMEOUT)).toEqual({ push, next: 'timedOut' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'timedOut' });
   });
 
   it('un SHA nuevo reinicia el tiempo desde la foto que lo trae', () => {
     const now = snapshot({ headSha: 'nuevo', checks: [pending('e2e')], observedAt: 40 * MINUTE });
 
-    expect(afterChecksWait(push, now, TIMEOUT)).toEqual({
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({
       push: { sha: 'nuevo', seenAt: 40 * MINUTE },
       next: 'waiting',
     });
@@ -402,5 +412,144 @@ describe('si hay que triar (change pr-shadow-triage, decisión 1)', () => {
     );
 
     expect(needsTriage(state)).toBe(false);
+  });
+});
+
+describe('al reanudar la espera de las comprobaciones, el relanzamiento (change pr-check-rerun)', () => {
+  it('una relanzable que falla o se agota en su primer intento se relanza', () => {
+    for (const conclusion of ['failure', 'timed_out']) {
+      const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1, conclusion)] });
+
+      expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'rerun' });
+    }
+  });
+
+  it('con una determinista y una relanzable en su primer intento, se relanza', () => {
+    const now = snapshot({ checks: [failedIn('lint', 1), failedIn('e2e', 1)] });
+
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'rerun' });
+  });
+
+  it('se relanza sin esperar a las demás: con test roja, SonarCloud no llega nunca', () => {
+    const now = snapshot({
+      checks: [passed('lint'), failedIn('test', 1), pending('SonarCloud Code Analysis')],
+    });
+
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'rerun' });
+  });
+
+  it('con su run aún en marcha, espera a que termine para relanzar', () => {
+    const running = failedIn('test', 1, 'failure', false);
+
+    for (const checks of [
+      [passed('lint'), running, pending('e2e')],
+      // Las exigidas han terminado, pero un job no exigido del run sigue corriendo.
+      [passed('lint'), running, passed('e2e')],
+    ]) {
+      expect(afterChecksWait(push, snapshot({ checks }), TIMEOUT, RERUN)).toEqual({
+        push,
+        next: 'waiting',
+      });
+    }
+  });
+
+  it('no se relanza una cancelada', () => {
+    const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1, 'cancelled')] });
+
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+  });
+
+  it('no se relanza una ya relanzada, a mano o por el sistema: su intento es 2 o más', () => {
+    for (const attempt of [2, 3]) {
+      const now = snapshot({ checks: [passed('lint'), failedIn('test', attempt)] });
+
+      expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+    }
+  });
+
+  it('no se relanza si solo falla una que no es relanzable', () => {
+    const now = snapshot({ checks: [failedIn('lint', 1), passed('e2e')] });
+
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+  });
+
+  it('no se relanza una sin intento, porque su job no se ha podido leer', () => {
+    const now = snapshot({ checks: [passed('lint'), failed('e2e')] });
+
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+  });
+
+  it('con la lista de relanzables vacía, no se relanza nada', () => {
+    const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1)] });
+
+    expect(afterChecksWait(push, now, TIMEOUT, [])).toEqual({ push, next: 'checksFailed' });
+  });
+
+  it('con el relanzamiento pedido y el intento 1 aún a la vista, sigue esperando sin volver a pedirlo', () => {
+    const rerun = { ...push, rerunSince: 5 * MINUTE };
+    const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1)] });
+
+    expect(afterChecksWait(rerun, now, TIMEOUT, RERUN)).toEqual({ push: rerun, next: 'waiting' });
+  });
+
+  it('con el relanzamiento pedido, el intento 2 que vuelve a fallar pasa al estado final', () => {
+    const rerun = { ...push, rerunSince: 5 * MINUTE };
+    const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 2)] });
+
+    expect(afterChecksWait(rerun, now, TIMEOUT, RERUN)).toEqual({
+      push: rerun,
+      next: 'checksFailed',
+    });
+  });
+
+  it('con el relanzamiento rechazado, no se vuelve a pedir', () => {
+    const rejected = { ...push, rerunRejected: ['e2e'] };
+    const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1)] });
+
+    expect(afterChecksWait(rejected, now, TIMEOUT, RERUN)).toEqual({
+      push: rejected,
+      next: 'checksFailed',
+    });
+  });
+
+  it('sin relanzamiento aceptado, no se vuelve a pedir pasados 30 min desde el push: se agota el tiempo', () => {
+    const at = (minute: number) =>
+      snapshot({ checks: [passed('lint'), failedIn('e2e', 1)], observedAt: minute * MINUTE });
+
+    expect(afterChecksWait(push, at(29), TIMEOUT, RERUN).next).toBe('rerun');
+    expect(afterChecksWait(push, at(30), TIMEOUT, RERUN)).toEqual({ push, next: 'timedOut' });
+  });
+
+  it('con el relanzamiento pedido, el tiempo cuenta desde él', () => {
+    const rerun = { ...push, rerunSince: 20 * MINUTE };
+    const at = (minute: number) =>
+      snapshot({ checks: [passed('lint'), pending('e2e')], observedAt: minute * MINUTE });
+
+    expect(afterChecksWait(rerun, at(49), TIMEOUT, RERUN).next).toBe('waiting');
+    expect(afterChecksWait(rerun, at(50), TIMEOUT, RERUN).next).toBe('timedOut');
+  });
+
+  it('un push nuevo borra el relanzamiento del anterior', () => {
+    const previous = { sha: 'push-anterior', seenAt: 0, rerunSince: 5 * MINUTE };
+    const now = snapshot({ checks: [pending('e2e')] });
+
+    expect(afterChecksWait(previous, now, TIMEOUT, RERUN)).toEqual({
+      push: { sha: HEAD, seenAt: 10 * MINUTE },
+      next: 'waiting',
+    });
+  });
+});
+
+describe('el estado final con el relanzamiento rechazado', () => {
+  it('dice qué falla y que no se ha podido relanzar', () => {
+    const checks = [passed('lint'), failedIn('e2e', 1)];
+
+    expect(finalState(snapshot({ checks, review: null }), { ...push, rerunRejected: ['e2e'] })).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['e2e'] },
+        { kind: 'rerunRejected', checks: ['e2e'] },
+      ],
+    });
   });
 });

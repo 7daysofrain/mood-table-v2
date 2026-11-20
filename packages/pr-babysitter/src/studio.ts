@@ -12,6 +12,7 @@ import { MemorySaver } from '@langchain/langgraph';
 
 import { createTrackingGraph } from './core/graph.ts';
 import type {
+  CheckReruns,
   DecisionModel,
   Findings,
   Notifier,
@@ -145,6 +146,14 @@ const decisionModel: DecisionModel = {
   },
 };
 
+/** En lugar de relanzar en GitHub, escribe en el log qué run se relanzaría (change pr-check-rerun). */
+const checkReruns: CheckReruns = {
+  rerun(runId) {
+    console.log(`Relanzamiento: run ${runId}`);
+    return Promise.resolve();
+  },
+};
+
 /** En lugar de comentar en la PR, escribe el resumen en la consola. */
 const summaries: TriageSummaries = {
   published: () => Promise.resolve(false),
@@ -157,10 +166,12 @@ const summaries: TriageSummaries = {
 // El servidor de Studio cambia el checkpointer del grafo por el suyo en cada ejecución; este solo
 // cumple la firma de `createTrackingGraph`.
 export const graph = createTrackingGraph(
-  { notifier, reviewRequests, findings, decisionModel, summaries },
+  { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns },
   new MemorySaver(),
   {
     timeoutMs: TIMEOUT_MS,
+    // La lista por defecto del contenedor (`RERUN_CHECKS`).
+    rerunChecks: ['test', 'e2e'],
     log: (line) => console.error(line),
     triage: {
       threshold: 0.8,

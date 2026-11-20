@@ -128,6 +128,8 @@ function reasonSummary(reason: InterventionReason): string {
       return `el revisor tiene hallazgos${FINDING_PUSHES[reason.pushes]}`;
     case 'reviewUnfinished':
       return 'la revisión no ha terminado';
+    case 'rerunRejected':
+      return `no he podido relanzar ${list(reason.checks)}`;
   }
 }
 

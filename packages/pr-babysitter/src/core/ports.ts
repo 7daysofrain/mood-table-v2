@@ -64,6 +64,18 @@ export interface ReviewRequests {
 }
 
 /**
+ * Relanzar las comprobaciones que fallan (change pr-check-rerun, decisiones 2 y 4): los *jobs*
+ * fallidos de un run de CI, sobre el mismo commit, y los que dependen de ellos. Qué CI hay detrás es
+ * del adaptador.
+ *
+ * Lanza como `ReviewRequests`: `GitHubRequestRejectedError` si GitHub lo rechaza (p. ej. el token no
+ * tiene *Actions: write*), y cualquier otro error si falla y se puede reintentar.
+ */
+export interface CheckReruns {
+  rerun(runId: number): Promise<void>;
+}
+
+/**
  * El resumen del triaje en la PR (change pr-shadow-triage, decisión 7), uno por push. El texto lo
  * arma el núcleo (`triage-summary.ts`) con una marca del SHA; el adaptador lo publica y la busca.
  *

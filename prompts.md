@@ -2487,7 +2487,34 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *GitHub devolvió las anotaciones en otro orden que el emitido, así que el triaje sigue el que da GitHub. Las anotaciones grabadas de esa PR sirven de fixture en `MOO-168`.*
 - *El módulo que parte las incidencias devuelve las suyas sin la marca de hallazgo, para que el paso 2.3 no tuviera que tocar el núcleo antes de su paso.*
 
-#### 6.94 Triar los hilos sin resolver del revisor de cualquier push (`MOO-173`)
+#### 6.94 Relanzar una vez test y e2e que fallan y esperar su resultado (`MOO-170`)
+
+**Prompt 1:**
+
+> Quiero que al finalizar la ejecucion de las tareas de `test` o `e2e` si estás terminan en un fallo transitorio se relanzen automaticamente hasta 3 veces. En caso que a la tercera siga fallando se marcaría como requiere criterio
+
+*Claude Code (`claude-opus-5-5`, 20-nov), el caso feliz de `/refine-story MOO-155`, que era una captura en* Triage *y se clasificó y redactó en la misma sesión. La IA explicó que relanzar el* job *relanza todos sus tests, y que el* spike *`MOO-120` ya había medido que el texto del error no dice si un fallo es transitorio. El usuario lo cambió a relanzar una vez y, más adelante, corrigió su propia idea: si vuelve a fallar es* real*, no* exige criterio *(«cierto, me equivoque, si falla es real, no necesita criterio»). Eso resolvió BQ8. Estimada a 5 en el planning poker con `estimator` (humano 3, IA 5).*
+
+**Prompt 2:**
+
+> vale, es que esto no lo habia tenido en cuenta, que relanza todas. Me gustaría volver a intentar crear la pregunta correcta para que el triador se de cuenta de cuando es una buena opción relanzar. En mi opinion esto ocurre cuando hablamos de timeouts o condiciones de carrera. Por ejemplo si ha ocurrido un timeout, es un buen candidato a relanzarse. ¿No podemos simplemente preguntar por los casos evidentes? ¿Se te ocurre alguno mas?
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en el mismo refinamiento. La IA propuso una regla rápida en código, sin el modelo de decisión, con cuatro casos evidentes (*timeout*, infraestructura, red y* runner *perdido), y dejó fuera `cancelled` porque la CI cancela el run de un push viejo. El usuario eligió relanzar todas una vez y usar la regla solo para el porqué. Al explorar el change, la IA movió el cálculo del caso evidente al error del intento que vuelve a fallar, para no subir el contexto de una comprobación a puerto del núcleo.*
+
+**Prompt 3:**
+
+> No me gusta linear, al final esto es una cosa del proceso de la PR, prefiero que deje el aviso en la PR, dentro del resumen
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en `/opsx:explore MOO-155`. La única decisión que la IA le planteó al usuario fue dónde contar un relanzamiento que pasa; el resto lo decidió ella como lo evidente, a petición del usuario («No me plantees las que tienen respuestas evidentes»). Resultado: el change `pr-check-rerun`, con el nodo `relanzar` en el seguimiento y no en el triaje, y D119, que matiza D114. En `/opsx:apply`, la IA implementó la sección de `MOO-170` con un commit por paso y los tests en rojo antes de cada implementación.*
+
+*Ajustes:*
+- *La IA cambió el diseño en un punto al implementar: `relanzar` sale por una arista condicional y no por un `Command`, para que el* driver *pueda saltárselo, como ya hace con `pedirRevision`, si llega un push nuevo o se detiene la PR. Lo anotó en el `design.md`.*
+- *El puerto quedó como `rerun(runId)`, y no `rerun(sha, checks)`: el núcleo elige el run.*
+- *Para no relanzar ninguna, `RERUN_CHECKS` lleva una coma sola, como `TRIAGE_RULE_CHECKS`: una variable vacía es la lista por defecto.*
+- *La prueba a mano encontró un hueco que ni el spec ni los tests habían visto: el sistema esperaba a que terminaran todas las comprobaciones exigidas para relanzar, y con `test` roja SonarCloud Code Analysis no llega nunca, así que la PR esperaba hasta el tiempo límite sin relanzar. La IA lo diagnosticó con el estado de los runs y propuso relanzar en cuanto termina el run de la que falla; el usuario lo aprobó («Sí, así»). Cambió el requisito, con un escenario nuevo, y la decisión 3 del `design.md`.*
+- *La revisión de Codex encontró otro: si GitHub aceptaba el relanzamiento pero se perdía la respuesta, el sistema lo reintentaba con la foto vieja y pedía un tercer intento, o GitHub lo rechazaba con el segundo en marcha. La IA propuso que el adaptador leyera el intento del run antes de pedirlo; el usuario prefirió decidir con la foto nueva («no sería mejor relanzar con la foto nueva?»), que deja el núcleo como único sitio de la regla. Cambiaron el escenario del fallo pasajero, con uno nuevo, y la decisión 5 del `design.md`. La revisión siguiente vio que así, con la petición fallando siempre, la PR no se agotaba nunca, y el reintento quedó dentro de los 30 min del push.*
+
+#### 6.95 Triar los hilos sin resolver del revisor de cualquier push (`MOO-173`)
 
 **Prompt 1:**
 

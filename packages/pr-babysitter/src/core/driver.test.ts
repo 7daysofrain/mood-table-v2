@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { createDriver, runDriver } from './driver.ts';
 import type { Notice } from './notice.ts';
 import {
+  type CheckReruns,
   GitHubUnauthorizedError,
   type GitHubReader,
   type Notifier,
@@ -53,6 +54,10 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     requestedReads: [] as { number: number; sha: string }[],
     /** Si falla solo la petición de revisión. */
     requestFailure: undefined as Error | undefined,
+    /** Los runs que el sistema relanza, en orden. */
+    reruns: [] as number[],
+    /** Si falla solo el relanzamiento. */
+    rerunFailure: undefined as Error | undefined,
     failure: undefined as Error | undefined,
     /** Si falla solo la lectura de las comprobaciones. */
     checksFailure: undefined as Error | undefined,
@@ -70,7 +75,7 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
     checks(sha) {
       github.checksReads += 1;
       if (github.checksFailure) return Promise.reject(github.checksFailure);
-      return read(github.checks[sha] ?? [{ name: 'lint', status: 'pending' }]);
+      return read(github.checks[sha] ?? [{ name: 'lint', status: 'pending', conclusion: null }]);
     },
   };
   const reviewer: ReviewReader = {
@@ -91,7 +96,14 @@ function fakeGitHub(pullRequests: OpenPullRequest[] = []) {
       return Promise.resolve();
     },
   };
-  return { github, reader, reviewer, reviewRequests };
+  const checkReruns: CheckReruns = {
+    rerun(runId) {
+      if (github.rerunFailure) return Promise.reject(github.rerunFailure);
+      github.reruns.push(runId);
+      return Promise.resolve();
+    },
+  };
+  return { github, reader, reviewer, reviewRequests, checkReruns };
 }
 
 /** Notifier falso: guarda los avisos que publica, o falla mientras `failing` esté a true. */
@@ -111,7 +123,7 @@ function fakeNotifier() {
 type TriageOverrides = Partial<Pick<Parameters<typeof createDriver>[0], 'findings' | 'decisionModel' | 'summaries'>>;
 
 function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {}) {
-  const { github, reader, reviewer, reviewRequests } = fakeGitHub(pullRequests);
+  const { github, reader, reviewer, reviewRequests, checkReruns } = fakeGitHub(pullRequests);
   const { notifier, port } = fakeNotifier();
   const log: string[] = [];
   const newDriver = () =>
@@ -119,6 +131,7 @@ function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {
       github: reader,
       reviewer,
       reviewRequests,
+      checkReruns,
       notifier: port,
       // Sin hallazgos que triar: el triaje se prueba en el grafo.
       findings: {
@@ -143,6 +156,7 @@ function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {
       checkpointer: new MemorySaver(),
       policy: { maintainer: MAINTAINER, baseBranch: 'main' },
       timeoutMs: 30 * MINUTE,
+      rerunChecks: ['test', 'e2e'],
       log: (line) => log.push(line),
     });
   let driver = newDriver();
@@ -331,7 +345,16 @@ function summary(notices: Notice[]) {
   });
 }
 
-const PASSED: Check[] = [{ name: 'lint', status: 'passed' }];
+const PASSED: Check[] = [{ name: 'lint', status: 'passed', conclusion: 'success' }];
+/** `e2e` falla en su primer intento, en el run 42 (change pr-check-rerun). */
+const E2E_FIRST_ATTEMPT: Check = {
+  name: 'e2e',
+  status: 'failed',
+  conclusion: 'failure',
+  attempt: 1,
+  runId: 42,
+  runFinished: true,
+};
 const reviewed = (sha: string): Review => ({ reviewedSha: sha, completed: true });
 
 describe('hasta el estado final', () => {
@@ -944,7 +967,7 @@ describe('de punta a punta, con los hilos sin resolver del revisor (change pr-un
     // El hilo está resuelto: el revisor no lo cuenta, y los hallazgos no lo traen.
     const { ports, recorded } = triageWith([e2e]);
     const { github, notifier, tick } = setup([pullRequest(74)], ports);
-    github.checks['sha-74'] = [{ name: 'lint', status: 'failed' }];
+    github.checks['sha-74'] = [{ name: 'lint', status: 'failed', conclusion: 'failure' }];
     github.threads[74] = { lastPush: 0, earlierPushes: 0 };
 
     await ticks(tick, 2);
@@ -1016,6 +1039,24 @@ describe('el sistema pide la revisión cuando pasan las comprobaciones del últi
     expect(github.requests).toEqual([]);
   });
 
+  it('una PR detenida con el relanzamiento pendiente por un fallo de red no relanza (change pr-check-rerun)', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = [E2E_FIRST_ATTEMPT];
+    github.rerunFailure = new Error('fetch failed');
+    await tick();
+
+    github.pullRequests = [stoppedPullRequest(74)];
+    github.rerunFailure = undefined;
+    await ticks(tick, 2);
+
+    expect(github.reruns).toEqual([]);
+    expect(summary(notifier.notices)).toEqual([
+      [74, 'tracking'],
+      [74, 'stopped'],
+    ]);
+  });
+
   it('una PR detenida con la petición pendiente por un fallo de red no la pide', async () => {
     const { github, notifier, tick } = setup([pullRequest(74)]);
     await tick();
@@ -1076,6 +1117,56 @@ describe('un nodo pendiente que se reintenta tras un push nuevo', () => {
     await ticks(tick, 2);
 
     expect(github.requests).toEqual([{ number: 74, sha: 'sha-74b' }]);
+  });
+
+  it('no relanza el run del push anterior que falló por la red (change pr-check-rerun)', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = [E2E_FIRST_ATTEMPT];
+    github.rerunFailure = new Error('fetch failed');
+    await tick();
+
+    github.pullRequests = [pullRequest(74, { headSha: 'sha-74b' })];
+    github.rerunFailure = undefined;
+    await ticks(tick, 3);
+
+    expect(github.reruns).toEqual([]);
+    expect(summary(notifier.notices)).toEqual([[74, 'tracking']]);
+  });
+
+  it('con el mismo push, vuelve a pedir con la foto nueva el relanzamiento que falló por la red (change pr-check-rerun)', async () => {
+    const { github, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = [E2E_FIRST_ATTEMPT];
+    github.rerunFailure = new Error('fetch failed');
+    await tick();
+
+    github.rerunFailure = undefined;
+    await ticks(tick, 2);
+
+    expect(github.reruns).toEqual([42]);
+  });
+
+  it('no vuelve a pedirlo si la foto nueva ya trae el intento 2: llegó a GitHub aunque fallara la respuesta, o se relanzó a mano (change pr-check-rerun)', async () => {
+    const { github, notifier, tick } = setup([pullRequest(74)]);
+    await tick();
+    github.checks['sha-74'] = [...PASSED, E2E_FIRST_ATTEMPT];
+    github.rerunFailure = new Error('fetch failed');
+    await tick();
+
+    github.rerunFailure = undefined;
+    github.checks['sha-74'] = [
+      ...PASSED,
+      { name: 'e2e', status: 'pending', conclusion: null, attempt: 2, runId: 42, runFinished: false },
+    ];
+    await ticks(tick, 3);
+    expect(github.reruns).toEqual([]);
+
+    github.checks['sha-74'] = [...PASSED, { ...E2E_FIRST_ATTEMPT, attempt: 2 }];
+    await ticks(tick, 2);
+
+    expect(github.reruns).toEqual([]);
+    expect(summary(notifier.notices).at(-1)).toEqual([74, 'needsIntervention']);
   });
 
   it('con el mismo push, reintenta la petición que falló por la red', async () => {
@@ -1152,7 +1243,7 @@ describe('las peticiones al modelo de decisión en paralelo (change pr-check-tri
     });
 
     await tick();
-    github.checks['sha-74'] = [{ name: 'lint', status: 'failed' }];
+    github.checks['sha-74'] = [{ name: 'lint', status: 'failed', conclusion: 'failure' }];
     await tick();
 
     expect(concurrency.calls).toBe(6);

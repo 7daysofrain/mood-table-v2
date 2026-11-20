@@ -162,6 +162,22 @@ describe('el aviso del estado final', () => {
   });
 });
 
+describe('el aviso del estado final con el relanzamiento rechazado (change pr-check-rerun)', () => {
+  it('dice qué no ha podido relanzar', () => {
+    const notice = finalNotice(pullRequest, {
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['lint', 'e2e'] },
+        { kind: 'rerunRejected', checks: ['e2e'] },
+      ],
+    });
+
+    expect(noticeSummary(notice)).toBe(
+      'Necesita intervención: fallan lint y e2e; no he podido relanzar e2e. Dejo de seguirla.',
+    );
+  });
+});
+
 describe('el aviso de que el sistema no puede leer GitHub', () => {
   it('no es de ninguna PR y dice que GitHub rechaza el token y que lo vuelve a intentar', () => {
     const notice = githubUnauthorizedNotice();
