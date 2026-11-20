@@ -554,6 +554,25 @@ describe('los hilos de revisión de una PR (change pr-unresolved-threads, decisi
     expect((JSON.parse(calls[0]!.body) as { query: string }).query).toMatch(/reviewThreads\(first: 100/);
   });
 
+  it('un hilo cuyo commit ya no da GitHub (tras un force push) se da, con el push desconocido', async () => {
+    const recorded = JSON.parse(await page()) as {
+      data: { repository: { pullRequest: { reviewThreads: { nodes: unknown[] } } } };
+    };
+    const [codex] = recorded.data.repository.pullRequest.reviewThreads.nodes as {
+      isResolved: boolean;
+      comments: { nodes: { originalCommit: { oid: string } | null }[] };
+    }[];
+    const forced = structuredClone(codex!);
+    forced.isResolved = false;
+    forced.comments.nodes[0]!.originalCommit = null;
+    const { fetch } = fakeFetch(async () => json(await page([forced])));
+
+    const threads = await reader(fetch).listReviewThreads(166);
+
+    expect(threads).toHaveLength(1);
+    expect(threads[0]).toMatchObject({ isResolved: false, comment: { originalSha: null } });
+  });
+
   it('un hilo sin comentarios no se da', async () => {
     const { fetch } = fakeFetch(async () =>
       json(await page([{ isResolved: false, comments: { nodes: [] } }])),

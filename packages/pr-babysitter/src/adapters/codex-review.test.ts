@@ -236,6 +236,18 @@ describe('los hilos sin resolver del revisor (change pr-unresolved-threads, deci
     expect(threads).toEqual({ lastPush: 0, earlierPushes: 0 });
   });
 
+  it('cuenta como de un push anterior uno cuyo commit ya no da GitHub (tras un force push)', async () => {
+    const [codex, other] = open(await threads166());
+    const forced = structuredClone(other!) as RecordedThread & {
+      comments: { nodes: { originalCommit: { oid: string } | null }[] };
+    };
+    forced.comments.nodes[0]!.originalCommit = null;
+
+    const { threads } = await unresolvedOf(PUSH_576, [codex!, forced]);
+
+    expect(threads).toEqual({ lastPush: 1, earlierPushes: 1 });
+  });
+
   it('no cuenta los que abre otra cuenta', async () => {
     const [codex, other] = open(await threads166());
     const person = structuredClone(other!);

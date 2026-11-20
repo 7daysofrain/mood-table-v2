@@ -247,6 +247,24 @@ describe('los hallazgos del revisor (change pr-unresolved-threads, decisiones 1 
     expect(reviewerFindings(read)[1]?.earlierPush?.code).toBeNull();
   });
 
+  it('uno cuyo commit ya no da GitHub (tras un force push) es de un push anterior, sin su SHA', async () => {
+    const threads = opened(await recordedThreads(88));
+    const forced = structuredClone(threads[1]!) as RecordedThread & {
+      comments: { nodes: { originalCommit: { oid: string } | null }[] };
+    };
+    forced.comments.nodes[0]!.originalCommit = null;
+    const { findings } = github(({ path }) => {
+      if (path === '/graphql') return threadsPage([forced]);
+      return path.endsWith(contents(GRAPH)) ? text(numbered(300)) : undefined;
+    });
+
+    const { findings: read } = await findings.read(88, PUSH_88, []);
+
+    expect(reviewerFindings(read)).toHaveLength(1);
+    expect(reviewerFindings(read)[0]?.earlierPush?.sha).toBeNull();
+    expect(reviewerFindings(read)[0]?.earlierPush?.code).toContain('>>  163 | línea 163');
+  });
+
   it('el texto va sin la insignia, sin la coletilla de Codex y sin marcas ocultas', async () => {
     const { findings } = github();
 

@@ -54,7 +54,9 @@ hoy. La lectura por REST (`listReviewComments`) deja de usarse y se borra.
 - **El push del hallazgo** es el `originalCommit` del primer comentario, como hoy `originalSha`. El
   `commit` de GitHub no vale: se mueve al push siguiente si la línea no cambia (la #88).
 - **Un comentario sobre un commit que ya no existe** (*force push*) sigue en su hilo, con su
-  `diffHunk`. Se tría como uno de un push anterior. Su SHA se nombra aunque ya no exista.
+  `diffHunk`. Se tría como uno de un push anterior. Su SHA se nombra aunque ya no exista; si GitHub
+  ya no da el commit (`originalCommit` es `null`), el hilo cuenta igual, como de un push anterior, y
+  el resumen lo dice sin SHA (hallazgo de Codex en la PR de `MOO-175`).
 
 **Alternativas:**
 - Seguir con REST y cruzar con GraphQL solo para `isResolved`: son dos lecturas y un cruce por id para

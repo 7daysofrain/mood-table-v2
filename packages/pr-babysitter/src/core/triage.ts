@@ -65,11 +65,12 @@ export const findingSchema = z.discriminatedUnion('source', [
     text: z.string(),
     diffHunk: z.string().nullable(),
     /**
-     * Si el comentario es de un push anterior, ese push y el código del último push alrededor de
-     * su línea, numerado y con `>>` en ella, o `null` si no se ha podido leer (change
-     * pr-unresolved-threads, decisión 3). `null` si es del último push: su código es el que comentó.
+     * Si el comentario es de un push anterior, ese push (`null` si GitHub ya no da su commit, tras
+     * un *force push*) y el código del último push alrededor de su línea, numerado y con `>>` en
+     * ella, o `null` si no se ha podido leer (change pr-unresolved-threads, decisiones 1 y 3).
+     * `null` si es del último push: su código es el que comentó.
      */
-    earlierPush: z.object({ sha: z.string(), code: z.string().nullable() }).nullable(),
+    earlierPush: z.object({ sha: z.string().nullable(), code: z.string().nullable() }).nullable(),
   }),
   z.object({
     source: z.literal('check'),

@@ -335,6 +335,14 @@ describe('un comentario de un push anterior (change pr-unresolved-threads, decis
     expect(row).not.toContain('push anterior');
   });
 
+  it('si GitHub ya no da su commit (tras un force push), dice que es de un push anterior, sin SHA', () => {
+    const forced: Finding = { ...earlier, earlierPush: { sha: null, code: '>>   54 | x' } };
+
+    const [row] = summary([{ finding: forced, verdict: fixedScope('valid', 'inScope', 0.31, 0.83, 0.21) }]);
+
+    expect(row).toContain('· Split SonarQube annotations before applying the context size limit · de un push anterior |');
+  });
+
   it('una fila por caso de su tabla: la clase y por qué', () => {
     expect(
       summary([

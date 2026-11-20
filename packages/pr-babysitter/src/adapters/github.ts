@@ -47,9 +47,10 @@ export interface ReviewThread {
     body: string;
     /**
      * El push sobre el que se hizo (`originalCommit`). No el `commit`, que GitHub mueve al push
-     * siguiente si la línea no cambia (la #88).
+     * siguiente si la línea no cambia (la #88). `null` si GitHub ya no da ese commit (tras un *force
+     * push*): el hilo sigue ahí, y es de un push anterior (change pr-unresolved-threads, decisión 1).
      */
-    originalSha: string;
+    originalSha: string | null;
     path: string;
     /** La línea en ese push, o `null` si el comentario es del fichero entero. */
     originalLine: number | null;
@@ -445,13 +446,13 @@ export function createGitHubReader({
         for (const { isResolved, comments } of reviewThreads.nodes) {
           const [first] = comments.nodes;
           // Un hilo cuyo comentario se ha borrado no dice nada.
-          if (first === undefined || first.originalCommit === null) continue;
+          if (first === undefined) continue;
           threads.push({
             isResolved,
             comment: {
               author: loginOf(first.author),
               body: first.body,
-              originalSha: first.originalCommit.oid,
+              originalSha: first.originalCommit?.oid ?? null,
               path: first.path,
               originalLine: first.originalLine,
               line: first.line,

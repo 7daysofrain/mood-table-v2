@@ -68,11 +68,13 @@ function identity(finding: Finding): string {
     return `SonarQube \`${finding.rule}\` en \`${where}\` · ${finding.ruleName}`;
   }
   const who = finding.badge === null ? finding.reviewer : `${finding.badge} de ${finding.reviewer}`;
-  const push =
-    finding.earlierPush === null
-      ? ''
-      : ` · de un push anterior (\`${finding.earlierPush.sha.slice(0, 7)}\`)`;
+  const push = finding.earlierPush === null ? '' : ` · de un push anterior${pushSha(finding.earlierPush.sha)}`;
   return `${who} en \`${where}\` · ${finding.title}${push}`;
+}
+
+/** El SHA corto del push de un comentario, si GitHub aún da su commit (change pr-unresolved-threads). */
+function pushSha(sha: string | null): string {
+  return sha === null ? '' : ` (\`${sha.slice(0, 7)}\`)`;
 }
 
 /**
