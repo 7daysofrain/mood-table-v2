@@ -56,7 +56,7 @@
   - algo entra en cola durante el margen: se espera a que termine y a otros 2 minutos;
   - el relanzamiento pasa: ningún aviso «necesita intervención» por ese fallo, y el camino de siempre;
   - todas pasan salvo una sin empezar: ningún aviso hasta el plazo, como hoy.
-- [ ] 1.7 El margen en las opciones del grafo (`notRunMarginMs`, `core/graph.ts`), en la configuración
+- [x] 1.7 El margen en las opciones del grafo (`notRunMarginMs`, `core/graph.ts`), en la configuración
   (`TRACKING_NOT_RUN_MARGIN_SECONDS`, 120 por defecto, `adapters/config.ts` con su test, `main.ts` y
   `.env.example`) y en `src/studio.ts`, más lo que falte para que 1.6 pase.
   Verificar: `pnpm test` en verde; `pnpm studio` arranca.

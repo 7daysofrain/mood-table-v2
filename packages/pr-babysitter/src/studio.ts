@@ -23,6 +23,8 @@ import type { CheckContext } from './core/triage.ts';
 
 /** El tiempo de espera por defecto del contenedor (`TRACKING_TIMEOUT_MINUTES`). */
 const TIMEOUT_MS = 30 * 60_000;
+/** El margen por defecto de las que no van a ejecutarse (`TRACKING_NOT_RUN_MARGIN_SECONDS`). */
+const NOT_RUN_MARGIN_MS = 120_000;
 
 /** En lugar de publicar en Linear, escribe el aviso en el log del servidor de Studio. */
 const notifier: Notifier = {
@@ -172,6 +174,7 @@ export const graph = createTrackingGraph(
     timeoutMs: TIMEOUT_MS,
     // La lista por defecto del contenedor (`RERUN_CHECKS`).
     rerunChecks: ['test', 'e2e'],
+    notRunMarginMs: NOT_RUN_MARGIN_MS,
     log: (line) => console.error(line),
     triage: {
       threshold: 0.8,

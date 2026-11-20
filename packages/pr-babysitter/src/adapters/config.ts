@@ -32,6 +32,7 @@ const envSchema = z.object({
   GITHUB_REVIEWER: z.string().trim().min(1).default('chatgpt-codex-connector[bot]'),
   POLL_INTERVAL_SECONDS: positiveInteger.default(60),
   TRACKING_TIMEOUT_MINUTES: positiveInteger.default(30),
+  TRACKING_NOT_RUN_MARGIN_SECONDS: positiveInteger.default(120),
   DECISION_MODEL_BASE_URL: z.url('no es una URL').default('https://ollama.com'),
   DECISION_MODEL: z.string().trim().min(1).default('clef:27b'),
   // 0 vale: Clef en local no cobra.
@@ -85,6 +86,11 @@ export interface Config {
    * (decisión 8; change pr-review-request, decisión 5).
    */
   trackingTimeoutMs: number;
+  /**
+   * Cuánto se espera, con una comprobación que falla y nada en cola ni en curso, a las que no tienen
+   * *check run* antes de darlas por no ejecutadas (change pr-checks-not-run, decisión 3).
+   */
+  trackingNotRunMarginMs: number;
   /**
    * El modelo de decisión del triaje (change pr-shadow-triage, decisión 3): la URL del proveedor,
    * sin `/v1/systemone`, el modelo fijado por su id y la clave de la cuenta.
@@ -144,6 +150,7 @@ export function loadConfig(env: Record<string, string | undefined>): ConfigResul
       linearInboxIssueId: vars.LINEAR_INBOX_ISSUE_ID,
       pollIntervalMs: vars.POLL_INTERVAL_SECONDS * 1000,
       trackingTimeoutMs: vars.TRACKING_TIMEOUT_MINUTES * 60_000,
+      trackingNotRunMarginMs: vars.TRACKING_NOT_RUN_MARGIN_SECONDS * 1000,
       decisionModelBaseUrl: vars.DECISION_MODEL_BASE_URL,
       decisionModel: vars.DECISION_MODEL,
       decisionModelApiKey: vars.DECISION_MODEL_API_KEY,
