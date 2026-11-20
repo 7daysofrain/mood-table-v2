@@ -1,0 +1,17 @@
+{
+  "model": "clef:27b",
+  "answers": {
+    "codex_p2_tracking_ts_109_inside": {
+      "type": "noul",
+      "noul": 0.0988
+    },
+    "codex_p2_tracking_ts_109_outside": {
+      "type": "noul",
+      "noul": 0.8141
+    }
+  },
+  "usage": {
+    "input_tokens": 3179,
+    "output_tokens": 0
+  }
+}

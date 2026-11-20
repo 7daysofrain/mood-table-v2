@@ -15,7 +15,7 @@ import {
   type TriageSummaries,
 } from './ports.ts';
 import type { Check, PullRequestSnapshot, Review } from './pull-request.ts';
-import type { Finding, PullRequestContext, Question } from './triage.ts';
+import type { Finding, ModelAnswer, PullRequestContext, Question } from './triage.ts';
 import { type TriagedPush, triageSummary } from './triage-summary.ts';
 
 const MINUTE = 60_000;
@@ -77,7 +77,10 @@ function recordingRequests() {
 }
 
 /** El título y la descripción de la PR, para el triaje. */
-const CONTEXT: PullRequestContext = { title: 'Avisar de cada PR lista para revisar', description: '' };
+const CONTEXT: PullRequestContext = {
+  title: 'Avisar de cada PR lista para revisar',
+  description: 'Fixes MOO-90',
+};
 
 /** Lo que el triaje necesita de fuera; por defecto, un push sin hallazgos. */
 interface TriagePorts {
@@ -617,14 +620,25 @@ function failingCheck(
 const e2eFailing = failingCheck('e2e');
 
 /**
- * Un triaje que se puede seguir: los hallazgos que da GitHub, la probabilidad que da el modelo de
- * cada uno (0,93 con 12.000 tokens, si no se dice), cada llamada al modelo, y el orden de lo que
- * pasa, con los avisos.
+ * La respuesta del modelo a la pregunta de la fuente del hallazgo, con `p` del lado del sí: a la de
+ * la causa, `p`; a la del alcance, P1 = `p` y P2 = `1 - p`.
+ */
+function modelAnswer(finding: Finding, p: number): ModelAnswer {
+  return finding.source === 'check'
+    ? { kind: 'answered', probability: p }
+    : { kind: 'scope', inside: p, outside: Math.round((1 - p) * 100) / 100 };
+}
+
+/**
+ * Un triaje que se puede seguir: los hallazgos que da GitHub con la PR (`CONTEXT`, si no se dice), la
+ * probabilidad que da el modelo de cada uno (0,93 con 12.000 tokens, si no se dice; `modelAnswer`),
+ * cada llamada al modelo, y el orden de lo que pasa, con los avisos.
  */
 function recordingTriage(
   found: Finding[],
   answer: (finding: Finding) => Promise<{ probability: number; inputTokens: number }> = () =>
     Promise.resolve({ probability: 0.93, inputTokens: 12_000 }),
+  context: PullRequestContext = CONTEXT,
 ) {
   const events: string[] = [];
   const reads: { number: number; sha: string; failedChecks: string[] }[] = [];
@@ -645,7 +659,7 @@ function recordingTriage(
         if (github.failure) return Promise.reject(github.failure);
         events.push('leer hallazgos');
         reads.push({ number, sha, failedChecks });
-        return Promise.resolve({ context: CONTEXT, findings: found });
+        return Promise.resolve({ context, findings: found });
       },
     },
     decisionModel: {
@@ -658,9 +672,14 @@ function recordingTriage(
         asked.push({ context, finding, question });
         concurrency.inFlight += 1;
         concurrency.peak = Math.max(concurrency.peak, concurrency.inFlight);
-        return answer(finding).finally(() => {
-          concurrency.inFlight -= 1;
-        });
+        return answer(finding)
+          .then(({ probability, inputTokens }) => ({
+            answer: modelAnswer(finding, probability),
+            inputTokens,
+          }))
+          .finally(() => {
+            concurrency.inFlight -= 1;
+          });
       },
     },
     summaries: {
@@ -745,7 +764,7 @@ describe('el sistema tría los hallazgos del último push cuando la PR necesita 
     await followTriage(triage, failing);
 
     expect(triage.asked).toEqual([
-      { context: CONTEXT, finding: codexP2, question: 'fixInThisPr' },
+      { context: CONTEXT, finding: codexP2, question: 'scope' },
       { context: CONTEXT, finding: e2eFailing, question: 'cause' },
     ]);
   });
@@ -783,7 +802,10 @@ describe('cada hallazgo sale real, no aplica o exige criterio según la probabil
       triage: {
         sha: HEAD,
         findings: [
-          { finding: codexP2, verdict: { class: 'valid', reason: 'probability', probability: 0.93 } },
+          {
+            finding: codexP2,
+            verdict: { class: 'valid', reason: 'inScope', inside: 0.93, outside: 0.07 },
+          },
           {
             finding: e2eFailing,
             verdict: { class: 'notApplicable', reason: 'probability', probability: 0.07 },
@@ -877,7 +899,7 @@ describe('el triaje no pasa del tope de gasto de la PR', () => {
 
     // El coste lo estima el modelo, petición a petición, con la PR en cada una.
     expect(triage.estimated).toEqual([
-      { context: CONTEXT, finding: codexP2, question: 'fixInThisPr' },
+      { context: CONTEXT, finding: codexP2, question: 'scope' },
       { context: CONTEXT, finding: longLog, question: 'cause' },
     ]);
     expect(triage.asked.map(({ finding }) => finding)).toEqual([codexP2]);
@@ -923,14 +945,14 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
     const state = await followTriage(triage, failing);
 
     expect(triage.asked).toEqual([
-      { context: CONTEXT, finding: codexP2, question: 'fixInThisPr' },
+      { context: CONTEXT, finding: codexP2, question: 'scope' },
       { context: CONTEXT, finding: testFailing, question: 'cause' },
       { context: CONTEXT, finding: e2eFailing, question: 'cause' },
     ]);
     expect(triage.concurrency.peak).toBe(3);
     expect(state.values).toMatchObject({
       triage: {
-        findings: three.map((finding) => ({ finding, verdict: { class: 'valid', probability: 0.93 } })),
+        findings: three.map((finding) => ({ finding, verdict: { class: 'valid' } })),
         inputTokens: 12_000,
       },
     });
@@ -956,7 +978,7 @@ describe('cada hallazgo se pregunta al modelo de decisión en una petición prop
     expect(state.values).toMatchObject({
       triage: {
         findings: [
-          { finding: codexP2, verdict: { class: 'valid', reason: 'probability' } },
+          { finding: codexP2, verdict: { class: 'valid', reason: 'inScope' } },
           { finding: testFailing, verdict: { class: 'needsJudgment', reason: 'modelUnavailable' } },
           { finding: e2eFailing, verdict: { class: 'notApplicable', reason: 'probability' } },
         ],
@@ -1098,13 +1120,13 @@ describe('las comprobaciones deterministas salen reales por regla', () => {
 });
 
 describe('la pregunta al modelo depende de la fuente del hallazgo', () => {
-  it('`e2e` llega al modelo con la pregunta de la causa, y un comentario del revisor, con la de hoy', async () => {
+  it('`e2e` llega al modelo con la pregunta de la causa, y un comentario del revisor, con la del alcance', async () => {
     const triage = recordingTriage([codexP2, e2eFailing]);
 
     await followTriage(triage, failing);
 
     expect(triage.asked.map(({ finding, question }) => [finding.source, question])).toEqual([
-      ['reviewer', 'fixInThisPr'],
+      ['reviewer', 'scope'],
       ['check', 'cause'],
     ]);
   });
@@ -1123,7 +1145,64 @@ describe('la pregunta al modelo depende de la fuente del hallazgo', () => {
 
     await followTriage(triage, failing);
 
-    expect(triage.estimated.map(({ question }) => question)).toEqual(['fixInThisPr', 'cause']);
+    expect(triage.estimated.map(({ question }) => question)).toEqual(['scope', 'cause']);
+  });
+});
+
+describe('un hallazgo del revisor se clasifica por el alcance de la PR (change pr-reviewer-scope)', () => {
+  it('el comentario llega al modelo con la pregunta del alcance y la comprobación con la de la causa, y el resumen da cada uno con su clase', async () => {
+    // El comentario: P1 0,10 y P2 0,90, de otra tarea. La comprobación: 0,93, la causa la PR.
+    const triage = recordingTriage([codexP2, e2eFailing], (finding) =>
+      Promise.resolve({ probability: finding.source === 'reviewer' ? 0.1 : 0.93, inputTokens: 3_000 }),
+    );
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ finding, question }) => [finding, question])).toEqual([
+      [codexP2, 'scope'],
+      [e2eFailing, 'cause'],
+    ]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          {
+            finding: codexP2,
+            verdict: { class: 'notApplicable', reason: 'outOfScope', inside: 0.1, outside: 0.9 },
+          },
+          { finding: e2eFailing, verdict: { class: 'valid', reason: 'probability', probability: 0.93 } },
+        ],
+        inputTokens: 6_000,
+      },
+    });
+    expect(triage.posted.summaries[0]?.text).toContain(
+      '| P2 de Codex en `tracking.ts:109` · Route failed checks directly to the final notification | no aplica | de otra tarea: p = 0,90 ≥ 0,80 · se capturaría |',
+    );
+    expect(triage.posted.summaries[0]?.text).toContain(
+      '| Comprobación `e2e` | real | p = 0,93 ≥ 0,80 · contexto: log |',
+    );
+  });
+
+  it('con la descripción de la PR vacía, el comentario exige criterio sin ninguna petición, y la comprobación se tría con el modelo', async () => {
+    const triage = recordingTriage([codexP2, e2eFailing], undefined, {
+      title: CONTEXT.title,
+      description: ' \n ',
+    });
+
+    const state = await followTriage(triage, failing);
+
+    expect(triage.asked.map(({ finding }) => finding)).toEqual([e2eFailing]);
+    expect(triage.estimated.map(({ finding }) => finding)).toEqual([e2eFailing]);
+    expect(state.values).toMatchObject({
+      triage: {
+        findings: [
+          { finding: codexP2, verdict: { class: 'needsJudgment', reason: 'noScope' } },
+          { finding: e2eFailing, verdict: { class: 'valid' } },
+        ],
+      },
+    });
+    expect(triage.posted.summaries[0]?.text).toContain(
+      '| exige criterio | regla: la PR no dice su alcance |',
+    );
   });
 });
 

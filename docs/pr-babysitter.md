@@ -114,7 +114,9 @@ Sale de `workflow.md` §4.4. El sistema escala al mantenedor cuando:
 - el arreglo cambia el diseño, contradice una D# o toca la spec del change;
 - hay que **aceptar** una incidencia de SonarQube;
 - descarta un hallazgo de severidad alta;
-- el arreglo se sale del alcance de la PR o el diff crece por encima de un umbral;
+- no está claro si el arreglo cae dentro del alcance de la PR, o el diff crece por encima de un
+  umbral. Si cae claramente fuera, no se escala: el hallazgo es *no aplica* y se capturaría
+  (`MOO-160`, `MOO-166`);
 - se agotan N iteraciones o la misma comprobación falla dos veces seguidas;
 - Codex no revisa el último push o hay un comentario humano en la PR.
 
@@ -202,12 +204,12 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Mantenedor** | `maintainer` | Quien integra las PR del repo. |
 | **Revisor** | `reviewer` | El servicio externo que revisa el código de la PR y deja comentarios (hoy, Codex). |
 | **Comprobación** | `check` | Cada puerta automática de la PR: `lint`, `typecheck`, `test`, `e2e` y SonarQube. |
-| **Alcance de la PR** | `prScope` | Lo que la PR debe cambiar: su tarea y su spec, el plan de la *chore* o la actualización de la dependencia. Salirse de él es motivo para escalar. |
+| **Alcance de la PR** | `prScope` | Lo que la PR debe cambiar: su tarea y su spec, el plan de la *chore* o la actualización de la dependencia. Un arreglo claramente fuera de él no se escala, se capturaría; si no está claro, sí (§4.1). |
 | **Hallazgo** | `finding` | Algo que una PR debe atender: un comentario del revisor, una incidencia nueva de SonarQube o una comprobación que falla. |
 | **Triaje** | `triage` | Clasificar un hallazgo en **real** (`valid`), **no aplica** (`notApplicable`) o **exige criterio** (`needsJudgment`). La pregunta es si hay que arreglarlo en esta PR antes de integrarla: *real* es que sí. |
 | **Triador** | `triager` | El agente del sistema que tría cada hallazgo: lo decide por una regla o se lo pregunta al modelo de decisión. |
 | **Modelo de decisión** | `decisionModel` | El modelo que responde, dentro del triador, la pregunta de cada hallazgo con la probabilidad de cada respuesta, que se compara con el umbral. No es un LLM generativo (D90). |
-| **No aplica** | `notApplicable` | Hallazgo que no hay que arreglar en esta PR: está equivocado, ya está resuelto, cae fuera del alcance de la PR o es un nit (una cuestión de gusto o una mejora menor que no merece un commit). |
+| **No aplica** | `notApplicable` | Hallazgo que no hay que arreglar en esta PR: está equivocado, ya está resuelto, cae fuera del alcance de la PR o es un nit (una cuestión de gusto o una mejora menor que no merece un commit). Un comentario del revisor cuyo arreglo es trabajo de otra tarea o historia es *no aplica*, y se capturaría (`MOO-160`). |
 | **Exige criterio** | `needsJudgment` | Hallazgo que el sistema no decide solo. Sale cuando su confianza no llega al umbral, o por una regla: descartaría un hallazgo de severidad alta, no ha podido reunir su contexto o se ha llegado al tope de gasto de la PR. |
 | **Arreglo** | `fix` | Cambio que atiende un hallazgo. |
 | **Modo sombra** | `shadowMode` | El sistema decide y registra, pero no actúa. |

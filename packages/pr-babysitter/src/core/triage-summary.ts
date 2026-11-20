@@ -49,8 +49,9 @@ function identity(finding: Finding): string {
 }
 
 /**
- * Por qué tiene esa clase (BE4): la probabilidad frente al umbral, o la regla que lo decide. En una
- * comprobación, termina con el origen de su contexto.
+ * Por qué tiene esa clase (BE4): la probabilidad frente al umbral, o la regla que lo decide, sin
+ * probabilidad (change pr-reviewer-scope, decisión 3). En una comprobación, termina con el origen de
+ * su contexto.
  */
 function why(finding: Finding, verdict: Verdict, threshold: number): string {
   // La regla decide por el nombre de la comprobación: su contexto no ha contado.
@@ -89,8 +90,21 @@ function reason(
       return 'no cabe en el tope de gasto de la PR';
     case 'modelUnavailable':
       return 'el modelo de decisión no ha respondido';
+    case 'noScope':
+      return 'regla: la PR no dice su alcance';
     case 'highSeverity':
-      return `p = ${decimal(verdict.probability)}: descartaría un hallazgo de severidad alta`;
+      return 'regla: descartaría un hallazgo de severidad alta';
+    // Por el alcance de la PR: la pregunta que llega al umbral, o las dos si no llega una sola. El
+    // modelo de decisión no redacta (D90): el porqué de «se capturaría» es P2 y su probabilidad, y
+    // de qué trataría la captura ya está en la fila.
+    case 'inScope':
+      return `dentro del alcance: p = ${decimal(verdict.inside)} ≥ ${decimal(threshold)}`;
+    case 'outOfScope':
+      return `de otra tarea: p = ${decimal(verdict.outside)} ≥ ${decimal(threshold)} · se capturaría`;
+    case 'unclearScope':
+      return `${bothScopes(verdict)}: ninguna llega a ${decimal(threshold)}`;
+    case 'contradictoryScope':
+      return `${bothScopes(verdict)}: se contradicen`;
     case 'probability': {
       const p = `p = ${decimal(verdict.probability)}`;
       if (verdict.class === 'valid') return `${p} ≥ ${decimal(threshold)}`;
@@ -98,6 +112,11 @@ function reason(
       return `${p}: no llega al umbral de ${decimal(threshold)}`;
     }
   }
+}
+
+/** Las dos probabilidades del alcance, P1 y P2, para que se vea hacia qué lado iba. */
+function bothScopes({ inside, outside }: { inside: number; outside: number }): string {
+  return `dentro p = ${decimal(inside)}, de otra tarea p = ${decimal(outside)}`;
 }
 
 /** Con dos decimales y coma, como se escribe en español. */

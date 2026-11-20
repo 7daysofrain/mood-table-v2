@@ -1012,7 +1012,7 @@ describe('las peticiones al modelo de decisión en paralelo (change pr-check-tri
           concurrency.peak = Math.max(concurrency.peak, concurrency.inFlight);
           await sleep(5);
           concurrency.inFlight -= 1;
-          return { probability: 0.5, inputTokens: 0 };
+          return { answer: { kind: 'answered', probability: 0.5 }, inputTokens: 0 };
         },
       },
       summaries: { published: () => Promise.resolve(false), publish: () => Promise.resolve() },

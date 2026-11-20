@@ -70,43 +70,29 @@ describe('la clase de un hallazgo (design.md, decisión 4)', () => {
     });
   });
 
-  it('4 · descartar uno de severidad alta exige criterio, también en el borde de 0,20', () => {
-    for (const probability of [0.03, 0.2]) {
-      expect(classify(p1, { kind: 'answered', probability }, THRESHOLD)).toEqual({
-        class: 'needsJudgment',
-        reason: 'highSeverity',
+  it('4 · con 0,80 o más de que la causa la PR es real', () => {
+    for (const probability of [0.8, 0.93]) {
+      expect(classify(checkFinding('e2e'), { kind: 'answered', probability }, THRESHOLD)).toEqual({
+        class: 'valid',
+        reason: 'probability',
         probability,
       });
     }
   });
 
-  it('5 · con 0,80 o más es real, también si es de severidad alta', () => {
-    for (const finding of [reviewerFinding(), p1, checkFinding('e2e')]) {
-      for (const probability of [0.8, 0.93]) {
-        expect(classify(finding, { kind: 'answered', probability }, THRESHOLD)).toEqual({
-          class: 'valid',
-          reason: 'probability',
-          probability,
-        });
-      }
+  it('5 · con 0,20 o menos no aplica', () => {
+    for (const probability of [0.2, 0.07]) {
+      expect(classify(checkFinding('e2e'), { kind: 'answered', probability }, THRESHOLD)).toEqual({
+        class: 'notApplicable',
+        reason: 'probability',
+        probability,
+      });
     }
   });
 
-  it('6 · con 0,20 o menos no aplica, si no es de severidad alta', () => {
-    for (const finding of [reviewerFinding(), checkFinding('e2e')]) {
-      for (const probability of [0.2, 0.07]) {
-        expect(classify(finding, { kind: 'answered', probability }, THRESHOLD)).toEqual({
-          class: 'notApplicable',
-          reason: 'probability',
-          probability,
-        });
-      }
-    }
-  });
-
-  it('7 · entre los dos exige criterio, por la probabilidad', () => {
+  it('6 · entre los dos exige criterio, por la probabilidad', () => {
     for (const probability of [0.21, 0.55, 0.79]) {
-      expect(classify(reviewerFinding(), { kind: 'answered', probability }, THRESHOLD)).toEqual({
+      expect(classify(checkFinding('e2e'), { kind: 'answered', probability }, THRESHOLD)).toEqual({
         class: 'needsJudgment',
         reason: 'probability',
         probability,
@@ -117,9 +103,83 @@ describe('la clase de un hallazgo (design.md, decisión 4)', () => {
   it('el umbral es configurable, y el corte bajo es su complemento', () => {
     const answered = (probability: number) => ({ kind: 'answered', probability }) as const;
 
-    expect(classify(reviewerFinding(), answered(0.7), 0.7).class).toBe('valid');
-    expect(classify(reviewerFinding(), answered(0.3), 0.7).class).toBe('notApplicable');
-    expect(classify(reviewerFinding(), answered(0.31), 0.7).class).toBe('needsJudgment');
+    expect(classify(checkFinding('e2e'), answered(0.7), 0.7).class).toBe('valid');
+    expect(classify(checkFinding('e2e'), answered(0.3), 0.7).class).toBe('notApplicable');
+    expect(classify(checkFinding('e2e'), answered(0.31), 0.7).class).toBe('needsJudgment');
+  });
+});
+
+describe('la clase de un hallazgo del revisor, por el alcance de la PR (change pr-reviewer-scope, decisión 1)', () => {
+  const scope = (inside: number, outside: number) => ({ kind: 'scope', inside, outside }) as const;
+
+  it('P1 llega y P2 no: real, con las dos probabilidades', () => {
+    expect(classify(reviewerFinding(), scope(0.91, 0.11), THRESHOLD)).toEqual({
+      class: 'valid',
+      reason: 'inScope',
+      inside: 0.91,
+      outside: 0.11,
+    });
+  });
+
+  it('P2 llega y P1 no: no aplica, porque es trabajo de otra tarea', () => {
+    expect(classify(reviewerFinding(), scope(0.12, 0.85), THRESHOLD)).toEqual({
+      class: 'notApplicable',
+      reason: 'outOfScope',
+      inside: 0.12,
+      outside: 0.85,
+    });
+  });
+
+  it('no llega ninguna: exige criterio', () => {
+    expect(classify(reviewerFinding(), scope(0.58, 0.32), THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'unclearScope',
+      inside: 0.58,
+      outside: 0.32,
+    });
+  });
+
+  it('llegan las dos: exige criterio, porque se contradicen', () => {
+    expect(classify(reviewerFinding(), scope(0.85, 0.82), THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'contradictoryScope',
+      inside: 0.85,
+      outside: 0.82,
+    });
+  });
+
+  it('un P1 que llega por P2 exige criterio por la regla de severidad alta, con las dos probabilidades', () => {
+    expect(classify(p1, scope(0.1, 0.9), THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'highSeverity',
+      inside: 0.1,
+      outside: 0.9,
+    });
+  });
+
+  it('un P1 que llega por P1 es real', () => {
+    expect(classify(p1, scope(0.93, 0.07), THRESHOLD)).toEqual({
+      class: 'valid',
+      reason: 'inScope',
+      inside: 0.93,
+      outside: 0.07,
+    });
+  });
+
+  it('los extremos de 0,80 cuentan dentro de su caso', () => {
+    expect(classify(reviewerFinding(), scope(0.8, 0.79), THRESHOLD).class).toBe('valid');
+    expect(classify(reviewerFinding(), scope(0.79, 0.8), THRESHOLD).class).toBe('notApplicable');
+    expect(classify(reviewerFinding(), scope(0.8, 0.8), THRESHOLD)).toMatchObject({
+      reason: 'contradictoryScope',
+    });
+    expect(classify(reviewerFinding(), scope(0.79, 0.79), THRESHOLD)).toMatchObject({
+      reason: 'unclearScope',
+    });
+  });
+
+  it('el umbral es configurable', () => {
+    expect(classify(reviewerFinding(), scope(0.7, 0.2), 0.7).class).toBe('valid');
+    expect(classify(reviewerFinding(), scope(0.2, 0.7), 0.7).class).toBe('notApplicable');
   });
 });
 
@@ -204,8 +264,12 @@ describe('lo que se decide sin el modelo (change pr-check-triage, decisión 6)',
     estimated.push(finding);
     return 400;
   };
-  const decide = (findings: Finding[], spentUsd = 0, ruleChecks = RULE_CHECKS) =>
-    withoutModel(findings, { ruleChecks, spentUsd, budget, estimate });
+  const decide = (
+    findings: Finding[],
+    spentUsd = 0,
+    ruleChecks = RULE_CHECKS,
+    description = 'Pregunta por el alcance de la PR los hallazgos del revisor.',
+  ) => withoutModel(findings, { ruleChecks, description, spentUsd, budget, estimate });
 
   it('una comprobación de la lista sale real por regla, sin probabilidad', () => {
     const lint = checkFinding('lint');
@@ -256,13 +320,59 @@ describe('lo que se decide sin el modelo (change pr-check-triage, decisión 6)',
   });
 });
 
+describe('una PR sin descripción no dice su alcance (change pr-reviewer-scope, decisión 4)', () => {
+  const budget: TriageBudget = { capUsd: 0.001, inputPricePerMTok: 1 };
+  const estimated: Finding[] = [];
+  /** 400 tokens por petición: con el tope de 1.000, caben dos. */
+  const estimate = (finding: Finding) => {
+    estimated.push(finding);
+    return 400;
+  };
+  const decide = (findings: Finding[], description: string) =>
+    withoutModel(findings, { ruleChecks: ['lint'], description, spentUsd: 0, budget, estimate });
+
+  it('con la descripción vacía o solo con espacios, un comentario del revisor sale noScope, sin reservar tope', () => {
+    for (const description of ['', '  \n\t ']) {
+      estimated.length = 0;
+      const reviewer = reviewerFinding();
+      const e2e = checkFinding('e2e');
+
+      expect(decide([reviewer, e2e, checkFinding('lint')], description)).toEqual([
+        { kind: 'noScope' },
+        undefined,
+        { kind: 'rule' },
+      ]);
+      expect(estimated).toEqual([e2e]);
+    }
+  });
+
+  it('noScope va antes que noContext', () => {
+    expect(decide([reviewerFinding({ diffHunk: null })], '')).toEqual([{ kind: 'noScope' }]);
+  });
+
+  it('las comprobaciones no la necesitan: sin contexto, siguen como siempre', () => {
+    expect(decide([checkFinding('e2e', { state: 'unreadable' })], '')).toEqual([{ kind: 'noContext' }]);
+  });
+
+  it('sin ninguna pregunta, exige criterio con su motivo', () => {
+    expect(classify(reviewerFinding(), { kind: 'noScope' }, THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'noScope',
+    });
+  });
+
+  it('con una descripción escueta, se pregunta al modelo', () => {
+    expect(decide([reviewerFinding()], 'Arregla el aviso.')).toEqual([undefined]);
+  });
+});
+
 describe('la pregunta depende de la fuente del hallazgo (change pr-check-triage, decisión 3)', () => {
   it('por una comprobación, si la causa esta PR', () => {
     expect(questionFor(checkFinding('e2e'))).toBe('cause');
   });
 
-  it('por un comentario del revisor, si hay que arreglarlo en esta PR', () => {
-    expect(questionFor(reviewerFinding())).toBe('fixInThisPr');
+  it('por un comentario del revisor, por el alcance de la PR (change pr-reviewer-scope, decisión 2)', () => {
+    expect(questionFor(reviewerFinding())).toBe('scope');
   });
 });
 
