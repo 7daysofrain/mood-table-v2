@@ -27,7 +27,8 @@ export type OpenPullRequest = z.infer<typeof openPullRequestSchema>;
 
 /**
  * Una comprobación que exige la rama base, en el último push (decisión 6): no ha terminado
- * (`pending`, también si aún no ha empezado), pasa (correcta, neutra o saltada) o falla.
+ * (`pending`, en cola o en curso), no ha empezado (`notStarted`, sin ningún *check run*; change
+ * pr-checks-not-run, decisión 1), pasa (correcta, neutra o saltada) o falla.
  *
  * Lleva también cómo acabó en GitHub y, si es de GitHub Actions y falla, su intento, su run y si ese
  * run ha terminado (change pr-check-rerun, decisión 3): con eso decide el seguimiento si se relanza y
@@ -35,7 +36,7 @@ export type OpenPullRequest = z.infer<typeof openPullRequestSchema>;
  */
 export const checkSchema = z.object({
   name: z.string(),
-  status: z.enum(['pending', 'passed', 'failed']),
+  status: z.enum(['pending', 'notStarted', 'passed', 'failed']),
   /** Cómo acabó (`success`, `failure`, `timed_out`, `cancelled`…); `null` si no ha terminado. */
   conclusion: z.string().nullable(),
   /**

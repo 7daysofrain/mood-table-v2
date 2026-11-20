@@ -24,7 +24,7 @@
   `adapters/github.test.ts`: una comprobación exigida sin *check run* sale `notStarted`; una con su
   *check run* `queued` o `in_progress`, `pending`; una `completed` sigue como hoy (superada o fallada,
   con su intento si es de GitHub Actions).
-- [ ] 1.3 `notStarted` en el esquema de la comprobación (`core/pull-request.ts`) y en `checks` de
+- [x] 1.3 `notStarted` en el esquema de la comprobación (`core/pull-request.ts`) y en `checks` de
   `adapters/github.ts`; `checksFinished` cuenta `notStarted` como no terminada.
   Verificar: los tests de 1.2 en verde y los que ya había; `pnpm typecheck` en verde.
 - [ ] 1.4 **(test en rojo)** La espera con el margen y el motivo (`design.md` decisiones 2 y 4), en

@@ -56,9 +56,14 @@ export type ChecksStep = 'waiting' | 'checksFinished' | 'checksFailed' | 'timedO
 /** Qué toca al reanudar la espera del revisor. */
 export type ReviewStep = 'waiting' | 'finished' | 'timedOut' | 'newPush';
 
-/** Han terminado cuando ninguna exigida está pendiente, pasen o fallen. */
+/**
+ * Han terminado cuando ninguna exigida está pendiente ni sin empezar, pasen o fallen. Cuándo deja de
+ * esperarse a una sin empezar lo decide `afterChecksWait` (change pr-checks-not-run, decisión 2).
+ */
 export function checksFinished(snapshot: PullRequestSnapshot): boolean {
-  return snapshot.checks.every((check) => check.status !== 'pending');
+  return snapshot.checks.every(
+    (check) => check.status === 'passed' || check.status === 'failed',
+  );
 }
 
 /** Han pasado cuando ninguna exigida está pendiente ni ha fallado. */
@@ -96,7 +101,7 @@ export function finalState(snapshot: PullRequestSnapshot, push: TrackedPush): Fi
   const named = (status: string) =>
     snapshot.checks.filter((check) => check.status === status).map((check) => check.name);
   const failed = named('failed');
-  const unfinished = named('pending');
+  const unfinished = [...named('pending'), ...named('notStarted')];
   const reasons: InterventionReason[] = [];
   if (failed.length > 0) reasons.push({ kind: 'checksFailed', checks: failed });
   if (push.rerunRejected) reasons.push({ kind: 'rerunRejected', checks: push.rerunRejected });
