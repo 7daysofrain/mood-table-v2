@@ -187,3 +187,35 @@ describe('el aviso de que el sistema no puede leer GitHub', () => {
     );
   });
 });
+
+describe('el aviso del estado final con las que no van a ejecutarse (change pr-checks-not-run)', () => {
+  it('dice qué falla y cuál no ha llegado a ejecutarse, sin decir que no ha terminado', () => {
+    const notice = finalNotice(pullRequest, {
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['test'] },
+        { kind: 'checksNotRun', checks: ['SonarCloud Code Analysis'] },
+      ],
+    });
+
+    expect(noticeSummary(notice)).toBe(
+      'Necesita intervención: falla test; no ha llegado a ejecutarse SonarCloud Code Analysis. ' +
+        'Dejo de seguirla.',
+    );
+  });
+
+  it('varias van en plural y en una lista', () => {
+    const notice = finalNotice(pullRequest, {
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['test'] },
+        { kind: 'checksNotRun', checks: ['SonarCloud Code Analysis', 'sonar-issues'] },
+      ],
+    });
+
+    expect(noticeSummary(notice)).toBe(
+      'Necesita intervención: falla test; no han llegado a ejecutarse SonarCloud Code Analysis y ' +
+        'sonar-issues. Dejo de seguirla.',
+    );
+  });
+});

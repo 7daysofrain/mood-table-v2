@@ -27,7 +27,7 @@
 - [x] 1.3 `notStarted` en el esquema de la comprobación (`core/pull-request.ts`) y en `checks` de
   `adapters/github.ts`; `checksFinished` cuenta `notStarted` como no terminada.
   Verificar: los tests de 1.2 en verde y los que ya había; `pnpm typecheck` en verde.
-- [ ] 1.4 **(test en rojo)** La espera con el margen y el motivo (`design.md` decisiones 2 y 4), en
+- [x] 1.4 **(test en rojo)** La espera con el margen y el motivo (`design.md` decisiones 2 y 4), en
   `core/tracking.test.ts` y `core/notice.test.ts`:
   - `afterChecksWait`: una fallada, nada `pending` y una `notStarted` → la primera foto guarda
     `quietSince` y sigue esperando; antes de 2 minutos, sigue esperando; a los 2 minutos (justos),
