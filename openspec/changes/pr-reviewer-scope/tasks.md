@@ -59,7 +59,7 @@
     `scope` y otra `cause`, y el resumen da cada uno con su clase;
   - con la descripción vacía: el comentario sale *exige criterio* sin petición, y la comprobación se
     tría con el modelo.
-- [ ] 1.9 Lo que falte para que 1.8 pase, si falta algo, y `studio.ts` con un hallazgo del revisor que
+- [x] 1.9 Lo que falte para que 1.8 pase, si falta algo, y `studio.ts` con un hallazgo del revisor que
   muestre «se capturaría».
   Verificar: `pnpm test` en verde; `pnpm studio` arranca y el hilo de ejemplo llega al resumen.
 - [ ] 1.10 Documentación: README §2.2 (el grafo, las reglas, el puerto `DecisionModel` y el adaptador

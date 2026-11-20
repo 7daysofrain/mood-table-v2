@@ -77,7 +77,8 @@ const findings: Findings = {
   read(pullRequestNumber, sha, failedChecks) {
     console.log(`Hallazgos: PR #${pullRequestNumber}, push ${sha}`);
     return Promise.resolve({
-      context: { title: `PR #${pullRequestNumber}`, description: '' },
+      // Con descripción: sin ella, el comentario del revisor exigiría criterio por regla.
+      context: { title: `PR #${pullRequestNumber}`, description: 'La PR de ejemplo de studio.ts.' },
       findings: [
         {
           source: 'reviewer',
@@ -102,11 +103,12 @@ const findings: Findings = {
 };
 
 /**
- * En lugar de preguntar al modelo, tarda un segundo y da una probabilidad distinta por fuente, para
- * ver las ramas `preguntarModelo` en paralelo y las tres clases: el comentario del revisor sale
- * real (0,90); las comprobaciones, por turnos, no aplica (0,10) y exige criterio (0,50).
+ * En lugar de preguntar al modelo, tarda un segundo y da una respuesta distinta por fuente, para ver
+ * las ramas `preguntarModelo` en paralelo y las tres clases: el comentario del revisor es de otra
+ * tarea (P1 0,10 y P2 0,90), así que no aplica y el resumen dice que se capturaría; las
+ * comprobaciones, por turnos, real (0,90) y exige criterio (0,50).
  */
-const CHECK_PROBABILITIES = [0.1, 0.5];
+const CHECK_PROBABILITIES = [0.9, 0.5];
 let checksAsked = 0;
 
 const decisionModel: DecisionModel = {
@@ -114,7 +116,7 @@ const decisionModel: DecisionModel = {
   async ask(_pr, finding) {
     await sleep(1000);
     if (finding.source === 'reviewer') {
-      return { answer: { kind: 'scope', inside: 0.9, outside: 0.05 }, inputTokens: 0 };
+      return { answer: { kind: 'scope', inside: 0.1, outside: 0.9 }, inputTokens: 0 };
     }
     const probability = CHECK_PROBABILITIES[checksAsked % CHECK_PROBABILITIES.length] ?? 0.5;
     checksAsked += 1;
