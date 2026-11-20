@@ -18,7 +18,7 @@
 
 ## 1. MOO-170 · infra
 
-- [ ] 1.1 Documentos de PB y la decisión:
+- [x] 1.1 Documentos de PB y la decisión:
   - `docs/pr-babysitter.md` §8: *Relanzar* (`rerun`: volver a ejecutar una comprobación que falla
     sobre el mismo commit, sin cambios) y *Caso evidente* (`evidentCase`: un error que dice por sí solo
     que el fallo es transitorio: un *timeout*, la infraestructura, la red o un *runner* perdido); *Modo
