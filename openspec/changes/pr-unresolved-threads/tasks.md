@@ -63,7 +63,7 @@
     hoy, con un caso por fila de su tabla; el 0,80 cuenta como arreglado. El veredicto guarda las tres
     probabilidades;
   - un comentario del último push sigue con las dos preguntas del alcance.
-- [ ] 1.9 El núcleo del triaje: la pregunta, la respuesta y el veredicto con `fixed`, `classify`,
+- [x] 1.9 El núcleo del triaje: la pregunta, la respuesta y el veredicto con `fixed`, `classify`,
   `withoutModel` y el puerto `DecisionModel.ask`.
   Verificar: los tests de 1.8 en verde y los que ya había.
 - [ ] 1.10 **(test en rojo)** El adaptador del modelo de decisión (`design.md` decisión 3), en

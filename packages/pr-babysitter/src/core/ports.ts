@@ -111,8 +111,10 @@ export interface DecisionModel {
    */
   estimate(pr: PullRequestContext, finding: Finding, question: Question): number;
   /**
-   * La respuesta a esa pregunta sobre el hallazgo, y los tokens de entrada cobrados: con `cause`,
-   * la probabilidad del sí (`answered`); con `scope`, las de P1 y P2 (`scope`). Qué se pregunta lo
+   * La respuesta a esa pregunta sobre el hallazgo, y los tokens de entrada cobrados: con `cause` o
+   * `rule`, la probabilidad del sí (`answered`); con `scope`, las de P1 y P2 (`scope`); con
+   * `fixedScope`, además la de que el último push ya lo arregla (`fixedScope`; change
+   * pr-unresolved-threads, decisión 3). Qué se pregunta lo
    * decide el núcleo (`questionFor`); cómo se formula, el adaptador.
    */
   ask(

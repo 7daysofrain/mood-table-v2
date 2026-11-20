@@ -119,6 +119,10 @@ function reason(
       return 'el modelo de decisión no ha respondido';
     case 'noScope':
       return 'regla: la PR no dice su alcance';
+    // Los textos de un comentario de un push anterior llegan en el paso 1.13.
+    case 'noCurrentCode':
+    case 'alreadyFixed':
+      return verdict.reason;
     case 'highSeverity':
       return 'regla: descartaría un hallazgo de severidad alta';
     // Por el alcance de la PR: la pregunta que llega al umbral, o las dos si no llega una sola. El
