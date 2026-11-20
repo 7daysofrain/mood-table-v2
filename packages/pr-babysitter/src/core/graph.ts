@@ -326,9 +326,10 @@ export function createTrackingGraph(
 
   // Lee los hallazgos del push y reparte las preguntas (change pr-check-triage, decisiones 4 a 6).
   // Decide sin el modelo lo que puede (`withoutModel`): una comprobación determinista, real por
-  // regla; un comentario del revisor de una PR que no dice su alcance; un hallazgo sin contexto; o uno que no cabe en lo que queda del tope, que se reserva
-  // aquí, antes de repartir. Los demás salen cada uno por su rama, con la pregunta de su fuente. Si GitHub
-  // falla al leerlos, lanza, y el nodo queda pendiente para la vuelta siguiente.
+  // regla; un comentario del revisor de una PR que no dice su alcance (change pr-reviewer-scope,
+  // decisión 4); un hallazgo sin contexto; o uno que no cabe en lo que queda del tope, que se
+  // reserva aquí, antes de repartir. Los demás salen cada uno por su rama, con la pregunta de su
+  // fuente. Si GitHub falla al leerlos, lanza, y el nodo queda pendiente para la vuelta siguiente.
   const triar: GraphNode<typeof TrackingState> = async (state) => {
     const { snapshot } = state;
     const final = finalState(snapshot, pushIn(state));

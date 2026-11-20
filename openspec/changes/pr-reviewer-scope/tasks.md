@@ -43,7 +43,7 @@
   - `estimate` cuenta las dos preguntas;
   - las dos claves de un título largo no pasan de 100 caracteres;
   - una comprobación sigue con una pregunta, la de la causa.
-- [ ] 1.5 El adaptador: P1 (la del *spike*, sin tocar) y P2 en `CRITERIA` e `instructions`, la
+- [x] 1.5 El adaptador: P1 (la del *spike*, sin tocar) y P2 en `CRITERIA` e `instructions`, la
   petición con dos preguntas y la respuesta `scope`; sin `fixInThisPr` ni su rama para una
   comprobación.
   Verificar: los tests de 1.4 en verde y los que ya había.
