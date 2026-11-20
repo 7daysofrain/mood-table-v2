@@ -13,7 +13,7 @@
 
 ## 1. MOO-175 · infra
 
-- [ ] 1.1 Alinear PB con lo decidido (`design.md` decisión 6): `docs/pr-babysitter.md` §8 (*Estado
+- [x] 1.1 Alinear PB con lo decidido (`design.md` decisión 6): `docs/pr-babysitter.md` §8 (*Estado
   final*, entrada nueva; *Hallazgo*; *Lista para integrar*; *Necesita intervención*). Y D120 en
   `docs/idea-mood-table.md` §10, que matiza D114 y D116 (`design.md` decisiones 2 a 4).
   Verificar: el glosario define *Estado final* como el de un push; *Hallazgo* y *Lista para integrar*
