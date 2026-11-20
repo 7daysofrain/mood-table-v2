@@ -63,7 +63,7 @@
 - [x] 1.8 Documentación: README §2.2 (*PR Babysitter*: con una comprobación que falla, deja de esperar a
   las que no tienen *check run* tras el margen, y el motivo «no ha llegado a ejecutarse»); `prompts.md`.
   Verificar: el README no dice que se espere siempre hasta el plazo a una comprobación sin empezar.
-- [ ] 1.9 **Prueba a mano** (sin commit), con el sistema en marcha desde la rama, repitiendo las PR de
+- [x] 1.9 **Prueba a mano** (sin commit), con el sistema en marcha desde la rama, repitiendo las PR de
   prueba del 19-nov: una con un test de Vitest roto (como la #154) y otra con solo el `lint` roto, de
   control (como la #155).
 
