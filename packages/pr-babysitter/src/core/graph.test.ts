@@ -1458,7 +1458,7 @@ describe('el sistema solo escribe en GitHub sus peticiones de revisión y el res
       snapshot(9, { checks: PASSED }),
       snapshot(12, { checks: PASSED, review: reviewed(HEAD, true) }),
     ];
-    await graph.invoke({ snapshot: first! }, threadConfig(74));
+    await graph.invoke({ snapshot: first }, threadConfig(74));
     for (const next of rest) {
       await graph.invoke(new Command({ resume: next }), threadConfig(74));
     }

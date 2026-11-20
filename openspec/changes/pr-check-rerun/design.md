@@ -102,8 +102,14 @@ esperarComprobaciones --checksFailed--> (relanzable en intento 1?) --si--> relan
 ```
 
 `afterChecksWait` devuelve un destino nuevo, `rerun`, cuando hay que relanzar. El puerto
-`CheckReruns.rerun(sha, checks)` vive en el núcleo; el adaptador está en `github.ts`. El triaje no
-relanza: el requisito *El triaje no actúa sobre la PR* no cambia.
+`CheckReruns.rerun(runId)` vive en el núcleo, y el núcleo elige el run (el de la primera relanzable
+que falla); el adaptador está en `github.ts`. El triaje no relanza: el requisito *El triaje no actúa
+sobre la PR* no cambia.
+
+`relanzar` sale por una arista condicional, no por un `Command`, para que el *driver* pueda saltárselo
+como ya hace con `pedirRevision`: si el nodo falló y entretanto llega un push nuevo, o si se detiene
+la PR, relanzar repetiría el run de un push viejo o actuaría en una PR detenida (añadido al
+implementar `MOO-170`).
 
 - **Alternativa:** relanzar desde el triaje, como dice D114 («antes de triar»). Mezcla actuar con
   clasificar y obliga a cambiar ese requisito.

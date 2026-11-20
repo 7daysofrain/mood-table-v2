@@ -63,7 +63,7 @@
       comprobaciones de 20 min;
     - lo único escrito en GitHub son peticiones de revisión, resúmenes y relanzamientos (amplía el
       test de solo escrituras).
-- [ ] 1.5 El destino `rerun` en `core/tracking.ts`, el puerto `CheckReruns` en `core/ports.ts`, el
+- [x] 1.5 El destino `rerun` en `core/tracking.ts`, el puerto `CheckReruns` en `core/ports.ts`, el
   nodo `relanzar` y su arista en `core/graph.ts`, y `rerunSince` y el rechazo en el estado.
   Verificar: los tests de 1.4 y todos los que ya había en verde; `pnpm typecheck` en verde.
 - [ ] 1.6 El adaptador y el montaje:
