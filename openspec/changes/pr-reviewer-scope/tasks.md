@@ -51,7 +51,7 @@
   prueba por fila de su tabla (*real* por P1, *no aplica* con «se capturaría», ninguna llega, se
   contradicen, regla de severidad alta sin probabilidad, la PR no dice su alcance). Las filas de las
   comprobaciones no cambian.
-- [ ] 1.7 Los textos del porqué en `core/triage-summary.ts`.
+- [x] 1.7 Los textos del porqué en `core/triage-summary.ts`.
   Verificar: los tests de 1.6 en verde y los que ya había.
 - [ ] 1.8 **(test en rojo)** Los escenarios de la spec de punta a punta en el grafo, en
   `core/graph.test.ts`, con el modelo de decisión falso:
