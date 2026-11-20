@@ -166,10 +166,12 @@ MUST NOT preguntar por él al modelo de decisión y MUST triar el resto de halla
 
 ### Requirement: El resumen dice de qué push viene cada hallazgo del revisor
 En un comentario del revisor sobre un push anterior, el resumen MUST decir que es de un push anterior
-y de cuál. En uno sobre el último push MUST NOT decirlo.
+y de cuál, o solo lo primero si GitHub ya no da ese commit. En uno sobre el último push MUST NOT
+decirlo.
 
 > Traza: `MOO-173`, criterio *el mantenedor sabe de qué push viene cada hallazgo*. El push, por su SHA
-> corto, como el resumen nombra el suyo.
+> corto, como el resumen nombra el suyo. Sin SHA tras un *force push*: hallazgo de Codex en la PR de
+> `MOO-175`, `design.md` decisión 1.
 
 #### Scenario: Un hallazgo de un push anterior
 - **GIVEN** una PR cuyo último push no tiene hallazgos y que tiene un comentario sin resolver del revisor sobre el push `576b496`
