@@ -10,4 +10,8 @@ describe('las ayudas de prueba', () => {
   it('los últimos elementos', () => {
     expect(lastN([1, 2, 3], 2)).toEqual([2, 3]);
   });
+
+  it('ninguno si no se pide ninguno', () => {
+    expect(lastN([1, 2, 3], 0)).toEqual([]);
+  });
 });

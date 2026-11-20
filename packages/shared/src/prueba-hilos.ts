@@ -8,7 +8,7 @@ export function percent(part: number, total: number): number {
   return Math.round((part / total) * 100);
 }
 
-/** Los `n` últimos elementos de una lista, en su orden. */
+/** Los `n` últimos elementos de una lista, en su orden; ninguno si `n` no es positivo. */
 export function lastN<T>(items: readonly T[], n: number): T[] {
-  return items.slice(-n);
+  return n > 0 ? items.slice(-n) : [];
 }
