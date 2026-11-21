@@ -51,10 +51,11 @@ const CLASS_NAMES: Record<TriageClass, string> = {
  * decide con el triaje.
  */
 export function triageSummary(triage: TriagedPush, threshold: number): string {
-  const note = (name: string) => firstTriageNote(name, triage.firstTriage ?? [], threshold);
+  const firstTriage = triage.firstTriage ?? [];
+  const note = (name: string) => firstTriageNote(name, firstTriage, threshold);
   const rows = triage.findings.map(
     ({ finding, verdict }) =>
-      `| ${cell(identity(finding))} | ${CLASS_NAMES[verdict.class]} | ${why(finding, verdict, threshold)}${rerunNote(finding, verdict, note)} |`,
+      `| ${cell(identity(finding))} | ${CLASS_NAMES[verdict.class]} | ${why(finding, verdict, threshold)}${rerunNote(finding, verdict, note)}${capturedNote(finding, verdict, firstTriage)} |`,
   );
   const table = rows.length === 0 ? [] : ['| Hallazgo | Clase | Por qué |', '|---|---|---|', ...rows, ''];
   return [
@@ -81,6 +82,20 @@ function rerunNote(finding: Finding, verdict: Verdict, note: (name: string) => s
   if (finding.source !== 'check') return '';
   return verdict.reason === 'failedTwice' || verdict.reason === 'rerunUnfinished'
     ? note(finding.name)
+    : '';
+}
+
+/**
+ * En la fila de una relanzable que no se relanzó y sale con su primer triaje (change
+ * pr-first-failure-triage, decisiones 4 y 5): si no la causa la PR, que se capturaría. Pasa cuando
+ * la PR causa el fallo de otra del mismo run. Las filas de las relanzadas salen por una regla, nunca
+ * por la probabilidad.
+ */
+function capturedNote(finding: Finding, verdict: Verdict, firstTriage: FirstTriage): string {
+  const fromFirstTriage =
+    finding.source === 'check' && firstTriage.some(({ name }) => name === finding.name);
+  return fromFirstTriage && verdict.reason === 'probability' && verdict.class === 'notApplicable'
+    ? ' · se capturaría'
     : '';
 }
 

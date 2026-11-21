@@ -16,8 +16,9 @@
  * El triaje dice qué pasa y `decidir` qué se hace (change pr-first-failure-triage, decisión 1;
  * D122): tras cada ronda de triaje, `decidir` elige la acción por reglas, sin el modelo, y la deja en
  * el estado. Hay dos rondas: la del primer fallo de una relanzable, en cuanto termina su run, que
- * tría solo esas comprobaciones y acaba en `relanzar`; y la final, antes del aviso. Lo que responde
- * la primera se guarda en el push (`firstTriage`): no se vuelve a preguntar, y el resumen lo cuenta.
+ * tría solo esas comprobaciones y acaba en `relanzar` o, si la PR causa el fallo, de vuelta en la
+ * espera, sin relanzar; y la final, antes del aviso. Lo que responde la primera se guarda en el push
+ * (`firstTriage`): no se vuelve a preguntar, y el resumen lo cuenta.
  *
  * Antes del aviso final, si la PR necesita intervención con hallazgos, se trían en modo sombra
  * (change pr-shadow-triage, decisión 1): ya están todos los del push. Si no hay nada que triar pero
@@ -48,7 +49,7 @@ import {
 } from '@langchain/langgraph';
 import * as z from 'zod';
 
-import { decide, decisionSchema } from './decision.ts';
+import { type Decision, decide, decisionSchema } from './decision.ts';
 import { checksFinishedNotice, finalNotice, trackingNotice } from './notice.ts';
 import {
   type CheckReruns,
@@ -123,6 +124,11 @@ const TrackingState = new StateSchema({
        * pr-first-failure-triage, decisión 4).
        */
       firstTriage: firstTriageSchema.optional(),
+      /**
+       * Las relanzables que `decidir` no ha relanzado porque la PR causa el fallo (change
+       * pr-first-failure-triage, decisión 9).
+       */
+      rerunSkipped: z.array(z.string()).optional(),
     })
     .optional(),
   /**
@@ -328,6 +334,13 @@ const AFTER_CHECKS = {
   firstFailure: TRIAGE_NODE,
 } as const satisfies Record<ChecksStep, string>;
 
+/** Adónde va el hilo tras cada acción de `decidir` (change pr-first-failure-triage, decisión 1). */
+const AFTER_DECISION = {
+  rerun: RERUN_NODE,
+  skipRerun: 'esperarComprobaciones',
+  publish: SUMMARY_NODE,
+} as const satisfies Record<Decision['action'], string>;
+
 const AFTER_REVIEW = {
   waiting: 'esperarRevisor',
   finished: 'avisarEstadoFinal',
@@ -513,6 +526,8 @@ export function createTrackingGraph(
       spentUsd: state.spentUsd ?? 0,
       budget: triage.budget,
       estimate: (finding) => decisionModel.estimate(read.context, finding, questionFor(finding)),
+      // Las que no se relanzaron porque la PR causa el fallo salen con su primer triaje (decisión 4).
+      firstTriage: push.rerunSkipped ? (push.firstTriage ?? []) : [],
     }).flatMap((answer, index): RoundAnswer[] =>
       answer ? [{ round, index, answer, inputTokens: 0 }] : [],
     );
@@ -633,10 +648,16 @@ export function createTrackingGraph(
   };
 
   // Qué se hace con el triaje de la ronda (change pr-first-failure-triage, decisión 1): lo decide
-  // `decide()`, sin el modelo, y queda en el estado con su regla. La arista siguiente lo lee.
-  const decidir: GraphNode<typeof TrackingState> = ({ triageRound }) => ({
-    decision: decide(triageRound?.kind ?? 'final'),
-  });
+  // `decide()`, sin el modelo, con lo que respondió el primer triaje del push, y queda en el estado
+  // con su regla. La arista siguiente lo lee. Si no relanza porque la PR causa el fallo, apunta en el
+  // push las que no relanza, y el hilo vuelve a esperar (decisión 9).
+  const decidir: GraphNode<typeof TrackingState> = (state) => {
+    const push = pushIn(state);
+    const decision = decide(state.triageRound?.kind ?? 'final', push.firstTriage);
+    if (decision.action !== 'skipRerun') return { decision };
+    const rerunSkipped = checksToRerun(state.snapshot, rerunChecks).map(({ name }) => name);
+    return { decision, push: { ...push, rerunSkipped } };
+  };
 
   // Publica en la PR el triaje del push (decisión 7) y lo que el sistema relanzó y pasó (change
   // pr-check-rerun, decisión 8), una vez: si ya está el de ese SHA (un reintento tras una respuesta
@@ -728,12 +749,13 @@ export function createTrackingGraph(
     .addEdge(ASK_NODE, GATHER_NODE)
     .addEdge(GATHER_NODE, DECIDE_NODE)
     // Una arista y no un `Command`, como la de `relanzar`: así el driver puede saltarse `relanzar`
-    // con un push viejo o una PR detenida.
-    .addConditionalEdges(
-      DECIDE_NODE,
-      ({ decision }) => (decision?.action === 'rerun' ? RERUN_NODE : SUMMARY_NODE),
-      [RERUN_NODE, SUMMARY_NODE],
-    )
+    // con un push viejo o una PR detenida. Sin relanzar, a esperar: la PR llega al estado final por
+    // el camino de cualquier fallo (change pr-first-failure-triage, decisión 9).
+    .addConditionalEdges(DECIDE_NODE, ({ decision }) => AFTER_DECISION[decision?.action ?? 'publish'], [
+      RERUN_NODE,
+      'esperarComprobaciones',
+      SUMMARY_NODE,
+    ])
     .addEdge(SUMMARY_NODE, 'avisarEstadoFinal')
     .addEdge('avisarEstadoFinal', END)
     .compile({ checkpointer });

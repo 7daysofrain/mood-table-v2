@@ -118,7 +118,7 @@
       la nota «se capturaría» de `e2e`;
     - con *SonarCloud Code Analysis* sin *check run*: el aviso llega tras el margen, no tras 30 min;
     - las vueltas siguientes no vuelven a triar el primer fallo.
-- [ ] 2.2 La regla en `core/decision.ts` (que pasa a recibir `push.firstTriage`), `rerunSkipped` en el push y en `afterChecksWait`
+- [x] 2.2 La regla en `core/decision.ts` (que pasa a recibir `push.firstTriage`), `rerunSkipped` en el push y en `afterChecksWait`
   (`core/tracking.ts`), la arista de `skipRerun` a `esperarComprobaciones` (`core/graph.ts`) y el
   veredicto guardado en `afterRerun` (`core/triage.ts`).
 

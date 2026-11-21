@@ -174,68 +174,6 @@ export const evidentCaseSchema = z.enum(['timeout', 'infrastructure', 'network',
 export type EvidentCase = z.infer<typeof evidentCaseSchema>;
 
 /**
- * La respuesta del modelo de decisión, según la pregunta: a la de la causa, la probabilidad del sí;
- * a la del alcance (change pr-reviewer-scope, decisiones 1 y 2), la de que el arreglo cae dentro del
- * alcance de la PR (P1, `inside`) y la de que es trabajo de otra tarea o historia (P2, `outside`); y
- * a la de un comentario de un push anterior, además, la de que el último push ya lo arregla
- * (`fixed`; change pr-unresolved-threads, decisión 3).
- */
-export const modelAnswerSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('answered'), probability: z.number() }),
-  z.object({ kind: z.literal('scope'), inside: z.number(), outside: z.number() }),
-  z.object({
-    kind: z.literal('fixedScope'),
-    fixed: z.number(),
-    inside: z.number(),
-    outside: z.number(),
-  }),
-]);
-
-export type ModelAnswer = z.infer<typeof modelAnswerSchema>;
-
-/** Lo que se sabe de un hallazgo antes de clasificarlo: la respuesta del modelo, o por qué no la hay. */
-export const triageAnswerSchema = z.union([
-  z.object({ kind: unansweredSchema }),
-  /** La decide la regla de las comprobaciones deterministas, sin preguntar. */
-  z.object({ kind: z.literal('rule') }),
-  /** Una relanzable que ha fallado dos veces: la decide su regla, con el caso evidente si lo hay. */
-  z.object({ kind: z.literal('failedTwice'), evidentCase: evidentCaseSchema.nullable() }),
-  /**
-   * El primer fallo de una relanzable con un caso evidente: no se pregunta, y se relanza (change
-   * pr-first-failure-triage, decisión 3).
-   */
-  z.object({ kind: z.literal('evident'), evidentCase: evidentCaseSchema }),
-  modelAnswerSchema,
-]);
-
-export type TriageAnswer = z.infer<typeof triageAnswerSchema>;
-
-/**
- * La respuesta sobre un hallazgo en un triaje del hilo (change pr-check-triage, decisión 4): de qué
- * ronda es, a qué hallazgo de esa ronda responde (su posición) y los tokens de entrada que costó.
- * La ronda es un número que crece con cada triaje del hilo.
- */
-export const roundAnswerSchema = z.object({
-  round: z.number().int(),
-  index: z.number().int(),
-  answer: triageAnswerSchema,
-  inputTokens: z.number(),
-});
-
-export type RoundAnswer = z.infer<typeof roundAnswerSchema>;
-
-/**
- * El reductor de las respuestas: junta las que llegan con las que había y se queda solo con las de
- * la ronda más alta. El hilo de una PR sobrevive entre pushes, y sin esto el triaje de un push
- * llevaría las respuestas del anterior, y el estado crecería push a push.
- */
-export function latestRound(current: RoundAnswer[], incoming: RoundAnswer[]): RoundAnswer[] {
-  const all = [...current, ...incoming];
-  const latest = Math.max(...all.map(({ round }) => round));
-  return all.filter(({ round }) => round === latest);
-}
-
-/**
  * La clase de un hallazgo y por qué (BE4): una de las reglas, la probabilidad de la causa frente al
  * umbral o las dos del alcance (change pr-reviewer-scope, decisión 1): solo llega P1 (`inScope`),
  * solo P2 (`outOfScope`), ninguna (`unclearScope`), las dos (`contradictoryScope`), o P2 en un
@@ -295,6 +233,73 @@ export const verdictSchema = z.union([
 export type Verdict = z.infer<typeof verdictSchema>;
 
 /**
+ * La respuesta del modelo de decisión, según la pregunta: a la de la causa, la probabilidad del sí;
+ * a la del alcance (change pr-reviewer-scope, decisiones 1 y 2), la de que el arreglo cae dentro del
+ * alcance de la PR (P1, `inside`) y la de que es trabajo de otra tarea o historia (P2, `outside`); y
+ * a la de un comentario de un push anterior, además, la de que el último push ya lo arregla
+ * (`fixed`; change pr-unresolved-threads, decisión 3).
+ */
+export const modelAnswerSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('answered'), probability: z.number() }),
+  z.object({ kind: z.literal('scope'), inside: z.number(), outside: z.number() }),
+  z.object({
+    kind: z.literal('fixedScope'),
+    fixed: z.number(),
+    inside: z.number(),
+    outside: z.number(),
+  }),
+]);
+
+export type ModelAnswer = z.infer<typeof modelAnswerSchema>;
+
+/** Lo que se sabe de un hallazgo antes de clasificarlo: la respuesta del modelo, o por qué no la hay. */
+export const triageAnswerSchema = z.union([
+  z.object({ kind: unansweredSchema }),
+  /** La decide la regla de las comprobaciones deterministas, sin preguntar. */
+  z.object({ kind: z.literal('rule') }),
+  /** Una relanzable que ha fallado dos veces: la decide su regla, con el caso evidente si lo hay. */
+  z.object({ kind: z.literal('failedTwice'), evidentCase: evidentCaseSchema.nullable() }),
+  /**
+   * El primer fallo de una relanzable con un caso evidente: no se pregunta, y se relanza (change
+   * pr-first-failure-triage, decisión 3).
+   */
+  z.object({ kind: z.literal('evident'), evidentCase: evidentCaseSchema }),
+  /**
+   * Una relanzable que no se relanzó porque la PR causa el fallo: sale con el veredicto de su primer
+   * triaje, sin preguntar (change pr-first-failure-triage, decisión 4).
+   */
+  z.object({ kind: z.literal('firstTriage'), verdict: verdictSchema }),
+  modelAnswerSchema,
+]);
+
+export type TriageAnswer = z.infer<typeof triageAnswerSchema>;
+
+/**
+ * La respuesta sobre un hallazgo en un triaje del hilo (change pr-check-triage, decisión 4): de qué
+ * ronda es, a qué hallazgo de esa ronda responde (su posición) y los tokens de entrada que costó.
+ * La ronda es un número que crece con cada triaje del hilo.
+ */
+export const roundAnswerSchema = z.object({
+  round: z.number().int(),
+  index: z.number().int(),
+  answer: triageAnswerSchema,
+  inputTokens: z.number(),
+});
+
+export type RoundAnswer = z.infer<typeof roundAnswerSchema>;
+
+/**
+ * El reductor de las respuestas: junta las que llegan con las que había y se queda solo con las de
+ * la ronda más alta. El hilo de una PR sobrevive entre pushes, y sin esto el triaje de un push
+ * llevaría las respuestas del anterior, y el estado crecería push a push.
+ */
+export function latestRound(current: RoundAnswer[], incoming: RoundAnswer[]): RoundAnswer[] {
+  const all = [...current, ...incoming];
+  const latest = Math.max(...all.map(({ round }) => round));
+  return all.filter(({ round }) => round === latest);
+}
+
+/**
  * Qué ronda de triaje es (change pr-first-failure-triage, decisiones 1 y 2): la del primer fallo de
  * una relanzable, antes de decidir si se relanza, o la final, antes del aviso del estado final.
  */
@@ -320,6 +325,7 @@ export type FirstTriage = z.infer<typeof firstTriageSchema>;
  */
 export function classify(finding: Finding, answer: TriageAnswer, threshold: number): Verdict {
   if (answer.kind === 'rule') return { class: 'valid', reason: 'rule' };
+  if (answer.kind === 'firstTriage') return answer.verdict;
   if (answer.kind === 'failedTwice') {
     return { class: 'valid', reason: 'failedTwice', evidentCase: answer.evidentCase };
   }
@@ -462,6 +468,8 @@ export function withinBudget(
  *
  * En la ronda del primer fallo (`round`), los hallazgos son solo las relanzables que fallan en su
  * primer intento, y siguen otras reglas (`beforeRerun`; change pr-first-failure-triage, decisión 3).
+ * En la final, una relanzable que no se relanzó porque la PR causa el fallo sale con lo que respondió
+ * su primer triaje (`firstTriage`; decisión 4).
  */
 export function withoutModel(
   findings: Finding[],
@@ -474,6 +482,7 @@ export function withoutModel(
     budget,
     estimate,
     round = 'final',
+    firstTriage = [],
   }: {
     /** Los nombres de las comprobaciones que decide la regla, tal como las exige la rama base. */
     ruleChecks: string[];
@@ -488,6 +497,8 @@ export function withoutModel(
     estimate: (finding: Finding) => number;
     /** La ronda: la del primer fallo de una relanzable o, por defecto, la final. */
     round?: TriageRoundKind;
+    /** En la final, lo que respondió el primer triaje de las relanzables que no se relanzaron. */
+    firstTriage?: FirstTriage;
   },
 ): (TriageAnswer | undefined)[] {
   if (round === 'firstFailure') return beforeRerun(findings, { spentUsd, budget, estimate });
@@ -517,7 +528,7 @@ export function withoutModel(
   );
   return findings.map((finding) => {
     if (byRule(finding)) return { kind: 'rule' };
-    if (rerunnable(finding)) return afterRerun(finding);
+    if (rerunnable(finding)) return afterRerun(finding, firstTriage);
     if (withoutIssues(finding)) return { kind: 'noIssues' };
     if (withoutScope(finding)) return { kind: 'noScope' };
     if (!hasContext(finding)) return { kind: 'noContext' };
@@ -561,14 +572,17 @@ function beforeRerun(
 /**
  * Lo que dice de una relanzable cómo acabó su relanzamiento (change pr-check-rerun, decisión 1): si
  * ha fallado dos veces, real, con el caso evidente del último intento; si no ha terminado o se ha
- * cancelado, exige criterio con ese motivo; y si sigue en su primer intento (GitHub no dejó
- * relanzarla, la petición no llegó a tiempo o no se sabe su intento), exige criterio porque no se
- * ha podido relanzar.
+ * cancelado, exige criterio con ese motivo; si sigue en su primer intento porque la PR causa el
+ * fallo, sale con lo que respondió su primer triaje (change pr-first-failure-triage, decisión 4); y
+ * si no (GitHub no dejó relanzarla, la petición no llegó a tiempo o no se sabe su intento), exige
+ * criterio porque no se ha podido relanzar.
  */
-function afterRerun(finding: CheckFinding): TriageAnswer {
+function afterRerun(finding: CheckFinding, firstTriage: FirstTriage): TriageAnswer {
   if (finding.unfinished) return { kind: 'rerunUnfinished' };
   if (finding.conclusion === 'cancelled') return { kind: 'cancelled' };
   if ((finding.attempt ?? 0) >= 2) return { kind: 'failedTwice', evidentCase: evidentCase(finding) };
+  const triaged = firstTriage.find(({ name }) => name === finding.name);
+  if (triaged) return { kind: 'firstTriage', verdict: triaged.verdict };
   return { kind: 'notRerun' };
 }
 

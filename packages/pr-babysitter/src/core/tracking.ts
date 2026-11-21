@@ -25,7 +25,8 @@ import type { FirstTriage } from './triage.ts';
  * un push nuevo no lo lleva.
  *
  * `firstTriage` es lo que respondió el triaje del primer fallo de cada relanzable (change
- * pr-first-failure-triage, decisión 4). Como lo demás, un push nuevo empieza sin él.
+ * pr-first-failure-triage, decisión 4), y `rerunSkipped`, las que el sistema no ha relanzado porque
+ * ese triaje da que la PR causa el fallo (decisión 9). Como lo demás, un push nuevo empieza sin ellos.
  */
 export interface TrackedPush {
   sha: string;
@@ -36,6 +37,7 @@ export interface TrackedPush {
   rerunRejected?: string[];
   quietSince?: number;
   firstTriage?: FirstTriage;
+  rerunSkipped?: string[];
 }
 
 /**
@@ -252,7 +254,9 @@ export function firstFailureChecks(
  * `decidir` elige si se relanza, una vez por push (change pr-first-failure-triage, decisión 1;
  * change pr-check-rerun, decisiones 3 a 5). Con el relanzamiento pedido, el tiempo cuenta desde él,
  * y se sigue esperando mientras la foto aún traiga el primer intento: GitHub tarda en crear el
- * segundo.
+ * segundo. Si GitHub lo ha rechazado, o `decidir` no ha relanzado porque la PR causa el fallo
+ * (`rerunSkipped`; change pr-first-failure-triage, decisión 9), no queda nada que relanzar, y la PR
+ * sigue el camino de cualquier fallo.
  *
  * Si una ha fallado, no queda nada que relanzar y ninguna está en cola ni en curso, pero alguna no
  * tiene *check run*, la foto está quieta: se apunta desde cuándo (`quietSince`) y, pasado el margen
@@ -272,7 +276,7 @@ export function afterChecksWait(
   // Una relanzable que falla se relanza en cuanto termina su run, sin esperar a las demás: alguna
   // puede depender de ella y no llegar nunca (con `test` roja, SonarCloud no se analiza). Dentro
   // del plazo del push: si la petición sigue fallando (la red, un 5xx), la PR acaba avisando.
-  const toRerun = push.rerunRejected ? [] : checksToRerun(snapshot, rerunChecks);
+  const toRerun = push.rerunRejected || push.rerunSkipped ? [] : checksToRerun(snapshot, rerunChecks);
   if (
     push.rerunSince === undefined &&
     toRerun.some((check) => check.runFinished) &&
