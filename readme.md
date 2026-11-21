@@ -652,29 +652,28 @@ La herramienta de desarrollo que sigue las PR (§2.2) no se despliega con el ins
 
 > Enumera y describe las prácticas de seguridad principales que se han implementado en el proyecto, añadiendo ejemplos si procede
 
-*Diseño previsto para la Entrega 2.*
-
 La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la mesa que en internet. Buena parte la resuelven decisiones de arquitectura, sin código adicional.
 
 #### En la mesa (red local)
 
 - **Sin autenticación, por decisión explícita.** Es una red doméstica de confianza, el sistema no guarda datos personales y el peor caso es que alguien de la casa cambie las luces. Queda fuera del MVP.
+- **Solo local salvo que se pida.** Por defecto, el motor escucha únicamente en `127.0.0.1:8080`. La mesa declara `server.host: 0.0.0.0` para abrir el panel a la red local (lo escribe el script de instalación), y la demo pública solo escucha en `127.0.0.1`, detrás de Caddy.
 - **La API no puede tocar el hardware.** Las tiras (puertos, número de LEDs, límites de potencia) se declaran en el fichero de configuración, no en la base de datos (§3). Desde la red solo se puede cambiar el efecto y sus parámetros, nunca a qué puerto se escribe ni cuánta corriente se permite.
 - **El proceso no corre como root.** Es una de las razones para descartar la conexión por GPIO, que exige root. Corre con el **usuario propio** `moodtable`, un usuario de sistema sin shell de entrada que solo tiene los grupos de los puertos serie (`dialout`) y de la tarjeta de sonido (`audio`), y ningún permiso de administrador: quien comprometiera el motor desde la red local no podría usar `sudo` (D110). Es dueño de toda la instalación, código incluido; dejar el código a root no cambiaría nada para el maker, que necesita `sudo` en los dos casos para editar la configuración, y la API no puede escribir ficheros.
 
 #### En la demo pública (internet)
 
 - **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria** (su configuración declara `"instrumentState": { "type": "memory" }`, §3): nada se escribe en disco y el estado vuelve al inicial cada 3 horas (§2.4). Todos los visitantes ven el mismo visor; que uno vea lo que toca otro se asume como parte de la demo.
-- **Sin hardware.** La configuración de la demo solo declara tiras virtuales, así que no hay puertos serie expuestos.
-- **Límite de peticiones** por IP en la API (`@fastify/rate-limit`) y **máximo de conexiones WebSocket** simultáneas.
+- **Sin hardware.** La configuración de la demo solo declara tiras virtuales y un fichero de audio de ejemplo, que se sirve en `/audio` sin su ruta en disco, así que no hay puertos serie expuestos.
+- **Sin límite de peticiones ni de conexiones WebSocket: riesgo aceptado.** El diseño inicial preveía `@fastify/rate-limit` y un máximo de conexiones, y no se implementaron. Lo peor que puede hacer un visitante es cambiar el efecto o la intensidad de todos o cargar la instancia; el estado vuelve al inicial cada 3 horas y la instancia está en modo de créditos *standard*, que se ralentiza en vez de facturar más, con una alerta de presupuesto (§2.4).
 - **HTTPS** con Caddy y certificado de Let's Encrypt; la instancia solo abre los puertos 80 y 443 y se administra sin SSH, por AWS Systems Manager (§2.4).
 
 #### En todo el sistema
 
 - **Validación de todas las entradas** con los esquemas TypeBox: tipos, rangos y rechazo de campos desconocidos. Un parámetro fuera de rango se rechaza antes de llegar al motor. El fichero de configuración se valida igual al arrancar.
 - **Mismo origen:** el panel lo sirve el propio motor, así que no se abre CORS.
-- **Cabeceras de seguridad** HTTP con `@fastify/helmet`.
-- **Tamaño máximo** de los mensajes WebSocket entrantes.
+- **El WebSocket solo va del motor al navegador:** el motor no lee lo que le llega por él. Los cambios entran solo por la API HTTP, validada.
+- **Sin cabeceras de seguridad HTTP propias:** el diseño inicial preveía `@fastify/helmet`, y no se implementó. El panel no tiene login, ni cookies, ni datos de nadie, así que es una deuda menor; en la demo, Caddy podría añadirlas sin tocar el motor.
 - **Sin secretos:** el instrumento no necesita claves ni credenciales. No hay login: el README lo indica expresamente en las instrucciones de prueba. La única pieza con secretos es la herramienta de desarrollo (abajo).
 
 #### En el PR Babysitter (herramienta de desarrollo)
@@ -705,37 +704,36 @@ El código lo escribe en buena parte un agente, así que el análisis automátic
 
 | Herramienta | Qué revisa | Cómo actúa |
 |---|---|---|
-| **SonarQube Cloud** (plan gratuito para proyectos públicos) | Bugs, vulnerabilidades y *security hotspots* en el código, *code smells*, duplicados y cobertura de tests | **Quality gate** en cada PR: si el código nuevo no la supera, el PR no se integra |
+| **SonarQube Cloud** (plan gratuito para proyectos públicos) | Bugs, vulnerabilidades y *security hotspots* en el código, *code smells*, duplicados y cobertura de tests | **Quality gate** en cada PR: si el código nuevo no la supera, el PR no se integra. Además, el job `sonar-issues` de la CI falla en las PR contra `main` con cualquier incidencia nueva, que el *quality gate* gratuito no mira (`tooling/ci/check-sonar-issues.ts`) |
 | **Dependabot** (GitHub) | Vulnerabilidades conocidas en las dependencias | Alertas y PRs automáticos de actualización. Cubre lo que el plan gratuito de Sonar no analiza |
 
 ### **2.6. Tests**
 
 > Describe brevemente algunos de los tests realizados
 
-*Diseño previsto para la Entrega 2.*
-
 La estrategia sigue la arquitectura (§2.1): el núcleo no tiene E/S, así que casi todo se prueba con entradas controladas y resultados deterministas. Con fuente = fichero y salida = memoria, un efecto produce siempre los mismos frames.
 
 | Nivel | Qué se prueba | Herramienta |
 |---|---|---|
-| **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (una sinusoide de 100 Hz cae en su banda). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). Restauración del estado al arrancar (§3). | Vitest |
+| **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (un tono de 400 Hz llena el tercio inferior de las bandas y uno de 8 kHz el superior, igual a 44,1 que a 48 kHz). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). Restauración del estado al arrancar (§3). | Vitest |
 | **Integración** | API con `fastify.inject()`, sin abrir puertos. Tests de contrato de `StateStore` contra SQLite y en memoria. El guardador, con un reloj falso, y la escritura en segundo plano, con un *worker* falso y con el de verdad (§2.2). | Vitest |
-| **E2E (flujo principal)** | El motor arranca con fuente = WAV; en el navegador, el visor reacciona a la música, mover un control cambia la luz y, tras matar el motor con `SIGKILL` y volver a arrancarlo, vuelve el último estado guardado; un arrastre a medias no (§3). | Playwright |
+| **Componentes del panel** | Cada zona del panel en jsdom con Testing Library: qué muestra con y sin conexión, los controles generados desde el esquema, el fader de la intensidad, la cola de peticiones mientras se arrastra. | Vitest + Testing Library |
+| **E2E (flujo principal)** | 8 specs en `e2e/` contra el motor real, que sirve el build del panel: el visor (`viewer`), la fuente y el nivel (`audio`), oír el fichero (`playback`), cambiar de efecto (`effects`), mover un control (`controls`), la intensidad (`intensity`), las zonas del panel (`panel`) y, tras matar el motor con `SIGKILL` y volver a arrancarlo, el último estado guardado; un arrastre a medias no (`restart`, §3). Los que necesitan audio arrancan su propio motor con un WAV. | Playwright |
 | **Hardware** | Tira física de la mesa: lista de comprobación manual (`HARDWARE_SETUP.md`) y vídeo. | Manual |
 
 **Por qué así:**
 
-- **Un solo runner (Vitest)** para el motor, el panel y `shared`: misma sintaxis y un único informe de cobertura, que es el que lee SonarQube.
+- **Un solo runner (Vitest)** para todos los paquetes (el motor, el panel, `shared` y el PR Babysitter) y para `tooling/` (los hooks del arnés, la regla de fronteras, la unidad de systemd): misma sintaxis y un único informe de cobertura, que es el que lee SonarQube.
 - **Los frames dorados hacen testeable lo visual:** "la luz se ve bien" pasa a ser una comparación exacta. Es clave cuando el código lo escribe un agente.
 - **El E2E recorre el circuito completo:** panel → motor → tira → persistencia → arranque.
 
-Todos los niveles automáticos se ejecutan en cada PR (§2.4).
+Todos los niveles automáticos se ejecutan en cada PR contra `main`, en los jobs `lint` (con ShellCheck para `deploy/`), `typecheck`, `test` y `e2e` de la CI (§2.4).
 
 #### Cobertura
 
 - **Quality gate de SonarQube:** ≥ 80 % de cobertura en el **código nuevo** de cada PR; si no se cumple, el PR no se integra.
-- **Núcleo** (bucle, análisis, efectos, límite de potencia): objetivo cercano al 100 %, por ser lógica pura y determinista.
-- **Adaptadores de hardware** (serie, `arecord`) y la raíz de composición: excluidos del cálculo; se prueban a mano (nivel "Hardware").
+- **Núcleo** (bucle, análisis, efectos, límite de potencia): objetivo cercano al 100 %, por ser lógica pura y determinista. Es un objetivo, no un umbral que haga cumplir la herramienta.
+- **Excluidos del cálculo:** la E/S de los adaptadores de hardware (`*.hardware.ts`: serie, `arecord`), que se prueba a mano (nivel "Hardware"), las raíces de composición y los puntos de entrada que solo hacen E/S. La lista está en `vitest.config.ts` y es la misma que en `sonar-project.properties`.
 - **E2E:** no cuentan. La cobertura es la de los tests unitarios y de integración (Vitest). Un E2E recorre mucho código sin comprobarlo en detalle, e inflaría la del código nuevo, que es la que juzga el *quality gate*. SonarQube los analiza como código de test.
 
 ---
