@@ -499,3 +499,39 @@ describe('si GitHub falla', () => {
     await expect(findings.read(88, PUSH_88, ['sonar-issues'])).rejects.toThrow();
   });
 });
+
+describe('solo las comprobaciones que fallan (change pr-first-failure-triage, decisión 2)', () => {
+  it('da el contexto de la PR y el de esas comprobaciones, como un hallazgo cada una', async () => {
+    const { findings, reader } = github();
+    const pull = JSON.parse(await fixture('pull-88.json')) as { title: string; body: string };
+
+    const read = await findings.readChecks(88, PUSH_88, ['sonar-issues']);
+
+    expect(read).toEqual({
+      context: { title: pull.title, description: pull.body },
+      findings: [
+        {
+          source: 'check',
+          name: 'sonar-issues',
+          ...(await readCheckContext(reader, PUSH_88, 'sonar-issues')),
+        },
+      ],
+    });
+  });
+
+  it('no pide los hilos del revisor', async () => {
+    const { findings, calls } = github();
+
+    await findings.readChecks(88, PUSH_88, ['sonar-issues']);
+
+    expect(calls.filter((call) => call.url.endsWith('/graphql'))).toEqual([]);
+  });
+
+  it('con un 5xx al leer un log, lanza para que se reintente', async () => {
+    const { findings } = github(({ path }) =>
+      path.includes('/actions/jobs/') ? json('{"message":"Server Error"}', 502) : undefined,
+    );
+
+    await expect(findings.readChecks(88, PUSH_88, ['sonar-issues'])).rejects.toThrow();
+  });
+});

@@ -3,7 +3,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { Command, MemorySaver } from '@langchain/langgraph';
 import { describe, expect, it } from 'vitest';
 
-import { createTrackingGraph, lastSnapshot, threadConfig } from './graph.ts';
+import { createTrackingGraph, lastSnapshot, threadConfig, type TrackingGraph } from './graph.ts';
 import { type Notice, noticeSummary } from './notice.ts';
 import {
   type CheckReruns,
@@ -147,7 +147,10 @@ interface TriagePorts {
 }
 
 const noFindings: TriagePorts = {
-  findings: { read: () => Promise.resolve({ context: CONTEXT, findings: [], sonarIssues: null }) },
+  findings: {
+    read: () => Promise.resolve({ context: CONTEXT, findings: [], sonarIssues: null }),
+    readChecks: () => Promise.resolve({ context: CONTEXT, findings: [] }),
+  },
   decisionModel: {
     estimate: () => 0,
     ask: () => Promise.reject(new Error('no hay hallazgos que triar')),
@@ -729,7 +732,23 @@ function recordingTriage(
         if (github.failure) return Promise.reject(github.failure);
         events.push('leer hallazgos');
         reads.push({ number, sha, failedChecks });
-        return Promise.resolve({ context, findings: found, sonarIssues });
+        // Una relanzable relanzada que sigue en marcha no falla en la foto, y el adaptador no la daría.
+        const read = found.filter(
+          (finding) =>
+            finding.source !== 'check' ||
+            !RERUN_CHECKS.includes(finding.name) ||
+            failedChecks.includes(finding.name),
+        );
+        return Promise.resolve({ context, findings: read, sonarIssues });
+      },
+      // Las comprobaciones del primer fallo de una relanzable, de entre las del push.
+      readChecks(_number, _sha, checks) {
+        if (github.failure) return Promise.reject(github.failure);
+        events.push('leer comprobaciones');
+        const named = found.filter(
+          (finding): finding is CheckFinding => finding.source === 'check' && checks.includes(finding.name),
+        );
+        return Promise.resolve({ context, findings: named });
       },
     },
     decisionModel: {
@@ -780,9 +799,21 @@ async function followTriage(
   spentUsd?: number,
   checkReruns = recordingReruns().checkReruns,
 ) {
+  const { state } = await runTriage(triage, snapshots, spentUsd, checkReruns);
+  return state;
+}
+
+/** Como `followTriage`, pero da también el grafo y las peticiones de revisión. */
+async function runTriage(
+  triage: ReturnType<typeof recordingTriage>,
+  snapshots: PullRequestSnapshot[],
+  spentUsd?: number,
+  checkReruns = recordingReruns().checkReruns,
+) {
+  const requests = recordingRequests();
   const graph = trackingGraph(
     triage.notifier,
-    recordingRequests().reviewRequests,
+    requests.reviewRequests,
     triage.ports,
     undefined,
     checkReruns,
@@ -792,7 +823,16 @@ async function followTriage(
   for (const next of rest) {
     await graph.invoke(new Command({ resume: next }), threadConfig(74));
   }
-  return graph.getState(threadConfig(74));
+  return { graph, state: await graph.getState(threadConfig(74)), requests: requests.recorded.requests };
+}
+
+/** Los nodos por los que ha pasado el hilo, en orden, sacados de su historial de checkpoints. */
+async function visitedNodes(graph: TrackingGraph): Promise<string[]> {
+  const nodes: string[] = [];
+  for await (const checkpoint of graph.getStateHistory(threadConfig(74))) {
+    nodes.unshift(...checkpoint.next);
+  }
+  return nodes;
 }
 
 /** El push con una comprobación que falla. */
@@ -1834,6 +1874,211 @@ describe('si el relanzamiento no termina en 30 minutos (change pr-check-rerun)',
   });
 });
 
+/** `e2e` con un *timeout* en su anotación: un caso evidente. */
+const e2eTimeout = failingCheck('e2e', {
+  state: 'available',
+  origin: 'annotations',
+  summary: '',
+  errors: [{ file: 'e2e/effects.spec.ts', line: 81, title: null, message: 'Test timeout of 30000ms exceeded.' }],
+  truncated: false,
+});
+
+/** El modelo responde con esta probabilidad, con 12.000 tokens. */
+const answering = (probability: number) => () => Promise.resolve({ probability, inputTokens: 12_000 });
+
+describe('el primer fallo de una relanzable se tría antes de relanzarla (change pr-first-failure-triage)', () => {
+  const firstFailure = [snapshot(0), snapshot(5, { checks: E2E_FIRST_ATTEMPT })];
+
+  it('falla un `e2e`: triar, una pregunta por su causa, reunirTriaje, decidir y relanzar, sin aviso, resumen ni revisión', async () => {
+    const triage = recordingTriage([failingCheck('e2e')]);
+    const reruns = recordingReruns();
+
+    const { graph, state, requests } = await runTriage(triage, firstFailure, undefined, reruns.checkReruns);
+
+    const nodes = await visitedNodes(graph);
+    expect(nodes.slice(nodes.indexOf('triar'))).toEqual([
+      'triar',
+      'preguntarModelo',
+      'reunirTriaje',
+      'decidir',
+      'relanzar',
+      'esperarComprobaciones',
+    ]);
+    expect(
+      triage.asked.map(({ finding, question }) => [finding.source === 'check' && finding.name, question]),
+    ).toEqual([['e2e', 'cause']]);
+    expect(reruns.recorded.reruns).toEqual([RUN]);
+    expect(triage.events).toEqual(['tracking', 'leer comprobaciones', 'preguntar al modelo']);
+    expect(triage.posted.summaries).toEqual([]);
+    expect(requests).toEqual([]);
+    expect(state.next).toEqual(['esperarComprobaciones']);
+  });
+
+  it('solo se tría la relanzable: un hilo del revisor de un push anterior no se pregunta en esa ronda', async () => {
+    const earlier: Finding = { ...codexP2, earlierPush: { sha: 'anterior', code: '>> 109 | x' } };
+    const triage = recordingTriage([earlier, failingCheck('e2e')]);
+
+    await followTriage(triage, [
+      snapshot(0, { reviewerThreads: { lastPush: 0, earlierPushes: 1 } }),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT, reviewerThreads: { lastPush: 0, earlierPushes: 1 } }),
+    ]);
+
+    expect(triage.reads).toEqual([]);
+    expect(triage.asked.map(({ question }) => question)).toEqual(['cause']);
+  });
+
+  it.each([
+    ['un caso evidente', () => recordingTriage([e2eTimeout]), undefined],
+    ['sin contexto', () => recordingTriage([failingCheck('e2e', { state: 'unreadable' })]), undefined],
+    ['fuera del tope', () => recordingTriage([failingCheck('e2e')]), 0.05],
+  ])('%s: se relanza igual, sin preguntar al modelo', async (_, triageOf, spentUsd) => {
+    const triage = triageOf();
+    const reruns = recordingReruns();
+
+    await followTriage(triage, firstFailure, spentUsd, reruns.checkReruns);
+
+    expect(triage.asked).toEqual([]);
+    expect(reruns.recorded.reruns).toEqual([RUN]);
+  });
+
+  it('el modelo no responde: se relanza igual', async () => {
+    const triage = recordingTriage([failingCheck('e2e')], () => Promise.reject(new Error('Ollama caído')));
+    const reruns = recordingReruns();
+
+    await followTriage(triage, firstFailure, undefined, reruns.checkReruns);
+
+    expect(triage.asked).toHaveLength(1);
+    expect(reruns.recorded.reruns).toEqual([RUN]);
+  });
+
+  it('la pregunta cuenta en el gasto de la PR', async () => {
+    const triage = recordingTriage([failingCheck('e2e')]);
+
+    const state = await followTriage(triage, firstFailure);
+
+    expect((state.values as { spentUsd: number }).spentUsd).toBeCloseTo((12_000 * 0.24) / 1_000_000);
+  });
+
+  it('guarda en el push lo que respondió, y no escribe el triaje del push', async () => {
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
+
+    const state = await followTriage(triage, firstFailure);
+
+    const values = state.values as { push: { firstTriage?: unknown }; triage?: unknown };
+    expect(values.push.firstTriage).toEqual([
+      { name: 'e2e', verdict: { class: 'notApplicable', reason: 'probability', probability: 0.12 } },
+    ]);
+    expect(values.triage).toBeUndefined();
+  });
+});
+
+describe('qué se hace con el triaje lo decide `decidir` y queda registrado (change pr-first-failure-triage)', () => {
+  it('en el primer fallo, relanzar, con su regla', async () => {
+    const triage = recordingTriage([failingCheck('e2e')]);
+
+    const state = await followTriage(triage, [snapshot(0), snapshot(5, { checks: E2E_FIRST_ATTEMPT })]);
+
+    expect(state.values).toMatchObject({ decision: { action: 'rerun', rule: 'firstFailure' } });
+  });
+
+  it('antes del aviso final, publicar, con su regla', async () => {
+    const triage = recordingTriage([failingCheck('e2e')]);
+
+    const state = await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
+
+    expect(state.values).toMatchObject({ decision: { action: 'publish', rule: 'finalState' } });
+  });
+});
+
+describe('el resumen dice qué respondió el primer triaje de cada relanzable relanzada (change pr-first-failure-triage)', () => {
+  it('el relanzamiento pasa: un solo resumen, que dice que se relanzó y pasó y que se capturaría', async () => {
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
+
+    await followTriage(triage, [...rerunThen(PASSED), snapshot(12, { checks: PASSED, review: reviewed() })]);
+
+    expect(triage.posted.summaries).toHaveLength(1);
+    expect(triage.posted.summaries[0]?.text).toContain(
+      'La comprobación `e2e` se relanzó y pasó · primer intento: p = 0,12 ≤ 0,20 · se capturaría.',
+    );
+    expect(summaryRows(triage)).toEqual([]);
+  });
+
+  it('vuelve a fallar: real por regla, con la nota, y ninguna pregunta nueva sobre `e2e`', async () => {
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
+
+    await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
+
+    expect(triage.asked).toHaveLength(1);
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | real | regla: ha fallado dos veces · primer intento: p = 0,12 ≤ 0,20 · se capturaría |',
+    ]);
+  });
+
+  it('no termina a tiempo: exige criterio, con la nota', async () => {
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
+
+    await followTriage(triage, [
+      snapshot(0),
+      snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+      snapshot(6, { checks: E2E_RERUNNING }),
+      snapshot(36, { checks: E2E_RERUNNING }),
+    ]);
+
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | exige criterio | regla: el relanzamiento no ha terminado · primer intento: p = 0,12 ≤ 0,20 · se capturaría |',
+    ]);
+  });
+});
+
+describe('el triaje del primer fallo no se repite en el mismo push (change pr-first-failure-triage)', () => {
+  it('un fallo pasajero de `relanzar`: la vuelta siguiente lo vuelve a pedir sin preguntar otra vez', async () => {
+    const triage = recordingTriage([failingCheck('e2e')]);
+    const reruns = recordingReruns();
+    reruns.recorded.failure = new TypeError('fetch failed');
+    const graph = trackingGraph(
+      triage.notifier,
+      recordingRequests().reviewRequests,
+      triage.ports,
+      undefined,
+      reruns.checkReruns,
+    );
+    await graph.invoke({ snapshot: snapshot(0) }, threadConfig(74));
+    await expect(
+      graph.invoke(new Command({ resume: snapshot(5, { checks: E2E_FIRST_ATTEMPT }) }), threadConfig(74)),
+    ).rejects.toThrow('fetch failed');
+
+    // Como el driver: se salta `relanzar` y el hilo vuelve a esperar (change pr-check-rerun, decisión 5).
+    reruns.recorded.failure = undefined;
+    await graph.updateState(threadConfig(74), {}, 'relanzar');
+    await graph.invoke(null, threadConfig(74));
+    await graph.invoke(new Command({ resume: snapshot(6, { checks: E2E_FIRST_ATTEMPT }) }), threadConfig(74));
+
+    expect(triage.asked).toHaveLength(1);
+    expect(reruns.recorded.reruns).toEqual([RUN]);
+    expect(summary(triage.notices)).toEqual(['tracking']);
+  });
+
+  it('un push nuevo se vuelve a preguntar', async () => {
+    const triage = recordingTriage([failingCheck('e2e')]);
+    const reruns = recordingReruns();
+
+    await followTriage(
+      triage,
+      [
+        snapshot(0),
+        snapshot(5, { checks: E2E_FIRST_ATTEMPT }),
+        snapshot(8, { headSha: 'nuevo', checks: PENDING }),
+        snapshot(10, { headSha: 'nuevo', checks: E2E_FIRST_ATTEMPT }),
+      ],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    expect(triage.asked).toHaveLength(2);
+    expect(reruns.recorded.reruns).toEqual([RUN, RUN]);
+  });
+});
+
 /** Una incidencia de SonarQube con su código. */
 function sonarIssue(file: string, line: number, code: string | null = `>> ${line} | x`): Finding {
   return {
@@ -1863,13 +2108,16 @@ const rerunThen = (checks: Check[]) => [
 ];
 
 describe('una comprobación relanzable que ha fallado dos veces sale real por regla (change pr-check-rerun)', () => {
-  it('el relanzamiento vuelve a fallar: real por la regla, que dice que ha fallado dos veces, sin preguntar al modelo', async () => {
+  it('el relanzamiento vuelve a fallar: real por la regla, que dice que ha fallado dos veces, sin volver a preguntar al modelo', async () => {
     const triage = recordingTriage([failingCheck('e2e')]);
 
     await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
 
-    expect(triage.asked).toEqual([]);
-    expect(summaryRows(triage)).toEqual(['| Comprobación `e2e` | real | regla: ha fallado dos veces |']);
+    // La única pregunta es la del primer fallo (change pr-first-failure-triage).
+    expect(triage.asked.map(({ question }) => question)).toEqual(['cause']);
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | real | regla: ha fallado dos veces · primer intento: p = 0,93 ≥ 0,80 |',
+    ]);
     expect(triage.events.slice(-2)).toEqual(['publicar resumen', 'aviso final']);
   });
 
@@ -1909,7 +2157,7 @@ describe('una comprobación relanzable que ha fallado dos veces sale real por re
     await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
 
     expect(summaryRows(triage)).toEqual([
-      '| Comprobación `e2e` | real | regla: ha fallado dos veces · caso evidente: timeout |',
+      '| Comprobación `e2e` | real | regla: ha fallado dos veces · caso evidente: timeout · primer intento: caso evidente: timeout |',
     ]);
   });
 
@@ -1918,7 +2166,9 @@ describe('una comprobación relanzable que ha fallado dos veces sale real por re
 
     await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
 
-    expect(summaryRows(triage)).toEqual(['| Comprobación `e2e` | real | regla: ha fallado dos veces |']);
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | real | regla: ha fallado dos veces · primer intento: no se ha podido preguntar por la causa: no se ha podido reunir su contexto |',
+    ]);
   });
 });
 
@@ -1935,7 +2185,8 @@ describe('una comprobación relanzable sin resultado tras relanzarla exige crite
       reruns.checkReruns,
     );
 
-    expect(triage.asked).toEqual([]);
+    // Solo la pregunta del primer fallo; sin nota, porque no se relanzó.
+    expect(triage.asked.map(({ question }) => question)).toEqual(['cause']);
     expect(summaryRows(triage)).toEqual([
       '| Comprobación `e2e` | exige criterio | regla: no se ha podido relanzar |',
     ]);
@@ -1953,7 +2204,13 @@ describe('una comprobación relanzable sin resultado tras relanzarla exige crite
     ]);
 
     expect(triage.asked).toEqual([]);
-    expect(triage.events).toEqual(['tracking', 'leer hallazgos', 'publicar resumen', 'aviso final']);
+    expect(triage.events).toEqual([
+      'tracking',
+      'leer comprobaciones',
+      'leer hallazgos',
+      'publicar resumen',
+      'aviso final',
+    ]);
     expect(summaryRows(triage)).toEqual([
       '| Comprobación `e2e` | exige criterio | regla: el relanzamiento no ha terminado |',
     ]);
@@ -1970,7 +2227,9 @@ describe('una comprobación relanzable sin resultado tras relanzarla exige crite
       snapshot(35, { checks: [pending('lint'), failedIn('e2e', 2)] }),
     ]);
 
-    expect(summaryRows(triage)).toEqual(['| Comprobación `e2e` | real | regla: ha fallado dos veces |']);
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `e2e` | real | regla: ha fallado dos veces · primer intento: p = 0,93 ≥ 0,80 |',
+    ]);
     expect(summary(triage.notices).at(-1)).toEqual({
       status: 'needsIntervention',
       reasons: [
@@ -2034,7 +2293,13 @@ describe('el resumen dice lo que se relanzó y pasó (change pr-check-rerun)', (
     await followTriage(triage, reviewedAfter(PASSED));
 
     expect(triage.reads).toEqual([]);
-    expect(triage.events).toEqual(['tracking', 'checksFinished', 'publicar resumen', 'aviso final']);
+    expect(triage.events).toEqual([
+      'tracking',
+      'leer comprobaciones',
+      'checksFinished',
+      'publicar resumen',
+      'aviso final',
+    ]);
     expect(triage.posted.summaries).toEqual([
       {
         number: 74,
@@ -2177,7 +2442,15 @@ describe('las comprobaciones que no van a ejecutarse (change pr-checks-not-run)'
       at154(10, failedIn('test', 2), passed('e2e')),
     ]);
 
-    expect(triage.events).toEqual(['tracking', 'leer hallazgos', 'publicar resumen', 'aviso final']);
+    // Antes de relanzar, el triaje del primer fallo (change pr-first-failure-triage).
+    expect(triage.events).toEqual([
+      'tracking',
+      'leer comprobaciones',
+      'preguntar al modelo',
+      'leer hallazgos',
+      'publicar resumen',
+      'aviso final',
+    ]);
     expect(triage.reads).toEqual([{ number: 74, sha: HEAD, failedChecks: ['test'] }]);
     const final = triage.notices.at(-1)!;
     expect(final.type === 'final' && final.state).toEqual({

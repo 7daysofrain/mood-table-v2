@@ -8,7 +8,14 @@
  */
 import * as z from 'zod';
 
-import type { EvidentCase, Finding, SonarIssueCount, TriageClass, Verdict } from './triage.ts';
+import type {
+  EvidentCase,
+  Finding,
+  FirstTriage,
+  SonarIssueCount,
+  TriageClass,
+  Verdict,
+} from './triage.ts';
 
 /** El triaje de un push, tal como queda en el estado del hilo. */
 export interface TriagedPush {
@@ -21,6 +28,11 @@ export interface TriagedPush {
    * decisión 8): no son hallazgos, pero el mantenedor ve que hubo un fallo transitorio.
    */
   rerunPassed?: string[];
+  /**
+   * Lo que respondió el triaje del primer fallo de cada relanzable (change pr-first-failure-triage,
+   * decisión 8): el resumen lo dice de las que se relanzaron.
+   */
+  firstTriage?: FirstTriage;
 }
 
 const CLASS_NAMES: Record<TriageClass, string> = {
@@ -31,28 +43,74 @@ const CLASS_NAMES: Record<TriageClass, string> = {
 
 /**
  * El texto del resumen, con la marca del push al final: la tabla de hallazgos, si hay alguno, y
- * debajo lo que se relanzó y pasó (change pr-check-rerun, decisión 8).
+ * debajo lo que se relanzó y pasó (change pr-check-rerun, decisión 8). De cada relanzable que se
+ * relanzó, dice además qué respondió el triaje de su primer fallo (change pr-first-failure-triage,
+ * decisión 8).
+ *
+ * La cabecera dice «no arregla», como el glosario de PB (*modo sombra*): el sistema ya relanza, y lo
+ * decide con el triaje.
  */
 export function triageSummary(triage: TriagedPush, threshold: number): string {
+  const note = (name: string) => firstTriageNote(name, triage.firstTriage ?? [], threshold);
   const rows = triage.findings.map(
     ({ finding, verdict }) =>
-      `| ${cell(identity(finding))} | ${CLASS_NAMES[verdict.class]} | ${why(finding, verdict, threshold)} |`,
+      `| ${cell(identity(finding))} | ${CLASS_NAMES[verdict.class]} | ${why(finding, verdict, threshold)}${rerunNote(finding, verdict, note)} |`,
   );
   const table = rows.length === 0 ? [] : ['| Hallazgo | Clase | Por qué |', '|---|---|---|', ...rows, ''];
   return [
-    `**Triaje del PR Babysitter** (modo sombra: no actúa) · push \`${triage.sha.slice(0, 7)}\``,
+    `**Triaje del PR Babysitter** (modo sombra: no arregla) · push \`${triage.sha.slice(0, 7)}\``,
     '',
     ...table,
     ...cutList(triage.sonarIssues),
-    ...rerunPassedLines(triage.rerunPassed ?? []),
+    ...rerunPassedLines(triage.rerunPassed ?? [], note),
     summaryMark(triage.sha),
   ].join('\n');
 }
 
-/** Una línea por comprobación relanzada que ha pasado. */
-function rerunPassedLines(names: string[]): string[] {
+/** Una línea por comprobación relanzada que ha pasado, con la nota de su primer triaje. */
+function rerunPassedLines(names: string[], note: (name: string) => string): string[] {
   if (names.length === 0) return [];
-  return [...names.map((name) => `La comprobación \`${name}\` se relanzó y pasó.`), ''];
+  return [...names.map((name) => `La comprobación \`${name}\` se relanzó y pasó${note(name)}.`), ''];
+}
+
+/**
+ * La nota del primer triaje en la fila de una relanzable que se relanzó: la que ha fallado dos veces
+ * o cuyo relanzamiento no ha terminado. Una que no se relanzó no la lleva.
+ */
+function rerunNote(finding: Finding, verdict: Verdict, note: (name: string) => string): string {
+  if (finding.source !== 'check') return '';
+  return verdict.reason === 'failedTwice' || verdict.reason === 'rerunUnfinished'
+    ? note(finding.name)
+    : '';
+}
+
+/**
+ * Qué respondió el triaje del primer fallo de una relanzable (change pr-first-failure-triage,
+ * decisión 8), o nada si no se trió. «Se capturaría» es una nota, no una clase (BQ8, D119).
+ */
+function firstTriageNote(name: string, firstTriage: FirstTriage, threshold: number): string {
+  const verdict = firstTriage.find((entry) => entry.name === name)?.verdict;
+  const answer = verdict ? firstAnswer(verdict, threshold) : null;
+  return answer === null ? '' : ` · primer intento: ${answer}`;
+}
+
+/** Los motivos por los que no se ha preguntado por la causa del primer fallo. */
+const UNASKED: Partial<Record<Verdict['reason'], string>> = {
+  noContext: 'no se ha podido reunir su contexto',
+  overBudget: 'no cabe en el tope de gasto de la PR',
+  modelUnavailable: 'el modelo de decisión no ha respondido',
+};
+
+function firstAnswer(verdict: Verdict, threshold: number): string | null {
+  if (verdict.reason === 'evident') return `caso evidente: ${EVIDENT_CASES[verdict.evidentCase]}`;
+  if (verdict.reason === 'probability') {
+    const p = `p = ${decimal(verdict.probability)}`;
+    if (verdict.class === 'valid') return `${p} ≥ ${decimal(threshold)}`;
+    if (verdict.class === 'notApplicable') return `${p} ≤ ${decimal(1 - threshold)} · se capturaría`;
+    return `${p}, no llega al umbral`;
+  }
+  const unasked = UNASKED[verdict.reason];
+  return unasked === undefined ? null : `no se ha podido preguntar por la causa: ${unasked}`;
 }
 
 /**
@@ -142,6 +200,9 @@ function reason(
   threshold: number,
 ): string {
   switch (verdict.reason) {
+    // Solo en el triaje del primer fallo (change pr-first-failure-triage, decisión 3).
+    case 'evident':
+      return `caso evidente: ${EVIDENT_CASES[verdict.evidentCase]}`;
     case 'notRerun':
       return 'regla: no se ha podido relanzar';
     case 'rerunUnfinished':

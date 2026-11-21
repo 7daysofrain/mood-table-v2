@@ -8,13 +8,15 @@
  *   dice cada uno (insignia, severidad, título) lo entiende el adaptador del revisor (BA3). Un hilo
  *   que abre otra cuenta nunca es un hallazgo (BE6).
  * - **De las comprobaciones que fallan:** cómo acabó cada una y su contexto, que depende de la app
- *   que la ejecuta (`check-context.ts`; change pr-check-triage, decisiones 1 y 2).
+ *   que la ejecuta (`check-context.ts`; change pr-check-triage, decisiones 1 y 2). En el primer
+ *   fallo de una relanzable se leen solo ellas (`readChecks`; change pr-first-failure-triage,
+ *   decisión 2).
  * - **De la comprobación que lista las incidencias nuevas de SonarQube:** cada incidencia que
  *   anota, con el código de alrededor de su línea (`sonar-issues.ts`; change pr-sonar-issue-triage,
  *   decisión 5). La comprobación solo es un hallazgo si no anota ninguna legible.
  */
 import type { Findings } from '../core/ports.ts';
-import type { Finding, SonarIssueCount } from '../core/triage.ts';
+import type { CheckFinding, Finding, SonarIssueCount } from '../core/triage.ts';
 import { type CheckContextGitHub, readCheckContext } from './check-context.ts';
 import type { ReviewThread } from './github.ts';
 import { around, readSonarIssues, type SonarIssuesGitHub } from './sonar-issues.ts';
@@ -122,6 +124,23 @@ export function createFindings({ reviewer, sonarIssuesCheck, github }: FindingsO
         findings: [...fromReviewer, ...fromChecks.flatMap(({ findings }) => findings)],
         sonarIssues: fromChecks.find(({ count }) => count !== null)?.count ?? null,
       };
+    },
+    // El primer fallo de una relanzable (change pr-first-failure-triage, decisión 2): esas
+    // comprobaciones y el título y la descripción de la PR, que la pregunta de la causa necesita.
+    async readChecks(pullRequestNumber, sha, checks) {
+      const [pull, findings] = await Promise.all([
+        github.getPullRequest(pullRequestNumber),
+        Promise.all(
+          checks.map(
+            async (name): Promise<CheckFinding> => ({
+              source: 'check',
+              name,
+              ...(await readCheckContext(github, sha, name)),
+            }),
+          ),
+        ),
+      ]);
+      return { context: { title: pull.title, description: pull.body }, findings };
     },
   };
 }

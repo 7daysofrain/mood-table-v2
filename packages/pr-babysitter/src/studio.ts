@@ -120,6 +120,21 @@ const findings: Findings = {
       ],
     });
   },
+  // El primer fallo de una relanzable (change pr-first-failure-triage, decisión 2): solo esas
+  // comprobaciones, con el error de una aserción en su log.
+  readChecks(pullRequestNumber, sha, checks) {
+    console.log(`Comprobaciones del primer fallo: PR #${pullRequestNumber}, push ${sha}`);
+    return Promise.resolve({
+      context: { title: `PR #${pullRequestNumber}`, description: 'La PR de ejemplo de studio.ts.' },
+      findings: checks.map((name) => ({
+        source: 'check' as const,
+        name,
+        conclusion: 'failure',
+        attempt: 1,
+        context: CHECK_CONTEXTS[0] ?? { state: 'notProvided' as const },
+      })),
+    });
+  },
 };
 
 /**
@@ -127,7 +142,8 @@ const findings: Findings = {
  * las ramas `preguntarModelo` en paralelo y las tres clases: el comentario del revisor es de otra
  * tarea (P1 0,10 y P2 0,90), así que no aplica y el resumen dice que se capturaría; el de un push
  * anterior ya está arreglado (0,91), así que no aplica; las comprobaciones, por turnos, real (0,90)
- * y exige criterio (0,50).
+ * y exige criterio (0,50). El primer fallo de una relanzable no lo causa la PR (0,12): se relanza y
+ * el resumen dice que se capturaría (change pr-first-failure-triage).
  */
 const CHECK_PROBABILITIES = [0.9, 0.5];
 let checksAsked = 0;
@@ -141,6 +157,9 @@ const decisionModel: DecisionModel = {
     }
     if (finding.source === 'reviewer') {
       return { answer: { kind: 'scope', inside: 0.1, outside: 0.9 }, inputTokens: 0 };
+    }
+    if (finding.source === 'check' && finding.attempt === 1) {
+      return { answer: { kind: 'answered', probability: 0.12 }, inputTokens: 0 };
     }
     const probability = CHECK_PROBABILITIES[checksAsked % CHECK_PROBABILITIES.length] ?? 0.5;
     checksAsked += 1;

@@ -7,6 +7,7 @@ import {
   checksFinished,
   type FinalState,
   finalState,
+  firstFailureChecks,
   type InterventionReason,
   needsReviewRequest,
   needsTriage,
@@ -455,18 +456,20 @@ describe('lo relanzado, con la foto (change pr-check-rerun, decisiones 1 y 8)', 
 });
 
 describe('al reanudar la espera de las comprobaciones, el relanzamiento (change pr-check-rerun)', () => {
-  it('una relanzable que falla o se agota en su primer intento se relanza', () => {
+  // Desde pr-first-failure-triage (decisión 1), el seguimiento no relanza: da `firstFailure`, el hilo
+  // tría el fallo y `decidir` relanza.
+  it('una relanzable que falla o se agota en su primer intento va al triaje del primer fallo', () => {
     for (const conclusion of ['failure', 'timed_out']) {
       const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1, conclusion)] });
 
-      expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'rerun' });
+      expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'firstFailure' });
     }
   });
 
   it('con una determinista y una relanzable en su primer intento, se relanza', () => {
     const now = snapshot({ checks: [failedIn('lint', 1), failedIn('e2e', 1)] });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'rerun' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'firstFailure' });
   });
 
   it('se relanza sin esperar a las demás: con test roja, SonarCloud no llega nunca', () => {
@@ -474,7 +477,7 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
       checks: [passed('lint'), failedIn('test', 1), pending('SonarCloud Code Analysis')],
     });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'rerun' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'firstFailure' });
   });
 
   it('con su run aún en marcha, espera a que termine para relanzar', () => {
@@ -555,7 +558,7 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
     const at = (minute: number) =>
       snapshot({ checks: [passed('lint'), failedIn('e2e', 1)], observedAt: minute * MINUTE });
 
-    expect(afterChecksWait(push, at(29), TIMEOUT, RERUN, MARGIN).next).toBe('rerun');
+    expect(afterChecksWait(push, at(29), TIMEOUT, RERUN, MARGIN).next).toBe('firstFailure');
     expect(afterChecksWait(push, at(30), TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'timedOut' });
   });
 
@@ -576,6 +579,39 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
       push: { sha: HEAD, seenAt: 10 * MINUTE },
       next: 'waiting',
     });
+  });
+});
+
+describe('las comprobaciones del triaje del primer fallo (change pr-first-failure-triage, decisiones 2 y 4)', () => {
+  const now = snapshot({ checks: [failedIn('lint', 1), failedIn('test', 1), failedIn('e2e', 1)] });
+
+  it('nunca da el paso de relanzar: lo decide `decidir`', () => {
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN).next).not.toBe('rerun');
+  });
+
+  it('son las relanzables que fallan en su primer intento, con su run terminado', () => {
+    expect(firstFailureChecks(now, push, RERUN)).toEqual(['test', 'e2e']);
+  });
+
+  it('sin las que ya ha triado el primer triaje del push: no se vuelven a preguntar', () => {
+    const triaged: TrackedPush = {
+      ...push,
+      firstTriage: [
+        { name: 'test', verdict: { class: 'notApplicable', reason: 'probability', probability: 0.12 } },
+      ],
+    };
+
+    expect(firstFailureChecks(now, triaged, RERUN)).toEqual(['e2e']);
+  });
+
+  it('ni una con el run en marcha, una cancelada o una en su segundo intento', () => {
+    const checks = [
+      failedIn('test', 1, 'failure', false),
+      failedIn('e2e', 1, 'cancelled'),
+      failedIn('test', 2),
+    ];
+
+    expect(firstFailureChecks(snapshot({ checks }), push, RERUN)).toEqual([]);
   });
 });
 
@@ -643,7 +679,7 @@ describe('al reanudar la espera de las comprobaciones, las que no van a ejecutar
   it('una relanzable que falla en su primer intento se relanza primero, sin margen', () => {
     const now = quiet(10, [failedIn('test', 1), passed('e2e'), notStarted(SONAR)]);
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'rerun' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'firstFailure' });
   });
 
   it('con el relanzamiento pedido y el intento 1 aún a la vista, no hay margen', () => {

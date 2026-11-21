@@ -200,6 +200,11 @@ export const triageAnswerSchema = z.union([
   z.object({ kind: z.literal('rule') }),
   /** Una relanzable que ha fallado dos veces: la decide su regla, con el caso evidente si lo hay. */
   z.object({ kind: z.literal('failedTwice'), evidentCase: evidentCaseSchema.nullable() }),
+  /**
+   * El primer fallo de una relanzable con un caso evidente: no se pregunta, y se relanza (change
+   * pr-first-failure-triage, decisión 3).
+   */
+  z.object({ kind: z.literal('evident'), evidentCase: evidentCaseSchema }),
   modelAnswerSchema,
 ]);
 
@@ -258,6 +263,11 @@ export const verdictSchema = z.union([
     reason: z.literal('failedTwice'),
     evidentCase: evidentCaseSchema.nullable(),
   }),
+  z.object({
+    class: z.literal('needsJudgment'),
+    reason: z.literal('evident'),
+    evidentCase: evidentCaseSchema,
+  }),
   z.object({ class: triageClassSchema, reason: z.literal('probability'), probability: z.number() }),
   z.object({
     class: z.literal('needsJudgment'),
@@ -285,6 +295,23 @@ export const verdictSchema = z.union([
 export type Verdict = z.infer<typeof verdictSchema>;
 
 /**
+ * Qué ronda de triaje es (change pr-first-failure-triage, decisiones 1 y 2): la del primer fallo de
+ * una relanzable, antes de decidir si se relanza, o la final, antes del aviso del estado final.
+ */
+export const triageRoundKindSchema = z.enum(['firstFailure', 'final']);
+
+export type TriageRoundKind = z.infer<typeof triageRoundKindSchema>;
+
+/**
+ * Lo que respondió el triaje del primer fallo de cada relanzable en un push (change
+ * pr-first-failure-triage, decisión 4): su nombre y su veredicto. Lo guarda el push, así que un push
+ * nuevo empieza sin él.
+ */
+export const firstTriageSchema = z.array(z.object({ name: z.string(), verdict: verdictSchema }));
+
+export type FirstTriage = z.infer<typeof firstTriageSchema>;
+
+/**
  * La clase de un hallazgo (decisión 4): si lo decide la regla de las comprobaciones deterministas,
  * real; sin respuesta del modelo, exige criterio con su motivo; con una sola probabilidad (la de la
  * causa, o la de que se cumple la regla de una incidencia), por ella (`byProbability`), y con la
@@ -295,6 +322,9 @@ export function classify(finding: Finding, answer: TriageAnswer, threshold: numb
   if (answer.kind === 'rule') return { class: 'valid', reason: 'rule' };
   if (answer.kind === 'failedTwice') {
     return { class: 'valid', reason: 'failedTwice', evidentCase: answer.evidentCase };
+  }
+  if (answer.kind === 'evident') {
+    return { class: 'needsJudgment', reason: 'evident', evidentCase: answer.evidentCase };
   }
   if (answer.kind === 'scope') return byScope(finding, answer, threshold);
   if (answer.kind === 'fixedScope') return byFixedScope(finding, answer, threshold);
@@ -429,6 +459,9 @@ export function withinBudget(
  * Un comentario de un push anterior sin el código del último push alrededor de su línea tampoco se
  * pregunta, ni siquiera por el alcance: el modelo juzgaría con la misma seguridad sin ese contexto
  * (change pr-unresolved-threads, decisión 4). Va después del contexto y antes del tope.
+ *
+ * En la ronda del primer fallo (`round`), los hallazgos son solo las relanzables que fallan en su
+ * primer intento, y siguen otras reglas (`beforeRerun`; change pr-first-failure-triage, decisión 3).
  */
 export function withoutModel(
   findings: Finding[],
@@ -440,6 +473,7 @@ export function withoutModel(
     spentUsd,
     budget,
     estimate,
+    round = 'final',
   }: {
     /** Los nombres de las comprobaciones que decide la regla, tal como las exige la rama base. */
     ruleChecks: string[];
@@ -452,8 +486,11 @@ export function withoutModel(
     spentUsd: number;
     budget: TriageBudget;
     estimate: (finding: Finding) => number;
+    /** La ronda: la del primer fallo de una relanzable o, por defecto, la final. */
+    round?: TriageRoundKind;
   },
 ): (TriageAnswer | undefined)[] {
+  if (round === 'firstFailure') return beforeRerun(findings, { spentUsd, budget, estimate });
   const byRule = (finding: Finding) =>
     finding.source === 'check' && ruleChecks.includes(finding.name);
   const rerunnable = (finding: Finding): finding is CheckFinding =>
@@ -485,6 +522,37 @@ export function withoutModel(
     if (withoutScope(finding)) return { kind: 'noScope' };
     if (!hasContext(finding)) return { kind: 'noContext' };
     if (withoutCurrentCode(finding)) return { kind: 'noCurrentCode' };
+    if (overBudget.includes(finding)) return { kind: 'overBudget' };
+    return undefined;
+  });
+}
+
+/**
+ * El primer fallo de una relanzable, antes de decidir si se relanza (change pr-first-failure-triage,
+ * decisión 3), en este orden: con un caso evidente, sale con él, sin preguntar; sin contexto,
+ * `noContext`; si no cabe en lo que queda del tope, `overBudget`; y si no, `undefined`, para
+ * preguntar al modelo por la causa. Solo reservan tope las que se preguntan.
+ */
+function beforeRerun(
+  findings: Finding[],
+  {
+    spentUsd,
+    budget,
+    estimate,
+  }: { spentUsd: number; budget: TriageBudget; estimate: (finding: Finding) => number },
+): (TriageAnswer | undefined)[] {
+  const evident = (finding: Finding) =>
+    finding.source === 'check' ? evidentCase(finding) : null;
+  const { overBudget } = withinBudget(
+    findings.filter((finding) => evident(finding) === null && hasContext(finding)),
+    spentUsd,
+    budget,
+    estimate,
+  );
+  return findings.map((finding) => {
+    const evidentFound = evident(finding);
+    if (evidentFound !== null) return { kind: 'evident', evidentCase: evidentFound };
+    if (!hasContext(finding)) return { kind: 'noContext' };
     if (overBudget.includes(finding)) return { kind: 'overBudget' };
     return undefined;
   });
