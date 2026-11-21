@@ -67,11 +67,11 @@ function rows(text: string): string[] {
 }
 
 describe('el resumen del triaje (design.md, decisión 7)', () => {
-  it('dice que es del PR Babysitter, que no actúa, y de qué push, con su SHA corto', () => {
+  it('dice que es del PR Babysitter, que no arregla, y de qué push, con su SHA corto', () => {
     const text = triageSummary({ sha: SHA, findings: [] }, 0.8);
 
     expect(text.split('\n')[0]).toBe(
-      '**Triaje del PR Babysitter** (modo sombra: no actúa) · push `abc1234`',
+      '**Triaje del PR Babysitter** (modo sombra: no arregla) · push `abc1234`',
     );
   });
 
@@ -516,7 +516,7 @@ describe('lo relanzado (change pr-check-rerun, decisiones 1, 6 y 8)', () => {
 
     expect(text).not.toContain('| Hallazgo |');
     expect(text.split('\n')).toEqual([
-      '**Triaje del PR Babysitter** (modo sombra: no actúa) · push `abc1234`',
+      '**Triaje del PR Babysitter** (modo sombra: no arregla) · push `abc1234`',
       '',
       'La comprobación `test` se relanzó y pasó.',
       'La comprobación `e2e` se relanzó y pasó.',
@@ -533,6 +533,101 @@ describe('lo relanzado (change pr-check-rerun, decisiones 1, 6 y 8)', () => {
     );
 
     expect(text).not.toContain('se relanzó');
+  });
+});
+
+describe('la nota del primer triaje (change pr-first-failure-triage, decisión 8)', () => {
+  /** El resumen de un push en el que `e2e` se relanzó y pasó, con este primer triaje. */
+  const passedWith = (verdict: Verdict) =>
+    triageSummary(
+      { sha: SHA, findings: [], rerunPassed: ['e2e'], firstTriage: [{ name: 'e2e', verdict }] },
+      0.8,
+    );
+  const passedLine = (text: string) => text.split('\n').find((line) => line.includes('se relanzó'));
+
+  it.each([
+    ['no aplica', probability('notApplicable', 0.12), 'primer intento: p = 0,12 ≤ 0,20 · se capturaría'],
+    ['exige criterio por la probabilidad', probability('needsJudgment', 0.55), 'primer intento: p = 0,55, no llega al umbral'],
+    ['real', probability('valid', 0.93), 'primer intento: p = 0,93 ≥ 0,80'],
+    [
+      'caso evidente',
+      { class: 'needsJudgment', reason: 'evident', evidentCase: 'timeout' } satisfies Verdict,
+      'primer intento: caso evidente: timeout',
+    ],
+    [
+      'sin respuesta del modelo',
+      { class: 'needsJudgment', reason: 'modelUnavailable' } satisfies Verdict,
+      'primer intento: no se ha podido preguntar por la causa: el modelo de decisión no ha respondido',
+    ],
+    [
+      'fuera del tope',
+      { class: 'needsJudgment', reason: 'overBudget' } satisfies Verdict,
+      'primer intento: no se ha podido preguntar por la causa: no cabe en el tope de gasto de la PR',
+    ],
+    [
+      'sin contexto',
+      { class: 'needsJudgment', reason: 'noContext' } satisfies Verdict,
+      'primer intento: no se ha podido preguntar por la causa: no se ha podido reunir su contexto',
+    ],
+  ])('%s: en la línea «se relanzó y pasó»', (_, verdict, note) => {
+    expect(passedLine(passedWith(verdict))).toBe(`La comprobación \`e2e\` se relanzó y pasó · ${note}.`);
+  });
+
+  it('en el porqué de una fila real por regla, porque ha fallado dos veces', () => {
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [{ finding: e2e, verdict: { class: 'valid', reason: 'failedTwice', evidentCase: null } }],
+        firstTriage: [{ name: 'e2e', verdict: probability('notApplicable', 0.12) }],
+      },
+      0.8,
+    );
+
+    expect(rows(text)).toEqual([
+      '| Comprobación `e2e` | real | regla: ha fallado dos veces · primer intento: p = 0,12 ≤ 0,20 · se capturaría |',
+    ]);
+  });
+
+  it('en el porqué de una fila que exige criterio porque el relanzamiento no ha terminado', () => {
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [{ finding: e2e, verdict: { class: 'needsJudgment', reason: 'rerunUnfinished' } }],
+        firstTriage: [{ name: 'e2e', verdict: probability('notApplicable', 0.12) }],
+      },
+      0.8,
+    );
+
+    expect(rows(text)).toEqual([
+      '| Comprobación `e2e` | exige criterio | regla: el relanzamiento no ha terminado · primer intento: p = 0,12 ≤ 0,20 · se capturaría |',
+    ]);
+  });
+
+  it('sin nota en una relanzable que no se relanzó', () => {
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [{ finding: e2e, verdict: { class: 'needsJudgment', reason: 'notRerun' } }],
+        firstTriage: [{ name: 'e2e', verdict: probability('notApplicable', 0.12) }],
+      },
+      0.8,
+    );
+
+    expect(rows(text)).toEqual(['| Comprobación `e2e` | exige criterio | regla: no se ha podido relanzar |']);
+  });
+
+  it('sin primer triaje de esa comprobación, sin nota', () => {
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [],
+        rerunPassed: ['test', 'e2e'],
+        firstTriage: [{ name: 'e2e', verdict: probability('notApplicable', 0.12) }],
+      },
+      0.8,
+    );
+
+    expect(text).toContain('La comprobación `test` se relanzó y pasó.\n');
   });
 });
 

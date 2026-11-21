@@ -171,11 +171,12 @@ resumen.
 | *exige criterio* por la probabilidad | `primer intento: p = 0,55, no llega al umbral` |
 | caso evidente | `primer intento: caso evidente: timeout` |
 | sin respuesta | `primer intento: no se ha podido preguntar por la causa: <motivo>` |
+| *real* | `primer intento: p = 0,93 ≥ 0,80` |
 
 Va en la línea «se relanzó y pasó» o en el porqué de su fila (*real* por regla, *exige criterio* porque
-no ha terminado). *Real* no lleva nota: con *real* no se relanza (`MOO-179`), y entonces la fila es la
-del propio primer triaje. «Se capturaría» es una nota, no una clase: una comprobación exigida en rojo
-no puede ser *no aplica* (BQ8, D119).
+no ha terminado). *Real* solo lleva nota mientras `decidir` relanza siempre (`MOO-178`): desde
+`MOO-179` no se relanza, y la fila es la del propio primer triaje. «Se capturaría» es una nota, no una
+clase: una comprobación exigida en rojo no puede ser *no aplica* (BQ8, D119).
 
 La cabecera pasa de «modo sombra: no actúa» a «modo sombra: no arregla», como el glosario (*decide y
 registra, pero no arregla*): desde D119 el sistema relanza, y desde aquí lo decide con el triaje.

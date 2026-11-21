@@ -19,14 +19,14 @@
   nota de que D122 la matiza.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
-- [ ] 1.2 **(test en rojo)** El triaje del primer fallo y la nota del resumen (`design.md` decisiones
+- [x] 1.2 **(test en rojo)** El triaje del primer fallo y la nota del resumen (`design.md` decisiones
   3, 4 y 8):
   - **`core/triage.test.ts`:**
     - en la ronda del primer fallo, una relanzable con caso evidente sale `evident` con su caso, sin
       pregunta; sin contexto, `noContext`; fuera del tope, `overBudget`; y si no, va al modelo con la
       pregunta `cause`;
-    - una relanzable que ya está en `push.firstTriage` no se vuelve a preguntar en la ronda del primer
-      fallo;
+    - que una relanzable que ya está en `push.firstTriage` no se vuelva a preguntar lo decide la
+      selección de las comprobaciones de la ronda, en `tracking.ts`: se prueba en 1.5;
     - en la ronda final, las reglas de «ha fallado dos veces», «no ha terminado», «cancelada» y «no se
       ha podido relanzar» siguen como hoy.
   - **`core/triage-summary.test.ts`:**

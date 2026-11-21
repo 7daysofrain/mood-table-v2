@@ -785,6 +785,122 @@ describe('una comprobación relanzable, tras el relanzamiento (change pr-check-r
   it('una determinista sigue saliendo por su regla, aunque también sea relanzable', () => {
     expect(decide([rerunnable('lint', 2)], 0, ['lint'])).toEqual([{ kind: 'rule' }]);
   });
+
+  it('en la ronda final, explícita, las reglas del relanzamiento siguen como antes', () => {
+    const findings = [
+      rerunnable('e2e', 2),
+      rerunnable('test', 1),
+      rerunnable('e2e', undefined, { conclusion: null, context: { state: 'notProvided' }, unfinished: true }),
+      rerunnable('test', 1, { conclusion: 'cancelled' }),
+    ];
+
+    expect(
+      withoutModel(findings, {
+        ruleChecks: ['lint'],
+        sonarIssuesCheck: 'sonar-issues',
+        rerunChecks: ['test', 'e2e'],
+        description: 'Relanza una vez test y e2e.',
+        spentUsd: 0,
+        budget,
+        estimate: () => 400,
+        round: 'final',
+      }),
+    ).toEqual([
+      { kind: 'failedTwice', evidentCase: null },
+      { kind: 'notRerun' },
+      { kind: 'rerunUnfinished' },
+      { kind: 'cancelled' },
+    ]);
+  });
+});
+
+describe('el primer fallo de una relanzable (change pr-first-failure-triage, decisión 3)', () => {
+  const estimated: Finding[] = [];
+  /** El triaje de la ronda del primer fallo, con 400 tokens por pregunta. */
+  const firstFailure = (findings: Finding[], spentUsd = 0, capUsd = 0.001) =>
+    withoutModel(findings, {
+      ruleChecks: ['lint'],
+      sonarIssuesCheck: 'sonar-issues',
+      rerunChecks: ['test', 'e2e'],
+      description: 'Pregunta por la causa antes de relanzar.',
+      spentUsd,
+      budget: { capUsd, inputPricePerMTok: 1 },
+      estimate: (finding) => {
+        estimated.push(finding);
+        return 400;
+      },
+      round: 'firstFailure',
+    });
+  /** Una relanzable que falla en su primer intento, con el error de una aserción. */
+  const atFirst = (name: string, overrides: Partial<CheckFinding> = {}): CheckFinding => ({
+    ...(checkFinding(name) as CheckFinding),
+    attempt: 1,
+    ...overrides,
+  });
+
+  it('va al modelo con la pregunta de la causa', () => {
+    const e2e = atFirst('e2e');
+
+    expect(firstFailure([e2e])).toEqual([undefined]);
+    expect(questionFor(e2e)).toBe('cause');
+  });
+
+  it('un caso evidente sale con su caso, sin preguntar ni reservar tope', () => {
+    estimated.length = 0;
+    const timedOut = atFirst('test', { conclusion: 'timed_out' });
+
+    expect(firstFailure([timedOut])).toEqual([{ kind: 'evident', evidentCase: 'timeout' }]);
+    expect(estimated).toEqual([]);
+    expect(classify(timedOut, { kind: 'evident', evidentCase: 'timeout' }, THRESHOLD)).toEqual({
+      class: 'needsJudgment',
+      reason: 'evident',
+      evidentCase: 'timeout',
+    });
+  });
+
+  it('el caso evidente va antes que la regla de sin contexto', () => {
+    const timedOut = atFirst('test', { conclusion: 'timed_out', context: { state: 'unreadable' } });
+
+    expect(firstFailure([timedOut])).toEqual([{ kind: 'evident', evidentCase: 'timeout' }]);
+  });
+
+  it('sin contexto, noContext, sin reservar tope', () => {
+    estimated.length = 0;
+
+    expect(firstFailure([atFirst('e2e', { context: { state: 'unreadable' } })])).toEqual([
+      { kind: 'noContext' },
+    ]);
+    expect(estimated).toEqual([]);
+  });
+
+  it('fuera del tope, overBudget; reservan solo las que se preguntan', () => {
+    estimated.length = 0;
+    const test = atFirst('test');
+    const e2e = atFirst('e2e');
+
+    // Quedan 0,0006 $: caben 600 tokens, una pregunta de 400 y no dos.
+    expect(firstFailure([test, e2e], 0.0004)).toEqual([undefined, { kind: 'overBudget' }]);
+    expect(estimated).toEqual([test, e2e]);
+  });
+
+  it('con el tope ya agotado, ninguna llega al modelo', () => {
+    expect(firstFailure([atFirst('test')], 0.001)).toEqual([{ kind: 'overBudget' }]);
+  });
+
+  it('una respuesta se clasifica por la probabilidad, como cualquier otra', () => {
+    const e2e = atFirst('e2e');
+
+    expect(classify(e2e, { kind: 'answered', probability: 0.12 }, THRESHOLD)).toEqual({
+      class: 'notApplicable',
+      reason: 'probability',
+      probability: 0.12,
+    });
+    expect(classify(e2e, { kind: 'answered', probability: 0.93 }, THRESHOLD)).toEqual({
+      class: 'valid',
+      reason: 'probability',
+      probability: 0.93,
+    });
+  });
 });
 
 describe('el caso evidente del error del último intento (change pr-check-rerun, decisión 6)', () => {
