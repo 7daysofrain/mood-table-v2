@@ -26,6 +26,7 @@ describe('la configuración del entorno', () => {
         linearInboxIssueId: 'f2b9c3d4-0000-4000-8000-000000000086',
         pollIntervalMs: 60_000,
         trackingTimeoutMs: 30 * 60_000,
+        trackingNotRunMarginMs: 120_000,
         decisionModelBaseUrl: 'https://ollama.com',
         decisionModel: 'clef:27b',
         decisionModelApiKey: 'ollama-key',
@@ -82,6 +83,11 @@ describe('la configuración del entorno', () => {
   it('lee el tiempo de espera en minutos', () => {
     const result = loadConfig({ ...env, TRACKING_TIMEOUT_MINUTES: '5' });
     expect(result.ok && result.config.trackingTimeoutMs).toBe(5 * 60_000);
+  });
+
+  it('lee el margen de las comprobaciones que no van a ejecutarse en segundos (change pr-checks-not-run)', () => {
+    const result = loadConfig({ ...env, TRACKING_NOT_RUN_MARGIN_SECONDS: '60' });
+    expect(result.ok && result.config.trackingNotRunMarginMs).toBe(60_000);
   });
 
   it('lee la cadencia en segundos', () => {

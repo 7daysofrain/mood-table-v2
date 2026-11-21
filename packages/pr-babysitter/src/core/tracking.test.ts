@@ -18,11 +18,14 @@ import {
 
 const MINUTE = 60_000;
 const TIMEOUT = 30 * MINUTE;
+/** El margen de las que no van a ejecutarse (`TRACKING_NOT_RUN_MARGIN_SECONDS`). */
+const MARGIN = 2 * MINUTE;
 const HEAD = 'a1b2c3d';
 
 const passed = (name: string): Check => ({ name, status: 'passed', conclusion: 'success' });
 const failed = (name: string): Check => ({ name, status: 'failed', conclusion: 'failure' });
 const pending = (name: string): Check => ({ name, status: 'pending', conclusion: null });
+const notStarted = (name: string): Check => ({ name, status: 'notStarted', conclusion: null });
 /** Una de GitHub Actions que falla en un intento del run 42, terminado salvo que se diga. */
 const failedIn = (
   name: string,
@@ -72,6 +75,7 @@ describe('las comprobaciones', () => {
 
   it('no han terminado mientras alguna esté pendiente o sin empezar', () => {
     expect(checksFinished(snapshot({ checks: [passed('lint'), pending('e2e')] }))).toBe(false);
+    expect(checksFinished(snapshot({ checks: [failed('lint'), notStarted('e2e')] }))).toBe(false);
   });
 });
 
@@ -234,11 +238,11 @@ describe('al reanudar la espera de las comprobaciones', () => {
   it('sigue esperando si no han terminado y no se ha agotado el tiempo', () => {
     const now = snapshot({ checks: [pending('e2e')], observedAt: 29 * MINUTE });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'waiting' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'waiting' });
   });
 
   it('pasa a avisar cuando han terminado, y la revisión cuenta desde esta foto si pasan todas', () => {
-    expect(afterChecksWait(push, snapshot(), TIMEOUT, RERUN)).toEqual({
+    expect(afterChecksWait(push, snapshot(), TIMEOUT, RERUN, MARGIN)).toEqual({
       push: { ...push, reviewSince: 10 * MINUTE },
       next: 'checksFinished',
     });
@@ -247,19 +251,19 @@ describe('al reanudar la espera de las comprobaciones', () => {
   it('si alguna falla, pasa al estado final y la revisión no empieza a contar', () => {
     const now = snapshot({ checks: [passed('lint'), failed('e2e')] });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'checksFailed' });
   });
 
   it('se agota el tiempo a los 30 min desde la primera foto con ese SHA', () => {
     const now = snapshot({ checks: [pending('e2e')], observedAt: 30 * MINUTE });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'timedOut' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'timedOut' });
   });
 
   it('un SHA nuevo reinicia el tiempo desde la foto que lo trae', () => {
     const now = snapshot({ headSha: 'nuevo', checks: [pending('e2e')], observedAt: 40 * MINUTE });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({
       push: { sha: 'nuevo', seenAt: 40 * MINUTE },
       next: 'waiting',
     });
@@ -455,14 +459,14 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
     for (const conclusion of ['failure', 'timed_out']) {
       const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1, conclusion)] });
 
-      expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'rerun' });
+      expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'rerun' });
     }
   });
 
   it('con una determinista y una relanzable en su primer intento, se relanza', () => {
     const now = snapshot({ checks: [failedIn('lint', 1), failedIn('e2e', 1)] });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'rerun' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'rerun' });
   });
 
   it('se relanza sin esperar a las demás: con test roja, SonarCloud no llega nunca', () => {
@@ -470,7 +474,7 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
       checks: [passed('lint'), failedIn('test', 1), pending('SonarCloud Code Analysis')],
     });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'rerun' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'rerun' });
   });
 
   it('con su run aún en marcha, espera a que termine para relanzar', () => {
@@ -481,7 +485,7 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
       // Las exigidas han terminado, pero un job no exigido del run sigue corriendo.
       [passed('lint'), running, passed('e2e')],
     ]) {
-      expect(afterChecksWait(push, snapshot({ checks }), TIMEOUT, RERUN)).toEqual({
+      expect(afterChecksWait(push, snapshot({ checks }), TIMEOUT, RERUN, MARGIN)).toEqual({
         push,
         next: 'waiting',
       });
@@ -491,47 +495,47 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
   it('no se relanza una cancelada', () => {
     const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1, 'cancelled')] });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'checksFailed' });
   });
 
   it('no se relanza una ya relanzada, a mano o por el sistema: su intento es 2 o más', () => {
     for (const attempt of [2, 3]) {
       const now = snapshot({ checks: [passed('lint'), failedIn('test', attempt)] });
 
-      expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+      expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'checksFailed' });
     }
   });
 
   it('no se relanza si solo falla una que no es relanzable', () => {
     const now = snapshot({ checks: [failedIn('lint', 1), passed('e2e')] });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'checksFailed' });
   });
 
   it('no se relanza una sin intento, porque su job no se ha podido leer', () => {
     const now = snapshot({ checks: [passed('lint'), failed('e2e')] });
 
-    expect(afterChecksWait(push, now, TIMEOUT, RERUN)).toEqual({ push, next: 'checksFailed' });
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'checksFailed' });
   });
 
   it('con la lista de relanzables vacía, no se relanza nada', () => {
     const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1)] });
 
-    expect(afterChecksWait(push, now, TIMEOUT, [])).toEqual({ push, next: 'checksFailed' });
+    expect(afterChecksWait(push, now, TIMEOUT, [], MARGIN)).toEqual({ push, next: 'checksFailed' });
   });
 
   it('con el relanzamiento pedido y el intento 1 aún a la vista, sigue esperando sin volver a pedirlo', () => {
     const rerun = { ...push, rerunSince: 5 * MINUTE };
     const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1)] });
 
-    expect(afterChecksWait(rerun, now, TIMEOUT, RERUN)).toEqual({ push: rerun, next: 'waiting' });
+    expect(afterChecksWait(rerun, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push: rerun, next: 'waiting' });
   });
 
   it('con el relanzamiento pedido, el intento 2 que vuelve a fallar pasa al estado final', () => {
     const rerun = { ...push, rerunSince: 5 * MINUTE };
     const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 2)] });
 
-    expect(afterChecksWait(rerun, now, TIMEOUT, RERUN)).toEqual({
+    expect(afterChecksWait(rerun, now, TIMEOUT, RERUN, MARGIN)).toEqual({
       push: rerun,
       next: 'checksFailed',
     });
@@ -541,7 +545,7 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
     const rejected = { ...push, rerunRejected: ['e2e'] };
     const now = snapshot({ checks: [passed('lint'), failedIn('e2e', 1)] });
 
-    expect(afterChecksWait(rejected, now, TIMEOUT, RERUN)).toEqual({
+    expect(afterChecksWait(rejected, now, TIMEOUT, RERUN, MARGIN)).toEqual({
       push: rejected,
       next: 'checksFailed',
     });
@@ -551,8 +555,8 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
     const at = (minute: number) =>
       snapshot({ checks: [passed('lint'), failedIn('e2e', 1)], observedAt: minute * MINUTE });
 
-    expect(afterChecksWait(push, at(29), TIMEOUT, RERUN).next).toBe('rerun');
-    expect(afterChecksWait(push, at(30), TIMEOUT, RERUN)).toEqual({ push, next: 'timedOut' });
+    expect(afterChecksWait(push, at(29), TIMEOUT, RERUN, MARGIN).next).toBe('rerun');
+    expect(afterChecksWait(push, at(30), TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'timedOut' });
   });
 
   it('con el relanzamiento pedido, el tiempo cuenta desde él', () => {
@@ -560,15 +564,15 @@ describe('al reanudar la espera de las comprobaciones, el relanzamiento (change 
     const at = (minute: number) =>
       snapshot({ checks: [passed('lint'), pending('e2e')], observedAt: minute * MINUTE });
 
-    expect(afterChecksWait(rerun, at(49), TIMEOUT, RERUN).next).toBe('waiting');
-    expect(afterChecksWait(rerun, at(50), TIMEOUT, RERUN).next).toBe('timedOut');
+    expect(afterChecksWait(rerun, at(49), TIMEOUT, RERUN, MARGIN).next).toBe('waiting');
+    expect(afterChecksWait(rerun, at(50), TIMEOUT, RERUN, MARGIN).next).toBe('timedOut');
   });
 
   it('un push nuevo borra el relanzamiento del anterior', () => {
     const previous = { sha: 'push-anterior', seenAt: 0, rerunSince: 5 * MINUTE };
     const now = snapshot({ checks: [pending('e2e')] });
 
-    expect(afterChecksWait(previous, now, TIMEOUT, RERUN)).toEqual({
+    expect(afterChecksWait(previous, now, TIMEOUT, RERUN, MARGIN)).toEqual({
       push: { sha: HEAD, seenAt: 10 * MINUTE },
       next: 'waiting',
     });
@@ -584,6 +588,148 @@ describe('el estado final con el relanzamiento rechazado', () => {
       reasons: [
         { kind: 'checksFailed', checks: ['e2e'] },
         { kind: 'rerunRejected', checks: ['e2e'] },
+      ],
+    });
+  });
+});
+
+const SONAR = 'SonarCloud Code Analysis';
+
+describe('al reanudar la espera de las comprobaciones, las que no van a ejecutarse (change pr-checks-not-run)', () => {
+  /** La #154: `test` falla, `sonar-issues` saltada, `e2e` pasa y SonarCloud sin check run. */
+  const quiet = (minute: number, checks: Check[] = [failed('test'), passed('e2e'), notStarted(SONAR)]) =>
+    snapshot({ checks, review: null, observedAt: minute * MINUTE });
+  const quietFrom = (minute: number): TrackedPush => ({ ...push, quietSince: minute * MINUTE });
+
+  it('la primera foto quieta guarda desde cuándo y sigue esperando', () => {
+    expect(afterChecksWait(push, quiet(10), TIMEOUT, RERUN, MARGIN)).toEqual({
+      push: quietFrom(10),
+      next: 'waiting',
+    });
+  });
+
+  it('antes de los 2 minutos sigue esperando', () => {
+    expect(afterChecksWait(quietFrom(10), quiet(11.9), TIMEOUT, RERUN, MARGIN)).toEqual({
+      push: quietFrom(10),
+      next: 'waiting',
+    });
+  });
+
+  it('a los 2 minutos justos, pasa al estado final como si hubieran terminado', () => {
+    expect(afterChecksWait(quietFrom(10), quiet(12), TIMEOUT, RERUN, MARGIN)).toEqual({
+      push: quietFrom(10),
+      next: 'checksFailed',
+    });
+  });
+
+  it('con una en cola o en curso no está quieta, y si lo estaba, el margen se borra', () => {
+    const running = quiet(11, [failed('test'), pending('e2e'), notStarted(SONAR)]);
+
+    expect(afterChecksWait(push, running, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'waiting' });
+    expect(afterChecksWait(quietFrom(10), running, TIMEOUT, RERUN, MARGIN)).toEqual({
+      push,
+      next: 'waiting',
+    });
+  });
+
+  it('al quedar quieta otra vez, el margen vuelve a empezar', () => {
+    const again = afterChecksWait(push, quiet(13), TIMEOUT, RERUN, MARGIN);
+
+    expect(again).toEqual({ push: quietFrom(13), next: 'waiting' });
+    expect(afterChecksWait(again.push, quiet(14), TIMEOUT, RERUN, MARGIN).next).toBe('waiting');
+    expect(afterChecksWait(again.push, quiet(15), TIMEOUT, RERUN, MARGIN).next).toBe('checksFailed');
+  });
+
+  it('una relanzable que falla en su primer intento se relanza primero, sin margen', () => {
+    const now = quiet(10, [failedIn('test', 1), passed('e2e'), notStarted(SONAR)]);
+
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'rerun' });
+  });
+
+  it('con el relanzamiento pedido y el intento 1 aún a la vista, no hay margen', () => {
+    const rerun = { ...push, rerunSince: 8 * MINUTE };
+    const now = quiet(10, [failedIn('test', 1), passed('e2e'), notStarted(SONAR)]);
+
+    expect(afterChecksWait(rerun, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push: rerun, next: 'waiting' });
+  });
+
+  it('si el relanzamiento pasa y queda una sin empezar sin ningún fallo, se espera hasta el plazo', () => {
+    const rerun = { ...push, rerunSince: 8 * MINUTE };
+    const at = (minute: number) => quiet(minute, [passed('test'), passed('e2e'), notStarted(SONAR)]);
+
+    expect(afterChecksWait(rerun, at(12), TIMEOUT, RERUN, MARGIN)).toEqual({ push: rerun, next: 'waiting' });
+    expect(afterChecksWait(rerun, at(37), TIMEOUT, RERUN, MARGIN).next).toBe('waiting');
+    expect(afterChecksWait(rerun, at(38), TIMEOUT, RERUN, MARGIN).next).toBe('timedOut');
+  });
+
+  it('si el relanzamiento vuelve a fallar, el margen empieza entonces', () => {
+    const rerun = { ...push, rerunSince: 8 * MINUTE };
+    const now = quiet(12, [failedIn('test', 2), passed('e2e'), notStarted(SONAR)]);
+
+    expect(afterChecksWait(rerun, now, TIMEOUT, RERUN, MARGIN)).toEqual({
+      push: { ...rerun, quietSince: 12 * MINUTE },
+      next: 'waiting',
+    });
+  });
+
+  it('una cancelada cuenta como fallada y también lleva al margen', () => {
+    const checks = [failedIn('e2e', 1, 'cancelled'), passed('test'), notStarted(SONAR)];
+
+    expect(afterChecksWait(push, quiet(10, checks), TIMEOUT, RERUN, MARGIN)).toEqual({
+      push: quietFrom(10),
+      next: 'waiting',
+    });
+    expect(afterChecksWait(quietFrom(10), quiet(12, checks), TIMEOUT, RERUN, MARGIN).next).toBe(
+      'checksFailed',
+    );
+  });
+
+  it('sin ninguna sin empezar, una fallada sin nada pendiente pasa al estado final en la misma foto', () => {
+    const now = quiet(10, [failed('test'), passed('e2e'), passed(SONAR)]);
+
+    expect(afterChecksWait(push, now, TIMEOUT, RERUN, MARGIN)).toEqual({ push, next: 'checksFailed' });
+  });
+
+  it('un push nuevo no lleva el margen del anterior', () => {
+    const previous = { sha: 'push-anterior', seenAt: 0, quietSince: 5 * MINUTE };
+
+    expect(afterChecksWait(previous, quiet(10), TIMEOUT, RERUN, MARGIN)).toEqual({
+      push: { sha: HEAD, seenAt: 10 * MINUTE, quietSince: 10 * MINUTE },
+      next: 'waiting',
+    });
+  });
+});
+
+describe('el estado final con las que no van a ejecutarse (change pr-checks-not-run)', () => {
+  it('con una fallada y nada pendiente, las sin empezar no han llegado a ejecutarse', () => {
+    const checks = [failed('test'), passed('e2e'), notStarted(SONAR)];
+
+    expect(finalState(snapshot({ checks, review: null }), push)).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['test'] },
+        { kind: 'checksNotRun', checks: [SONAR] },
+      ],
+    });
+  });
+
+  it('al vencer el plazo sin fallo, una sin empezar sigue sin terminar', () => {
+    const checks = [passed('test'), passed('e2e'), notStarted(SONAR)];
+
+    expect(finalState(snapshot({ checks, review: null }), push)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksUnfinished', checks: [SONAR] }],
+    });
+  });
+
+  it('al vencer el plazo con una fallada y otra en marcha, las sin empezar siguen sin terminar', () => {
+    const checks = [failed('test'), pending('e2e'), notStarted(SONAR)];
+
+    expect(finalState(snapshot({ checks, review: null }), push)).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['test'] },
+        { kind: 'checksUnfinished', checks: ['e2e', SONAR] },
       ],
     });
   });

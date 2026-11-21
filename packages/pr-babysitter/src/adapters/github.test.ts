@@ -10,7 +10,7 @@
  * - `check-runs-failed.json` (26-oct): los de un push de la #69 en el que falla `sonar-issues`.
  * - `check-runs-in-progress.json`: **derivado a mano** del anterior, porque un push recién hecho no
  *   se puede grabar a posteriori: `e2e` en marcha, `lint` neutral, `sonar-issues` saltada y sin el
- *   *check run* de `SonarCloud Code Analysis`.
+ *   *check run* de `SonarCloud Code Analysis`. Un test lo cambia para poner `e2e` en cola.
  * - `check-runs-116.json`, `annotations-116-e2e.json`, `check-runs-117.json` y
  *   `job-logs-112-e2e.txt` (14-nov): las comprobaciones que fallan en la #116, la #117 y la #112
  *   (detalle en `check-context.test.ts`).
@@ -148,16 +148,28 @@ describe('las comprobaciones', () => {
     expect(checks.filter((check) => check.status === 'passed')).toHaveLength(5);
   });
 
-  it('neutra y saltada pasan; en marcha o sin check run, no ha terminado', async () => {
+  it('neutra y saltada pasan; en marcha, pendiente; sin check run, no ha empezado', async () => {
     const body = await fixture('check-runs-in-progress.json');
     const { fetch } = fakeFetch(() => json(body));
 
     await expect(reader(fetch).checks(FAILED_PUSH, REQUIRED_CHECKS)).resolves.toEqual([
       { name: 'lint', status: 'passed', conclusion: 'neutral' },
       { name: 'test', status: 'passed', conclusion: 'success' },
-      { name: 'SonarCloud Code Analysis', status: 'pending', conclusion: null },
+      { name: 'SonarCloud Code Analysis', status: 'notStarted', conclusion: null },
       { name: 'typecheck', status: 'passed', conclusion: 'success' },
       { name: 'sonar-issues', status: 'passed', conclusion: 'skipped' },
+      { name: 'e2e', status: 'pending', conclusion: null },
+    ]);
+  });
+
+  it('una con su check run en cola está pendiente, no sin empezar (change pr-checks-not-run)', async () => {
+    const body = JSON.parse(await fixture('check-runs-in-progress.json')) as {
+      check_runs: { name: string; status: string }[];
+    };
+    for (const run of body.check_runs) if (run.name === 'e2e') run.status = 'queued';
+    const { fetch } = fakeFetch(() => json(JSON.stringify(body)));
+
+    await expect(reader(fetch).checks(FAILED_PUSH, ['e2e'])).resolves.toEqual([
       { name: 'e2e', status: 'pending', conclusion: null },
     ]);
   });

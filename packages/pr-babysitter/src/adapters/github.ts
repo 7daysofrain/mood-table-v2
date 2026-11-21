@@ -381,7 +381,10 @@ export function createGitHubReader({
       return Promise.all(
         required.map(async (name): Promise<Check> => {
           const run = latest(runs, name);
-          if (run?.status !== 'completed') return { name, status: 'pending', conclusion: null };
+          // Sin check run no ha empezado; en cola o en curso, pendiente (change pr-checks-not-run,
+          // decisión 1). GitHub crea el check run en cola en cuanto encola el job.
+          if (!run) return { name, status: 'notStarted', conclusion: null };
+          if (run.status !== 'completed') return { name, status: 'pending', conclusion: null };
           const { conclusion } = run;
           if (PASSING_CONCLUSIONS.has(conclusion ?? '')) {
             return { name, status: 'passed', conclusion };

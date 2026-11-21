@@ -17,6 +17,11 @@ import type { Check, PullRequestSnapshot } from './pull-request.ts';
  * `rerunSince` es cuándo lo pidió, y desde ahí cuenta la espera de las comprobaciones, y
  * `rerunNames` cuáles fallaban en el run que relanzó (decisión 8); si GitHub lo rechazó,
  * `rerunRejected` dice cuáles no ha podido relanzar. Un push nuevo no lleva ninguno.
+ *
+ * `quietSince` es la hora de la primera foto en la que una comprobación ha fallado, no queda nada que
+ * relanzar y ninguna está en cola ni en curso; desde ahí cuenta el margen de las que no van a
+ * ejecutarse (change pr-checks-not-run, decisión 2). Se borra si algo vuelve a ponerse en marcha, y
+ * un push nuevo no lo lleva.
  */
 export interface TrackedPush {
   sha: string;
@@ -25,6 +30,7 @@ export interface TrackedPush {
   rerunSince?: number;
   rerunNames?: string[];
   rerunRejected?: string[];
+  quietSince?: number;
 }
 
 /**
@@ -37,6 +43,7 @@ export type FindingPushes = 'last' | 'earlier' | 'both';
 export type InterventionReason =
   | { kind: 'checksFailed'; checks: string[] }
   | { kind: 'checksUnfinished'; checks: string[] }
+  | { kind: 'checksNotRun'; checks: string[] }
   | { kind: 'reviewFindings'; pushes: FindingPushes }
   | { kind: 'reviewUnfinished' }
   | { kind: 'rerunRejected'; checks: string[] };
@@ -56,9 +63,14 @@ export type ChecksStep = 'waiting' | 'checksFinished' | 'checksFailed' | 'timedO
 /** Qué toca al reanudar la espera del revisor. */
 export type ReviewStep = 'waiting' | 'finished' | 'timedOut' | 'newPush';
 
-/** Han terminado cuando ninguna exigida está pendiente, pasen o fallen. */
+/**
+ * Han terminado cuando ninguna exigida está pendiente ni sin empezar, pasen o fallen. Cuándo deja de
+ * esperarse a una sin empezar lo decide `afterChecksWait` (change pr-checks-not-run, decisión 2).
+ */
 export function checksFinished(snapshot: PullRequestSnapshot): boolean {
-  return snapshot.checks.every((check) => check.status !== 'pending');
+  return snapshot.checks.every(
+    (check) => check.status === 'passed' || check.status === 'failed',
+  );
 }
 
 /** Han pasado cuando ninguna exigida está pendiente ni ha fallado. */
@@ -88,6 +100,10 @@ export function reviewFinished({ review, headSha }: PullRequestSnapshot): boolea
  * ha terminado. Que la revisión no ha terminado solo se dice si se esperaba, es decir, si las
  * comprobaciones pasaron (`reviewSince`; change pr-review-request, decisión 4).
  *
+ * Con una comprobación que falla y ninguna en cola ni en curso, las que no tienen *check run* no han
+ * llegado a ejecutarse (`checksNotRun`), en vez de no haber terminado (change pr-checks-not-run,
+ * decisión 4): así se llega aquí tras el margen, o al vencer el plazo en ese mismo caso.
+ *
  * Los hallazgos del revisor son sus hilos sin resolver, de cualquier push, haya terminado o no la
  * revisión del último (change pr-unresolved-threads, decisión 2): con las comprobaciones en verde
  * solo se llega aquí con esa revisión terminada, y si falla una, los de un push anterior ya cuentan.
@@ -96,10 +112,13 @@ export function finalState(snapshot: PullRequestSnapshot, push: TrackedPush): Fi
   const named = (status: string) =>
     snapshot.checks.filter((check) => check.status === status).map((check) => check.name);
   const failed = named('failed');
-  const unfinished = named('pending');
+  const pending = named('pending');
+  const notRun = failed.length > 0 && pending.length === 0 ? named('notStarted') : [];
+  const unfinished = notRun.length > 0 ? pending : [...pending, ...named('notStarted')];
   const reasons: InterventionReason[] = [];
   if (failed.length > 0) reasons.push({ kind: 'checksFailed', checks: failed });
   if (push.rerunRejected) reasons.push({ kind: 'rerunRejected', checks: push.rerunRejected });
+  if (notRun.length > 0) reasons.push({ kind: 'checksNotRun', checks: notRun });
   if (unfinished.length > 0) reasons.push({ kind: 'checksUnfinished', checks: unfinished });
   const pushes = findingPushes(snapshot);
   if (pushes !== null) reasons.push({ kind: 'reviewFindings', pushes });
@@ -210,12 +229,19 @@ export function checksToRerun(
  * termina su run, sin esperar a las demás, y dentro de los 30 min del push (change pr-check-rerun,
  * decisiones 3 a 5). Con el relanzamiento pedido, el tiempo cuenta desde él, y se
  * sigue esperando mientras la foto aún traiga el primer intento: GitHub tarda en crear el segundo.
+ *
+ * Si una ha fallado, no queda nada que relanzar y ninguna está en cola ni en curso, pero alguna no
+ * tiene *check run*, la foto está quieta: se apunta desde cuándo (`quietSince`) y, pasado el margen
+ * (`notRunMarginMs`), se da el estado final sin esperar al plazo, porque las que faltan no van a
+ * ejecutarse (change pr-checks-not-run, decisión 2). Si algo vuelve a ponerse en marcha, el margen
+ * se borra y empieza de nuevo la próxima vez que esté quieta.
  */
 export function afterChecksWait(
   current: TrackedPush,
   snapshot: PullRequestSnapshot,
   timeoutMs: number,
   rerunChecks: string[],
+  notRunMarginMs: number,
 ): { push: TrackedPush; next: ChecksStep } {
   const push = pushOf(current, snapshot);
   const since = push.rerunSince ?? push.seenAt;
@@ -236,8 +262,35 @@ export function afterChecksWait(
     }
     if (toRerun.length === 0) return { push, next: 'checksFailed' };
   }
-  if (timedOut(since, snapshot, timeoutMs)) return { push, next: 'timedOut' };
-  return { push, next: 'waiting' };
+  if (isQuiet(snapshot, toRerun)) {
+    const quiet = { ...push, quietSince: push.quietSince ?? snapshot.observedAt };
+    if (snapshot.observedAt - quiet.quietSince >= notRunMarginMs) {
+      return { push: quiet, next: 'checksFailed' };
+    }
+    return { push: quiet, next: timedOut(since, snapshot, timeoutMs) ? 'timedOut' : 'waiting' };
+  }
+  const next = timedOut(since, snapshot, timeoutMs) ? 'timedOut' : 'waiting';
+  return { push: withoutQuiet(push), next };
+}
+
+/** El push sin la marca de quieta: algo se ha vuelto a poner en marcha. */
+function withoutQuiet(push: TrackedPush): TrackedPush {
+  if (push.quietSince === undefined) return push;
+  const moving = { ...push };
+  delete moving.quietSince;
+  return moving;
+}
+
+/**
+ * Si la foto está quieta (change pr-checks-not-run, decisión 2): una ha fallado, no queda nada que
+ * relanzar (`toRerun`) y ninguna está en cola ni en curso. Una cancelada cuenta como fallada.
+ */
+function isQuiet(snapshot: PullRequestSnapshot, toRerun: Check[]): boolean {
+  return (
+    toRerun.length === 0 &&
+    snapshot.checks.some((check) => check.status === 'failed') &&
+    snapshot.checks.every((check) => check.status !== 'pending')
+  );
 }
 
 /**

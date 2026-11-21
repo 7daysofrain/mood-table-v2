@@ -103,6 +103,11 @@ const TrackingState = new StateSchema({
       rerunNames: z.array(z.string()).optional(),
       /** Las relanzables que GitHub no ha dejado relanzar (change pr-check-rerun, decisión 5). */
       rerunRejected: z.array(z.string()).optional(),
+      /**
+       * Desde cuándo la ve quieta: una falla y nada en cola ni en curso (change pr-checks-not-run,
+       * decisión 2).
+       */
+      quietSince: z.number().optional(),
     })
     .optional(),
   /**
@@ -179,6 +184,11 @@ export interface TrackingOptions {
    * se relanza nada.
    */
   rerunChecks: string[];
+  /**
+   * Cuánto se espera, con una comprobación que falla y nada en cola ni en curso, a las que no tienen
+   * *check run* antes de darlas por no ejecutadas (change pr-checks-not-run, decisión 3).
+   */
+  notRunMarginMs: number;
   /**
    * Una línea por petición de revisión, relanzamiento o resumen del triaje que GitHub rechaza, o por
    * hallazgo sin respuesta del modelo, para el log de errores.
@@ -357,7 +367,7 @@ function waitFor(waitingFor: TrackingWait['waitingFor']) {
 export function createTrackingGraph(
   { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns }: TrackingPorts,
   checkpointer: BaseCheckpointSaver,
-  { timeoutMs, rerunChecks, log, triage }: TrackingOptions,
+  { timeoutMs, rerunChecks, notRunMarginMs, log, triage }: TrackingOptions,
 ) {
   const avisarSeguimiento: GraphNode<typeof TrackingState> = async ({ snapshot }) => {
     await notifier.notify(trackingNotice(snapshot));
@@ -376,7 +386,13 @@ export function createTrackingGraph(
     Nodes: AfterChecks;
   }> = (state) => {
     const snapshot = waitFor('checks');
-    const { push, next } = afterChecksWait(pushIn(state), snapshot, timeoutMs, rerunChecks);
+    const { push, next } = afterChecksWait(
+      pushIn(state),
+      snapshot,
+      timeoutMs,
+      rerunChecks,
+      notRunMarginMs,
+    );
     const goto = viaTriage(AFTER_CHECKS[next], snapshot, push, rerunChecks);
     return new Command({ update: { snapshot, push }, goto });
   };

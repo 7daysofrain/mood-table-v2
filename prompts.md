@@ -2564,6 +2564,45 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Los tests del grafo que usaban `e2e` como la comprobación que se pregunta al modelo pasaron a `build`, que no es determinista ni relanzable: con la regla nueva, `e2e` ya no llega al modelo.*
 - *El paso 2.2 dejó el grafo pasando la lista de relanzables vacía al triaje, para que cada commit quedara en verde; el 2.4 pasa la real.*
 
+**Prompt 3:**
+
+> tiene un hallazgo de code, lo miras?
+
+*Claude Code (`claude-opus-5-5`, 20-nov), desde la sesión de `MOO-164`. Codex comentó un P2 en la #173: GitHub relanza todos los* jobs *fallidos del run, así que un `lint` puede relanzarse de rebote, y si no terminaba a tiempo, el resumen lo daba como* real *por la regla determinista sin resultado de ese intento. La IA lo comprobó contra el código y la spec, propuso limitar a las relanzables lo que no ha terminado tras relanzarse, como dice el requisito, y el usuario aceptó. Lo arregló una sesión aparte en el worktree de la rama, con su test.*
+
+*Ajustes:*
+- *El triaje del PR Babysitter no había corrido sobre ese comentario. El contenedor se había construido desde la rama de `MOO-171` antes de que esta incorporara `main`, y le faltaba el triaje de los hilos sin resolver (D120). Se reconstruyó desde `main`, y el resumen salió en la vuelta siguiente, con el comentario en* exige criterio.
+
+#### 6.97 Avisar sin esperar a las comprobaciones que no van a ejecutarse (`MOO-164`)
+
+**Prompt 1:**
+
+> quiero que cuando falle una PR en cualquiera de sus pasos como no se van ha ejecutar los siguientes, envie inemdiatamente ek mensaje de necesita intervencion en vez de esperar los 30 minutos
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en `/refine-story MOO-164`. La captura decía que el triaje tardaba 30 min cuando fallaba `test`. La IA la clasificó como* Feature *y no como* Bug*: el código cumplía la spec, que cuenta como no terminada una comprobación exigida que no ha empezado, y lo que cambiaba era el requisito. También vio que lo lento no era el triaje sino la espera: el resumen y el aviso esperaban a* SonarCloud Code Analysis*, que no llega si fallan los tests. El usuario fijó qué quería. Al refinar eligió esperar a las que siguen en curso, para que el aviso traiga todos los fallos del push, y dejar el margen como número en la spec.*
+
+**Prompt 2:**
+
+> por favor las decisiones triviales como esta tomalas tu, solo necesito decidir en decisiones de diseño relevantes y con posibilidades abiertas
+
+*Claude Code (`claude-opus-5-5`, 20-nov), en `/opsx:explore`. La IA midió los* check runs *de 7 PR: GitHub distingue una comprobación en cola de una sin* check run*, y `sonar-issues` empieza 2-3 s después de `test`. Preguntó desde cuándo contar el margen, y el usuario eligió el reloj del sistema y no el `completed_at` de GitHub. Luego preguntó cuánto debía durar, y el usuario pidió que decidiera ella lo evidente. La IA lo guardó en su memoria y fijó el resto con su porqué: 2 min, una cancelada cuenta como fallada, y el delta toca un solo requisito para no chocar con el change `pr-check-rerun`, aún sin archivar.*
+
+**Prompt 3:**
+
+> /opsx:propose
+
+*Claude Code (`claude-opus-5-5`, 20-nov). Resultado: el change `pr-checks-not-run`, con un requisito modificado, cinco decisiones (D121 y `TRACKING_NOT_RUN_MARGIN_SECONDS`) y una sola tarea, `MOO-177`, que empieza al integrar la #173.*
+
+**Prompt 4:**
+
+> /opsx:apply
+
+*Claude Code (`claude-opus-5-5`, 20-nov). La IA hizo el umbral y la D121 y se paró hasta que se integró la #173, que tocaba los mismos ficheros. Luego implementó un commit por paso, con los tests en rojo antes de cada implementación: el estado `notStarted` en el adaptador, `quietSince` y el margen en `afterChecksWait`, el motivo `checksNotRun` y su texto, y los escenarios de la spec en el grafo, entre ellos la #154.*
+
+*Ajustes:*
+- *En el paso 1.5, el margen ya entraba como opción del grafo y del driver, pero `main.ts` y `studio.ts` no lo pasaban hasta el 1.7: en ese commit, el* typecheck *fallaba en esos dos ficheros.*
+- *Los escenarios del grafo del paso 1.6 pasaron desde el principio, porque el 1.5 ya guardaba `quietSince` en el estado. La IA comprobó que, sin ese campo, fallan tres, y lo dejó dicho en el commit.*
+
 ---
 
 ### 7. Pull Requests

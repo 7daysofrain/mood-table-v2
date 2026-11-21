@@ -89,6 +89,7 @@ const driver = createDriver({
   policy: { maintainer: config.githubMaintainer, baseBranch: BASE_BRANCH },
   timeoutMs: config.trackingTimeoutMs,
   rerunChecks: config.rerunChecks,
+  notRunMarginMs: config.trackingNotRunMarginMs,
   log,
 });
 
