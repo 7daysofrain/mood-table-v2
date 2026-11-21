@@ -2628,6 +2628,43 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *El design decía que una relanzable* real *no lleva nota en el resumen, pero la prueba a mano de `MOO-178` la esperaba: mientras `decidir` relance siempre, una* real *también se relanza. La IA añadió la fila al design.*
 - *`decide()` iba a recibir el primer triaje desde `MOO-178`, pero el lint no deja un parámetro sin usar: lo recibe en `MOO-179`, y el grafo prueba mientras tanto que relanza sea cual sea el veredicto.*
 
+
+#### 6.99 Montar el hardware definitivo: tira de 153 LEDs y fuente Mean Well (sin tarea)
+
+**Prompt 1** (desde el móvil, dictando por voz, con fotos de la tira, la fuente y el polímetro):
+
+> Voy a contectar ya el setup de hardware definitivo y voy a necesitar tu ayuda
+
+*Claude Code (`claude-opus-5-5`, 21-nov). La IA guio el montaje paso a paso: la Pi con su propia fuente y no con la de la tira, la LRS-100-5 con margen para una segunda tira, la red de 230 V lo último y sin explicar cómo cablearla. Propuso alimentar por un solo extremo y declarar 8 A en lugar de los 18 de la etiqueta, para validar antes el hardware (D123).*
+
+**Prompt 2:**
+
+> Por favor, en este chat intenta hablarme conciso y las cosas de una en una, porque estoy en el móvil y te estoy dictando los textos por voz, así que necesito aquí simplemente si no, adelante, o me parece bien, o preguntas concisas, ¿vale? Pero no textos largos porque no tengo capacidad de leerlos. Luego ya cuando nos pongamos ya con el tema en el ordenador, seguimos como siempre.
+
+*La IA lo guardó en su memoria y pasó a respuestas de una línea. Con fotos de las flechas vio que los datos entraban por el extremo `DO`, donde la tira trae su conector, y que el `Din` venía cortado sin conector: el usuario compró un conector de clip. Con el polímetro en continuidad, guiado medida a medida, el primer rollo pitaba en tramos cortos de `GND` y no de punta a punta.*
+
+**Prompt 3:**
+
+> Vamos a hacer, como tengo una segunda tira, vamos a probar la segunda tira.
+
+*El segundo rollo pitaba entero, pero la tira seguía apagada con 5 V en un extremo y unos 2 V de datos en el otro. La causa era el panel: la tira tenía un efecto reactivo y no sonaba música. Pasó otra vez después de un reinicio.*
+
+**Prompt 4:**
+
+> Tengo todo esto muy enredado, no soy capaz de medir un metro. ¿Podemos hacerlo de otra manera?
+
+*La IA escribió un script desechable que pinta marcas por Adalight, con el motor parado: el LED 1 en blanco, uno verde cada 10 y uno rojo cada 50, en el orden GRB del chip. El usuario contó tres LEDs después del tercer rojo: 153. La IA cambió `ledCount` en la Pi y comprobó en el log 60 fps y el límite de 6,4 A. El sketch no hubo que recargarlo.*
+
+**Prompt 5** (ya en el ordenador, cuando la IA propuso crear una tarea de Linear para la documentación):
+
+> Sin Linear
+
+*La IA actualizó `HARDWARE_SETUP.md` (piezas, conexiones, potencia, recuento de LEDs, medidas y diagnóstico), el README y la ficha (D123), en una PR sin tarea.*
+
+*Ajustes:*
+- *La IA editó primero el `config/local.json` de un clon viejo del repositorio en la carpeta de `pi`, y el log seguía diciendo 173. Con `systemctl cat` vio que el servicio lee `/opt/moodtable`. Deshizo su cambio y editó el bueno con `sudo -u moodtable`. Quedó anotado en `HARDWARE_SETUP.md` §7.*
+- *El `!ssh` del usuario fallaba (sin la clave y sin terminal para `sudo`): la IA lanzó los comandos en el panel de terminal de la app, con `ssh -t` y la clave explícita.*
+
 ---
 
 ### 7. Pull Requests
