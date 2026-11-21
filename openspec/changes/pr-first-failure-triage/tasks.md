@@ -35,7 +35,7 @@
       terminado;
     - sin nota en una relanzable que no se relanzó;
     - la cabecera «modo sombra: no arregla».
-- [ ] 1.3 La ronda en `triageRound` (`kind`), la rama del primer fallo en `withoutModel` y la respuesta
+- [x] 1.3 La ronda en `triageRound` (`kind`), la rama del primer fallo en `withoutModel` y la respuesta
   `evident` en `core/triage.ts`; `firstTriage` en `TriagedPush` y la nota en `core/triage-summary.ts`.
 
   Verificar: los tests de 1.2 y todos los que ya había en verde; `pnpm typecheck` en verde.
