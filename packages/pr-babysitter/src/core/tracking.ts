@@ -8,6 +8,7 @@
  * nuevo los reinicia.
  */
 import type { Check, PullRequestSnapshot } from './pull-request.ts';
+import type { FirstTriage } from './triage.ts';
 
 /**
  * El push que se sigue: su SHA, cuándo lo vio el sistema por primera vez y, si sus comprobaciones
@@ -22,6 +23,9 @@ import type { Check, PullRequestSnapshot } from './pull-request.ts';
  * relanzar y ninguna está en cola ni en curso; desde ahí cuenta el margen de las que no van a
  * ejecutarse (change pr-checks-not-run, decisión 2). Se borra si algo vuelve a ponerse en marcha, y
  * un push nuevo no lo lleva.
+ *
+ * `firstTriage` es lo que respondió el triaje del primer fallo de cada relanzable (change
+ * pr-first-failure-triage, decisión 4). Como lo demás, un push nuevo empieza sin él.
  */
 export interface TrackedPush {
   sha: string;
@@ -31,6 +35,7 @@ export interface TrackedPush {
   rerunNames?: string[];
   rerunRejected?: string[];
   quietSince?: number;
+  firstTriage?: FirstTriage;
 }
 
 /**
@@ -56,9 +61,10 @@ export type FinalState =
 /**
  * Qué toca al reanudar la espera de las comprobaciones: si pasan todas, avisar y esperar al
  * revisor; si alguna falla, el estado final sin esperarlo (change pr-review-request, decisión 4),
- * salvo si hay que relanzarla (change pr-check-rerun, decisión 4).
+ * salvo si es el primer fallo de una relanzable, que se tría antes de decidir si se relanza (change
+ * pr-first-failure-triage, decisión 1; antes, `rerun`: change pr-check-rerun, decisión 4).
  */
-export type ChecksStep = 'waiting' | 'checksFinished' | 'checksFailed' | 'timedOut' | 'rerun';
+export type ChecksStep = 'waiting' | 'checksFinished' | 'checksFailed' | 'timedOut' | 'firstFailure';
 
 /** Qué toca al reanudar la espera del revisor. */
 export type ReviewStep = 'waiting' | 'finished' | 'timedOut' | 'newPush';
@@ -221,14 +227,32 @@ export function checksToRerun(
 }
 
 /**
+ * Las relanzables cuyo primer fallo toca triar con esta foto (change pr-first-failure-triage,
+ * decisiones 2 y 4): las que se relanzarían, con su run terminado, menos las que el primer triaje
+ * del push ya ha respondido, que no se vuelven a preguntar.
+ */
+export function firstFailureChecks(
+  snapshot: PullRequestSnapshot,
+  push: TrackedPush,
+  rerunChecks: string[],
+): string[] {
+  const triaged = new Set((push.firstTriage ?? []).map(({ name }) => name));
+  return checksToRerun(snapshot, rerunChecks)
+    .filter((check) => check.runFinished && !triaged.has(check.name))
+    .map(({ name }) => name);
+}
+
+/**
  * Al reanudar la espera de las comprobaciones con una foto: un push nuevo reinicia el tiempo y se
  * sigue con la foto que lo trae. Si han pasado todas, la espera de la revisión empieza a contar;
  * si alguna falla, no se espera la revisión.
  *
- * Si la que falla es relanzable y está en su primer intento, se relanza, una vez por push, en cuanto
- * termina su run, sin esperar a las demás, y dentro de los 30 min del push (change pr-check-rerun,
- * decisiones 3 a 5). Con el relanzamiento pedido, el tiempo cuenta desde él, y se
- * sigue esperando mientras la foto aún traiga el primer intento: GitHub tarda en crear el segundo.
+ * Si la que falla es relanzable y está en su primer intento, en cuanto termina su run, sin esperar a
+ * las demás, y dentro de los 30 min del push, es su primer fallo (`firstFailure`): el hilo lo tría y
+ * `decidir` elige si se relanza, una vez por push (change pr-first-failure-triage, decisión 1;
+ * change pr-check-rerun, decisiones 3 a 5). Con el relanzamiento pedido, el tiempo cuenta desde él,
+ * y se sigue esperando mientras la foto aún traiga el primer intento: GitHub tarda en crear el
+ * segundo.
  *
  * Si una ha fallado, no queda nada que relanzar y ninguna está en cola ni en curso, pero alguna no
  * tiene *check run*, la foto está quieta: se apunta desde cuándo (`quietSince`) y, pasado el margen
@@ -254,7 +278,7 @@ export function afterChecksWait(
     toRerun.some((check) => check.runFinished) &&
     !timedOut(since, snapshot, timeoutMs)
   ) {
-    return { push, next: 'rerun' };
+    return { push, next: 'firstFailure' };
   }
   if (checksFinished(snapshot)) {
     if (checksPassed(snapshot)) {

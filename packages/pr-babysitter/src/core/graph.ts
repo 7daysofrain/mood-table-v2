@@ -13,6 +13,12 @@
  * relanzar una comprobación que falla en su primer intento (change pr-check-rerun, decisión 4):
  * `relanzar` lo pide y vuelve a la espera de las comprobaciones.
  *
+ * El triaje dice qué pasa y `decidir` qué se hace (change pr-first-failure-triage, decisión 1;
+ * D122): tras cada ronda de triaje, `decidir` elige la acción por reglas, sin el modelo, y la deja en
+ * el estado. Hay dos rondas: la del primer fallo de una relanzable, en cuanto termina su run, que
+ * tría solo esas comprobaciones y acaba en `relanzar`; y la final, antes del aviso. Lo que responde
+ * la primera se guarda en el push (`firstTriage`): no se vuelve a preguntar, y el resumen lo cuenta.
+ *
  * Antes del aviso final, si la PR necesita intervención con hallazgos, se trían en modo sombra
  * (change pr-shadow-triage, decisión 1): ya están todos los del push. Si no hay nada que triar pero
  * el sistema relanzó algo que pasó, el aviso final va igual por `publicarResumen`, que lo cuenta
@@ -42,6 +48,7 @@ import {
 } from '@langchain/langgraph';
 import * as z from 'zod';
 
+import { decide, decisionSchema } from './decision.ts';
 import { checksFinishedNotice, finalNotice, trackingNotice } from './notice.ts';
 import {
   type CheckReruns,
@@ -60,6 +67,7 @@ import {
   type ChecksStep,
   checksToRerun,
   finalState,
+  firstFailureChecks,
   needsReviewRequest,
   needsTriage,
   rerunPassed,
@@ -71,6 +79,7 @@ import {
   classify,
   type Finding,
   findingSchema,
+  firstTriageSchema,
   latestRound,
   type PullRequestContext,
   type Question,
@@ -80,6 +89,7 @@ import {
   sonarIssueCountSchema,
   spend,
   type TriageBudget,
+  triageRoundKindSchema,
   verdictSchema,
   withoutModel,
 } from './triage.ts';
@@ -108,6 +118,11 @@ const TrackingState = new StateSchema({
        * decisión 2).
        */
       quietSince: z.number().optional(),
+      /**
+       * Lo que respondió el triaje del primer fallo de cada relanzable (change
+       * pr-first-failure-triage, decisión 4).
+       */
+      firstTriage: firstTriageSchema.optional(),
     })
     .optional(),
   /**
@@ -127,6 +142,8 @@ const TrackingState = new StateSchema({
   triageRound: z
     .object({
       number: z.number().int(),
+      /** La del primer fallo de una relanzable o la final (change pr-first-failure-triage). */
+      kind: triageRoundKindSchema,
       pr: z.object({ title: z.string(), description: z.string() }),
       findings: z.array(findingSchema),
       sonarIssues: sonarIssueCountSchema,
@@ -153,6 +170,17 @@ const TrackingState = new StateSchema({
       costUsd: z.number(),
     })
     .optional(),
+  /**
+   * Qué ronda hará el próximo `triar`: lo escribe, en el mismo paso, cada nodo que lleva a él
+   * (change pr-first-failure-triage, decisión 1).
+   */
+  nextTriage: triageRoundKindSchema.optional(),
+  /**
+   * Lo último que ha decidido `decidir`: la acción y la regla que la toma (change
+   * pr-first-failure-triage, decisión 1). Va en la salida del nodo, que LangSmith guarda en la traza
+   * (BE4).
+   */
+  decision: decisionSchema.optional(),
 });
 
 type State = typeof TrackingState.State;
@@ -236,6 +264,8 @@ const ASK_NODE = 'preguntarModelo';
 
 const GATHER_NODE = 'reunirTriaje';
 
+const DECIDE_NODE = 'decidir';
+
 const SUMMARY_NODE = 'publicarResumen';
 
 /**
@@ -295,7 +325,7 @@ const AFTER_CHECKS = {
   checksFinished: 'avisarComprobaciones',
   checksFailed: 'avisarEstadoFinal',
   timedOut: 'avisarEstadoFinal',
-  rerun: RERUN_NODE,
+  firstFailure: TRIAGE_NODE,
 } as const satisfies Record<ChecksStep, string>;
 
 const AFTER_REVIEW = {
@@ -394,7 +424,8 @@ export function createTrackingGraph(
       notRunMarginMs,
     );
     const goto = viaTriage(AFTER_CHECKS[next], snapshot, push, rerunChecks);
-    return new Command({ update: { snapshot, push }, goto });
+    const nextTriage = next === 'firstFailure' ? 'firstFailure' : 'final';
+    return new Command({ update: { snapshot, push, nextTriage }, goto });
   };
 
   const avisarComprobaciones: GraphNode<typeof TrackingState> = async ({ snapshot }) => {
@@ -443,7 +474,7 @@ export function createTrackingGraph(
         `GitHub rechaza relanzar ${rejected.join(', ')} en la PR #${snapshot.number}; ` +
           `necesita intervención: ${error.message}`,
       );
-      return { push: { ...push, rerunRejected: rejected } };
+      return { push: { ...push, rerunRejected: rejected }, nextTriage: 'final' };
     }
   };
 
@@ -453,7 +484,7 @@ export function createTrackingGraph(
     const snapshot = waitFor('review');
     const { push, next } = afterReviewWait(pushIn(state), snapshot, timeoutMs);
     const goto = viaTriage(AFTER_REVIEW[next], snapshot, push, rerunChecks);
-    return new Command({ update: { snapshot, push }, goto });
+    return new Command({ update: { snapshot, push, nextTriage: 'final' }, goto });
   };
 
   // Lee los hallazgos del push y reparte las preguntas (change pr-check-triage, decisiones 4 a 6).
@@ -463,6 +494,7 @@ export function createTrackingGraph(
   // reserva aquí, antes de repartir. Los demás salen cada uno por su rama, con la pregunta de su
   // fuente. Si GitHub falla al leerlos, lanza, y el nodo queda pendiente para la vuelta siguiente.
   const triar: GraphNode<typeof TrackingState> = async (state) => {
+    if (state.nextTriage === 'firstFailure') return triarPrimerFallo(state);
     const { snapshot } = state;
     const push = pushIn(state);
     const final = finalState(snapshot, push);
@@ -487,6 +519,7 @@ export function createTrackingGraph(
     return {
       triageRound: {
         number: round,
+        kind: 'final',
         pr: read.context,
         findings: found,
         sonarIssues: read.sonarIssues,
@@ -494,6 +527,44 @@ export function createTrackingGraph(
       triageAnswers: decided,
     };
   };
+
+  // La ronda del primer fallo (change pr-first-failure-triage, decisiones 2 y 3): solo las
+  // relanzables que fallan en su primer intento y que el primer triaje del push aún no ha respondido.
+  // Si ya las respondió todas (el driver se saltó `relanzar` tras un fallo pasajero), la ronda va
+  // vacía, sin leer GitHub ni preguntar, y `decidir` vuelve a elegir con lo guardado.
+  async function triarPrimerFallo(state: State) {
+    const { snapshot } = state;
+    const push = pushIn(state);
+    const names = firstFailureChecks(snapshot, push, rerunChecks);
+    const read =
+      names.length === 0
+        ? { context: { title: snapshot.title, description: '' }, findings: [] }
+        : await findings.readChecks(snapshot.number, snapshot.headSha, names);
+    const found = withReruns(read.findings, snapshot, push, rerunChecks);
+    const round = (state.triageRound?.number ?? 0) + 1;
+    const decided = withoutModel(found, {
+      ruleChecks: triage.ruleChecks,
+      sonarIssuesCheck: triage.sonarIssuesCheck,
+      rerunChecks,
+      description: read.context.description,
+      spentUsd: state.spentUsd ?? 0,
+      budget: triage.budget,
+      estimate: (finding) => decisionModel.estimate(read.context, finding, questionFor(finding)),
+      round: 'firstFailure',
+    }).flatMap((answer, index): RoundAnswer[] =>
+      answer ? [{ round, index, answer, inputTokens: 0 }] : [],
+    );
+    return {
+      triageRound: {
+        number: round,
+        kind: 'firstFailure' as const,
+        pr: read.context,
+        findings: found,
+        sonarIssues: null,
+      },
+      triageAnswers: decided,
+    };
+  }
 
   // Pregunta al modelo por un hallazgo (decisión 4). No lanza nunca: si lanzara, fallaría el paso
   // entero y con él las demás ramas. Si el modelo no responde, ese hallazgo exige criterio, y lo
@@ -520,6 +591,10 @@ export function createTrackingGraph(
 
   // Junta las respuestas de la ronda, clasifica cada hallazgo y suma el gasto (decisiones 4 y 5):
   // un proveedor caído no deja la PR sin aviso, porque el aviso final sale igual.
+  //
+  // En la ronda del primer fallo no escribe `triage`, que `publicarResumen` tomaría por el triaje del
+  // push, sino el veredicto de cada relanzable en `push.firstTriage` (change pr-first-failure-triage,
+  // decisión 4).
   const reunirTriaje: GraphNode<typeof TrackingState> = (state) => {
     const { snapshot, triageRound } = state;
     if (!triageRound) return {};
@@ -527,24 +602,41 @@ export function createTrackingGraph(
     const inputTokens = answers.reduce((tokens, answer) => tokens + answer.inputTokens, 0);
     const spentBefore = state.spentUsd ?? 0;
     const spentUsd = spend(spentBefore, inputTokens, triage.budget);
+    const classified = triageRound.findings.map((finding, index) => ({
+      finding,
+      verdict: classify(
+        finding,
+        answers.find((answer) => answer.index === index)?.answer ?? { kind: 'modelUnavailable' },
+        triage.threshold,
+      ),
+    }));
+    if (triageRound.kind === 'firstFailure') {
+      const push = pushIn(state);
+      const answered = classified.flatMap(({ finding, verdict }) =>
+        finding.source === 'check' ? [{ name: finding.name, verdict }] : [],
+      );
+      return {
+        spentUsd,
+        push: { ...push, firstTriage: [...(push.firstTriage ?? []), ...answered] },
+      };
+    }
     return {
       spentUsd,
       triage: {
         sha: snapshot.headSha,
-        findings: triageRound.findings.map((finding, index) => ({
-          finding,
-          verdict: classify(
-            finding,
-            answers.find((answer) => answer.index === index)?.answer ?? { kind: 'modelUnavailable' },
-            triage.threshold,
-          ),
-        })),
+        findings: classified,
         sonarIssues: triageRound.sonarIssues,
         inputTokens,
         costUsd: spentUsd - spentBefore,
       },
     };
   };
+
+  // Qué se hace con el triaje de la ronda (change pr-first-failure-triage, decisión 1): lo decide
+  // `decide()`, sin el modelo, y queda en el estado con su regla. La arista siguiente lo lee.
+  const decidir: GraphNode<typeof TrackingState> = ({ triageRound }) => ({
+    decision: decide(triageRound?.kind ?? 'final'),
+  });
 
   // Publica en la PR el triaje del push (decisión 7) y lo que el sistema relanzó y pasó (change
   // pr-check-rerun, decisión 8), una vez: si ya está el de ese SHA (un reintento tras una respuesta
@@ -566,6 +658,7 @@ export function createTrackingGraph(
           findings: found,
           sonarIssues: triaged?.sonarIssues,
           rerunPassed: passed,
+          firstTriage: pushIn(state).firstTriage,
         },
         triage.threshold,
       );
@@ -590,7 +683,7 @@ export function createTrackingGraph(
     .addNode('avisarSeguimiento', avisarSeguimiento)
     .addNode('empezarSinAviso', empezarSinAviso)
     .addNode('esperarComprobaciones', esperarComprobaciones, {
-      ends: [...Object.values(AFTER_CHECKS), TRIAGE_NODE, SUMMARY_NODE],
+      ends: [...new Set([...Object.values(AFTER_CHECKS), TRIAGE_NODE, SUMMARY_NODE])],
     })
     .addNode('avisarComprobaciones', avisarComprobaciones)
     .addNode(REVIEW_REQUEST_NODE, pedirRevision)
@@ -601,6 +694,7 @@ export function createTrackingGraph(
     .addNode(TRIAGE_NODE, triar)
     .addNode(ASK_NODE, preguntarModelo)
     .addNode(GATHER_NODE, reunirTriaje)
+    .addNode(DECIDE_NODE, decidir)
     .addNode(SUMMARY_NODE, publicarResumen)
     .addNode('avisarEstadoFinal', avisarEstadoFinal)
     .addConditionalEdges(
@@ -632,7 +726,14 @@ export function createTrackingGraph(
     )
     .addConditionalEdges(TRIAGE_NODE, fanOut, [ASK_NODE, GATHER_NODE])
     .addEdge(ASK_NODE, GATHER_NODE)
-    .addEdge(GATHER_NODE, SUMMARY_NODE)
+    .addEdge(GATHER_NODE, DECIDE_NODE)
+    // Una arista y no un `Command`, como la de `relanzar`: así el driver puede saltarse `relanzar`
+    // con un push viejo o una PR detenida.
+    .addConditionalEdges(
+      DECIDE_NODE,
+      ({ decision }) => (decision?.action === 'rerun' ? RERUN_NODE : SUMMARY_NODE),
+      [RERUN_NODE, SUMMARY_NODE],
+    )
     .addEdge(SUMMARY_NODE, 'avisarEstadoFinal')
     .addEdge('avisarEstadoFinal', END)
     .compile({ checkpointer });

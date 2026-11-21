@@ -48,8 +48,9 @@
   Verificar: `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
 - [x] 1.5 **(test en rojo)** El nodo `decidir` y el primer fallo en el grafo (`design.md` decisiones 1,
   4, 6 y 7):
-  - **`core/decision.test.ts`:** `decide()` da `rerun` en la ronda del primer fallo, sea cual sea el
-    veredicto (en esta tarea siempre relanza), y `publish` en la final.
+  - **`core/decision.test.ts`:** `decide()` da `rerun` en la ronda del primer fallo (en esta tarea
+    siempre relanza) y `publish` en la final. Que relanza sea cual sea el veredicto lo prueba el grafo:
+    `decide()` solo recibe la ronda hasta que `MOO-179` le pasa el primer triaje.
   - **`core/tracking.test.ts`:** `afterChecksWait` da `firstFailure` con las condiciones que hoy dan
     `rerun`, y ya no da `rerun`.
   - **`core/graph.test.ts`,** un `describe` por requisito nuevo o cambiado, con el modelo falso
@@ -68,7 +69,7 @@
     - la decisión queda en el estado, con su acción y su regla;
     - los tests del relanzamiento de `pr-check-rerun` siguen pasando, ahora a través de `triar` y
       `decidir`.
-- [ ] 1.6 `core/decision.ts`, el paso `firstFailure` en `core/tracking.ts`, y en `core/graph.ts`:
+- [x] 1.6 `core/decision.ts`, el paso `firstFailure` en `core/tracking.ts`, y en `core/graph.ts`:
   - la ronda del primer fallo en `triar`;
   - `push.firstTriage` en `reunirTriaje`;
   - el nodo `decidir` y sus aristas, con `relanzar` alcanzado desde `decidir`;
@@ -117,7 +118,7 @@
       la nota «se capturaría» de `e2e`;
     - con *SonarCloud Code Analysis* sin *check run*: el aviso llega tras el margen, no tras 30 min;
     - las vueltas siguientes no vuelven a triar el primer fallo.
-- [ ] 2.2 La regla en `core/decision.ts`, `rerunSkipped` en el push y en `afterChecksWait`
+- [ ] 2.2 La regla en `core/decision.ts` (que pasa a recibir `push.firstTriage`), `rerunSkipped` en el push y en `afterChecksWait`
   (`core/tracking.ts`), la arista de `skipRerun` a `esperarComprobaciones` (`core/graph.ts`) y el
   veredicto guardado en `afterRerun` (`core/triage.ts`).
 

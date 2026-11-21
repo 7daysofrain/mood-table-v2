@@ -1956,7 +1956,7 @@ describe('el primer fallo de una relanzable se tría antes de relanzarla (change
 
     const state = await followTriage(triage, firstFailure);
 
-    expect(state.values.spentUsd).toBeCloseTo((12_000 * 0.24) / 1_000_000);
+    expect((state.values as { spentUsd: number }).spentUsd).toBeCloseTo((12_000 * 0.24) / 1_000_000);
   });
 
   it('guarda en el push lo que respondió, y no escribe el triaje del push', async () => {
@@ -1964,10 +1964,11 @@ describe('el primer fallo de una relanzable se tría antes de relanzarla (change
 
     const state = await followTriage(triage, firstFailure);
 
-    expect(state.values.push?.firstTriage).toEqual([
+    const values = state.values as { push: { firstTriage?: unknown }; triage?: unknown };
+    expect(values.push.firstTriage).toEqual([
       { name: 'e2e', verdict: { class: 'notApplicable', reason: 'probability', probability: 0.12 } },
     ]);
-    expect(state.values.triage).toBeUndefined();
+    expect(values.triage).toBeUndefined();
   });
 });
 
@@ -1977,7 +1978,7 @@ describe('qué se hace con el triaje lo decide `decidir` y queda registrado (cha
 
     const state = await followTriage(triage, [snapshot(0), snapshot(5, { checks: E2E_FIRST_ATTEMPT })]);
 
-    expect(state.values.decision).toEqual({ action: 'rerun', rule: 'firstFailure' });
+    expect(state.values).toMatchObject({ decision: { action: 'rerun', rule: 'firstFailure' } });
   });
 
   it('antes del aviso final, publicar, con su regla', async () => {
@@ -1985,7 +1986,7 @@ describe('qué se hace con el triaje lo decide `decidir` y queda registrado (cha
 
     const state = await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
 
-    expect(state.values.decision).toEqual({ action: 'publish', rule: 'finalState' });
+    expect(state.values).toMatchObject({ decision: { action: 'publish', rule: 'finalState' } });
   });
 });
 
@@ -2441,7 +2442,15 @@ describe('las comprobaciones que no van a ejecutarse (change pr-checks-not-run)'
       at154(10, failedIn('test', 2), passed('e2e')),
     ]);
 
-    expect(triage.events).toEqual(['tracking', 'leer hallazgos', 'publicar resumen', 'aviso final']);
+    // Antes de relanzar, el triaje del primer fallo (change pr-first-failure-triage).
+    expect(triage.events).toEqual([
+      'tracking',
+      'leer comprobaciones',
+      'preguntar al modelo',
+      'leer hallazgos',
+      'publicar resumen',
+      'aviso final',
+    ]);
     expect(triage.reads).toEqual([{ number: 74, sha: HEAD, failedChecks: ['test'] }]);
     const final = triage.notices.at(-1)!;
     expect(final.type === 'final' && final.state).toEqual({
