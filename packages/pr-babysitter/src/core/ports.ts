@@ -6,6 +6,7 @@
 import type { Notice } from './notice.ts';
 import type { Check, OpenPullRequest, Review, ReviewerThreads } from './pull-request.ts';
 import type {
+  CheckFinding,
   Finding,
   ModelAnswer,
   PullRequestContext,
@@ -105,6 +106,16 @@ export interface Findings {
     sha: string,
     failedChecks: string[],
   ): Promise<{ context: PullRequestContext; findings: Finding[]; sonarIssues: SonarIssueCount }>;
+  /**
+   * Solo esas comprobaciones, cada una como un hallazgo, y el contexto de la PR, sin los hilos del
+   * revisor: el triaje del primer fallo de una relanzable (change pr-first-failure-triage, decisión
+   * 2).
+   */
+  readChecks(
+    pullRequestNumber: number,
+    sha: string,
+    checks: string[],
+  ): Promise<{ context: PullRequestContext; findings: CheckFinding[] }>;
 }
 
 

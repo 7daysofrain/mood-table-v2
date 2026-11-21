@@ -147,7 +147,10 @@ interface TriagePorts {
 }
 
 const noFindings: TriagePorts = {
-  findings: { read: () => Promise.resolve({ context: CONTEXT, findings: [], sonarIssues: null }) },
+  findings: {
+    read: () => Promise.resolve({ context: CONTEXT, findings: [], sonarIssues: null }),
+    readChecks: () => Promise.resolve({ context: CONTEXT, findings: [] }),
+  },
   decisionModel: {
     estimate: () => 0,
     ask: () => Promise.reject(new Error('no hay hallazgos que triar')),
@@ -730,6 +733,15 @@ function recordingTriage(
         events.push('leer hallazgos');
         reads.push({ number, sha, failedChecks });
         return Promise.resolve({ context, findings: found, sonarIssues });
+      },
+      // Las comprobaciones del primer fallo de una relanzable, de entre las del push.
+      readChecks(_number, _sha, checks) {
+        if (github.failure) return Promise.reject(github.failure);
+        events.push('leer comprobaciones');
+        const named = found.filter(
+          (finding): finding is CheckFinding => finding.source === 'check' && checks.includes(finding.name),
+        );
+        return Promise.resolve({ context, findings: named });
       },
     },
     decisionModel: {

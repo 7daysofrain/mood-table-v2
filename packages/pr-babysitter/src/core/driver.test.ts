@@ -137,6 +137,7 @@ function setup(pullRequests: OpenPullRequest[] = [], triage: TriageOverrides = {
       findings: {
         read: () =>
           Promise.resolve({ context: { title: '', description: '' }, findings: [], sonarIssues: null }),
+        readChecks: () => Promise.resolve({ context: { title: '', description: '' }, findings: [] }),
       },
       decisionModel: {
         estimate: () => 0,
@@ -919,6 +920,7 @@ describe('de punta a punta, con los hilos sin resolver del revisor (change pr-un
       findings: {
         read: () =>
           Promise.resolve({ context: { title: 'PR', description: 'Fixes MOO-1' }, findings, sonarIssues: null }),
+        readChecks: () => Promise.resolve({ context: { title: 'PR', description: 'Fixes MOO-1' }, findings: [] }),
       },
       decisionModel: {
         estimate: () => 0,
@@ -1229,6 +1231,7 @@ describe('las peticiones al modelo de decisión en paralelo (change pr-check-tri
               },
             })),
           }),
+        readChecks: () => Promise.resolve({ context: { title: '', description: '' }, findings: [] }),
       },
       decisionModel: {
         estimate: () => 0,

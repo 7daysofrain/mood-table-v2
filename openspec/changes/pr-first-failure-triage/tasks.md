@@ -39,7 +39,7 @@
   `evident` en `core/triage.ts`; `firstTriage` en `TriagedPush` y la nota en `core/triage-summary.ts`.
 
   Verificar: los tests de 1.2 y todos los que ya había en verde; `pnpm typecheck` en verde.
-- [ ] 1.4 Leer solo las comprobaciones que fallan (`design.md` decisión 2):
+- [x] 1.4 Leer solo las comprobaciones que fallan (`design.md` decisión 2):
   - **test en rojo primero,** en `adapters/findings.test.ts`: `readChecks` da el contexto de la PR y el
     de esas comprobaciones, y no pide los hilos del revisor;
   - el método en el puerto `Findings` (`core/ports.ts`) y en `adapters/findings.ts`;

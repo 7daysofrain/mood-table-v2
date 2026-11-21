@@ -120,6 +120,21 @@ const findings: Findings = {
       ],
     });
   },
+  // El primer fallo de una relanzable (change pr-first-failure-triage, decisión 2): solo esas
+  // comprobaciones, con el error de una aserción en su log.
+  readChecks(pullRequestNumber, sha, checks) {
+    console.log(`Comprobaciones del primer fallo: PR #${pullRequestNumber}, push ${sha}`);
+    return Promise.resolve({
+      context: { title: `PR #${pullRequestNumber}`, description: 'La PR de ejemplo de studio.ts.' },
+      findings: checks.map((name) => ({
+        source: 'check' as const,
+        name,
+        conclusion: 'failure',
+        attempt: 1,
+        context: CHECK_CONTEXTS[0] ?? { state: 'notProvided' as const },
+      })),
+    });
+  },
 };
 
 /**
