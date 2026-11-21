@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1100" width="1000" height="1100" role="img" aria-label="Bucle de cada push en el PR Babysitter: esperar comprobaciones, pedir revisión, esperar al revisor, triar, arreglar, contestar o escalar, publicar y volver a empezar">
+  <style>
+    text { font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #18202E; }
+    .ground { fill: #FFFFFF; }
+    .t { font-size: 15px; font-weight: 600; }
+    .t14 { font-size: 14px; font-weight: 600; }
+    .s { font-size: 12px; fill: #5B6577; }
+    .chip { font-size: 13px; font-weight: 600; }
+    .lbl { font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; fill: #5B6577; }
+    .node { fill: #FFFFFF; stroke: #C9D0DC; stroke-width: 1.5; }
+    .diamond { fill: #FFFFFF; stroke: #18202E; stroke-width: 1.5; }
+    .acc { fill: #E6ECFC; stroke: #2F54D8; stroke-width: 1.5; }
+    .ok { fill: #E3F4EA; stroke: #1F8A55; stroke-width: 1.5; }
+    .fail { fill: #FBE7E3; stroke: #C8432F; stroke-width: 1.5; }
+    .warn { fill: #FBF0D9; stroke: #A86C06; stroke-width: 1.5; }
+    .na { fill: #ECEEF2; stroke: #5F6779; stroke-width: 1.5; }
+    .human { fill: #F0E8FB; stroke: #7A3FC4; stroke-width: 1.5; }
+    .node-fail { fill: #FFFFFF; stroke: #C8432F; stroke-width: 1.5; }
+    .node-na { fill: #FFFFFF; stroke: #5F6779; stroke-width: 1.5; }
+    .edge { fill: none; stroke: #5B6577; stroke-width: 1.5; }
+    .edge-loop { fill: none; stroke: #2F54D8; stroke-width: 1.8; stroke-dasharray: 7 5; }
+    .edge-human { fill: none; stroke: #7A3FC4; stroke-width: 1.6; stroke-dasharray: 5 4; }
+    .head { fill: #5B6577; }
+    .head-acc { fill: #2F54D8; }
+    .head-human { fill: #7A3FC4; }
+    .c-fail { fill: #C8432F; }
+    .c-na { fill: #5F6779; }
+    .c-warn { fill: #A86C06; }
+    .c-ok { fill: #1F8A55; }
+    .c-human { fill: #7A3FC4; }
+    .c-acc { fill: #2F54D8; }
+    .legend { font-size: 12px; fill: #5B6577; }
+    @media (prefers-color-scheme: dark) {
+      text { fill: #E6EAF1; }
+      .ground { fill: #171E29; }
+      .s { fill: #98A2B3; }
+      .lbl { fill: #98A2B3; }
+      .node { fill: #171E29; stroke: #354052; }
+      .diamond { fill: #171E29; stroke: #E6EAF1; }
+      .acc { fill: #1C2647; stroke: #8AA4FF; }
+      .ok { fill: #12301F; stroke: #4CC489; }
+      .fail { fill: #3A1A15; stroke: #F07A66; }
+      .warn { fill: #35280C; stroke: #E7B040; }
+      .na { fill: #232B38; stroke: #A2AABA; }
+      .human { fill: #2B1F3D; stroke: #B88CF5; }
+      .node-fail { fill: #171E29; stroke: #F07A66; }
+      .node-na { fill: #171E29; stroke: #A2AABA; }
+      .edge { stroke: #98A2B3; }
+      .edge-loop { stroke: #8AA4FF; }
+      .edge-human { stroke: #B88CF5; }
+      .head { fill: #98A2B3; }
+      .head-acc { fill: #8AA4FF; }
+      .head-human { fill: #B88CF5; }
+      .c-fail { fill: #F07A66; }
+      .c-na { fill: #A2AABA; }
+      .c-warn { fill: #E7B040; }
+      .c-ok { fill: #4CC489; }
+      .c-human { fill: #B88CF5; }
+      .c-acc { fill: #8AA4FF; }
+      .legend { fill: #98A2B3; }
+    }
+  </style>
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker>
+    <marker id="a2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head-acc"/></marker>
+    <marker id="a2h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head-human"/></marker>
+  </defs>
+  <rect width="1000" height="1100" rx="14" class="ground"/>
+
+  <!-- inicio -->
+  <rect x="320" y="24" width="220" height="40" rx="20" class="acc"/>
+  <text x="430" y="49" text-anchor="middle" class="t14 c-acc">Push nuevo en la PR</text>
+  <path d="M430,64 V102" class="edge" marker-end="url(#a2)"/>
+
+  <!-- esperar comprobaciones -->
+  <rect x="290" y="104" width="280" height="64" rx="10" class="node"/>
+  <text x="430" y="131" text-anchor="middle" class="t">Esperar comprobaciones</text>
+  <text x="430" y="151" text-anchor="middle" class="s">lint · typecheck · test · e2e · SonarQube</text>
+
+  <!-- relanzar -->
+  <rect x="675" y="104" width="250" height="64" rx="10" class="node"/>
+  <text x="800" y="131" text-anchor="middle" class="t">Relanzar una vez</text>
+  <text x="800" y="151" text-anchor="middle" class="s">test o e2e que fallan (¿transitorio?)</text>
+  <path d="M570,124 H673" class="edge" marker-end="url(#a2)"/>
+  <text x="622" y="116" text-anchor="middle" class="s">falla 1.ª vez</text>
+  <path d="M675,150 H572" class="edge" marker-end="url(#a2)"/>
+  <text x="622" y="166" text-anchor="middle" class="s">otra vez</text>
+  <path d="M430,168 V192" class="edge" marker-end="url(#a2)"/>
+
+  <!-- ¿en verde? -->
+  <polygon points="430,194 520,230 430,266 340,230" class="diamond"/>
+  <text x="430" y="235" text-anchor="middle" class="t14">¿En verde?</text>
+  <path d="M430,266 V298" class="edge" marker-end="url(#a2)"/>
+  <text x="442" y="287" class="lbl">sí</text>
+  <path d="M340,230 H150 V648 H288" class="edge" marker-end="url(#a2)"/>
+  <text x="318" y="222" text-anchor="middle" class="lbl">no</text>
+  <text x="162" y="410" class="s">la comprobación</text>
+  <text x="162" y="426" class="s">que falla ya es</text>
+  <text x="162" y="442" class="s">un hallazgo</text>
+
+  <!-- pedir revisión -->
+  <rect x="290" y="300" width="280" height="64" rx="10" class="node"/>
+  <text x="430" y="327" text-anchor="middle" class="t">Pedir la revisión</text>
+  <text x="430" y="347" text-anchor="middle" class="s">«@codex review», una vez por push</text>
+  <path d="M430,364 V398" class="edge" marker-end="url(#a2)"/>
+
+  <!-- esperar al revisor -->
+  <rect x="290" y="400" width="280" height="64" rx="10" class="node"/>
+  <text x="430" y="427" text-anchor="middle" class="t">Esperar al revisor</text>
+  <text x="430" y="447" text-anchor="middle" class="s">Codex revisa y abre hilos</text>
+  <path d="M430,464 V488" class="edge" marker-end="url(#a2)"/>
+
+  <!-- ¿hallazgos? -->
+  <polygon points="430,490 520,526 430,562 340,526" class="diamond"/>
+  <text x="430" y="531" text-anchor="middle" class="t14">¿Hallazgos?</text>
+  <path d="M430,562 V598" class="edge" marker-end="url(#a2)"/>
+  <text x="442" y="584" class="lbl">sí</text>
+
+  <!-- camino feliz -->
+  <path d="M520,526 H673" class="edge" marker-end="url(#a2)"/>
+  <text x="596" y="518" text-anchor="middle" class="lbl">no</text>
+  <rect x="675" y="494" width="250" height="64" rx="10" class="ok"/>
+  <text x="800" y="521" text-anchor="middle" class="t c-ok">Lista para integrar</text>
+  <text x="800" y="541" text-anchor="middle" class="s">en verde, revisada, sin hilos abiertos</text>
+  <path d="M800,558 V588" class="edge" marker-end="url(#a2)"/>
+  <rect x="675" y="590" width="250" height="50" rx="10" class="node"/>
+  <text x="800" y="611" text-anchor="middle" class="t14">Aviso en Linear</text>
+  <text x="800" y="629" text-anchor="middle" class="s">menciona al mantenedor</text>
+  <path d="M800,640 V670" class="edge" marker-end="url(#a2)"/>
+  <rect x="690" y="672" width="220" height="40" rx="20" class="human"/>
+  <text x="800" y="697" text-anchor="middle" class="t14 c-human">Merge del mantenedor</text>
+
+  <!-- triar -->
+  <rect x="290" y="600" width="280" height="100" rx="10" class="acc"/>
+  <text x="430" y="628" text-anchor="middle" class="t">Triar cada hallazgo</text>
+  <text x="430" y="648" text-anchor="middle" class="s">una rama por hallazgo, en paralelo</text>
+  <text x="430" y="666" text-anchor="middle" class="s">modelo de decisión (Clef) y reglas</text>
+  <text x="430" y="684" text-anchor="middle" class="s">publica el resumen del triaje en la PR</text>
+
+  <!-- reparto -->
+  <path d="M430,700 V744 M170,744 H740" class="edge"/>
+  <path d="M170,744 V758" class="edge" marker-end="url(#a2)"/>
+  <path d="M430,744 V758" class="edge" marker-end="url(#a2)"/>
+  <path d="M740,744 V758" class="edge" marker-end="url(#a2)"/>
+
+  <!-- clases -->
+  <rect x="50" y="760" width="240" height="32" rx="16" class="fail"/>
+  <text x="170" y="781" text-anchor="middle" class="chip c-fail">Real · prob. ≥ 0,80</text>
+  <rect x="310" y="760" width="240" height="32" rx="16" class="na"/>
+  <text x="430" y="781" text-anchor="middle" class="chip c-na">No aplica · prob. ≤ 0,20</text>
+  <rect x="620" y="760" width="240" height="32" rx="16" class="warn"/>
+  <text x="740" y="781" text-anchor="middle" class="chip c-warn">Exige criterio · duda o regla</text>
+  <path d="M170,792 V818" class="edge" marker-end="url(#a2)"/>
+  <path d="M430,792 V818" class="edge" marker-end="url(#a2)"/>
+  <path d="M740,792 V818" class="edge" marker-end="url(#a2)"/>
+
+  <!-- arreglar -->
+  <rect x="50" y="820" width="240" height="100" rx="10" class="node-fail"/>
+  <text x="170" y="847" text-anchor="middle" class="t">Arreglar</text>
+  <text x="170" y="867" text-anchor="middle" class="s">agente en un worktree local</text>
+  <text x="170" y="885" text-anchor="middle" class="s">solo dentro del alcance de la PR</text>
+  <text x="170" y="903" text-anchor="middle" class="s">pasa lint · typecheck · test · e2e</text>
+
+  <!-- no aplica -->
+  <rect x="310" y="820" width="240" height="100" rx="10" class="node-na"/>
+  <text x="430" y="847" text-anchor="middle" class="t">Contestar el hilo</text>
+  <text x="430" y="867" text-anchor="middle" class="s">explica por qué no aplica</text>
+  <text x="430" y="885" text-anchor="middle" class="s">si es trabajo de otra tarea,</text>
+  <text x="430" y="903" text-anchor="middle" class="s">lo captura en Linear</text>
+
+  <!-- escalar -->
+  <rect x="620" y="820" width="240" height="100" rx="10" class="warn"/>
+  <text x="740" y="847" text-anchor="middle" class="t c-warn">Escalar</text>
+  <text x="740" y="867" text-anchor="middle" class="s">pausa la PR (interrupt)</text>
+  <text x="740" y="885" text-anchor="middle" class="s">pregunta en Linear con el porqué</text>
+  <text x="740" y="903" text-anchor="middle" class="s">y espera la respuesta</text>
+  <path d="M740,920 V960" class="edge" marker-end="url(#a2)"/>
+
+  <!-- publicar -->
+  <path d="M170,920 V948" class="edge" marker-end="url(#a2)"/>
+  <path d="M430,920 V948" class="edge" marker-end="url(#a2)"/>
+  <rect x="50" y="950" width="500" height="64" rx="10" class="acc"/>
+  <text x="300" y="977" text-anchor="middle" class="t">Publicar</text>
+  <text x="300" y="997" text-anchor="middle" class="s">push con los arreglos · contesta y resuelve cada hilo</text>
+
+  <!-- mantenedor -->
+  <rect x="640" y="962" width="200" height="40" rx="20" class="human"/>
+  <text x="740" y="987" text-anchor="middle" class="t14 c-human">Decide el mantenedor</text>
+  <path d="M840,982 H905 V744 H746" class="edge-human" marker-end="url(#a2h)"/>
+  <text x="917" y="863" text-anchor="middle" class="lbl c-human" transform="rotate(90 917 863)">su respuesta lo vuelve real o no aplica</text>
+
+  <!-- bucle -->
+  <path d="M50,982 H24 V136 H288" class="edge-loop" marker-end="url(#a2a)"/>
+  <text x="14" y="560" text-anchor="middle" class="lbl c-acc" transform="rotate(-90 14 560)">siguiente vuelta: vuelve a mirar la PR</text>
+
+  <!-- leyenda -->
+  <rect x="50" y="1050" width="14" height="14" rx="4" class="acc"/><text x="72" y="1062" class="legend">lo hace el sistema</text>
+  <rect x="210" y="1050" width="14" height="14" rx="4" class="ok"/><text x="232" y="1062" class="legend">estado final bueno</text>
+  <rect x="370" y="1050" width="14" height="14" rx="4" class="warn"/><text x="392" y="1062" class="legend">pausa por criterio</text>
+  <rect x="530" y="1050" width="14" height="14" rx="4" class="human"/><text x="552" y="1062" class="legend">lo hace una persona</text>
+  <path d="M700,1057 H726" class="edge-loop"/><text x="734" y="1062" class="legend">el bucle de cada push</text>
+</svg>
