@@ -15,7 +15,7 @@
 
 ## 1. MOO-178 · infra
 
-- [ ] 1.1 La decisión: D122 en `docs/idea-mood-table.md` §10 (`design.md` decisión 1) y, en D119, una
+- [x] 1.1 La decisión: D122 en `docs/idea-mood-table.md` §10 (`design.md` decisión 1) y, en D119, una
   nota de que D122 la matiza.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
