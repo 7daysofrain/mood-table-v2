@@ -1,7 +1,8 @@
 /**
  * Dónde falla un texto que no es JSON válido. `JSON.parse` no siempre lo dice (con un carácter
  * inesperado, V8 solo cita el texto), así que se recorre la gramática de JSON hasta el primer
- * carácter que no encaja. Solo se usa después de que `JSON.parse` haya fallado.
+ * carácter que no encaja. Solo se usa después de que `JSON.parse` haya fallado, para decirle al
+ * usuario en qué línea y columna de su configuración está el error.
  */
 
 export interface TextPosition {

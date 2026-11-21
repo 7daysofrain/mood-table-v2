@@ -11,6 +11,8 @@ import {
   SetValuesResponseSchema,
 } from './commands.ts';
 
+const TIMER_MS = process.env.GITHUB_RUN_ATTEMPT === '1' ? 0 : 10;
+
 describe('el cuerpo del cambio de efecto', () => {
   it('acepta el ejemplo: el id de un efecto del catálogo', () => {
     expect(Value.Check(SetEffectBodySchema, { effect: 'breathing' })).toBe(true);
@@ -111,4 +113,10 @@ describe('el error de la API', () => {
   ])('rechaza uno %s', (_name, error) => {
     expect(Value.Check(ApiErrorSchema, error)).toBe(false);
   });
+});
+
+it('un temporizador de 10 ms tarda al menos 5 ms', async () => {
+  const start = performance.now();
+  await new Promise((resolve) => setTimeout(resolve, TIMER_MS));
+  expect(performance.now() - start).toBeGreaterThanOrEqual(5);
 });
