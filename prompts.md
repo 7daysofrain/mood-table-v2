@@ -2666,6 +2666,29 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La IA editó primero el `config/local.json` de un clon viejo del repositorio en la carpeta de `pi`, y el log seguía diciendo 173. Con `systemctl cat` vio que el servicio lee `/opt/moodtable`. Deshizo su cambio y editó el bueno con `sudo -u moodtable`. Quedó anotado en `HARDWARE_SETUP.md` §7.*
 - *El `!ssh` del usuario fallaba (sin la clave y sin terminal para `sudo`): la IA lanzó los comandos en el panel de terminal de la app, con `ssh -t` y la clave explícita.*
 
+#### 6.100 Medir el triaje contra PR ya cerradas (`MOO-76`, *spike*)
+
+**Prompt 1** (al pedirle el caso feliz en `/refine-story MOO-76`):
+
+> Es que no tengo claro que tenga que hacer nada, no? Esta US es para sacar numeros
+
+*Claude Code (`claude-opus-5-5`, 21-nov). La IA le dio la razón: sin comportamiento observable ni un* When*, la historia era una pregunta con datos que desbloquea una decisión (BE3, la puerta de `MOO-77`), es decir, un* spike*. Paró la skill antes de traducir nada, y no escribió en Linear. Señaló el riesgo: el prototipo de un* spike *se tira, y si se quería medir otra vez en cada cambio del triaje, eso sí sería una historia.*
+
+**Prompt 2:**
+
+> ahora tengo dudas de que incluso sea una spike
+
+*La IA defendió que sí lo era, porque una decisión depende de los números, y ofreció la otra salida: no medir y cambiar BE3, ya que el modo ensayo no publica. El usuario eligió el* spike*. La IA cambió la etiqueta y lo planteó con `/create-spike`: tres preguntas, una de ellas sobre si había bastantes filas* no aplica *(BA4), y ½ día de* timebox*. Al experimentar, reunió por GraphQL los hilos de las 190 PR cerradas y, de la API pública de SonarCloud, las incidencias arregladas y aceptadas, con su línea sacada de los logs de la CI. Las trió con el código de producción: 49 filas que no se usaron al escribir las preguntas, por unos 0,09 $. Ningún error con confianza, pero no había casi filas* no aplica*, y la pregunta de SonarQube acertaba bastante menos que con las filas con las que se escribió.*
+
+**Prompt 3:**
+
+> A: 0,80 y MOO-77 arranca
+
+*El usuario eligió la opción que recomendaba la IA, frente a bajar el umbral a 0,70, que la muestra no podía justificar. Resultado: D124, BA4 comprobada, BQ5 con el umbral de BE3, `MOO-77` desbloqueada y una captura para recalibrar los criterios de SonarQube. ½ día frente a ½ de* timebox*.*
+
+*Ajustes:*
+- *La IA había reservado D123 para el veredicto, pero ya la usaba el montaje del hardware: pasó a D124.*
+
 ---
 
 ### 7. Pull Requests
