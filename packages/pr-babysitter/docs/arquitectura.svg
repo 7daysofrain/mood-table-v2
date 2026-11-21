@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 390" width="1000" height="390" role="img" aria-label="Arquitectura del PR Babysitter: GitHub, el contenedor con driver, grafo, triador y arreglador, Linear y el mantenedor">
+  <style>
+    text { font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #18202E; }
+    .ground { fill: #FFFFFF; }
+    .t { font-size: 15px; font-weight: 600; }
+    .s { font-size: 12px; fill: #5B6577; }
+    .si { font-size: 12px; }
+    .lbl, .mono { font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; fill: #5B6577; }
+    .mono { font-size: 11.5px; }
+    .small { font-size: 10.5px; }
+    .zone-title { font-size: 18px; font-weight: 700; }
+    .node { fill: #FFFFFF; stroke: #C9D0DC; stroke-width: 1.5; }
+    .zone { fill: #F4F6F9; stroke: #C9D0DC; stroke-width: 1.5; }
+    .container { fill: none; stroke: #2F54D8; stroke-width: 1.5; stroke-dasharray: 6 5; }
+    .acc { fill: #E6ECFC; stroke: #2F54D8; stroke-width: 1.5; }
+    .human { fill: #F0E8FB; stroke: #7A3FC4; stroke-width: 1.5; }
+    .edge { fill: none; stroke: #5B6577; stroke-width: 1.5; }
+    .edge-human { fill: none; stroke: #7A3FC4; stroke-width: 1.6; stroke-dasharray: 5 4; }
+    .head { fill: #5B6577; }
+    .head-human { fill: #7A3FC4; }
+    .c-human { fill: #7A3FC4; }
+    @media (prefers-color-scheme: dark) {
+      text { fill: #E6EAF1; }
+      .ground { fill: #171E29; }
+      .s { fill: #98A2B3; }
+      .lbl, .mono { fill: #98A2B3; }
+      .node { fill: #171E29; stroke: #354052; }
+      .zone { fill: #0F141C; stroke: #354052; }
+      .container { stroke: #8AA4FF; }
+      .acc { fill: #1C2647; stroke: #8AA4FF; }
+      .human { fill: #2B1F3D; stroke: #B88CF5; }
+      .edge { stroke: #98A2B3; }
+      .edge-human { stroke: #B88CF5; }
+      .head { fill: #98A2B3; }
+      .head-human { fill: #B88CF5; }
+      .c-human { fill: #B88CF5; }
+    }
+  </style>
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker>
+    <marker id="a1h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="head-human"/></marker>
+  </defs>
+  <rect width="1000" height="390" rx="14" class="ground"/>
+
+  <!-- GitHub -->
+  <rect x="20" y="40" width="230" height="272" rx="12" class="zone"/>
+  <text x="40" y="70" class="zone-title">GitHub</text>
+  <rect x="36" y="86" width="198" height="40" rx="8" class="node"/><text x="135" y="111" text-anchor="middle" class="si">La PR y sus hilos</text>
+  <rect x="36" y="136" width="198" height="40" rx="8" class="node"/><text x="135" y="161" text-anchor="middle" class="si">Comprobaciones (Actions)</text>
+  <rect x="36" y="186" width="198" height="40" rx="8" class="node"/><text x="135" y="211" text-anchor="middle" class="si">SonarQube</text>
+  <rect x="36" y="236" width="198" height="40" rx="8" class="node"/><text x="135" y="261" text-anchor="middle" class="si">Codex · el revisor</text>
+
+  <!-- Contenedor -->
+  <rect x="300" y="20" width="410" height="320" rx="14" class="container"/>
+  <text x="316" y="44" class="mono">Contenedor Docker · máquina de casa</text>
+  <rect x="330" y="60" width="350" height="54" rx="10" class="node"/>
+  <text x="505" y="83" text-anchor="middle" class="t">Driver</text>
+  <text x="505" y="101" text-anchor="middle" class="s">lee GitHub cada vuelta y saca una foto de cada PR</text>
+  <path d="M505,114 V138" class="edge" marker-end="url(#a1)"/>
+  <text x="515" y="131" class="lbl">reanuda su hilo</text>
+  <rect x="330" y="140" width="350" height="58" rx="10" class="acc"/>
+  <text x="505" y="165" text-anchor="middle" class="t">Grafo de LangGraph</text>
+  <text x="505" y="184" text-anchor="middle" class="s">un hilo por PR, con estado y pausas</text>
+  <path d="M415,198 V226" class="edge" marker-end="url(#a1)"/>
+  <path d="M595,198 V226" class="edge" marker-end="url(#a1)"/>
+  <rect x="330" y="228" width="170" height="66" rx="10" class="node"/>
+  <text x="415" y="255" text-anchor="middle" class="t">Triador</text>
+  <text x="415" y="274" text-anchor="middle" class="s">Clef, modelo de decisión</text>
+  <rect x="510" y="228" width="170" height="66" rx="10" class="node"/>
+  <text x="595" y="255" text-anchor="middle" class="t">Arreglador</text>
+  <text x="595" y="274" text-anchor="middle" class="s">agente con herramientas</text>
+  <text x="505" y="322" text-anchor="middle" class="mono">estado en SQLite · trazas en LangSmith</text>
+
+  <!-- GitHub <-> contenedor -->
+  <path d="M250,92 H328" class="edge" marker-end="url(#a1)"/>
+  <text x="289" y="84" text-anchor="middle" class="lbl">lee</text>
+  <path d="M330,169 H252" class="edge" marker-end="url(#a1)"/>
+  <text x="291" y="161" text-anchor="middle" class="lbl">escribe</text>
+  <text x="275" y="190" text-anchor="middle" class="mono small">push,</text>
+  <text x="275" y="204" text-anchor="middle" class="mono small">hilos,</text>
+  <text x="275" y="218" text-anchor="middle" class="mono small">resumen</text>
+
+  <!-- Linear y mantenedor -->
+  <rect x="770" y="60" width="210" height="80" rx="12" class="zone"/>
+  <text x="875" y="94" text-anchor="middle" class="zone-title">Linear</text>
+  <text x="875" y="116" text-anchor="middle" class="s">avisos y escalados</text>
+  <path d="M680,169 H730 V100 H768" class="edge" marker-end="url(#a1)"/>
+  <text x="688" y="161" class="lbl">avisa</text>
+  <rect x="770" y="212" width="210" height="80" rx="12" class="human"/>
+  <text x="875" y="246" text-anchor="middle" class="t c-human">Mantenedor</text>
+  <text x="875" y="267" text-anchor="middle" class="s">decide lo que exige criterio</text>
+  <path d="M845,140 V210" class="edge" marker-end="url(#a1)"/>
+  <text x="837" y="180" text-anchor="end" class="lbl">aviso</text>
+  <path d="M905,212 V142" class="edge-human" marker-end="url(#a1h)"/>
+  <text x="913" y="180" class="lbl">respuesta</text>
+  <path d="M875,292 V368 H135 V314" class="edge-human" marker-end="url(#a1h)"/>
+  <text x="505" y="360" text-anchor="middle" class="lbl c-human">merge: solo lo hace el mantenedor</text>
+</svg>
