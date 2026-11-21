@@ -126,13 +126,11 @@ La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor 
 ### **1.4. Instrucciones de instalación:**
 > Documenta de manera precisa las instrucciones para instalar y poner en marcha el proyecto en local (librerías, backend, frontend, servidor, base de datos, migraciones y semillas de datos, etc.)
 
-*Diseño previsto para la Entrega 2. Los comandos definitivos se confirmarán con el código.*
-
 Hay tres formas de probar Mood Table, de menos a más esfuerzo: la **demo pública** (sin instalar nada), el **simulador en local** (sin hardware) y la **mesa** (Raspberry Pi con una tira LED real).
 
 > **Credenciales: no hay.** Mood Table no tiene login en ningún entorno (§2.5). La demo pública y el panel local se abren directamente.
 
-#### 1. Probar la demo pública (sin instalar nada) — *disponible con la entrega final*
+#### 1. Probar la demo pública (sin instalar nada)
 
 1. Abre `https://moodtable.josebaalonso.tech`.
 2. Pulsa el botón de oír (el altavoz de la cabecera): suena una pista de ejemplo y las dos tiras virtuales reaccionan (**H1**).
@@ -140,7 +138,7 @@ Hay tres formas de probar Mood Table, de menos a más esfuerzo: la **demo públi
 4. En **Intensidad**, baja el fader: todas las tiras bajan su brillo a la vez y, abajo del todo, se apagan (**H2**).
 5. En **Tiras**, selecciona la otra tira: los controles pasan a ser los suyos (**H4**).
 
-La demo comparte el estado entre todos los visitantes y lo reinicia cada cierto tiempo. La tira física (**H3**) y el arranque en el último estado (**H5**) se ven en el vídeo de la mesa (§2.4) o en local (abajo).
+La demo comparte el estado entre todos los visitantes y vuelve a su estado inicial cada 3 horas (a las 00:00, 03:00, 06:00… UTC; §2.4). La tira física (**H3**) y el arranque en el último estado (**H5**) se ven en el vídeo de la mesa (§2.4) o en local (abajo).
 
 #### 2. Simulador en local (sin hardware)
 
@@ -516,9 +514,7 @@ mood-table-v2/
 
 > Detalla la infraestructura del proyecto, incluyendo un diagrama en el formato que creas conveniente, y explica el proceso de despliegue que se sigue
 
-*Diseño previsto para la Entrega 2.*
-
-Mood Table se despliega en **dos entornos con el mismo artefacto y el mismo procedimiento**: la **mesa** (producción real, una Raspberry Pi 4 en la red local) y la **demo pública** (una instancia EC2 en AWS, para que cualquiera pueda probarla sin hardware). Los dos son una máquina Linux **arm64** con el motor como servicio `systemd`. Solo cambia el fichero de configuración: qué tiras hay, de dónde sale el audio y dónde se guarda el estado.
+Mood Table se despliega en **dos entornos con el mismo script de instalación**: la **mesa** (producción real, una Raspberry Pi 4 en la red local) y la **demo pública** (una instancia EC2 en AWS, para que cualquiera pueda probarla sin hardware). Los dos son una máquina Linux **arm64** con el motor como servicio `systemd`. Solo cambia el fichero de configuración (qué tiras hay, de dónde sale el audio y dónde se guarda el estado) y lo que la demo añade encima: Caddy y un temporizador que la devuelve a su estado inicial. Los dos se despliegan **a mano**, sin despliegue continuo (D125).
 
 ```mermaid
 flowchart LR
@@ -528,8 +524,7 @@ flowchart LR
     direction TB
     repo["Repositorio"]
     ci["GitHub Actions<br/>lint · tipos · tests · E2E<br/>SonarQube (quality gate)"]
-    rel["Release<br/>paquete del motor + build del panel"]
-    repo --> ci --> rel
+    repo --> ci
   end
 
   subgraph home["Casa · red local"]
@@ -554,7 +549,9 @@ flowchart LR
       direction TB
       caddy["Caddy :80/:443<br/>HTTPS Let's Encrypt"]
       svcDemo["systemd · usuario moodtable<br/>motor Node.js 127.0.0.1:8080<br/>audio = WAV · estado en memoria"]
+      timer["systemd timer<br/>reinicio cada 3 h"]
       caddy --> svcDemo
+      timer -.-> svcDemo
     end
   end
 
@@ -562,8 +559,8 @@ flowchart LR
   visitor["🌍 Visitante / evaluador"]
 
   dev -- "push / PR" --> repo
-  rel -- "update.sh (manual, por la red local)" --> svcPi
-  rel -- "CD: GitHub Actions → SSM → update.sh" --> svcDemo
+  repo -- "install.sh (a mano, por SSH en la red local)" --> svcPi
+  repo -- "install.sh + demo/setup.sh (a mano, por SSM)" --> svcDemo
   visitor -- "HTTPS + WSS" --> caddy
   dns -.-> caddy
 
@@ -578,40 +575,39 @@ flowchart LR
 | **Máquina** | Raspberry Pi 4 (arm64) | AWS EC2 `t4g.micro`: 2 vCPU Graviton (arm64), 1 GB |
 | **Tiras** | Tira de la mesa (Adalight), visible también en el visor | Solo tiras virtuales: sin puertos serie |
 | **Audio** | Tarjeta de sonido USB (`arecord`) | Fichero WAV en bucle, con licencia libre |
-| **Estado** | SQLite en la tarjeta SD (§3) | En memoria; se reinicia cada cierto tiempo (§2.5) |
+| **Estado** | SQLite en la tarjeta SD (§3) | En memoria; vuelve al inicial cada 3 horas, cuando un temporizador reinicia el motor |
 | **Acceso** | Red local, sin autenticación | `https://moodtable.josebaalonso.tech`, sin login |
-| **Despliegue** | Manual: se lanza `deploy/update.sh` desde la red local | **Continuo (CD) con GitHub Actions** al integrar en `main` |
+| **Despliegue** | A mano: `deploy/install.sh` por SSH desde la red local | A mano: `deploy/install.sh` y después `deploy/demo/setup.sh`, desde una sesión de SSM |
 
 **Por qué arm64 en los dos.** Es la arquitectura de la Pi. Con una instancia Graviton en la nube, el motor y sus dependencias nativas (`serialport`, SQLite) se instalan y se prueban igual en los dos sitios, y las medidas de rendimiento de la demo son representativas de la mesa. Es un único procedimiento de despliegue, no dos.
 
-**Por qué una máquina virtual (EC2).** El motor es un proceso de larga duración con un bucle continuo y WebSocket, así que necesita una máquina siempre disponible y no un servicio que duerma la aplicación. Una EC2 replica la mesa (Linux + `systemd`), de modo que el procedimiento de despliegue es el mismo en los dos entornos.
+**Por qué una máquina virtual (EC2).** El motor es un proceso de larga duración con un bucle continuo y WebSocket, así que necesita una máquina siempre disponible y no un servicio que duerma la aplicación. Una EC2 replica la mesa (Linux + `systemd`), de modo que el script de instalación es el mismo en los dos entornos.
 
 #### Proceso de despliegue
 
 1. **Integración continua (en cada PR).** GitHub Actions ejecuta lint (incluida la regla "el núcleo no importa de los adaptadores", §2.3), comprobación de tipos, tests unitarios y de integración, el E2E con Playwright (§2.6) y el análisis de SonarQube Cloud, con una comprobación propia que falla si el PR añade incidencias nuevas (el *quality gate* gratuito no las cuenta). Esa comprobación anota cada incidencia en su línea del PR, con su regla y su nombre, su severidad y su mensaje, hasta 10, y avisa del total (`MOO-167`). Además, Codex revisa cada PR (D62) y no se integra con hilos de revisión sin resolver. Si algo falla o no se supera el *quality gate*, el PR no se integra. Los PR van contra `main`; la rama de cada entrega es una foto de `main` (D41).
-2. **Release (al integrar en `main`).** Se construye el panel (build estático de Vite) y el motor, y se publica un paquete versionado como release de GitHub.
-3. **Instalación inicial (una vez por máquina).** El script de instalación, `deploy/install.sh` (D110), que el maker lanza en la Pi por SSH con `curl … | sudo bash` (§1.4). En bash, porque Node.js todavía no está instalado. Instala `git` y Node.js 24 del repositorio de NodeSource, que lo deja en `/usr/bin/node` y lo parchea con `apt upgrade` sin salir de la 24; activa pnpm con `corepack`; crea el usuario de sistema `moodtable` (sin shell de entrada, con los grupos `dialout` y `audio`); hace un clon superficial de `main` (u otra rama o etiqueta que se le pase) en `/opt/moodtable.new`, instala las dependencias y construye el panel; deja el fichero de configuración base (la demo con `server.host` en `0.0.0.0`); le da toda la instalación a `moodtable`, la mueve a `/opt/moodtable` y registra la unidad `systemd`. Todo lo que puede fallar por la red o el disco pasa antes de tocar `/opt/moodtable`. `git log -1` en `/opt/moodtable` dice qué commit está instalado. Si ya hay una instalación (la suya en `/opt/moodtable`, o la anterior de la mesa, que encuentra por el `WorkingDirectory` de la unidad registrada), primero pregunta, leyendo de `/dev/tty`, si conservar o sobrescribir su `config/local.json`; sin una de las dos respuestas termina sin tocar nada, y con conservar también si el fichero guarda el estado fuera de la instalación (lo comprueba con el Node que ya hay). Al reinstalar, el fichero conservado o el base (con el anterior como `.bck`) va a la instalación nueva, `data/` no se copia, se para el servicio, la instalación del script se aparta a `/opt/moodtable.old` y se borra en cuanto la nueva ocupa su sitio. El clon anterior no se toca. ShellCheck lo revisa en `pnpm lint`; los escenarios se prueban a mano en la mesa. La demo, cuando llegue, instalará además Caddy.
-4. **Despliegue continuo de la demo (al integrar en `main`).** Tras publicar la release, el mismo workflow de GitHub Actions la despliega en la EC2. Como Actions corre en servidores de GitHub, llega a la máquina por **AWS Systems Manager** (SSM), con un rol temporal (OIDC): no hay claves de AWS guardadas en GitHub ni puerto SSH abierto. Lo que ejecuta dentro de la máquina es `deploy/update.sh <versión>`.
-5. **Despliegue de la mesa (manual).** Se lanza el **mismo** `deploy/update.sh` desde la red local. GitHub no puede llegar a la Pi, y es preferible no actualizar el instrumento en mitad de una sesión.
+2. **Instalación y actualización (los dos entornos, a mano).** El script de instalación, `deploy/install.sh` (D110), que el maker lanza en la Pi por SSH con `curl … | sudo bash` (§1.4), y el autor en la EC2 desde una sesión de SSM. En bash, porque Node.js todavía no está instalado. Instala `git` y Node.js 24 del repositorio de NodeSource, que lo deja en `/usr/bin/node` y lo parchea con `apt upgrade` sin salir de la 24; activa pnpm con `corepack`; crea el usuario de sistema `moodtable` (sin shell de entrada, con los grupos `dialout` y `audio`); hace un clon superficial de `main` (u otra rama o etiqueta que se le pase) en `/opt/moodtable.new`, instala las dependencias y construye el panel; deja el fichero de configuración base (la demo con `server.host` en `0.0.0.0`); le da toda la instalación a `moodtable`, la mueve a `/opt/moodtable` y registra la unidad `systemd`. Todo lo que puede fallar por la red o el disco pasa antes de tocar `/opt/moodtable`. `git log -1` en `/opt/moodtable` dice qué commit está instalado. Si ya hay una instalación (la suya en `/opt/moodtable`, o la anterior de la mesa, que encuentra por el `WorkingDirectory` de la unidad registrada), primero pregunta, leyendo de `/dev/tty`, si conservar o sobrescribir su `config/local.json`; sin una de las dos respuestas termina sin tocar nada, y con conservar también si el fichero guarda el estado fuera de la instalación (lo comprueba con el Node que ya hay). Al reinstalar, el fichero conservado o el base (con el anterior como `.bck`) va a la instalación nueva, `data/` no se copia, se para el servicio, la instalación del script se aparta a `/opt/moodtable.old` y se borra en cuanto la nueva ocupa su sitio. El clon anterior no se toca. ShellCheck lo revisa en `pnpm lint`; los escenarios se prueban a mano en la mesa. Para **actualizar**, se vuelve a lanzar: reinstala con lo último de `main`. **Volver atrás** es lanzarlo con la rama o la etiqueta anterior.
+3. **La demo encima (en la EC2, a mano).** Después de `install.sh`, `sudo bash /opt/moodtable/deploy/demo/setup.sh` la convierte en la demo pública (D125): deja `config/cloud.json` como fichero de configuración (dos tiras virtuales, el audio de ejemplo, el estado en memoria, 30 fps y el motor solo en `127.0.0.1`), instala Caddy de su repositorio oficial con `deploy/demo/Caddyfile`, añade a la unidad el *drop-in* `deploy/demo/moodtable-demo.conf` y registra el temporizador `moodtable-reset.timer`. Al terminar reinicia el motor y comprueba que ha arrancado. Se puede volver a lanzar, y hay que hacerlo después de cada `install.sh`, que deja otra vez la configuración base. ShellCheck lo revisa también en `pnpm lint`.
 
-**Qué hace `update.sh`** (el paso que se ejecuta en la máquina, igual en los dos entornos): descarga la release indicada, instala las dependencias de producción y reinicia el servicio. Tras cada despliegue, el autor comprueba a mano que la demo funciona. **Volver atrás** es ejecutar el mismo script con la versión anterior.
+**Por qué sin despliegue continuo** (D125). El diseño inicial (D30) preveía releases y un workflow de GitHub Actions que, por SSM, lanzara un `update.sh` en la EC2. No llegaba a tiempo para la entrega final, y desplegar a mano con el mismo `install.sh` de la mesa deja un único procedimiento, ya probado, sin nada nuevo que probar. El precio: integrar en `main` no actualiza la demo; hay que volver a lanzar los dos scripts. Tras cada despliegue, el autor comprueba a mano que la demo funciona.
 
-**Por qué los pasos viven en un script y no en el YAML del workflow.** GitHub Actions **decide y lanza** el despliegue; el script es **lo que se hace dentro de la máquina**. Tenerlo en un script da un único procedimiento para la mesa y la demo (en el YAML habría dos versiones que acabarían divergiendo), se puede probar sin GitHub en la Pi de desarrollo y deja el workflow corto y legible: construir, publicar y pedir por SSM que se ejecute `update.sh`.
-
-**Servicio `systemd`** (`deploy/moodtable.service`, D106). Arranca el motor al encender la máquina, como el usuario propio `moodtable`, desde la instalación de `/opt/moodtable` y con su `config/local.json`. La registra el script de instalación (D110). Antes de lanzarlo espera a que `udev` termine con los dispositivos enchufados al encender (`udevadm settle`), para que el puerto serie del controlador Adalight y la tarjeta de sonido ya estén cuando el motor los abre; si la espera se agota, lo lanza igualmente. No espera a la red: las tiras pintan aunque no la haya, y como la mesa escucha en `0.0.0.0`, el panel se abre en cuanto llega. **No lo reinicia** si termina o se cae: queda en `failed`, con el motivo en el registro (`journalctl -u moodtable -b`), y el DJ lo recupera apagando y encendiendo la mesa. Junto con el guardado del estado en SQLite, es lo que permite que la mesa "vuelva como estaba" (H5) tras un corte de luz. El estado va, si el fichero de configuración no dice otra cosa (`instrumentState`, §3), en `data/instrument-state.db` dentro de la instalación, que es toda de `moodtable`, así que puede escribir ahí. Si no pudiera, el motor arranca igual, sin guardar, y lo dice en el log.
+**Servicio `systemd`** (`deploy/moodtable.service`, D106). Arranca el motor al encender la máquina, como el usuario propio `moodtable`, desde la instalación de `/opt/moodtable` y con su `config/local.json`. La registra el script de instalación (D110). Antes de lanzarlo espera a que `udev` termine con los dispositivos enchufados al encender (`udevadm settle`), para que el puerto serie del controlador Adalight y la tarjeta de sonido ya estén cuando el motor los abre; si la espera se agota, lo lanza igualmente. No espera a la red: las tiras pintan aunque no la haya, y como la mesa escucha en `0.0.0.0`, el panel se abre en cuanto llega. **No lo reinicia** si termina o se cae: queda en `failed`, con el motivo en el registro (`journalctl -u moodtable -b`), y el DJ lo recupera apagando y encendiendo la mesa. En la demo, un *drop-in* le añade `Restart=on-failure`: allí no hay un DJ que apague y encienda. Junto con el guardado del estado en SQLite, es lo que permite que la mesa "vuelva como estaba" (H5) tras un corte de luz. El estado va, si el fichero de configuración no dice otra cosa (`instrumentState`, §3), en `data/instrument-state.db` dentro de la instalación, que es toda de `moodtable`, así que puede escribir ahí. Si no pudiera, el motor arranca igual, sin guardar, y lo dice en el log.
 
 #### Detalles de la demo pública
 
-- **HTTPS con Caddy.** Caddy recibe el tráfico en los puertos 80 y 443, obtiene y renueva solo el certificado de Let's Encrypt y reenvía HTTP y WebSocket al motor, que solo escucha en `127.0.0.1`. La configuración cabe en unas líneas:
+- **HTTPS con Caddy.** Caddy recibe el tráfico en los puertos 80 y 443, obtiene y renueva solo el certificado de Let's Encrypt y reenvía HTTP y WebSocket al motor, que solo escucha en `127.0.0.1`. La configuración (`deploy/demo/Caddyfile`) cabe en unas líneas:
 
   ```
   moodtable.josebaalonso.tech {
+      encode zstd gzip
       reverse_proxy 127.0.0.1:8080
   }
   ```
 
+- **Vuelta al estado inicial.** El temporizador `moodtable-reset.timer` reinicia el motor cada 3 horas, a horas fijas (00:00, 03:00, 06:00… UTC). Con el estado en memoria, cada tira vuelve al efecto que declara y a los valores por defecto, lo deje como lo deje el último visitante. El panel abierto pierde la conexión unos segundos y se reconecta solo. `systemctl list-timers moodtable-reset.timer` dice cuándo toca el siguiente.
+
 - **DNS.** Un registro `A` en Spaceship apunta el subdominio a la **IP elástica** de la instancia. La IP elástica no cambia aunque la instancia se pare, y no cuesta más que una IP pública automática.
-- **CPU.** Las `t4g` acumulan créditos de CPU cuando están ociosas y los gastan en ráfagas. Por eso, en la demo, **el bucle se pausa cuando no hay ningún navegador conectado** y corre a **30 fps**: acumula créditos mientras nadie mira y tiene CPU de sobra cuando alguien entra. La instancia va en modo de créditos *standard* (si se agotan, se ralentiza en lugar de facturar más). El consumo real en la instancia está por medir: el spike de rendimiento (`MOO-12`) midió la Pi.
+- **CPU.** Las `t4g` acumulan créditos de CPU cuando están ociosas y los gastan en ráfagas. La instancia va en modo de créditos *standard* (si se agotan, se ralentiza en lugar de facturar más) y el motor corre a **30 fps**, siempre, haya o no navegadores conectados. El consumo en la instancia se mide tras desplegar (el spike de rendimiento, `MOO-12`, midió la Pi).
 - **Red y acceso.** El grupo de seguridad solo abre 80 y 443. La administración se hace por SSM Session Manager, sin SSH. Las actualizaciones de seguridad del sistema operativo se aplican solas (`unattended-upgrades`).
 - **Coste previsto.** ~6 $/mes de instancia + ~3,6 $/mes de IPv4 pública + disco: **unos 10 $/mes**, con una **alerta de presupuesto** en AWS.
 
@@ -635,9 +631,10 @@ La herramienta de desarrollo que sigue las PR (§2.2) no se despliega con el ins
 
 #### Sacrificios
 
-- **Operación a cargo del autor.** Sistema operativo, Caddy y la instancia se mantienen a mano; un PaaS lo daría hecho. Se compensa con scripts idempotentes y actualizaciones automáticas.
+- **Operación a cargo del autor.** Sistema operativo, Caddy y la instancia se mantienen y se despliegan a mano; un PaaS lo daría hecho. Se compensa con scripts que se pueden volver a lanzar y actualizaciones de seguridad automáticas.
 - **Una sola instancia, sin alta disponibilidad.** Si cae, la demo no está hasta que `systemd` la reinicia. Es suficiente para una demo.
-- **Infraestructura sin código (IaC).** La instancia, el grupo de seguridad, la IP y el rol se crean una vez y se documentan paso a paso en `deploy/`; Terraform o CDK quedan fuera del MVP.
+- **Infraestructura sin código (IaC).** La instancia, el grupo de seguridad, la IP y el rol se crean una vez a mano en la consola de AWS; Terraform o CDK quedan fuera del MVP.
+- **Sin despliegue continuo** (D125). Integrar en `main` no actualiza la demo: hay que volver a lanzar los dos scripts.
 - **Coste fijo** de ~10 $/mes.
 
 ### **2.5. Seguridad**
@@ -656,7 +653,7 @@ La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la 
 
 #### En la demo pública (internet)
 
-- **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria** (su configuración declara `"instrumentState": { "type": "memory" }`, §3): nada se escribe en disco y el estado vuelve al inicial cada cierto tiempo. Todos los visitantes ven el mismo visor; que uno vea lo que toca otro se asume como parte de la demo.
+- **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria** (su configuración declara `"instrumentState": { "type": "memory" }`, §3): nada se escribe en disco y el estado vuelve al inicial cada 3 horas (§2.4). Todos los visitantes ven el mismo visor; que uno vea lo que toca otro se asume como parte de la demo.
 - **Sin hardware.** La configuración de la demo solo declara tiras virtuales, así que no hay puertos serie expuestos.
 - **Límite de peticiones** por IP en la API (`@fastify/rate-limit`) y **máximo de conexiones WebSocket** simultáneas.
 - **HTTPS** con Caddy y certificado de Let's Encrypt; la instancia solo abre los puertos 80 y 443 y se administra sin SSH, por AWS Systems Manager (§2.4).
