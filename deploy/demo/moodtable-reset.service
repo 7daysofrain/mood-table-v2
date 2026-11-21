@@ -1,0 +1,11 @@
+# Reinicia el motor de la demo pública (D125). Lo lanza moodtable-reset.timer.
+# Con el estado en memoria (config/cloud.json), el motor arranca con el efecto que declara cada tira
+# y los valores por defecto: la demo vuelve a su estado inicial, lo deje como lo deje el último
+# visitante.
+
+[Unit]
+Description=Mood Table: devolver la demo a su estado inicial
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart moodtable.service

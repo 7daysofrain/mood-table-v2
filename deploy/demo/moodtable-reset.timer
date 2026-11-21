@@ -1,0 +1,12 @@
+# Cada 3 horas, a horas fijas en UTC (00:00, 03:00, 06:00…), lanza moodtable-reset.service (D125).
+# A horas fijas para que se sepa cuándo toca: systemctl list-timers moodtable-reset.timer
+
+[Unit]
+Description=Mood Table: devolver la demo a su estado inicial cada 3 horas
+
+[Timer]
+OnCalendar=*-*-* 00/3:00:00 UTC
+# Sin Persistent: si la instancia estaba parada a esa hora, al arrancar ya empieza en el estado inicial.
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,9 @@
+# La demo pública (D125). deploy/demo/setup.sh lo copia a /etc/caddy/Caddyfile.
+# Caddy obtiene y renueva solo el certificado de Let's Encrypt (necesita los puertos 80 y 443 abiertos
+# y el registro A del dominio apuntando a la IP elástica) y reenvía HTTP y WebSocket al motor, que
+# solo escucha en 127.0.0.1 (config/cloud.json).
+
+moodtable.josebaalonso.tech {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8080
+}
