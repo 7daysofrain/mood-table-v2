@@ -128,7 +128,7 @@
   `prompts.md`, si la sección 1 dejó algo por contar.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
-- [ ] 2.4 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 2.4 **Prueba a mano** (sin commit), con el sistema en marcha:
   - las dos PR de prueba de 1.8, otra vez;
   - una tercera con un test que rompe la PR y un `e2e` que falla solo en el primer intento.
 
