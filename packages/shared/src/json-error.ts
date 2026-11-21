@@ -5,7 +5,7 @@
  */
 
 export interface TextPosition {
-  /** Empezando en 1, como en los editores. */
+  /** Empezando en 0, como los índices de los textos. */
   line: number;
   column: number;
 }
@@ -27,7 +27,7 @@ export function findJsonError(text: string): TextPosition | undefined {
 
 function toPosition(text: string, offset: number): TextPosition {
   const before = text.slice(0, offset).split('\n');
-  return { line: before.length, column: (before.at(-1)?.length ?? 0) + 1 };
+  return { line: before.length, column: before.at(-1)?.length ?? 0 };
 }
 
 /** Se lanza en el primer carácter que no encaja y corta el recorrido. */
