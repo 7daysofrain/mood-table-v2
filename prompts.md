@@ -2678,7 +2678,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 > ahora tengo dudas de que incluso sea una spike
 
-*La IA defendió que sí lo era, porque una decisión depende de los números, y ofreció la otra salida: no medir y cambiar BE3, ya que el modo ensayo no publica. El usuario eligió el* spike*. La IA cambió la etiqueta y lo planteó con `/create-spike`: tres preguntas, una de ellas sobre si había bastantes filas* no aplica *(BA4), y ½ día de* timebox*. Al experimentar, reunió por GraphQL los hilos de las 190 PR cerradas y, de la API pública de SonarCloud, las incidencias arregladas y aceptadas, con su línea sacada de los logs de la CI. Las trió con el código de producción: 49 filas que no se usaron al escribir las preguntas, por unos 0,09 $. Ningún error con confianza, pero no había casi filas* no aplica*, y la pregunta de SonarQube acertaba bastante menos que con las filas con las que se escribió.*
+*La IA defendió que sí lo era, porque una decisión depende de los números, y ofreció la otra salida: no medir y cambiar BE3, ya que el modo ensayo no publica. El usuario eligió el* spike*. La IA cambió la etiqueta y lo planteó con `/create-spike`: tres preguntas, una de ellas sobre si había bastantes filas* no aplica *(BA4), y ½ día de* timebox*. Al experimentar, reunió por GraphQL los hilos de las 190 PR cerradas y, de la API pública de SonarCloud, las incidencias arregladas y aceptadas, con su línea sacada de los logs de la CI. Las trió con el código de producción: 47 filas que no se usaron al escribir las preguntas, por unos 0,09 $. Ningún error con confianza, pero no había casi filas* no aplica*, y la pregunta de SonarQube acertaba bastante menos que con las filas con las que se escribió.*
 
 **Prompt 3:**
 
@@ -2688,6 +2688,7 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *Ajustes:*
 - *La IA había reservado D123 para el veredicto, pero ya la usaba el montaje del hardware: pasó a D124.*
+- *Codex revisó la PR y encontró dos errores en las cifras, comprobados contra los datos del prototipo. La tabla de SonarQube contaba 19 incidencias arregladas y 3 aceptadas, y eran 18 y 4. Y las 49 filas «nuevas» incluían dos aceptadas que la propia nota daba por el mismo bucle que dos filas de D118: el grupo eran 47, con la cota del error en un 6,2 % y no por debajo del 6 %. El veredicto no cambia.*
 
 ---
 
