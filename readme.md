@@ -27,7 +27,7 @@ Instrumento de luz para la mesa de DJ: un motor de efectos propio, reactivo a la
 
 ### **0.4. URL del proyecto:**
 
-*Pendiente.* Será la demo pública (el motor reproduciendo un fichero de audio y pintando tiras virtuales en el visor) y llegará con la entrega final.
+**https://moodtable.josebaalonso.tech**: la demo pública, sin login. El motor reproduce un fichero de audio y pinta dos tiras virtuales en el visor; se toca desde el mismo panel que la mesa. Cómo probarla, en §1.4; cómo está desplegada, en §2.4.
 
 > Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
 
@@ -1205,7 +1205,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 > Documenta 3 de los tickets de trabajo principales del desarrollo, uno de backend, uno de frontend, y uno de bases de datos. Da todo el detalle requerido para desarrollar la tarea de inicio a fin teniendo en cuenta las buenas prácticas al respecto. 
 
-> **Copia para la entrega (25-sep-2026).** Un ticket es una **tarea** de Linear: un cambio de **una sola área** que se integra en **una PR** (`workflow.md` §2). En Linear, la tarea tiene una o dos líneas y enlaza su historia; el paso a paso vivirá en el `tasks.md` del **OpenSpec change** de la historia, que se escribe en la Entrega 2 (un paso = un commit). Esta ficha reúne lo que ya existe (criterios de la historia, diseño de §2-§3, riesgos) y marca como ***previsto*** lo que fijará la spec.
+> **Copia para la entrega (25-sep-2026).** Los cuatro tickets se conservan como se planificaron, sin reescribirlos con lo que se construyó; solo se actualizan su estado y su PR. Lo que cambió al implementarlos está en la descripción de cada PR, y tres de ellas, en el §7. Un ticket es una **tarea** de Linear: un cambio de **una sola área** que se integra en **una PR** (`workflow.md` §2). En Linear, la tarea tiene una o dos líneas y enlaza su historia; el paso a paso vivirá en el `tasks.md` del **OpenSpec change** de la historia, que se escribe en la Entrega 2 (un paso = un commit). Esta ficha reúne lo que ya existe (criterios de la historia, diseño de §2-§3, riesgos) y marca como ***previsto*** lo que fijará la spec.
 
 **Ticket 1**
 
@@ -1216,8 +1216,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 | **Tipo / área** | Backend · `engine` |
 | **Historia** | HU1 · `MOO-13` (8 puntos, compartidos por sus tres tareas) |
 | **Prioridad** | Alta (heredada de la historia) |
-| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-16/arrancar-el-motor-con-una-tira-virtual-y-el-efecto-respiracion) |
-| **Rama / PR** | `7daysofrain/moo-16-…` · PR con `Fixes MOO-16`; commits con `Refs MOO-16` |
+| **Estado** | Done, integrada el 15-oct · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-16/arrancar-el-motor-con-una-tira-virtual-y-el-efecto-respiracion) |
+| **Rama / PR** | `7daysofrain/moo-16-…` · [PR #28](https://github.com/7daysofrain/mood-table-v2/pull/28) con `Fixes MOO-16`; commits con `Refs MOO-16` |
 
 **Descripción.** Primer código del motor. Lee un fichero de configuración mínimo, arranca el bucle de frames y pinta una tira virtual con el efecto *respiración*. Los frames todavía no salen del motor (eso es `MOO-17`): se comprueban con una salida en memoria.
 
@@ -1278,8 +1278,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 | **Tipo / área** | Frontend · `panel` |
 | **Historia** | HU1 · `MOO-13` (8 puntos, compartidos por sus tres tareas) |
 | **Prioridad** | Alta (heredada de la historia) |
-| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-18/dibujar-las-tiras-en-el-visor-y-mostrar-la-conexion-con-el-motor) |
-| **Rama / PR** | `7daysofrain/moo-18-…` · PR con `Fixes MOO-18` |
+| **Estado** | Done, integrada el 15-oct · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-18/dibujar-las-tiras-en-el-visor-y-mostrar-la-conexion-con-el-motor) |
+| **Rama / PR** | `7daysofrain/moo-18-…` · [PR #31](https://github.com/7daysofrain/mood-table-v2/pull/31) con `Fixes MOO-18` |
 
 **Descripción.** El **visor** del panel: recibe los frames binarios que emite el motor por WebSocket y dibuja cada tira en un `<canvas>`, un punto de luz por LED. Muestra si hay conexión con el motor y se reconecta solo cuando el motor vuelve.
 
@@ -1337,8 +1337,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 | **Tipo / área** | Base de datos · `db` |
 | **Historia** | `MOO-25` · Volver al último estado del instrumento tras reiniciar el motor (épica H5, `MOO-9`). Sin refinar ni estimar: se refina justo a tiempo, como el resto de H5 |
 | **Prioridad** | Alta (heredada de la épica, must-have) |
-| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-26/crear-la-base-de-persistencia-del-estado-del-instrumento-sqlite) |
-| **Rama / PR** | `7daysofrain/moo-26-…` · PR con `Fixes MOO-26`; commits con `Refs MOO-26` |
+| **Estado** | Done, integrada el 8-nov · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-26/crear-la-base-de-persistencia-del-estado-del-instrumento-sqlite) |
+| **Rama / PR** | `7daysofrain/moo-26-…` · [PR #122](https://github.com/7daysofrain/mood-table-v2/pull/122) con `Fixes MOO-26`; commits con `Refs MOO-26` |
 
 **Descripción.** La base técnica de la persistencia del **estado del instrumento** (efecto activo y valores de cada tira, §3): el esquema con sus migraciones, el modelo en TypeScript, el puerto `StateStore` con sus dos adaptadores y la conexión al arrancar. No incluye la lógica que decide *cuándo* se guarda ni la reconciliación con el fichero de tiras: son tareas `engine` de la misma historia. Esta tarea deja la persistencia lista y probada para que esas tareas solo tengan que usarla.
 
@@ -1406,8 +1406,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 | **Tipo / área** | Backend · `engine` |
 | **Historia** | HU2 · `MOO-14` (8 puntos, compartidos por sus tres tareas) |
 | **Prioridad** | Alta (heredada de la historia) |
-| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-20/analizar-el-audio-y-pintar-el-efecto-energia) |
-| **Rama / PR** | `7daysofrain/moo-20-…` · PR con `Fixes MOO-20` |
+| **Estado** | Done, integrada el 19-oct · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-20/analizar-el-audio-y-pintar-el-efecto-energia) |
+| **Rama / PR** | `7daysofrain/moo-20-…` · [PR #40](https://github.com/7daysofrain/mood-table-v2/pull/40) con `Fixes MOO-20` |
 
 **Descripción.** El análisis del audio en el núcleo y el primer efecto reactivo. A partir de las muestras de la fuente de audio calcula, una vez por frame, los **rasgos** que consumen los efectos, y el efecto *energía* los convierte en luz. El motor envía además al panel el tipo de fuente y su nivel.
 
