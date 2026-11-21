@@ -124,7 +124,7 @@
 
   Verificar: los tests de 2.1 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 2.3 Documentación: README §2.2 (*PR Babysitter*: `decidir` ya no relanza lo que causa la PR) y
+- [x] 2.3 Documentación: README §2.2 (*PR Babysitter*: `decidir` ya no relanza lo que causa la PR) y
   `prompts.md`, si la sección 1 dejó algo por contar.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.

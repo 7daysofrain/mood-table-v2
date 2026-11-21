@@ -2621,12 +2621,13 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 > Separamos ya, reestima a 8
 
-*Claude Code (`claude-opus-5-5`, 21-nov). Resultado: el change `pr-first-failure-triage` (`/opsx:propose`), con D122, un nodo `decidir` sin modelo y dos tareas: `MOO-178` rehace el grafo sin cambiar el comportamiento (siempre relanza) y `MOO-179` deja de relanzar lo que causa la PR. El usuario lo commiteó sin revisarlo. En `/opsx:apply`, la IA implementó la sección de `MOO-178` con un commit por paso y los tests en rojo antes de cada implementación.*
+*Claude Code (`claude-opus-5-5`, 21-nov). Resultado: el change `pr-first-failure-triage` (`/opsx:propose`), con D122, un nodo `decidir` sin modelo y dos tareas: `MOO-178` rehace el grafo sin cambiar el comportamiento (siempre relanza) y `MOO-179` deja de relanzar lo que causa la PR. El usuario lo commiteó sin revisarlo. En `/opsx:apply`, la IA implementó la sección de `MOO-178` con un commit por paso y los tests en rojo antes de cada implementación, la probó a mano en dos PR de prueba (p = 0,09 en un test intermitente y p = 0,95 en uno que rompe la PR) y, ya integrada, la de `MOO-179`.*
 
 *Ajustes:*
 - *La IA propuso esperar para estimar, «para no anclarse». El usuario lo cuestionó («porque no podemos estimar ahora? quiero incluso ejecutarla»), y la IA reconoció que la skill solo pide un procedimiento aparte, no esperar.*
 - *El design decía que una relanzable* real *no lleva nota en el resumen, pero la prueba a mano de `MOO-178` la esperaba: mientras `decidir` relance siempre, una* real *también se relanza. La IA añadió la fila al design.*
 - *`decide()` iba a recibir el primer triaje desde `MOO-178`, pero el lint no deja un parámetro sin usar: lo recibe en `MOO-179`, y el grafo prueba mientras tanto que relanza sea cual sea el veredicto.*
+- *En `MOO-179`, el design no decía cómo cuenta el resumen que el fallo de `e2e` se capturaría cuando no se relanza porque la PR causa el de `test`. La IA añadió «se capturaría» a la fila que sale del primer triaje, solo en las relanzables.*
 
 ---
 
