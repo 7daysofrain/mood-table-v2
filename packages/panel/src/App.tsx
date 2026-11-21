@@ -6,6 +6,7 @@ import { AudioControl } from './audio/AudioControl.tsx';
 import { AudioPlayer } from './audio/player.ts';
 import { EngineConnection, viewerUrl } from './engine/connection.ts';
 import { ControlList } from './controls/ControlList.tsx';
+import { DemoNotice } from './demo/DemoNotice.tsx';
 import type { ValueRequests } from './controls/use-draft-values.ts';
 import {
   effectRequests,
@@ -121,36 +122,42 @@ export function App({
   if (selected && selected.id !== selectedId) setSelectedId(selected.id);
 
   return (
-    <PanelLayout
-      status={status}
-      audio={
-        <Group gap="xs" wrap="nowrap">
-          <AudioSourceIndicator source={source} lost={sourceLost} levels={connection} />
-          {source?.kind === 'file' && <AudioControl player={player} />}
-        </Group>
-      }
-      viewer={<Viewer source={connection} />}
-      strips={
-        strips &&
-        selected && (
-          <StripList strips={strips} selectedId={selected.id} onSelect={setSelectedId} />
-        )
-      }
-      effects={
-        selected && (
-          <EffectList
-            active={selected.effect}
-            hasAudioSource={source !== undefined && source.kind !== 'none'}
-            onChoose={(effect) => {
-              requests.send(selected.id, effect);
-            }}
-          />
-        )
-      }
-      controls={selected && <ControlList strip={selected} requests={values} />}
-      intensity={
-        intensity !== undefined && <IntensityZone intensity={intensity} requests={intensityQueue} />
-      }
-    />
+    <>
+      {/* TEMPORAL (MOO-181): solo en la demo pública; se retira tras la corrección del máster. */}
+      <DemoNotice />
+      <PanelLayout
+        status={status}
+        audio={
+          <Group gap="xs" wrap="nowrap">
+            <AudioSourceIndicator source={source} lost={sourceLost} levels={connection} />
+            {source?.kind === 'file' && <AudioControl player={player} />}
+          </Group>
+        }
+        viewer={<Viewer source={connection} />}
+        strips={
+          strips &&
+          selected && (
+            <StripList strips={strips} selectedId={selected.id} onSelect={setSelectedId} />
+          )
+        }
+        effects={
+          selected && (
+            <EffectList
+              active={selected.effect}
+              hasAudioSource={source !== undefined && source.kind !== 'none'}
+              onChoose={(effect) => {
+                requests.send(selected.id, effect);
+              }}
+            />
+          )
+        }
+        controls={selected && <ControlList strip={selected} requests={values} />}
+        intensity={
+          intensity !== undefined && (
+            <IntensityZone intensity={intensity} requests={intensityQueue} />
+          )
+        }
+      />
+    </>
   );
 }
