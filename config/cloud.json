@@ -1,0 +1,22 @@
+{
+  "fps": 30,
+  "server": { "host": "127.0.0.1" },
+  "audioSource": { "type": "file", "path": "config/audio/bouncer.wav" },
+  "instrumentState": { "type": "memory" },
+  "strips": [
+    {
+      "id": "frontal",
+      "name": "Tira frontal",
+      "output": { "type": "virtual" },
+      "ledCount": 120,
+      "effect": "spectrum"
+    },
+    {
+      "id": "lateral",
+      "name": "Tira lateral",
+      "output": { "type": "virtual" },
+      "ledCount": 60,
+      "effect": "energy"
+    }
+  ]
+}

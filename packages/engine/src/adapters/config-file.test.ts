@@ -230,3 +230,22 @@ describe('el config/demo.json del repositorio', () => {
     expect(audio.ok && audio.source.sampleRate).toBe(44_100);
   });
 });
+
+describe('el config/cloud.json del repositorio', () => {
+  // La demo pública (D125): deploy/demo/setup.sh lo copia a `config/local.json` en la EC2. Si dejara
+  // de ser válido, el motor de la demo no arrancaría, y eso solo se vería al desplegar.
+  it('arranca con dos tiras virtuales, el audio de la demo, estado en memoria y solo para Caddy', async () => {
+    const result = await loadConfig(REPO_ROOT, 'config/cloud.json');
+    if (!result.ok) throw new Error(result.error);
+    const { strips, audioSource, instrumentState, fps, server } = result.config;
+
+    expect(strips.map(({ output }) => output.type)).toEqual(['virtual', 'virtual']);
+    expect(audioSource).toEqual({
+      type: 'file',
+      path: join(REPO_ROOT, 'config', 'audio', 'bouncer.wav'),
+    });
+    expect(instrumentState).toEqual({ type: 'memory' });
+    expect(fps).toBe(30);
+    expect(server).toEqual({ host: '127.0.0.1', port: 8080 });
+  });
+});
