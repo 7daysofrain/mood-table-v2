@@ -18,65 +18,71 @@ fichero de configuración y el servicio) está en el [README §1.4](readme.md#3-
 | **Sistema** | Raspberry Pi OS Lite **de 64 bits** (Debian 13 *trixie*, `arm64`), sin escritorio (§4.2). Node.js 24 no tiene versión oficial para ARM de 32 bits | ✅ |
 | **Red** | WiFi | ✅ |
 | **Controlador de la tira** | Arduino Uno (clon con chip USB CH340, `1a86:7523`) con el sketch [Adalight-FastLED](https://github.com/dmadison/Adalight-FastLED) (§4.1; decisión D46 de la ficha) | ✅ |
-| **Tira** | 173 LEDs direccionables de 5 V tipo WS2812B, orden de color GRB (pistas `+5V`, `Din`, `GND`; una flecha marca el sentido de los datos) | ✅ |
-| **Fuente de la tira** | Adaptador AC/DC YU0508: **5 V · 8 A**, clavija de barril con el **positivo en el centro**. Mide 5,36 V en la entrada de la tira, con la tira apagada | ✅ |
+| **Tira** | BTF-LIGHTING WS2812B de 5 V, 60 LEDs/m, IP65 (funda de silicona): **153 LEDs**, unos 2,55 m, contados en la mesa (§4.1). Orden de color GRB; pistas `+5V`, `Din` y `GND`, y una flecha marca el sentido de los datos | ✅ |
+| **Fuente de la tira** | Mean Well LRS-100-5: **5 V · 18 A**, con bornes de tornillo (`+V` y `−V` a la tira; `L`, `N` y tierra `⏚` a la red). La tira toma la corriente por un solo extremo, así que la configuración declara **8 A** a propósito (§3, D123) | ✅ |
 | **Audio** | Tarjeta de sonido USB C-Media "USB PnP Sound Device" (`08bb:2902`), captura **mono**, 44,1/48 kHz | ✅ |
 | **Mixer** | Pioneer XDJ-AZ: salida **Booth** (dos jacks de 6,35 mm TRS balanceados, L y R, con su propio mando de nivel) | ✅ |
 | **Cable de audio** | Minijack **de 3 contactos (TRS)** a dos jacks mono de 6,35 mm; solo el **izquierdo**, a *Booth L*. No uno de auriculares con micrófono (4 contactos, TRRS): §8 | ✅ |
 
-**Cualquier controlador Adalight sirve.** La tira, el Light Box y el adaptador vinieron en un kit
-"Dream Color"; el **Light Box** era un controlador Adalight con el mismo chip CH340, pero **se averió**
-(§6) y lo sustituye el Uno. Un Arduino Nano con CH340 funciona igual y ocupa menos.
+**Cualquier controlador Adalight sirve.** El primer montaje usaba un kit "Dream Color": una tira de 173
+LEDs, un adaptador de barril YU0508 de 5 V · 8 A y el **Light Box**, un controlador Adalight con el
+mismo chip CH340 que **se averió** (§6) y que sustituyó el Uno. El 21-nov, la tira y el adaptador se
+cambiaron por los de esta tabla. Un Arduino Nano con CH340 funciona igual que el Uno y ocupa menos.
 
-**Alternativa de fuente para tiras más largas:** Mean Well LRS-100-5 (5 V · 18 A), con bornes de
-tornillo. Su lado de 230 V va cableado a la red en el montaje actual; este documento **no** explica cómo
-cablear la red: si hay que hacerlo, que lo haga alguien con experiencia, con la tierra (`⏚`) conectada
-y los bornes tapados. ⏳ Sin verificar para este montaje.
+**La red de la fuente.** El lado de 230 V de la LRS-100-5 va a la red por sus bornes, y este documento
+**no** explica cómo cablearlo: si hay que hacerlo, que lo haga alguien con experiencia. Va con la tierra
+(`⏚`) conectada, los bornes tapados y la fuente ventilada: se calienta, y nunca debe ir encerrada sin
+aire. ⏳ En la mesa faltan la tierra (el cable de red es de dos hilos) y la tapa de los bornes (§9).
 
 ## 2. Conexiones
 
 ```mermaid
 flowchart LR
   red1["🔌 Red 230 V"] --> trafoPi["Transformador USB-C<br/>de la Pi"]
-  red2["🔌 Red 230 V"] --> fuente["Adaptador 5 V · 8 A"]
+  red2["🔌 Red 230 V"] --> fuente["Mean Well LRS-100-5<br/>5 V · 18 A"]
   trafoPi -->|USB-C| pi["Raspberry Pi 4"]
   mixer["🎚️ XDJ-AZ · Booth L"] -->|jack mono → minijack| tarjeta["Tarjeta de sonido USB"]
   tarjeta -->|USB| pi
   pi -->|USB| uno["Arduino Uno<br/>(CH340 · Adalight)"]
-  uno -->|"pin 6 → datos<br/>GND → masa"| tira["Tira LED 5 V<br/>extremo Din"]
-  fuente -->|"barril hembra<br/>(+5V y GND)"| tira
+  uno -->|"pin 6 → Din<br/>GND → GND<br/>(conector de clip)"| din["Tira LED 5 V<br/>extremo Din"]
+  din --- do["extremo DO"]
+  fuente -->|"+V y −V<br/>(cables de alimentación)"| do
 ```
 
 - **El Arduino no alimenta la tira:** se alimenta del USB de la Pi y solo manda los datos.
-- **La tira se alimenta directamente de su fuente**, por la clavija de barril **hembra** de su extremo.
+- **La tira se alimenta directamente de su fuente**, por los dos cables de alimentación de su extremo
+  `DO`, atornillados a los bornes `+V` y `−V`.
 - **La Pi no se alimenta de la fuente de la tira.** Los saltos de consumo de la tira (de negro a blanco)
   bajan la tensión y la Pi 4 se reinicia o se ralentiza; con fuentes separadas, un fallo en la tira no
   se lleva la Pi.
-- **Los datos entran por el extremo `Din`** de la tira (la flecha impresa apunta en el sentido de los
-  datos). Por el otro extremo no funciona.
-- **Masa común:** la masa del Arduino y la de la fuente tienen que estar unidas en la tira para que la
-  señal tenga referencia. Por eso el cable de datos lleva su propio negro a `GND`.
+- **Los datos entran por el extremo `Din`.** Las flechas impresas apuntan en el sentido de los datos,
+  así que se alejan de `Din`. Por el otro extremo la tira no enciende, sin ningún error (§6).
+- **La corriente puede entrar por cualquiera de los dos extremos**, o por los dos: las pistas `+5V` y
+  `GND` recorren la tira entera. En la mesa entra por `DO` porque es donde la tira trae sus cables.
+- **Masa común:** la masa del Arduino y la de la fuente tienen que estar unidas para que la señal tenga
+  referencia. Aquí las une la pista `GND` de la tira, de punta a punta: si esa pista se rompe, la tira
+  no enciende aunque llegue la corriente (§6).
 
 ### Los cables de la tira
 
-Del extremo `Din` salen **dos cables**, cada uno con un rojo y un negro:
+La tira de la mesa no trae los cables en su extremo `Din`, sino en el `DO`:
 
-| Cable | Acaba en | Rojo | Negro |
-|---|---|---|---|
-| **Corriente** | Clavija de barril **hembra** (entra el adaptador) | `+5V` | `GND` |
-| **Datos** | Antes, clavija de barril **macho** al conector `DATA` del Light Box; ahora, regleta de palanca hacia el Arduino | `Din` | `GND` |
+| Extremo | Qué trae | Qué se conecta |
+|---|---|---|
+| **`Din`** (inicio) | Nada: viene cortado a tijera, con las pistas bajo la silicona | Un **conector de clip** de 3 pines para tira de 10 mm: `Din` al **pin 6** del Arduino y `GND` a su **`GND`**. El `+5V` del clip no se usa: aísla su punta |
+| **`DO`** (final) | Un conector JST de 3 pines, para enlazar otra tira, y **dos cables sueltos de alimentación** | Los de alimentación, a la fuente: el de `+5V` a `+V` y el de `GND` a `−V`. El JST no se usa |
 
-- **Hay dos rojos y no son lo mismo.** Si cambias de sitio el de corriente y el de datos, metes 5 V en
-  la entrada de datos. Antes de soldar, sigue cada funda de punta a punta o comprueba con el pitido del
-  polímetro qué rojo conecta con el centro de la clavija de corriente.
-- **Los dos negros van juntos a `GND`.**
-- **Arduino ↔ cable de datos**, con una regleta de palanca (tipo Wago): **pin 6 → rojo (`Din`)** y
-  **`GND` → negro**. ⏳ Los pines Dupont sujetan regular en la regleta; queda mejorar esta conexión
-  (cable pelado o soldado).
+- **El clip muerde las pistas a través de la silicona:** hay que rascarla antes en las tres pistas,
+  justo antes de un corte, y cerrar el clip con la flecha de la tira alejándose de él. Compruébalo con
+  el polímetro antes de enchufar nada (§5, medida 7).
+- **El cable de datos no lleva `+5V`.** El cable del `+5V` del clip no debe tocar nada: en el `5V` del
+  Arduino uniría la fuente de la tira con el USB de la Pi, y en el pin 6 metería 5 V en su salida.
+- **Arduino ↔ clip**, con pines Dupont metidos directamente en los conectores del Uno. ⏳ Sujetan
+  regular; queda mejorar esta conexión (§9).
 
 ### Proteger el primer LED
 
-El primer LED recibe la señal directamente del controlador y es el que más sufre: en este montaje
+El primer LED recibe la señal directamente del controlador y es el que más sufre: en la tira anterior
 **los LEDs 1 y 2 murieron** tras desenchufar y volver a enchufar los cables (§6). Para que no vuelva a
 pasar:
 
@@ -89,19 +95,27 @@ pasar:
 ## 3. Potencia: la fuente manda
 
 A blanco total, cada LED WS2812B consume unos **60 mA**, 20 mA por canal (la cifra que usa la ficha:
-5 V · 18 A ≈ 300 LEDs). Con 173 LEDs son unos **10,4 A**: no caben en el adaptador de 8 A.
+5 V · 18 A ≈ 300 LEDs). Con 153 LEDs son unos **9,2 A**: caben de sobra en los 18 A de la LRS-100-5.
 
 - **Mood Table protege la fuente.** El fichero de configuración declara, en cada tira física, su chip
   y los amperios de su fuente (`"chip": "WS2812B"`, `"power": { "supplyAmps": 8 }`; README §3.2). El
-  motor baja cada frame que pediría más del **80 %** de esos amperios (E8, README §2.2). En la mesa, el
-  blanco total sale a 200 de 255, con unos 6,4 A. Al arrancar, el log lo dice:
-  `Tira «Mesa»: fuente de 8 A, usará como mucho 6,4 A; en blanco total pide 10,38 A: bajará los frames que se pasen`.
-  ✅ Comprobado en la mesa el 12-nov, con el sketch a `255`: la respiración en blanco con la intensidad
-  al máximo pasa por el blanco total sin que la fuente corte, la tira parpadee ni el Arduino se
-  reinicie, y con el *espectro* y graves fuertes los LEDs tenues no se apagan. ⏳ Falta medir la
-  tensión al final de la tira en un pico (§5).
-- **Copia los amperios de OUTPUT, no los de INPUT.** La etiqueta de la fuente lleva las dos cifras:
-  INPUT es lo que toma de la red, y OUTPUT lo que da a la tira (8 A en el YU0508).
+  motor baja cada frame que pediría más del **80 %** de esos amperios (E8, README §2.2). Al arrancar, el
+  log lo dice; en la mesa (21-nov):
+  `Tira «Mesa»: fuente de 8 A, usará como mucho 6,4 A; en blanco total pide 9,18 A: bajará los frames que se pasen`.
+  ✅ Con la tira anterior (173 LEDs, mismo límite) se comprobó el 12-nov, con el sketch a `255`: la
+  respiración en blanco con la intensidad al máximo pasa por el blanco total sin que la fuente corte,
+  la tira parpadee ni el Arduino se reinicie, y con el *espectro* y graves fuertes los LEDs tenues no
+  se apagan. ⏳ Falta repetirlo con la tira de 153 y medir la tensión al final de la tira en un pico
+  (§5).
+- **En la mesa se declaran 8 A, no 18 (D123).** La corriente entra solo por el extremo `DO`, por dos
+  cables finos y las pistas de cobre de la tira. Con 18 A declarados, el límite no bajaría nada y el
+  blanco total pasaría sus 9,2 A por ahí, con la tensión cayendo hacia el otro extremo. Con 8 A, el
+  motor no pasa de 6,4 A. Cuando la tira se alimente **por los dos extremos**, se vuelve a los 18 A de
+  la etiqueta. Si la misma fuente alimenta **dos tiras**, se reparten los amperios a mano en sus
+  `supplyAmps`, sin pasar entre las dos de los 18 A: cada tira solo conoce los suyos.
+- **Copia los amperios de OUTPUT, no los de INPUT**, salvo que declares menos a propósito, como en la
+  mesa. La etiqueta de la fuente lleva las dos cifras: INPUT es lo que toma de la red, y OUTPUT lo que
+  da a la tira (18 A en la LRS-100-5).
 - **Si cambias de fuente, cambia el fichero de configuración.** El motor no puede medir la fuente:
   se fía de lo declarado. Con una fuente más pequeña y el fichero sin cambiar, la sobrecargaría.
 - **Por eso el sketch ya no limita el brillo** (`Brightness = 255`, §4.1). Antes lo dejaba en el 25 %
@@ -109,10 +123,11 @@ A blanco total, cada LED WS2812B consume unos **60 mA**, 20 mA por canal (la cif
 - **Mood Table solo limita lo que pinta él.** Si la tira vuelve a recibir colores de otro programa sin
   límite propio, como Hyperion en la SD de la v1, la fuente queda sin proteger: vuelve a cargar antes
   el sketch con `64`. Si el límite debe cubrir también eso es una pregunta abierta (Q11 del PRD).
-- ⏳ **Un fusible o una fuente con protección contra sobrecorriente** (recomendado): el límite depende
+- **Un fusible o una fuente con protección contra sobrecorriente** (recomendado): el límite depende
   de que lo declarado sea cierto. Un fusible en el `+5V` de la tira, de no más amperios que la fuente,
-  o una fuente que se corte sola al pasarse, como la Mean Well LRS-100-5 de §1. El adaptador de este
-  montaje no lo tiene comprobado.
+  o una fuente que se corte sola al pasarse. La LRS-100-5 se corta sola ante una sobrecarga o un
+  cortocircuito, según su ficha; ⏳ no se ha provocado en la mesa. Ojo: protege la fuente, no los
+  cables finos de la tira, que es lo que cubre declarar 8 A.
 - ⏳ En tiras largas, la tensión cae hacia el final (los últimos LEDs se ven más rojizos o tenues). Se
   mide con el polímetro en §5; si cae mucho, se alimenta también por el otro extremo.
 
@@ -123,10 +138,12 @@ Haz todo **con todo desenchufado de la red** y enchufa solo cuando lo diga el pa
 1. **Pi.** Graba Raspberry Pi OS Lite de 64 bits en la tarjeta SD con Raspberry Pi Imager, que deja
    configurados la WiFi, el usuario y el acceso por SSH (§4.2). Alimenta la Pi con su transformador.
 2. **Arduino.** Cárgale el sketch Adalight (§4.1) y conéctalo por USB a la Pi.
-3. **Tira, alimentación.** Antes de conectar la tira, comprueba con el polímetro la salida de la fuente
-   (§5, medidas 1 y 2). Después conecta el adaptador a la clavija hembra de la tira y enchúfalo.
-4. **Tira, datos (lo último).** Conecta el cable de datos al Arduino: rojo al pin 6, negro a `GND`. Va
-   después de la alimentación para proteger el primer LED (§2).
+3. **Tira, alimentación.** Antes de conectar la tira, enchufa la fuente a la red y comprueba con el
+   polímetro sus bornes `+V` y `−V` (§5, medidas 1 y 2). Desenchúfala, atornilla los cables de
+   alimentación del extremo `DO` (§2) y vuelve a enchufarla: se enciende su LED verde.
+4. **Tira, datos (lo último).** Pon el conector de clip en el extremo `Din` y compruébalo (§5, medida
+   7). Después conecta su `Din` al pin 6 del Arduino y su `GND` al `GND`. Va después de la alimentación
+   para proteger el primer LED (§2).
 5. **Audio.** Conecta la tarjeta de sonido por USB a la Pi, y el jack mono **izquierdo** del cable a
    la salida *Booth L* del mixer y su minijack a la **entrada** de la tarjeta, hasta el fondo. El
    izquierdo va por la punta del minijack, que es lo que lee la entrada de micro; el anillo (el
@@ -149,10 +166,10 @@ En `Adalight-FastLED/Arduino/LEDstream_FastLED/LEDstream_FastLED.ino`, cambia es
 
 | Valor | En este montaje | Por qué |
 |---|---|---|
-| `Num_Leds` | `173` | Los LEDs reales de la tira. Si pones más, sobran sin problema; si pones menos, los últimos no se encienden |
+| `Num_Leds` | `173` | Al menos los LEDs reales de la tira. Si pones más, sobran sin problema: cada frame dice cuántos LEDs trae. Si pones menos, los últimos no se encienden. Se quedó en 173, el valor de la tira anterior: con la de 153 no hubo que volver a cargar el sketch |
 | `Brightness` | `255` | Sin tope: protege la fuente el límite de Mood Table (§3). Con otro programa sin límite propio, `64` (el 25 %) |
 | `PIN_DATA` | `6` | El pin donde va el rojo de datos |
-| `SerialSpeed` | `500000` | A 115.200, Adalight solo da 20 fps con 173 LEDs; a 500.000, 59 (D96). Es exacta para el Uno a 16 MHz. Con Hyperion se usaba 115.200 |
+| `SerialSpeed` | `500000` | A 115.200, Adalight solo da 20 fps con 173 LEDs; a 500.000, 59 (D96), y 60 con los 153 de ahora. Es exacta para el Uno a 16 MHz. Con Hyperion se usaba 115.200 |
 | `COLOR_ORDER` | `RGB` | El sketch pasa los canales tal como le llegan, porque Mood Table ya los manda en el orden de color del chip de la tira (D111). Con el `GRB` que trae el sketch, el orden se aplica dos veces y el rojo y el verde salen cambiados, sin ningún error. Con otro programa que mande los canales en RGB (Hyperion), `GRB` |
 
 `LED_TYPE` (`WS2812B`) ya viene bien para esta tira. Compila y carga (el puerto aparece como
@@ -195,11 +212,14 @@ tira (`"chip": "WS2812B"`, que es GRB), y el motor reordena los canales antes de
 sketch tiene que llevar `COLOR_ORDER` en `RGB`, y el motor y el sketch se actualizan juntos: con un
 motor anterior a `MOO-146` y el sketch en `RGB`, el rojo y el verde también salen cambiados.
 
-**Contar los LEDs sin contarlos uno a uno:** con el sketch cargado con más LEDs de los que hay, manda un
-único frame con todo en rojo, un LED verde cada 10 y uno **blanco** cada 50. El frame va directo al
-sketch, sin pasar por el motor, así que nadie reordena los canales: en una `WS2812B`, el rojo y el
-verde salen cambiados y se ve todo en verde, con un LED rojo cada 10 (el blanco no cambia). La cuenta
-sale de lo que se ve al final de la tira: en este montaje, 3 blancos, 2 rojos y 3 verdes = 173.
+**Contar los LEDs sin contarlos uno a uno** (✅ 21-nov): con el motor parado (`sudo systemctl stop
+moodtable`) y el sketch cargado con más LEDs de los que hay, manda al puerto, a sus baudios, un frame
+Adalight con el LED 1 en **blanco**, uno **verde** cada 10, uno **rojo** cada 50 y el resto apagado.
+Repítelo cada décima de segundo y espera 2,5 s antes del primero: al abrir el puerto, el Uno se
+reinicia. El frame va directo al sketch, sin pasar por el motor, así que nadie reordena los canales:
+mándalos ya en GRB, el orden de la `WS2812B`, o el rojo y el verde saldrán cambiados. La cuenta sale de
+lo que se ve al final de la tira: en la mesa, tres LEDs después del tercer rojo (el 150) = **153**. Al
+acabar, arranca otra vez el motor.
 
 ### 4.2. Grabar el sistema de la Pi
 
@@ -254,16 +274,18 @@ a bornes de 230 V**.
 
 | # | Qué | Cómo | Valor esperado | Medido |
 |---|---|---|---|---|
-| 1 | La fuente da 5 V | Rueda en `V⎓`. Fuente enchufada, sin tira. Punta roja dentro de la clavija (centro), negra fuera | Entre 4,9 y 5,3 V | — |
+| 1 | La fuente da 5 V | Rueda en `V⎓`. Fuente enchufada, sin tira. Punta roja en el borne `+V`, negra en `−V` | Entre 4,9 y 5,3 V | — |
 | 2 | Polaridad | Misma medida | **Positiva.** Si sale negativa, **no conectes la tira** | — |
-| 3 | Llega corriente a la tira | Rueda en `V⎓`, tira conectada. Roja en `+5V`, negra en `GND`, en las pistas de entrada | ≈ 5 V | ✅ 5,36 V |
-| 4 | Caída al final | Igual, en el último LED, con la tira en blanco y brillo bajo | ⏳ umbral por fijar | ⏳ |
-| 5 | Llegan datos | Rueda en `V⎓`, **con la Pi encendida y enviando**. Roja en `Din`, negra en `GND` | Algo por encima de 0 que baila (es la media de los pulsos) | ✅ 1,2-1,3 V con el Light Box sano |
-| 6 | Sin cruces entre pistas | Rueda en continuidad (`·)))`), **todo desenchufado**. Puntas en dos soldaduras vecinas | **No pita** | ✅ |
-| 7 | Cable de datos entero | Continuidad, **todo desenchufado**. Cada extremo del rojo de datos con la soldadura `Din`; el negro con `GND` | **Pita** | ✅ |
+| 3 | Llega corriente a la tira | Rueda en `V⎓`, tira conectada. Roja en `+5V`, negra en `GND`, en el extremo **contrario** al de la fuente | ≈ 5 V | ✅ 5 V en el extremo `Din`, con la tira apagada (21-nov). Con la tira anterior, 5,36 V |
+| 4 | Caída al final | Igual que la 3, con la tira en blanco y brillo bajo | ⏳ umbral por fijar | ⏳ |
+| 5 | Llegan datos | Rueda en `V⎓`, **con la Pi encendida y enviando**. Roja en `Din`, negra en `GND` | Algo por encima de 0 que baila (es la media de los pulsos) | ✅ unos 2 V con el Uno (21-nov); 1,2-1,3 V con el Light Box sano |
+| 6 | Sin cruces entre pistas | Rueda en continuidad (`·)))`), **todo desenchufado**. Puntas en dos pistas o soldaduras vecinas | **No pita** | ✅ |
+| 7 | El clip hace contacto | Continuidad, **todo desenchufado**. Cada pin del clip con la pista de la tira que muerde; los de `+5V` y `GND`, también con su pista en el **otro extremo** | `+5V` y `GND` **pitan** de punta a punta; `Din` solo con su pista, no hasta el otro extremo (pasa por los chips) | ✅ (21-nov) |
+| 8 | `GND` entera | Continuidad, **todo desenchufado**. `GND` de un extremo con `GND` del otro | **Pita.** Si no, la pista está rota: tramos cortos pitan y de punta a punta no (§6) | ✅ en la tira de la mesa; ❌ en el primer rollo |
 
-- La medida 3 sale algo por encima de 5,3 V (el máximo recomendado para WS2812B) porque se toma con la
-  tira apagada; con LEDs encendidos baja.
+- Con la fuente en el extremo `DO`, la medida 3 se toma en el `Din`: es el punto más lejano, y donde
+  más cae la tensión. Con la tira apagada no hay caída; con LEDs encendidos baja, y eso es la medida
+  4. No debe pasar de 5,3 V, el máximo recomendado para WS2812B.
 - **La medida 5 solo vale con la Pi encendida:** el controlador se alimenta de su USB, y sin ella no
   manda nada y siempre sale 0. Un valor **fijo cerca de 5 V** tampoco es bueno: es una línea clavada en
   alto, no datos (§6).
@@ -277,16 +299,22 @@ a bornes de 230 V**.
 Una tira WS2812B con corriente pero **sin datos válidos se queda apagada del todo**, así que "apagada"
 no dice si falla la alimentación o los datos. El orden que funcionó en este montaje:
 
-1. **Software** (desde la Pi): el controlador aparece en `lsusb` y el programa que manda los datos tiene
+1. **El efecto:** mira en el panel qué efecto tiene la tira. La *energía* y el *scroll* reaccionan al
+   audio y **se apagan en silencio**: sin música, la tira se queda negra aunque todo funcione. Pon la
+   *respiración*, que pinta siempre. Fue la causa de "no se enciende" dos veces el 21-nov.
+2. **Software** (desde la Pi): el controlador aparece en `lsusb` y el programa que manda los datos tiene
    el puerto abierto y escribe en él (§7).
-2. **Alimentación:** medida 3. Si no hay 5 V, el problema es la fuente, la clavija o el cable.
-3. **Datos tras el primer LED:** medida 5 en el `Din` entre el LED 1 y el LED 2.
-4. **Datos en la entrada:** medida 5 en las soldaduras de entrada (hay que abrir el termorretráctil del
+3. **Extremo:** los datos tienen que entrar por `Din`, el extremo del que se **alejan** las flechas.
+   Conectados al `DO`, la tira no enciende y no hay ningún error.
+4. **Alimentación:** medida 3. Si no hay 5 V, el problema es la fuente, los bornes o el cable. Si hay
+   corriente y datos y no enciende nada, mira que la pista `GND` esté entera (medida 8).
+5. **Datos tras el primer LED:** medida 5 en el `Din` entre el LED 1 y el LED 2.
+6. **Datos en la entrada:** medida 5 en las soldaduras de entrada (hay que abrir el termorretráctil del
    empalme). Si hay datos en la entrada y no después del LED 1, **el LED 1 está muerto**.
-5. **Puente de prueba:** con un trozo de cable pelado solo en las puntas, une la soldadura `Din` de la
+7. **Puente de prueba:** con un trozo de cable pelado solo en las puntas, une la soldadura `Din` de la
    entrada con el `Din` de un LED más adelante. Si la tira se enciende a partir de ese LED, el anterior
    está muerto. Con calma: si el cable resbala a `+5V`, metes 5 V en la salida del controlador.
-6. **Controlador:** compara la medida 5 **con el cable de datos conectado y sin él**. Sin él sale 0; si
+8. **Controlador:** compara la medida 5 **con el cable de datos conectado y sin él**. Sin él sale 0; si
    con él sale un valor **fijo cerca de 5 V** y el puente a otros LEDs tampoco enciende nada, el
    controlador tiene la línea clavada en alto. Desenchufarle el USB 10 segundos lo reinicia; si sigue
    igual, está averiado.
@@ -304,15 +332,26 @@ ssh-keygen -R moodtable.local
 
 **Lo que se encontró** en este montaje:
 
-- **LEDs 1 y 2 muertos** (5-oct-2026): 5,36 V en la entrada, datos en la entrada del LED 1 y nada
+- **LEDs 1 y 2 muertos** (5-oct-2026, tira anterior): 5,36 V en la entrada, datos en la entrada del LED 1 y nada
   después; con el puente al LED 3 la tira se encendía, y al LED 2 no. **Reparado** cortando la tira entre
   el LED 2 y el LED 3 y soldando los cables a la entrada del LED 3 (16-oct). La tira pasa de 175 a 173
   LEDs.
 - **Light Box averiado** (16-oct): tras la reparación, con el Light Box conectado `Din` marcaba 4-6 V
   fijos (0 V sin él), y ni el puente al segundo LED encendía nada. Reiniciarlo no lo arregló. Con un
   Arduino Uno con Adalight en su lugar, la tira se enciende entera.
+- **Datos por el extremo equivocado** (21-nov, tira nueva): la tira trae su conector y sus cables en el
+  extremo `DO` (las flechas apuntan hacia él), y con los datos ahí no encendía nada. El extremo `Din`
+  venía cortado y sin conector: se resolvió con el conector de clip (§2).
+- **Pista `GND` rota en el primer rollo** (21-nov): con la corriente por un extremo y los datos por el
+  otro, nada. La continuidad de `GND` pitaba en tramos cortos y no de punta a punta (medida 8): la
+  pista estaba cortada a mitad de la tira y la masa del Arduino no llegaba a la de la fuente. Se apartó
+  y se usó un segundo rollo del mismo modelo, que pita entero.
+- **Tira negra por el efecto** (21-nov, dos veces): con todo bien conectado, el panel tenía la tira en
+  un efecto reactivo y sin música (paso 1).
+- **Arduino desenchufado en caliente** (21-nov): al volver a enchufarlo, la tira no vuelve hasta
+  reiniciar el motor (§7, `MOO-112`).
 
-**Cómo se reparó la tira** (hace falta soldador; el estaño sin plomo funde mejor con flux):
+**Cómo se reparó la tira anterior** (hace falta soldador; el estaño sin plomo funde mejor con flux):
 
 1. Desenchufa la corriente de la tira y los datos del controlador.
 2. Corta la tira por la línea blanca entre el último LED muerto y el siguiente, por el medio de las
@@ -321,8 +360,8 @@ ssh-keygen -R moodtable.local
    un tirón suave del cable.
 4. Estaña las tres pistas del nuevo primer LED y suelda: los dos negros a `GND`, el rojo de datos a
    `Din` y el rojo de corriente a `+5V` (§2).
-5. Medida 6 entre soldaduras vecinas y medida 7 del cable de datos antes de enchufar; después cubre el
-   empalme con termorretráctil o cinta aislante.
+5. Medida 6 entre soldaduras vecinas y, con el polímetro en continuidad, cada cable con su soldadura
+   antes de enchufar; después cubre el empalme con termorretráctil o cinta aislante.
 
 ## 7. Comprobar que la Pi ve el hardware
 
@@ -408,25 +447,30 @@ la mesa:
     "chip": "WS2812B",
     "power": { "supplyAmps": 8 }
   },
-  "ledCount": 173,
+  "ledCount": 153,
   "effect": "breathing"
 }
 ```
 
-- **`baudRate` tiene que ser el `SerialSpeed` del sketch** (§4.1), y `ledCount`, su `Num_Leds`.
-  Adalight no confirma nada, así que el motor no puede comprobarlo: con otros baudios, la tira no
-  enciende o pinta basura, sin ningún mensaje.
+- **`baudRate` tiene que ser el `SerialSpeed` del sketch** (§4.1), y `ledCount`, los LEDs reales de la
+  tira, nunca más que su `Num_Leds`. Adalight no confirma nada, así que el motor no puede comprobarlo:
+  con otros baudios, la tira no enciende o pinta basura, sin ningún mensaje.
+- **En la mesa, el fichero que lee el servicio es `/opt/moodtable/config/local.json`**, del usuario
+  `moodtable`: se edita con `sudo -u moodtable` y se reinicia el servicio (`sudo systemctl restart
+  moodtable`). Un clon del repositorio en la carpeta de `pi` tiene su propio `config/local.json`, que el
+  servicio no lee.
 - **Al arrancar el motor, la tira tarda un segundo o dos en encenderse.** Al abrir el puerto, el Uno se
   reinicia (la línea DTR), y mientras arranca el sketch los frames se pierden sin hacer daño. Al parar
   el motor, el Uno se vuelve a reiniciar y la tira se queda como estaba o se apaga.
 - **La medida del log.** Tras los primeros 50 frames, el motor dice una vez cuánto tarda cada uno en
-  salir por el puerto y a cuántos frames por segundo va la tira. ✅ En la mesa (5-nov):
+  salir por el puerto y a cuántos frames por segundo va la tira. ✅ En la mesa (21-nov):
 
   ```
-  Tira «Mesa»: 11 ms por frame, 59 fps (500000 baudios, 173 LEDs)
+  Tira «Mesa»: 10 ms por frame, 60 fps (500000 baudios, 153 LEDs)
   ```
 
-  A 115.200 baudios eran 45 ms y 20 fps (4-nov).
+  Con la tira anterior de 173 LEDs eran 11 ms y 59 fps (5-nov), y a 115.200 baudios, 45 ms y 20 fps
+  (4-nov).
 
   Esos milisegundos más un pulso del motor (16,7 ms a 60 fps) es lo que tarda la tira física, como
   mucho, en pintar lo que ya pinta el visor: tiene que quedar por debajo de 100 ms. Con más LEDs o
@@ -517,10 +561,15 @@ vúmetro de la cabecera del panel como medidor.
 
 ## 9. Pendientes
 
+- ⏳ Tierra de la fuente: un cable de red de tres hilos, con la tierra en el borne `⏚` (§1). El de ahora
+  es de dos hilos.
+- ⏳ Tapa de los bornes de la LRS-100-5, y un sitio ventilado para la fuente (§1).
 - ⏳ Resistencia de 330 Ω en serie con `Din` (§2).
-- ⏳ Conexión fija entre el Arduino y el cable de datos, sin pines Dupont en la regleta (§2).
+- ⏳ Conexión fija entre el Arduino y el clip, sin pines Dupont sueltos (§2).
+- ⏳ Alimentar la tira por los dos extremos y volver a declarar los 18 A de la fuente (§3, D123).
+- ⏳ Blanco total con la intensidad al máximo en la tira de 153 (§3).
 - ⏳ Medidas 1, 2 y 4 de §5.
-- ⏳ Fusible o fuente con protección contra sobrecorriente (§3).
+- ⏳ Protección contra sobrecorriente: la LRS-100-5 la trae según su ficha, sin probar en la mesa (§3).
 - ✅ ~~Nivel de audio con música real~~: comprobado el 21-oct (§8),
   [MOO-53](https://linear.app/7daysofrain/issue/MOO-53).
 - ✅ ~~Cable de audio de 3 contactos (TRS) en lugar del de micrófono (TRRS)~~: con la XDJ-AZ, el fondo
