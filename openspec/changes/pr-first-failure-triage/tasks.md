@@ -103,7 +103,7 @@
 
 ## 2. MOO-179 · infra
 
-- [ ] 2.1 **(test en rojo)** No relanzar lo que causa la PR (`design.md` decisiones 5 y 9):
+- [x] 2.1 **(test en rojo)** No relanzar lo que causa la PR (`design.md` decisiones 5 y 9):
   - **`core/decision.test.ts`:** `skipRerun` si alguna relanzable sale *real* en el primer triaje,
     también con la otra *no aplica*; `rerun` en los demás casos de la decisión 6.
   - **`core/tracking.test.ts`:** con `rerunSkipped`, `afterChecksWait` no vuelve a dar `firstFailure` y

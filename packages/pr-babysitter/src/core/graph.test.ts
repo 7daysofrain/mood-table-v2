@@ -2079,6 +2079,119 @@ describe('el triaje del primer fallo no se repite en el mismo push (change pr-fi
   });
 });
 
+describe('si la PR causa el primer fallo de una relanzable, no se relanza (change pr-first-failure-triage)', () => {
+  const lintPassed: Check = { name: 'lint', status: 'passed', conclusion: 'success' };
+  const SONAR = 'SonarCloud Code Analysis';
+  const sonarNotStarted: Check = { name: SONAR, status: 'notStarted', conclusion: null };
+  /** `test` falla en su primer intento, y todo lo demás ha terminado. */
+  const TEST_FIRST_ATTEMPT: Check[] = [lintPassed, failedIn('test', 1)];
+  /** El modelo da que la PR causa el fallo de `test` (0,93) y no el de las demás (0,12). */
+  const testCaused = (finding: Finding) =>
+    Promise.resolve({
+      probability: finding.source === 'check' && finding.name === 'test' ? 0.93 : 0.12,
+      inputTokens: 12_000,
+    });
+
+  it('`decidir` no relanza, lo deja en el push y vuelve a esperar', async () => {
+    const triage = recordingTriage([failingCheck('test')]);
+    const reruns = recordingReruns();
+
+    const { graph, state } = await runTriage(
+      triage,
+      [snapshot(0), snapshot(5, { checks: TEST_FIRST_ATTEMPT })],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    const nodes = await visitedNodes(graph);
+    expect(nodes.slice(nodes.indexOf('triar'))).toEqual([
+      'triar',
+      'preguntarModelo',
+      'reunirTriaje',
+      'decidir',
+      'esperarComprobaciones',
+    ]);
+    expect(state.values).toMatchObject({
+      decision: { action: 'skipRerun', rule: 'prCausesFailure' },
+      push: { rerunSkipped: ['test'] },
+    });
+    expect(reruns.recorded.reruns).toEqual([]);
+  });
+
+  it('`test` causado por la PR: sin relanzar, el aviso con `test` y el resumen la da real con su probabilidad, con una sola pregunta', async () => {
+    const triage = recordingTriage([failingCheck('test')]);
+    const reruns = recordingReruns();
+
+    await followTriage(
+      triage,
+      [snapshot(0), snapshot(5, { checks: TEST_FIRST_ATTEMPT }), snapshot(6, { checks: TEST_FIRST_ATTEMPT })],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    expect(reruns.recorded.reruns).toEqual([]);
+    expect(triage.asked).toHaveLength(1);
+    expect(triage.events).toEqual([
+      'tracking',
+      'leer comprobaciones',
+      'preguntar al modelo',
+      'leer hallazgos',
+      'publicar resumen',
+      'aviso final',
+    ]);
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksFailed', checks: ['test'] }],
+    });
+    expect(summaryRows(triage)).toEqual(['| Comprobación `test` | real | p = 0,93 ≥ 0,80 · contexto: log |']);
+  });
+
+  it('`test` causado y `e2e` no: no relanza ninguna, el aviso con las dos, y el resumen da `test` real y que `e2e` se capturaría', async () => {
+    const triage = recordingTriage([failingCheck('test'), failingCheck('e2e')], testCaused);
+    const reruns = recordingReruns();
+    const both = [lintPassed, failedIn('test', 1), failedIn('e2e', 1)];
+
+    await followTriage(
+      triage,
+      [snapshot(0), snapshot(5, { checks: both }), snapshot(6, { checks: both })],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    expect(reruns.recorded.reruns).toEqual([]);
+    expect(triage.asked).toHaveLength(2);
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksFailed', checks: ['test', 'e2e'] }],
+    });
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `test` | real | p = 0,93 ≥ 0,80 · contexto: log |',
+      '| Comprobación `e2e` | no aplica | p = 0,12 ≤ 0,20 · contexto: log · se capturaría |',
+    ]);
+  });
+
+  it('con SonarCloud sin check run, el aviso llega tras el margen y no tras 30 minutos; las vueltas siguientes no vuelven a triar el primer fallo', async () => {
+    const checks = [lintPassed, failedIn('test', 1), sonarNotStarted];
+    const before = recordingTriage([failingCheck('test')]);
+    const after = recordingTriage([failingCheck('test')]);
+    const first = [snapshot(0), snapshot(5, { checks }), snapshot(6, { checks })];
+
+    await followTriage(before, [...first, snapshot(7.5, { checks })]);
+    await followTriage(after, [...first, snapshot(7.5, { checks }), snapshot(8, { checks })]);
+
+    expect(summary(before.notices)).toEqual(['tracking']);
+    expect(before.events.filter((event) => event === 'leer comprobaciones')).toHaveLength(1);
+    expect(summary(after.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['test'] },
+        { kind: 'checksNotRun', checks: [SONAR] },
+      ],
+    });
+    expect(after.asked).toHaveLength(1);
+  });
+});
+
 /** Una incidencia de SonarQube con su código. */
 function sonarIssue(file: string, line: number, code: string | null = `>> ${line} | x`): Finding {
   return {

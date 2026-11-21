@@ -6,12 +6,14 @@ import {
   evidentCase,
   type Finding,
   findingKeys,
+  type FirstTriage,
   hasContext,
   latestRound,
   questionFor,
   type RoundAnswer,
   spend,
   type TriageBudget,
+  type Verdict,
   withinBudget,
   withoutModel,
 } from './triage.ts';
@@ -900,6 +902,65 @@ describe('el primer fallo de una relanzable (change pr-first-failure-triage, dec
       reason: 'probability',
       probability: 0.93,
     });
+  });
+});
+
+describe('una relanzable que no se relanzó porque la causa la PR (change pr-first-failure-triage, decisión 4)', () => {
+  const estimated: Finding[] = [];
+  const REAL: Verdict = { class: 'valid', reason: 'probability', probability: 0.93 };
+  const NOT_APPLICABLE: Verdict = { class: 'notApplicable', reason: 'probability', probability: 0.12 };
+  /** El triaje final, con lo que respondió el primer triaje de las que no se relanzaron. */
+  const final = (findings: Finding[], firstTriage: FirstTriage) =>
+    withoutModel(findings, {
+      ruleChecks: ['lint'],
+      sonarIssuesCheck: 'sonar-issues',
+      rerunChecks: ['test', 'e2e'],
+      description: 'No relanza lo que causa la PR.',
+      spentUsd: 0,
+      budget: { capUsd: 0.001, inputPricePerMTok: 1 },
+      estimate: (finding) => {
+        estimated.push(finding);
+        return 400;
+      },
+      firstTriage,
+    });
+  const atAttempt = (name: string, attempt: number, overrides: Partial<CheckFinding> = {}): CheckFinding => ({
+    ...(checkFinding(name) as CheckFinding),
+    attempt,
+    ...overrides,
+  });
+
+  it('sale con el veredicto de su primer triaje, sin preguntar ni reservar tope', () => {
+    estimated.length = 0;
+    const answers = final(
+      [atAttempt('test', 1), atAttempt('e2e', 1)],
+      [
+        { name: 'test', verdict: REAL },
+        { name: 'e2e', verdict: NOT_APPLICABLE },
+      ],
+    );
+
+    expect(answers).toEqual([
+      { kind: 'firstTriage', verdict: REAL },
+      { kind: 'firstTriage', verdict: NOT_APPLICABLE },
+    ]);
+    expect(estimated).toEqual([]);
+    expect(classify(atAttempt('test', 1), { kind: 'firstTriage', verdict: REAL }, THRESHOLD)).toEqual(REAL);
+  });
+
+  it('las reglas del relanzamiento siguen por delante', () => {
+    const firstTriage = [
+      { name: 'test', verdict: REAL },
+      { name: 'e2e', verdict: REAL },
+    ];
+
+    expect(
+      final([atAttempt('test', 2), atAttempt('e2e', 1, { conclusion: 'cancelled' })], firstTriage),
+    ).toEqual([{ kind: 'failedTwice', evidentCase: null }, { kind: 'cancelled' }]);
+  });
+
+  it('una en su primer intento que el primer triaje no respondió sigue sin poder relanzarse', () => {
+    expect(final([atAttempt('e2e', 1)], [{ name: 'test', verdict: REAL }])).toEqual([{ kind: 'notRerun' }]);
   });
 });
 
