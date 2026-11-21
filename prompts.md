@@ -2603,6 +2603,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *En el paso 1.5, el margen ya entraba como opción del grafo y del driver, pero `main.ts` y `studio.ts` no lo pasaban hasta el 1.7: en ese commit, el* typecheck *fallaba en esos dos ficheros.*
 - *Los escenarios del grafo del paso 1.6 pasaron desde el principio, porque el 1.5 ya guardaba `quietSince` en el estado. La IA comprobó que, sin ese campo, fallan tres, y lo dejó dicho en el commit.*
 
+#### 6.98 Preguntar si la PR causa el fallo de test o e2e antes de relanzarlo (`MOO-169`)
+
+**Prompt 1:**
+
+> Cuando falle una tarea relanzable (test o e2e) quiero que se evalue si el problema que ha aparecido pertenece a la propia PR o a main. En caso de que pertenezca a la propia PR marque el hallazgo como real y no relance. En caso de que pertenezca a main marca el hallazgo para captrurar y relanza. En caso de no tenerlo claro simplemente relanza
+
+*Claude Code (`claude-opus-5-5`, 21-nov), el caso feliz de `/refine-story MOO-169`, una captura de dos non-goals de `MOO-155`. La IA avisó de que contradecía D119, que pregunta solo tras relanzar, y antes de reescribir la historia el usuario pidió probar la pregunta. La IA pasó la pregunta de la causa de producción por 26 fallos de `test` y `e2e` del historial de CI: los 12 de la PR salieron con p ≥ 0,80 y ninguno de los 14 intermitentes llegó (el más alto, 0,67); la lista de ficheros no mejoró nada. «Se capturaría» quedó como nota del resumen y no como clase, por BQ8. Estimada a 5 (humano 5, IA 5).*
+
+**Prompt 2:**
+
+> Bueno, vamos a ir sacandolo del modo sombra poco a poco de todas maneras. A mi lo que me pide el cuerpo es que una vez hecho el triaje, hay que decidir que se hace. es decir el triaje deberia de responder algo asi como "el test e2e falla por un fallo intermitente externo a la PR en una posibilidad de >= 0,80". Una vez que el triador termine debería de haber nodos de decision que actuen en consecuencia a cada situacion. En este caso ese nodo decidiria relanzar una vez. Es decir hay que dividir la responsabilidad de determinar el que pasa y que se hace en consecuencia, no te parece? En un hallazgo de Codex podria ser lanzar un fixer de codigo por ejemplo. Si ves que se escapa mucho del scope de la tarea lo que podemos hacer ahora es un workaround que no nos lleve mucho para el relanzamiento y asi cubrir la historia. Pero entonces la decision del grafo que me pedias se tiene que ver condicionado por esto que sería el futuro
+
+*Claude Code (`claude-opus-5-5`, 21-nov), en `/opsx:explore`. La IA había planteado un nodo `preguntarCausa` dentro del seguimiento, más pequeño, como alternativa a triar el primer fallo. El usuario prefirió separar qué pasa de qué se hace, pensando en el Fixer (BH3) y en la escalada (BH4), y aceptó el coste: la IA dijo que cambiaba el flujo del grafo, el riesgo que había señalado el estimador.*
+
+**Prompt 3:**
+
+> Separamos ya, reestima a 8
+
+*Claude Code (`claude-opus-5-5`, 21-nov). Resultado: el change `pr-first-failure-triage` (`/opsx:propose`), con D122, un nodo `decidir` sin modelo y dos tareas: `MOO-178` rehace el grafo sin cambiar el comportamiento (siempre relanza) y `MOO-179` deja de relanzar lo que causa la PR. El usuario lo commiteó sin revisarlo. En `/opsx:apply`, la IA implementó la sección de `MOO-178` con un commit por paso y los tests en rojo antes de cada implementación.*
+
+*Ajustes:*
+- *La IA propuso esperar para estimar, «para no anclarse». El usuario lo cuestionó («porque no podemos estimar ahora? quiero incluso ejecutarla»), y la IA reconoció que la skill solo pide un procedimiento aparte, no esperar.*
+- *El design decía que una relanzable* real *no lleva nota en el resumen, pero la prueba a mano de `MOO-178` la esperaba: mientras `decidir` relance siempre, una* real *también se relanza. La IA añadió la fila al design.*
+- *`decide()` iba a recibir el primer triaje desde `MOO-178`, pero el lint no deja un parámetro sin usar: lo recibe en `MOO-179`, y el grafo prueba mientras tanto que relanza sea cual sea el veredicto.*
+
 ---
 
 ### 7. Pull Requests

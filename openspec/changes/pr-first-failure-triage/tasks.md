@@ -79,7 +79,7 @@
 
   Verificar: los tests de 1.5 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 1.7 Documentación:
+- [x] 1.7 Documentación:
   - README §2.2 (*PR Babysitter*): el nodo `decidir`, el triaje del primer fallo y el diagrama del
     grafo;
   - `prompts.md`: la entrada de la historia (refinamiento, prueba de la pregunta, estimación,
