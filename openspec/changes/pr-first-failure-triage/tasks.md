@@ -86,7 +86,7 @@
     exploración con la decisión del usuario y change), con el formato de `course.md` §5.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
-- [ ] 1.8 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 1.8 **Prueba a mano** (sin commit), con el sistema en marcha:
   - una PR de prueba con un test de Vitest que falla solo en el primer intento
     (`process.env.GITHUB_RUN_ATTEMPT === '1'`) y una descripción que no dice nada del test;
   - otra con un test que rompe la propia PR y falla siempre.
