@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "node tooling/dev/prepare-local-config.ts && pnpm --parallel --filter @moodtable/engine --filter @moodtable/panel dev",
-    "lint": "eslint . && shellcheck deploy/*.sh",
+    "lint": "eslint . && shellcheck deploy/*.sh deploy/demo/*.sh",
     "typecheck": "tsc --noEmit && pnpm -r typecheck",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
