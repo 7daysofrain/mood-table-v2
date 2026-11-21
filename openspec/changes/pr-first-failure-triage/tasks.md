@@ -103,7 +103,7 @@
 
 ## 2. MOO-179 · infra
 
-- [ ] 2.1 **(test en rojo)** No relanzar lo que causa la PR (`design.md` decisiones 5 y 9):
+- [x] 2.1 **(test en rojo)** No relanzar lo que causa la PR (`design.md` decisiones 5 y 9):
   - **`core/decision.test.ts`:** `skipRerun` si alguna relanzable sale *real* en el primer triaje,
     también con la otra *no aplica*; `rerun` en los demás casos de la decisión 6.
   - **`core/tracking.test.ts`:** con `rerunSkipped`, `afterChecksWait` no vuelve a dar `firstFailure` y
@@ -118,17 +118,17 @@
       la nota «se capturaría» de `e2e`;
     - con *SonarCloud Code Analysis* sin *check run*: el aviso llega tras el margen, no tras 30 min;
     - las vueltas siguientes no vuelven a triar el primer fallo.
-- [ ] 2.2 La regla en `core/decision.ts` (que pasa a recibir `push.firstTriage`), `rerunSkipped` en el push y en `afterChecksWait`
+- [x] 2.2 La regla en `core/decision.ts` (que pasa a recibir `push.firstTriage`), `rerunSkipped` en el push y en `afterChecksWait`
   (`core/tracking.ts`), la arista de `skipRerun` a `esperarComprobaciones` (`core/graph.ts`) y el
   veredicto guardado en `afterRerun` (`core/triage.ts`).
 
   Verificar: los tests de 2.1 y todos los que ya había en verde; `pnpm lint`, `pnpm typecheck` y
   `pnpm test` en verde.
-- [ ] 2.3 Documentación: README §2.2 (*PR Babysitter*: `decidir` ya no relanza lo que causa la PR) y
+- [x] 2.3 Documentación: README §2.2 (*PR Babysitter*: `decidir` ya no relanza lo que causa la PR) y
   `prompts.md`, si la sección 1 dejó algo por contar.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
-- [ ] 2.4 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 2.4 **Prueba a mano** (sin commit), con el sistema en marcha:
   - las dos PR de prueba de 1.8, otra vez;
   - una tercera con un test que rompe la PR y un `e2e` que falla solo en el primer intento.
 

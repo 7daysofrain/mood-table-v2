@@ -145,7 +145,9 @@ Se lee en tres sitios:
 Si fallan `test` y `e2e`, cada una tiene su pregunta (D114: una petición por hallazgo). Como
 `rerun-failed-jobs` las relanza juntas y relanzar *job* a *job* choca con el run en marcha (D119),
 `decide()` no relanza ninguna si alguna sale *real*. La otra queda en el resumen con su nota
-(«se capturaría» si no la causa la PR).
+(«se capturaría» si no la causa la PR). Como no se ha relanzado, su fila es la de su primer triaje
+(*no aplica* con su probabilidad), y «se capturaría» va al final del porqué; solo en las
+relanzables, que son las que tienen primer triaje (detalle añadido en `MOO-179`).
 
 ### 6. Se relanza cuando no se sabe
 

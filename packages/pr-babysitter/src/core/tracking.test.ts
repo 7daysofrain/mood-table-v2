@@ -631,6 +631,43 @@ describe('el estado final con el relanzamiento rechazado', () => {
 
 const SONAR = 'SonarCloud Code Analysis';
 
+describe('sin relanzar lo que causa la PR (change pr-first-failure-triage, decisión 9)', () => {
+  const skipped: TrackedPush = { ...push, rerunSkipped: ['test'] };
+
+  it('no vuelve a dar el primer fallo: todo terminado, el estado final', () => {
+    const now = snapshot({ checks: [passed('lint'), failedIn('test', 1)] });
+
+    expect(afterChecksWait(skipped, now, TIMEOUT, RERUN, MARGIN)).toEqual({
+      push: skipped,
+      next: 'checksFailed',
+    });
+  });
+
+  it('con una sin check run, el margen de las que no van a ejecutarse y después el estado final', () => {
+    const at = (minute: number) =>
+      snapshot({
+        checks: [passed('lint'), failedIn('test', 1), notStarted(SONAR)],
+        observedAt: minute * MINUTE,
+      });
+    const quiet = { ...skipped, quietSince: 6 * MINUTE };
+
+    expect(afterChecksWait(skipped, at(6), TIMEOUT, RERUN, MARGIN)).toEqual({ push: quiet, next: 'waiting' });
+    expect(afterChecksWait(quiet, at(8), TIMEOUT, RERUN, MARGIN)).toEqual({
+      push: quiet,
+      next: 'checksFailed',
+    });
+  });
+
+  it('el estado final no añade ningún motivo: «falla test» ya lo dice', () => {
+    const checks = [passed('lint'), failedIn('test', 1)];
+
+    expect(finalState(snapshot({ checks, review: null }), skipped)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksFailed', checks: ['test'] }],
+    });
+  });
+});
+
 describe('al reanudar la espera de las comprobaciones, las que no van a ejecutarse (change pr-checks-not-run)', () => {
   /** La #154: `test` falla, `sonar-issues` saltada, `e2e` pasa y SonarCloud sin check run. */
   const quiet = (minute: number, checks: Check[] = [failed('test'), passed('e2e'), notStarted(SONAR)]) =>

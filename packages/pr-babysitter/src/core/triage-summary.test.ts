@@ -631,6 +631,44 @@ describe('la nota del primer triaje (change pr-first-failure-triage, decisión 8
   });
 });
 
+describe('una relanzable que no se relanzó porque la causa la PR (change pr-first-failure-triage, decisión 5)', () => {
+  const test: CheckFinding = { ...e2e, name: 'test' };
+
+  it('la fila es la de su primer triaje: real con su probabilidad, y la otra dice que se capturaría', () => {
+    const real = probability('valid', 0.95);
+    const notApplicable = probability('notApplicable', 0.12);
+    const text = triageSummary(
+      {
+        sha: SHA,
+        findings: [
+          { finding: test, verdict: real },
+          { finding: e2e, verdict: notApplicable },
+        ],
+        firstTriage: [
+          { name: 'test', verdict: real },
+          { name: 'e2e', verdict: notApplicable },
+        ],
+      },
+      0.8,
+    );
+
+    expect(rows(text)).toEqual([
+      '| Comprobación `test` | real | p = 0,95 ≥ 0,80 · contexto: log |',
+      '| Comprobación `e2e` | no aplica | p = 0,12 ≤ 0,20 · contexto: log · se capturaría |',
+    ]);
+  });
+
+  it('una comprobación que no es relanzable y no aplica no dice que se capturaría', () => {
+    const build: CheckFinding = { ...e2e, name: 'build' };
+    const text = triageSummary(
+      { sha: SHA, findings: [{ finding: build, verdict: probability('notApplicable', 0.12) }] },
+      0.8,
+    );
+
+    expect(rows(text)).toEqual(['| Comprobación `build` | no aplica | p = 0,12 ≤ 0,20 · contexto: log |']);
+  });
+});
+
 describe('las marcas de un comentario', () => {
   it('no hay ninguna en un comentario cualquiera', () => {
     expect(summaryMarks('Buen trabajo')).toEqual([]);

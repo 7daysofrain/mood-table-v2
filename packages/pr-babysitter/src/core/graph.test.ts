@@ -1890,7 +1890,7 @@ describe('el primer fallo de una relanzable se tría antes de relanzarla (change
   const firstFailure = [snapshot(0), snapshot(5, { checks: E2E_FIRST_ATTEMPT })];
 
   it('falla un `e2e`: triar, una pregunta por su causa, reunirTriaje, decidir y relanzar, sin aviso, resumen ni revisión', async () => {
-    const triage = recordingTriage([failingCheck('e2e')]);
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
     const reruns = recordingReruns();
 
     const { graph, state, requests } = await runTriage(triage, firstFailure, undefined, reruns.checkReruns);
@@ -1974,7 +1974,7 @@ describe('el primer fallo de una relanzable se tría antes de relanzarla (change
 
 describe('qué se hace con el triaje lo decide `decidir` y queda registrado (change pr-first-failure-triage)', () => {
   it('en el primer fallo, relanzar, con su regla', async () => {
-    const triage = recordingTriage([failingCheck('e2e')]);
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
 
     const state = await followTriage(triage, [snapshot(0), snapshot(5, { checks: E2E_FIRST_ATTEMPT })]);
 
@@ -2032,7 +2032,7 @@ describe('el resumen dice qué respondió el primer triaje de cada relanzable re
 
 describe('el triaje del primer fallo no se repite en el mismo push (change pr-first-failure-triage)', () => {
   it('un fallo pasajero de `relanzar`: la vuelta siguiente lo vuelve a pedir sin preguntar otra vez', async () => {
-    const triage = recordingTriage([failingCheck('e2e')]);
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
     const reruns = recordingReruns();
     reruns.recorded.failure = new TypeError('fetch failed');
     const graph = trackingGraph(
@@ -2059,7 +2059,7 @@ describe('el triaje del primer fallo no se repite en el mismo push (change pr-fi
   });
 
   it('un push nuevo se vuelve a preguntar', async () => {
-    const triage = recordingTriage([failingCheck('e2e')]);
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
     const reruns = recordingReruns();
 
     await followTriage(
@@ -2076,6 +2076,119 @@ describe('el triaje del primer fallo no se repite en el mismo push (change pr-fi
 
     expect(triage.asked).toHaveLength(2);
     expect(reruns.recorded.reruns).toEqual([RUN, RUN]);
+  });
+});
+
+describe('si la PR causa el primer fallo de una relanzable, no se relanza (change pr-first-failure-triage)', () => {
+  const lintPassed: Check = { name: 'lint', status: 'passed', conclusion: 'success' };
+  const SONAR = 'SonarCloud Code Analysis';
+  const sonarNotStarted: Check = { name: SONAR, status: 'notStarted', conclusion: null };
+  /** `test` falla en su primer intento, y todo lo demás ha terminado. */
+  const TEST_FIRST_ATTEMPT: Check[] = [lintPassed, failedIn('test', 1)];
+  /** El modelo da que la PR causa el fallo de `test` (0,93) y no el de las demás (0,12). */
+  const testCaused = (finding: Finding) =>
+    Promise.resolve({
+      probability: finding.source === 'check' && finding.name === 'test' ? 0.93 : 0.12,
+      inputTokens: 12_000,
+    });
+
+  it('`decidir` no relanza, lo deja en el push y vuelve a esperar', async () => {
+    const triage = recordingTriage([failingCheck('test')]);
+    const reruns = recordingReruns();
+
+    const { graph, state } = await runTriage(
+      triage,
+      [snapshot(0), snapshot(5, { checks: TEST_FIRST_ATTEMPT })],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    const nodes = await visitedNodes(graph);
+    expect(nodes.slice(nodes.indexOf('triar'))).toEqual([
+      'triar',
+      'preguntarModelo',
+      'reunirTriaje',
+      'decidir',
+      'esperarComprobaciones',
+    ]);
+    expect(state.values).toMatchObject({
+      decision: { action: 'skipRerun', rule: 'prCausesFailure' },
+      push: { rerunSkipped: ['test'] },
+    });
+    expect(reruns.recorded.reruns).toEqual([]);
+  });
+
+  it('`test` causado por la PR: sin relanzar, el aviso con `test` y el resumen la da real con su probabilidad, con una sola pregunta', async () => {
+    const triage = recordingTriage([failingCheck('test')]);
+    const reruns = recordingReruns();
+
+    await followTriage(
+      triage,
+      [snapshot(0), snapshot(5, { checks: TEST_FIRST_ATTEMPT }), snapshot(6, { checks: TEST_FIRST_ATTEMPT })],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    expect(reruns.recorded.reruns).toEqual([]);
+    expect(triage.asked).toHaveLength(1);
+    expect(triage.events).toEqual([
+      'tracking',
+      'leer comprobaciones',
+      'preguntar al modelo',
+      'leer hallazgos',
+      'publicar resumen',
+      'aviso final',
+    ]);
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksFailed', checks: ['test'] }],
+    });
+    expect(summaryRows(triage)).toEqual(['| Comprobación `test` | real | p = 0,93 ≥ 0,80 · contexto: log |']);
+  });
+
+  it('`test` causado y `e2e` no: no relanza ninguna, el aviso con las dos, y el resumen da `test` real y que `e2e` se capturaría', async () => {
+    const triage = recordingTriage([failingCheck('test'), failingCheck('e2e')], testCaused);
+    const reruns = recordingReruns();
+    const both = [lintPassed, failedIn('test', 1), failedIn('e2e', 1)];
+
+    await followTriage(
+      triage,
+      [snapshot(0), snapshot(5, { checks: both }), snapshot(6, { checks: both })],
+      undefined,
+      reruns.checkReruns,
+    );
+
+    expect(reruns.recorded.reruns).toEqual([]);
+    expect(triage.asked).toHaveLength(2);
+    expect(summary(triage.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [{ kind: 'checksFailed', checks: ['test', 'e2e'] }],
+    });
+    expect(summaryRows(triage)).toEqual([
+      '| Comprobación `test` | real | p = 0,93 ≥ 0,80 · contexto: log |',
+      '| Comprobación `e2e` | no aplica | p = 0,12 ≤ 0,20 · contexto: log · se capturaría |',
+    ]);
+  });
+
+  it('con SonarCloud sin check run, el aviso llega tras el margen y no tras 30 minutos; las vueltas siguientes no vuelven a triar el primer fallo', async () => {
+    const checks = [lintPassed, failedIn('test', 1), sonarNotStarted];
+    const before = recordingTriage([failingCheck('test')]);
+    const after = recordingTriage([failingCheck('test')]);
+    const first = [snapshot(0), snapshot(5, { checks }), snapshot(6, { checks })];
+
+    await followTriage(before, [...first, snapshot(7.5, { checks })]);
+    await followTriage(after, [...first, snapshot(7.5, { checks }), snapshot(8, { checks })]);
+
+    expect(summary(before.notices)).toEqual(['tracking']);
+    expect(before.events.filter((event) => event === 'leer comprobaciones')).toHaveLength(1);
+    expect(summary(after.notices).at(-1)).toEqual({
+      status: 'needsIntervention',
+      reasons: [
+        { kind: 'checksFailed', checks: ['test'] },
+        { kind: 'checksNotRun', checks: [SONAR] },
+      ],
+    });
+    expect(after.asked).toHaveLength(1);
   });
 });
 
@@ -2109,14 +2222,14 @@ const rerunThen = (checks: Check[]) => [
 
 describe('una comprobación relanzable que ha fallado dos veces sale real por regla (change pr-check-rerun)', () => {
   it('el relanzamiento vuelve a fallar: real por la regla, que dice que ha fallado dos veces, sin volver a preguntar al modelo', async () => {
-    const triage = recordingTriage([failingCheck('e2e')]);
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.55));
 
     await followTriage(triage, rerunThen(E2E_FAILED_AGAIN));
 
     // La única pregunta es la del primer fallo (change pr-first-failure-triage).
     expect(triage.asked.map(({ question }) => question)).toEqual(['cause']);
     expect(summaryRows(triage)).toEqual([
-      '| Comprobación `e2e` | real | regla: ha fallado dos veces · primer intento: p = 0,93 ≥ 0,80 |',
+      '| Comprobación `e2e` | real | regla: ha fallado dos veces · primer intento: p = 0,55, no llega al umbral |',
     ]);
     expect(triage.events.slice(-2)).toEqual(['publicar resumen', 'aviso final']);
   });
@@ -2174,7 +2287,7 @@ describe('una comprobación relanzable que ha fallado dos veces sale real por re
 
 describe('una comprobación relanzable sin resultado tras relanzarla exige criterio (change pr-check-rerun)', () => {
   it('GitHub rechaza el relanzamiento: exige criterio porque no se ha podido relanzar', async () => {
-    const triage = recordingTriage([failingCheck('e2e')]);
+    const triage = recordingTriage([failingCheck('e2e')], answering(0.12));
     const reruns = recordingReruns();
     reruns.recorded.failure = new GitHubRequestRejectedError('403 Resource not accessible');
 
