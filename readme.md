@@ -1472,5 +1472,50 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 > Documenta 3 de las Pull Requests realizadas durante la ejecución del proyecto
 
-**Llegan con la entrega final.** Las PRs salen de las tareas de Linear (una tarea, una PR; ver [`docs/instructions/workflow.md`](docs/instructions/workflow.md)).
+Son las PR de los tres tickets del §6, uno por área: backend, frontend y base de datos. Cada PR integra **una tarea** de Linear (`Fixes MOO-n`) y sale de la sección de esa tarea en el `tasks.md` de su OpenSpec change, **un commit por paso** ([`workflow.md`](docs/instructions/workflow.md) §2). Todas pasan las mismas puertas antes de integrarse: `lint` (con la regla de fronteras), `typecheck`, `test`, `e2e`, SonarQube Cloud y, desde el 22-oct, la revisión de Codex con todos sus hilos resueltos. A 21-nov-2026, el proyecto lleva 147 PR integradas.
+
+**Pull Request 1**
+
+### PR 1 · Backend · [#28](https://github.com/7daysofrain/mood-table-v2/pull/28) · Arrancar el motor con una tira virtual y el efecto respiración
+
+| | |
+|---|---|
+| **Tarea** | `MOO-16` · historia HU1 `MOO-13` · change [`virtual-strip-breathing`](openspec/changes/archive/2026-10-16-virtual-strip-breathing/) |
+| **Tamaño** | 22 commits · 52 ficheros · +2.536 / −63 · integrada el 15-oct-2026 |
+
+**Qué integra.** El primer código del motor. El esquema TypeBox del fichero de configuración y su validación, que nombra la tira y el campo que falla; el contrato `Effect` y la *respiración*, con frames dorados; el bucle de frames puro (`tick(now)`), con búferes preasignados, salto de los pulsos tardíos y el puerto `LightOutput`; los adaptadores (salida en memoria, lectura de `config/local.json`, temporizador) y la raíz de composición `main.ts`, la única que ve el núcleo y los adaptadores.
+
+**Cómo se hizo.** Cada escenario de la spec tiene su test, y la PR los enlaza en una tabla. Copilot no pudo revisarla por cuota, así que se hizo una revisión local con IA: cinco arreglos, y dos cambios de comportamiento que **decidió el usuario** (rechazar los campos que el esquema no declara y limitar `fps` a 60), cada uno con su escenario nuevo en la spec antes que el código.
+
+**Verificación.** 134 tests y E2E en verde; en un clon limpio, `pnpm dev` crea la configuración local y no la pisa en el segundo arranque; sin fichero, el motor termina con código 1 y dice qué falta.
+
+**Pull Request 2**
+
+### PR 2 · Frontend · [#31](https://github.com/7daysofrain/mood-table-v2/pull/31) · Dibujar las tiras en el visor y mostrar la conexión con el motor
+
+| | |
+|---|---|
+| **Tarea** | `MOO-18` · cierra la historia HU1 `MOO-13` · change `virtual-strip-breathing` |
+| **Tamaño** | 10 commits · 27 ficheros · +1.139 / −52 · integrada el 15-oct-2026 |
+
+**Qué integra.** La conexión del panel con el motor (`panel/src/engine/connection.ts`): un único WebSocket que se reintenta cada segundo y decodifica los frames con el protocolo de `shared`, sin saber nada de React. El visor, un `<canvas>` sin librería que dibuja el último frame de cada tira en cada `requestAnimationFrame`, con la geometría separada del dibujo en una función pura. La cabecera con el estado de la conexión. Y el primer E2E del flujo principal (`e2e/viewer.spec.ts`), con el motor real sirviendo el build del panel.
+
+**Cómo se hizo.** La PR traza cada escenario de la historia a sus tests unitarios y E2E. Un matiz de la D44 que **decidió el usuario** (cargar otro fichero de configuración solo en los tests, `MOODTABLE_CONFIG`) entró primero en la spec y después en el código. El escenario *Dos paneles ven lo mismo* se reformuló como *todos los paneles reciben los mismos frames*, porque así se puede probar.
+
+**Verificación.** 202 tests; los 5 E2E, 15 de 15 con `--repeat-each=3` para descartar intermitencias; `openspec validate --strict` pasa; a mano, el visor se recupera solo tras reiniciar el motor, sin recargar.
+
+**Pull Request 3**
+
+### PR 3 · Base de datos · [#122](https://github.com/7daysofrain/mood-table-v2/pull/122) · Crear la base de persistencia del estado del instrumento
+
+| | |
+|---|---|
+| **Tarea** | `MOO-26` · historia H5 `MOO-25` · change [`instrument-state-restore`](openspec/changes/archive/2026-11-10-instrument-state-restore/) |
+| **Tamaño** | 16 commits · 30 ficheros · +1.653 / −32 · integrada el 8-nov-2026 |
+
+**Qué integra.** El puerto `StateStore`, síncrono, en el núcleo, con **tests de contrato** que corren contra sus dos adaptadores. El adaptador SQLite con `node:sqlite`, que viene con Node y no obliga a compilar nada nativo en la Pi (D103): WAL, `synchronous = FULL`, claves foráneas, la migración 1 con `strip_state` y `strip_effects` y la tabla de control `schema_migrations` (§3). Al abrir cubre cuatro casos: sin fichero (lo crea), dañado (lo aparta con fecha y crea otro), imposible de crear (arranca sin guardar) y de una versión más nueva del motor (arranca sin tocarlo). Y el adaptador en memoria, que usan la demo pública y los E2E.
+
+**Cómo se hizo.** Con TDD: los commits de los tests en rojo van marcados. **Codex** dejó dos hallazgos P2 reales, los dos corregidos con su test: comprobar la versión del esquema antes de pasar el fichero a WAL, y que un identificador de tira como `__proto__` no se pierda (`Object.fromEntries`). El usuario dejó un tercer hilo, sobre dónde vivían los tests de contrato, que acabó moviéndolos fuera de `src/core` para que no contaran en la cobertura. La PR documenta además las desviaciones del change que salieron al implementar.
+
+**Verificación.** 1.174 tests y 21 E2E en verde; las dos incidencias del primer análisis de SonarQube, corregidas en un commit aparte; a mano, el motor con una carpeta de solo lectura arranca y lo dice en el log.
 
