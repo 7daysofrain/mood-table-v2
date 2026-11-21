@@ -740,8 +740,6 @@ Todos los niveles automáticos se ejecutan en cada PR contra `main`, en los jobs
 
 ## 3. Modelo de Datos
 
-*Diseño previsto para la Entrega 2.*
-
 **Regla de reparto:** lo que sale de la hoja de características del hardware y no cambia se **declara en un fichero de configuración**; lo que cambia mientras se toca el instrumento se guarda en la **base de datos**.
 
 | Dato | Ejemplos | Dónde vive | Quién lo cambia |
@@ -774,7 +772,13 @@ erDiagram
     TEXT updated_at "NOT NULL, ISO 8601"
   }
   STRIP_EFFECTS ||--o| STRIP_STATE : "(strip_id, active_effect_id) es el efecto activo"
+  SCHEMA_MIGRATIONS {
+    INTEGER version PK "migración aplicada"
+    TEXT applied_at "NOT NULL, ISO 8601"
+  }
 ```
+
+*`SCHEMA_MIGRATIONS` es la tabla de control de las migraciones (§3.2), sin relación con las otras dos.*
 
 ### **3.2. Descripción de entidades principales:**
 
@@ -869,6 +873,15 @@ Por último, el fichero dice **dónde se guarda el estado del instrumento** (`in
 ```json
 "instrumentState": { "type": "sqlite", "path": "/var/lib/moodtable/estado.db" }
 ```
+
+Quedan dos campos de primer nivel, opcionales, para el motor:
+
+| Campo | Tipo | Validación | Para qué |
+|---|---|---|---|
+| `fps` | entero | De 1 a 60; por defecto 60 | El pulso del motor. La demo pública va a 30 (D30) |
+| `server` | objeto | `host`, texto no vacío, por defecto `127.0.0.1`; `port`, de 1 a 65535, por defecto 8080 | Dónde escucha el motor. Por defecto, solo local (§2.5); la mesa declara `0.0.0.0` |
+
+El fichero admite como mucho 256 tiras, el máximo que direcciona el protocolo del visor (`MAX_STRIPS`).
 
 #### Reconciliación al arrancar
 
@@ -982,7 +995,7 @@ Los errores responden `{ "message": "…" }`, sin cambiar nada:
 | Código | Ruta | Cuándo | Ejemplo de `message` |
 |---|---|---|---|
 | `400` | `effect` | El cuerpo no es `{ "effect": "<id>" }` o el efecto no existe | «strobe» no es un efecto (hay: `breathing`, `spectrum`, `scroll`, `energy`) |
-| `400` | `values` | Los valores no cumplen el esquema del efecto activo: falta uno, sobra uno o está fuera de rango (D86) | la tira «demo», efecto `breathing`: `period` debe ser <= 20 |
+| `400` | `values` | El cuerpo no es un objeto JSON, o los valores no cumplen el esquema del efecto activo: falta uno, sobra uno o está fuera de rango (D86). Sin objeto JSON, el mensaje es «el cuerpo debe ser un objeto JSON con todos los valores del efecto activo» | la tira «demo», efecto `breathing`: `period` debe ser <= 20 |
 | `400` | `intensity` | El cuerpo no es `{ "intensity": <número de 0 a 1> }`: falta, sobra un campo, no es un número o está fuera de rango | el cuerpo debe ser un objeto JSON con el campo `intensity`, un número de 0 a 1, y ninguno más |
 | `404` | `effect` y `values` | La tira no existe | la tira «luces» no existe |
 | `409` | `effect` | El efecto es reactivo y el instrumento no tiene fuente de audio (D80) | la tira «demo», efecto `energy`: necesita una fuente de audio |
