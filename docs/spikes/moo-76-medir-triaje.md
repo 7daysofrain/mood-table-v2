@@ -57,3 +57,10 @@ fallos de `test` y `e2e` del historial ya se usaron en D122.
 **Con el umbral en 0,70:** el revisor pasaría a 21 de 27 *real* y SonarQube a 7 de 19, sin ningún
 error en esta muestra. Pero casi todas las filas son *real*, así que la muestra no ve el coste de
 bajarlo (un *no aplica* que sale *real*).
+
+## Veredicto acordado (21-nov)
+
+El usuario elige mantener el umbral en 0,80 y que `MOO-77` arranque en modo ensayo: no hay ningún
+error con confianza en 49 filas nuevas, y en modo ensayo un error no se publica. El precio es el
+volumen que llega al mantenedor. Sale una captura: recalibrar los criterios de la pregunta de la regla
+de SonarQube (D118), que acierta en 3 de 19 incidencias *real* nuevas.
