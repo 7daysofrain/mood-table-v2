@@ -6,7 +6,7 @@
 # Qué hace, en orden:
 #   1. deja config/cloud.json como fichero de configuración (dos tiras virtuales, estado en memoria,
 #      el motor solo en 127.0.0.1);
-#   2. instala Caddy, del repositorio de Ubuntu, con el Caddyfile de la demo (HTTPS y proxy al motor);
+#   2. instala Caddy, de su repositorio oficial, con el Caddyfile de la demo (HTTPS y proxy al motor);
 #   3. añade a moodtable.service el drop-in con Restart=on-failure, solo en la demo;
 #   4. registra el temporizador que reinicia el motor cada 3 horas, para volver al estado inicial;
 #   5. reinicia el motor y dice dónde está la demo.
@@ -21,6 +21,8 @@ readonly SERVICE_USER='moodtable'
 readonly DROP_IN_DIR="/etc/systemd/system/${SERVICE}.service.d"
 readonly RESET='moodtable-reset'
 readonly DOMAIN='moodtable.josebaalonso.tech'
+readonly CADDY_REPO='https://dl.cloudsmith.io/public/caddy/stable'
+readonly CADDY_KEYRING='/usr/share/keyrings/caddy-stable-archive-keyring.gpg'
 
 info() {
   printf '\n==> %s\n' "$*"
@@ -51,10 +53,17 @@ write_config() {
     "${INSTALL_DIR}/config/cloud.json" "${INSTALL_DIR}/config/local.json"
 }
 
-# Paso 2. El paquete de Ubuntu: lo parchea unattended-upgrades con el resto del sistema, y basta para
-# un proxy con HTTPS. El paquete registra y arranca caddy.service.
+# Paso 2. Del repositorio oficial de Caddy (https://caddyserver.com/docs/install), no del de Ubuntu:
+# el de Ubuntu 24.04 se quedó en la 2.6, de 2022. Se actualiza con `apt upgrade`. El paquete
+# registra y arranca caddy.service.
 install_caddy() {
   info 'Instalando Caddy'
+  apt-get update
+  apt-get install --yes curl gpg
+  curl -1sLf "${CADDY_REPO}/gpg.key" |
+    gpg --dearmor --batch --yes -o "$CADDY_KEYRING"
+  curl -1sLf "${CADDY_REPO}/debian.deb.txt" >/etc/apt/sources.list.d/caddy-stable.list
+  chmod o+r "$CADDY_KEYRING" /etc/apt/sources.list.d/caddy-stable.list
   apt-get update
   apt-get install --yes caddy
   install --mode=0644 "${DEMO_DIR}/Caddyfile" /etc/caddy/Caddyfile
