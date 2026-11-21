@@ -46,7 +46,7 @@
   - los puertos falsos de `src/studio.ts`.
 
   Verificar: `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 1.5 **(test en rojo)** El nodo `decidir` y el primer fallo en el grafo (`design.md` decisiones 1,
+- [x] 1.5 **(test en rojo)** El nodo `decidir` y el primer fallo en el grafo (`design.md` decisiones 1,
   4, 6 y 7):
   - **`core/decision.test.ts`:** `decide()` da `rerun` en la ronda del primer fallo, sea cual sea el
     veredicto (en esta tarea siempre relanza), y `publish` en la final.
