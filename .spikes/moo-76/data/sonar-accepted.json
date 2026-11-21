@@ -1,0 +1,45 @@
+{
+  "total": 5,
+  "issues": [
+    {
+      "rule": "typescript:S9382",
+      "component": "7daysofrain_mood-table-v2:packages/pr-babysitter/src/adapters/github.ts",
+      "line": 447,
+      "issueStatus": "ACCEPTED",
+      "message": "Unexpected `await` inside a loop.",
+      "creationDate": "2026-11-20T20:30:07+0000"
+    },
+    {
+      "rule": "typescript:S9382",
+      "component": "7daysofrain_mood-table-v2:packages/pr-babysitter/src/core/driver.ts",
+      "line": 421,
+      "issueStatus": "ACCEPTED",
+      "message": "Unexpected `await` inside a loop.",
+      "creationDate": "2026-10-26T15:12:55+0000"
+    },
+    {
+      "rule": "typescript:S9382",
+      "component": "7daysofrain_mood-table-v2:packages/pr-babysitter/src/core/driver.ts",
+      "line": 422,
+      "issueStatus": "ACCEPTED",
+      "message": "Unexpected `await` inside a loop.",
+      "creationDate": "2026-10-26T15:12:55+0000"
+    },
+    {
+      "rule": "typescript:S6819",
+      "component": "7daysofrain_mood-table-v2:packages/panel/src/viewer/Viewer.tsx",
+      "line": 55,
+      "issueStatus": "ACCEPTED",
+      "message": "Use <img alt=...>, or <img alt=...> instead of the \"img\" role to ensure accessibility across all devices.",
+      "creationDate": "2026-10-15T18:01:19+0000"
+    },
+    {
+      "rule": "typescript:S9382",
+      "component": "7daysofrain_mood-table-v2:tooling/ci/check-sonar-issues.ts",
+      "line": 66,
+      "issueStatus": "ACCEPTED",
+      "message": "Unexpected `await` inside a loop.",
+      "creationDate": "2026-10-06T19:35:21+0000"
+    }
+  ]
+}
