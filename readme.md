@@ -96,14 +96,25 @@ https://github.com/7daysofrain/mood-table-v2
 
 > Proporciona imágenes y/o videotutorial mostrando la experiencia del usuario desde que aterriza en la aplicación, pasando por todas las funcionalidades principales.
 
-*Diseño previsto para la Entrega 2. Las capturas y el vídeo del producto real llegarán con la entrega final.*
+**Vídeo de la mesa (2-3 min):** VIDEO_PENDIENTE. El recorrido completo con la tira física: panel → motor → tira de la mesa → apagar y encender → vuelve al último estado.
+
+**Capturas del panel real**, en la demo pública (21-nov-2026):
+
+![El panel en la demo pública: dos tiras virtuales reaccionando a la pista de ejemplo, con Espectro activo en la tira frontal](docs/img/panel/02-panel.png)
+*El panel con la tira frontal seleccionada y el efecto Espectro. En el visor, una fila por tira; arriba, la fuente de audio con su nivel, el botón de oírla y la conexión con el motor; a la derecha, la intensidad.*
+
+![La tira frontal con Respiración: los controles de color y periodo generados desde el esquema del efecto](docs/img/panel/03-respiracion-controles.png)
+*Con Respiración, la zona Controles muestra los parámetros que declara el efecto: un selector de color y el periodo en segundos. El panel no conoce el efecto: los genera desde su esquema.*
+
+![El aviso que explica la demo pública la primera vez que se abre](docs/img/panel/01-aviso-demo.png)
+*Solo en la demo pública, un aviso explica qué es y qué probar la primera vez que se abre (`MOO-181`).*
 
 La interfaz del MVP es **un único panel web**, técnico y pensado para escritorio, que sirve igual para la **demo pública** y para la **mesa**. El panel no sabe si detrás hay una tira física: solo ve las tiras declaradas. Pasar del simulador a la mesa es cambiar la configuración del despliegue (fuente de audio y salidas), no la interfaz (§2.1).
 
 La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor F1 o un mando propio) queda **fuera del MVP**; se conectará al mismo puerto de mandos.
 
 ![Wireframe del panel del MVP](docs/img/panel-wireframe.png)
-*Wireframe de baja fidelidad: estructura prevista, no diseño final.*
+*El wireframe de baja fidelidad de la Entrega 1, que fijó la estructura. El panel construido mantiene sus zonas, con tres diferencias: la intensidad se añadió después, a la derecha (`MOO-97`); los fps del motor aún no se muestran; y los efectos reactivos, portados tal cual de la v1, no tienen parámetros.*
 
 #### Zonas del panel
 
