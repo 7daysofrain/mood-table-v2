@@ -2,7 +2,13 @@ import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { render } from '../../test/render.tsx';
-import { DEMO_HOSTNAME, DEMO_NOTICE_SEEN_KEY, DemoNotice, type NoticeStorage } from './DemoNotice.tsx';
+import {
+  DEMO_HOSTNAME,
+  DEMO_NOTICE_SEEN_KEY,
+  DemoNotice,
+  type NoticeStorage,
+  TABLE_VIDEO_EMBED_URL,
+} from './DemoNotice.tsx';
 
 const NOTICE = { name: 'Mood Table · demo pública' };
 
@@ -27,6 +33,15 @@ describe('el aviso de la demo pública (temporal, MOO-181)', () => {
       'href',
       'https://github.com/7daysofrain/mood-table-v2#readme',
     );
+  });
+
+  it('muestra el vídeo de la mesa sin cookies ni reproducción automática', async () => {
+    render(<DemoNotice hostname={DEMO_HOSTNAME} storage={memoryStorage()} />);
+
+    const video = await screen.findByTitle('Vídeo de la Mood Table en la mesa');
+    expect(video).toHaveAttribute('src', TABLE_VIDEO_EMBED_URL);
+    expect(TABLE_VIDEO_EMBED_URL).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\//);
+    expect(TABLE_VIDEO_EMBED_URL).not.toMatch(/autoplay=1/);
   });
 
   it.each(['localhost', '127.0.0.1', '192.168.0.173'])('no sale desde %s', (hostname) => {

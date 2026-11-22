@@ -4,7 +4,7 @@
  * su línea en `App.tsx`. Por eso no hay un campo en la configuración del motor que lo active: solo
  * sale con el dominio de la demo, así que en local, en la mesa y en los E2E no aparece.
  */
-import { Anchor, Button, Group, List, Modal, Stack, Text } from '@mantine/core';
+import { Anchor, AspectRatio, Button, Group, List, Modal, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 
 /** El dominio de la demo pública (README §2.4). */
@@ -14,6 +14,12 @@ export const DEMO_HOSTNAME = 'moodtable.josebaalonso.tech';
 export const DEMO_NOTICE_SEEN_KEY = 'moodtable.demoNoticeSeen';
 
 const README_URL = 'https://github.com/7daysofrain/mood-table-v2#readme';
+
+/**
+ * El vídeo de la mesa (README §1.3), incrustado desde `youtube-nocookie.com`: YouTube no deja cookies hasta
+ * que se reproduce, y no arranca solo.
+ */
+export const TABLE_VIDEO_EMBED_URL = 'https://www.youtube-nocookie.com/embed/SKcjWI1v5Rw?rel=0';
 
 /** Lo que el aviso usa del almacenamiento del navegador: los tests le dan uno en memoria. */
 export type NoticeStorage = Pick<Storage, 'getItem' | 'setItem'>;
@@ -66,8 +72,19 @@ export function DemoNotice({
         </Text>
         <Text>
           Aquí no hay hardware: las dos tiras del visor son virtuales y reaccionan a una pista de
-          ejemplo. En la mesa, lo que ves en el visor lo pinta una tira LED real.
+          ejemplo. En la mesa, lo que ves en el visor lo pinta una tira LED real, como en este vídeo:
         </Text>
+        <AspectRatio ratio={16 / 9}>
+          <iframe
+            src={TABLE_VIDEO_EMBED_URL}
+            title="Vídeo de la Mood Table en la mesa"
+            style={{ border: 0 }}
+            allow="encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        </AspectRatio>
         <Text>Para probarlo:</Text>
         <List spacing={4}>
           <List.Item>pulsa el altavoz de la cabecera para oír la pista;</List.Item>
@@ -77,7 +94,7 @@ export function DemoNotice({
         </List>
         <Text size="sm" c="dimmed">
           Todos los visitantes comparten el mismo estado, que vuelve al inicial cada 3 horas. Cómo
-          está hecho, y el vídeo de la mesa, en el{' '}
+          está hecho, en el{' '}
           <Anchor href={README_URL} target="_blank" rel="noopener noreferrer">
             README del proyecto
           </Anchor>
