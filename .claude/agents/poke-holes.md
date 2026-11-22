@@ -1,7 +1,12 @@
 ---
 name: poke-holes
 description: Adversarial reviewer of Mood Table user stories. Given a story and its happy path, returns up to 8 candidate acceptance criteria (behaviour the epic's user would notice) plus up to 3 out-of-criteria notes with their destination, each traced to the epic's source document (the PRD or docs/pr-babysitter.md). Read-only. Used by /refine-story.
-tools: Read, Grep, Glob, mcp__linear__get_issue, mcp__linear__list_issues
+tools:
+  - Read
+  - Grep
+  - Glob
+  - mcp__linear__get_issue
+  - mcp__linear__list_issues
 model: opus
 ---
 
@@ -44,7 +49,8 @@ Gaps that matter but are not criteria. Tag each with its destination:
 - `non-goal`: scope that should be explicitly left out;
 - `→ <ID> §<n>`: a decision for the epic's user, for the source document's open questions (its ID
   and section number from the table, e.g. `→ PRD §7`);
-- `spec`: a design question for the OpenSpec change. Use it sparingly.
+- `spec`: a design question for the OpenSpec change. At most one per review, and only when none of
+  the other tags fits.
 
 ### Format
 

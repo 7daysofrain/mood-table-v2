@@ -28,8 +28,8 @@ Spanish by the subagent.
    falta>`) and stop.
 
 2. **Gather the evidence.** From this conversation, pick only what backs the user's words and that
-   the subagent could not know: links, `file:line`, PR and job IDs, commits, short log excerpts (a few
-   lines, not whole logs), trace IDs. Add a line `De dónde sale: MOO-n` with the Linear issue or PR
+   the subagent could not know: links, `file:line`, PR and job IDs, commits, log excerpts (at most 10
+   lines around the error, never whole logs), trace IDs. Add a line `De dónde sale: MOO-n` with the Linear issue or PR
    the session is working on, if the need came out of it. Copy, do not summarise, classify or give
    your opinion: the subagent suggests the type, and the user decides it. If the conversation holds
    nothing relevant, write `Sin evidencia`.

@@ -42,10 +42,10 @@ Spanish**, using the glossary of the epic's source document.
 
 3. **Quick INVEST (before anything else is built on the story).** With the Como/quiero/para, the
    non-goals and the user's description, give one line per criterion (Independent, Negotiable,
-   Valuable, Estimable, Small, Testable) with ✅/⚠️/❌ and a reason. If it fails **two or more**, the
-   story is not ready: propose how to split it into 2-3 stories, each with its own observable
-   behaviour, citing the evidence in the user's description (e.g. several actions that will not fit
-   in one `When`), and stop there. Do not translate the description, do not launch poke-holes and do
+   Valuable, Estimable, Small, Testable) with ✅/⚠️/❌ and a reason. If **two or more** criteria are
+   ❌ (a ⚠️ is not a failure), the story is not ready: propose how to split it into 2-3 stories,
+   each with its own observable behaviour, citing the evidence in the user's description (e.g.
+   several actions that will not fit in one `When`), and stop there. Do not translate the description, do not launch poke-holes and do
    not write anything to Linear. The reason it goes here and not only at the end: every later step
    (translation, poke-holes, the user's selection, DoD, tasks) is work the user reviews, and all of it
    is wasted on a story that gets split. If it passes, show it briefly and carry on; the full check
@@ -96,8 +96,8 @@ Spanish**, using the glossary of the epic's source document.
 
 9. **Full INVEST check.** Same format and rule as step 3, now with the criteria, the DoD and the
    technical context in hand: they can show what the description alone could not (e.g. the kept
-   criteria do not fit in 1-2 days). If it fails **two or more**, propose how to split the story into
-   2-3 stories and stop there.
+   criteria do not fit in 1-2 days). If **two or more** criteria are ❌, propose how to split the
+   story into 2-3 stories and stop there.
 
 10. **Propose tasks.** Follow `workflow.md` §2: one task = **one PR** in **one area**. For each task,
     give an imperative title, one area label and 1-2 lines on what gets integrated. Leave out the

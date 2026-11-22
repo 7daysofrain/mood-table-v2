@@ -36,7 +36,8 @@ Spanish**, using the glossary of the epic's source document.
    - **The branch and the PR.** The current branch must be the spike's (its ID is in the name), with
      an open draft PR (`gh pr view`). If you are on another branch, stop: closing from the wrong branch
      would delete or commit the wrong things. If there are uncommitted changes, ask whether they belong
-     to the experiment before going on.
+     to the experiment: if they do, commit them with `Refs MOO-n` before going on; if they do not,
+     stop and ask the user to set them aside.
    - **What the experiment left:** the notes in `docs/spikes/`, the prototype in `.spikes/moo-n/` and
      its results, the branch's commits (`git log origin/main..HEAD`) and anything under `packages/`
      the experiment touched (`git diff --stat origin/main...HEAD -- packages/`).
