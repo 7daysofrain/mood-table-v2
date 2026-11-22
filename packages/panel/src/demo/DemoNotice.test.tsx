@@ -38,6 +38,7 @@ describe('el aviso de la demo pública (temporal, MOO-181)', () => {
   it('muestra el vídeo de la mesa sin cookies ni reproducción automática', async () => {
     render(<DemoNotice hostname={DEMO_HOSTNAME} storage={memoryStorage()} />);
 
+    expect(await screen.findByText(/se explica el montaje físico real del proyecto/)).toBeInTheDocument();
     const video = await screen.findByTitle('Vídeo de la Mood Table en la mesa');
     expect(video).toHaveAttribute('src', TABLE_VIDEO_EMBED_URL);
     expect(TABLE_VIDEO_EMBED_URL).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\//);
