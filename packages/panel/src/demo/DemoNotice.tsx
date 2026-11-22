@@ -4,7 +4,7 @@
  * su línea en `App.tsx`. Por eso no hay un campo en la configuración del motor que lo active: solo
  * sale con el dominio de la demo, así que en local, en la mesa y en los E2E no aparece.
  */
-import { Anchor, AspectRatio, Button, Group, List, Modal, Stack, Text } from '@mantine/core';
+import { Anchor, AspectRatio, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 
 /** El dominio de la demo pública (README §2.4). */
@@ -64,7 +64,14 @@ export function DemoNotice({
   };
 
   return (
-    <Modal opened={opened} onClose={close} title="Mood Table · demo pública" size="lg" centered>
+    <Modal
+      opened={opened}
+      onClose={close}
+      title="Mood Table · demo pública"
+      size="lg"
+      centered
+      styles={{ title: { fontSize: 'var(--mantine-font-size-xl)', fontWeight: 600 } }}
+    >
       <Stack gap="sm">
         <Text>
           Mood Table es un instrumento de luz para una mesa de DJ: un motor en TypeScript pinta tiras
@@ -72,7 +79,8 @@ export function DemoNotice({
         </Text>
         <Text>
           Aquí no hay hardware: las dos tiras del visor son virtuales y reaccionan a una pista de
-          ejemplo. En la mesa, lo que ves en el visor lo pinta una tira LED real, como en este vídeo:
+          ejemplo. En la mesa, lo que ves en el visor lo pinta una tira LED real. En este vídeo se
+          explica el montaje físico real del proyecto:
         </Text>
         <AspectRatio ratio={16 / 9}>
           <iframe
@@ -85,13 +93,6 @@ export function DemoNotice({
             referrerPolicy="strict-origin-when-cross-origin"
           />
         </AspectRatio>
-        <Text>Para probarlo:</Text>
-        <List spacing={4}>
-          <List.Item>pulsa el altavoz de la cabecera para oír la pista;</List.Item>
-          <List.Item>en Efectos, cambia el efecto de la tira;</List.Item>
-          <List.Item>en Intensidad, baja el fader: todas las tiras bajan a la vez;</List.Item>
-          <List.Item>en Tiras, elige la otra tira.</List.Item>
-        </List>
         <Text size="sm" c="dimmed">
           Todos los visitantes comparten el mismo estado, que vuelve al inicial cada 3 horas. Cómo
           está hecho, en el{' '}
