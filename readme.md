@@ -25,6 +25,8 @@ Mood Table
 
 Instrumento de luz para la mesa de DJ: un motor de efectos propio, reactivo a la música, que se toca en vivo y funciona sin conexión. En el MVP se controla desde un panel web local; la visión es tocarlo con una pantalla táctil en la mesa o un controlador tipo Traktor F1, que se conectarán al mismo puerto de mandos. Un simulador (audio desde fichero + tiras virtuales en el visor del navegador) permite desarrollarlo y demostrarlo sin hardware.
 
+Del propio desarrollo nació un segundo sistema, el **PR Babysitter**: un agente que sigue cada PR del repo hasta dejarla lista para integrar. No es producto, sino la herramienta con la que se construye la Mood Table (§1.5).
+
 ### **0.4. URL del proyecto:**
 
 **https://moodtable.josebaalonso.tech**: la demo pública, sin login. El motor reproduce un fichero de audio y pinta dos tiras virtuales en el visor; se toca desde el mismo panel que la mesa. Cómo probarla, en §1.4; cómo está desplegada, en §2.4.
@@ -213,6 +215,29 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 
 4. Desde cualquier dispositivo de la red local, abre `http://<ip-de-la-pi>:8080`. Lo que ves en el visor lo pinta la tira real (**H3**).
 5. Desenchufa la Pi y vuelve a enchufarla: arranca sola y vuelve al último estado (**H5**).
+
+### **1.5. El PR Babysitter: la herramienta con la que se construye**
+
+El producto es la Mood Table. Pero construirla con IA, una tarea por PR, hizo que el cuello de botella fuera **vigilar cada PR**: esperar las comprobaciones, pedir la revisión de Codex, leer cada hallazgo y decidir qué hacer con él. Casi todas esas vueltas solo piden atención, no criterio. De ahí salió el **PR Babysitter**, un agente que sigue cada PR del repo hasta dejarla lista para integrar y avisa al mantenedor solo cuando hace falta criterio. Integrar sigue siendo siempre humano. El qué y el porqué están en [`docs/pr-babysitter.md`](docs/pr-babysitter.md); el diseño, en §2.2; el despliegue, en §2.4.
+
+**Qué hace hoy**, en el repo y desplegado en un contenedor Docker en casa:
+
+- Sigue cada PR y avisa en su tarea de Linear de cómo va: comprobaciones terminadas, estado final o detenida (BH1).
+- Pide la revisión de Codex cuando las comprobaciones del último push están en verde, y no antes (BH5).
+- Tría **en modo sombra** cada hallazgo del revisor: lo clasifica sin actuar y publica el resumen en la PR, para medir su criterio antes de dejarle arreglar (BH2).
+- Ante el primer fallo de una comprobación, decide si lo causa la PR. Si no la causa, o no se sabe, la relanza.
+
+**Su peso en el proyecto:** 28 de las 148 PR integradas y unas 15.500 líneas de TypeScript con sus tests, frente a unas 19.200 del motor, el panel y `shared` juntos.
+
+**Por qué es interesante para la evaluación:**
+
+- **Arquitectura:** el mismo patrón hexagonal que el motor, en un paquete que no importa nada del producto (D72), y un grafo de LangGraph.js con un hilo por PR que sobrevive entre pushes. El triaje reparte los hallazgos en paralelo, uno por rama (*fan-out*, D115).
+- **IA dentro del sistema:** no usa un LLM. Pregunta a un **modelo de decisión** (Clef en Ollama, D90), que contesta con una probabilidad, con un umbral medido (D124), un tope de gasto por PR, un presupuesto mensual y trazas en LangSmith.
+- **IA en el proceso:** se construye con la misma vía de la Mood Table (épica, historias, OpenSpec, una tarea por PR), y vigila sus propias PR (*dogfooding*).
+
+**Lo que falta:** que arregle los hallazgos reales y conteste sus hilos (BH3), y que se pause y pregunte en los casos que exigen criterio (BH4).
+
+**A futuro**, la intención es **independizarlo** en un proyecto propio, generalizado para cualquier repositorio, cuando funcione como se espera aquí. Por eso ya vive aislado del producto ([`docs/pr-babysitter.md`](docs/pr-babysitter.md) §5.2).
 
 ---
 

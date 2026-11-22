@@ -142,6 +142,9 @@ cuenta en `prompts.md` y el resto sigue después.
   los datos lo justifiquen.
 - Un revisor propio en local (p. ej. con Ollama), que quitaría la dependencia de BA7. Choca con §5.3
   y §6.2, y se valoraría tras BH2, con su medición.
+- **Independizarlo en un proyecto propio**, generalizado para cualquier repositorio, cuando funcione
+  aquí como espera el mantenedor. Hasta entonces se construye en este repo, que es su banco de
+  pruebas (*dogfooding*); por eso vive en su propio paquete, sin importar nada del producto (D72).
 
 ### 5.3 Fuera por decisión
 
