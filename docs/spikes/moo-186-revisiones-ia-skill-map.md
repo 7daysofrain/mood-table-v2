@@ -44,22 +44,22 @@ ruido casi siempre, y es probabilística (dos pasadas pueden dar hallazgos disti
 - **Reales (5):** #9 `refine-story` (`warn`: en INVEST no dice si ⚠️ cuenta como fallo; su eval espera
   «al menos dos ❌»), #14 `poke-holes` («use it sparingly» para `spec`, sin límite), #5 `close-spike`
   (qué hacer con los cambios sin commitear según la respuesta), #27 `capture` (cuántas líneas de log),
-  #21 `linear.md` (quién revisa los permisos cuando Linear publica herramientas nuevas).
+  #21 `docs/instructions/linear.md` (quién revisa los permisos cuando Linear publica herramientas nuevas).
 - **Cosméticos (45):** las 25 de `prose-to-rules` pasan la prosa con su porqué a listas de comprobación,
   con las mismas directivas; las 4 de `structure` reordenan sin cambiar el sentido; el resto son
   repeticiones y estilo. Cinco repeticiones son deliberadas (estimador a ciegas, puerta humana antes de
   Linear, la decisión es del usuario): quitarlas debilita reglas críticas.
 - **Falsos (7):** #12 `trigger` (las skills llevan `disable-model-invocation: true`, así que la
   descripción no decide cuándo se lanzan); #17 y #18 en `AGENTS.md` (margen de criterio dejado a
-  propósito, que la propia revisión dice no marcar); #23 y #24 en `course.md` (reglas del máster
-  citadas); #2 en `capturer.md` (el propio hallazgo admite que está resuelto); #53 `scope` en
-  `linear.md` (las puertas viven ahí por diseño y `workflow.md` §4 enlaza a ellas).
+  propósito, que la propia revisión dice no marcar); #23 y #24 en `docs/instructions/course.md` (reglas del máster
+  citadas); #2 en `.claude/skills/capture/references/capturer.md` (el propio hallazgo admite que está resuelto); #53 `scope` en
+  `docs/instructions/linear.md` (las puertas viven ahí por diseño y `docs/instructions/workflow.md` §4 enlaza a ellas).
 
 ### Evals con los hallazgos aplicados (P2)
 
 Solo #9 y #14, más `tools` como lista en `poke-holes`, caen en algo con evals: los 6 casos de
-`refine-story`. `close-spike` y `linear.md` no tienen evals, y las de `capture` prueban `capturer.md`, no
-el `SKILL.md` de #27.
+`refine-story`. `close-spike` y `docs/instructions/linear.md` no tienen evals, y las de `capture` prueban
+`.claude/skills/capture/references/capturer.md`, no el SKILL.md de la skill, donde está #27.
 
 | | Con cambios | Versión actual |
 |---|---|---|
@@ -113,7 +113,7 @@ dólares.
   reclama (`sm jobs claim`), lo ejecuta y lo cierra con `sm record`, que valida el informe y guarda los
   hallazgos. La skill `sm-process-jobs` (`sm agent install`) enseña ese protocolo. Está pensado para un
   bucle interactivo con la UI (`sm`) y una sesión residente; aquí se usó en lote para poder medir.
-- **Nodos (14):** las 6 skills, `capture/references/capturer.md`, `estimator`, `poke-holes`,
+- **Nodos (14):** las 6 skills, `.claude/skills/capture/references/capturer.md`, `estimator`, `poke-holes`,
   `AGENTS.md` y los 4 de `docs/instructions/`.
 - **Revisiones:** las 5 que nombraba la pregunta 1 y, con el acuerdo del usuario, las otras 6, para no
   decidir con menos de la mitad.
@@ -149,7 +149,7 @@ dólares.
   evals de `refine-story` y `capture` antes de la PR. `tools` de `estimator` espera a `MOO-153`:
 
   ```text
-  /capture Aplicar de golpe los 5 hallazgos reales de vagueness del spike MOO-186 (#9 INVEST en refine-story, #14 spec en poke-holes, #5 en close-spike, #27 en capture, #21 en linear.md) y tools como lista en poke-holes, pasando antes las evals de refine-story y capture. tools de estimator espera a MOO-153. Detalle en docs/spikes/moo-186-revisiones-ia-skill-map.md
+  /capture Aplicar de golpe los 5 hallazgos reales de vagueness del spike MOO-186 (#9 INVEST en refine-story, #14 spec en poke-holes, #5 en close-spike, #27 en capture, #21 en docs/instructions/linear.md) y tools como lista en poke-holes, pasando antes las evals de refine-story y capture. tools de estimator espera a MOO-153. Detalle en docs/spikes/moo-186-revisiones-ia-skill-map.md
   ```
 
 ## Tiempo dedicado frente al *timebox*
@@ -161,8 +161,8 @@ dólares.
 El prototipo se borró antes de integrar; está en
 [`c95cd45`](https://github.com/7daysofrain/mood-table-v2/tree/c95cd450cbdd1f80e566c0df5fff1f2d67901c1a/.spikes/moo-186),
 dentro de la PR [#200](https://github.com/7daysofrain/mood-table-v2/pull/200), con los scripts, los
-informes de las 154 revisiones, `findings.json`, el resumen de las evals (`evals/benchmark.md`,
-`evals/review.html`) y el diff de los tres cambios (`evals/cambios.diff`).
+informes de las 154 revisiones, `findings.json`, el resumen de las evals (el benchmark y
+el visor, en su carpeta `evals`) y el diff de los tres cambios (`cambios.diff`).
 
 ```bash
 git clone https://github.com/7daysofrain/mood-table-v2.git && cd mood-table-v2
