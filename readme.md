@@ -25,9 +25,11 @@ Mood Table
 
 Instrumento de luz para la mesa de DJ: un motor de efectos propio, reactivo a la música, que se toca en vivo y funciona sin conexión. En el MVP se controla desde un panel web local; la visión es tocarlo con una pantalla táctil en la mesa o un controlador tipo Traktor F1, que se conectarán al mismo puerto de mandos. Un simulador (audio desde fichero + tiras virtuales en el visor del navegador) permite desarrollarlo y demostrarlo sin hardware.
 
+Del propio desarrollo nació un segundo sistema, el **PR Babysitter**: un agente que sigue cada PR del repo hasta dejarla lista para integrar. No es producto, sino la herramienta con la que se construye la Mood Table (§1.5).
+
 ### **0.4. URL del proyecto:**
 
-*Pendiente.* Será la demo pública (el motor reproduciendo un fichero de audio y pintando tiras virtuales en el visor) y llegará con la entrega final.
+**https://moodtable.josebaalonso.tech**: la demo pública, sin login. El motor reproduce un fichero de audio y pinta dos tiras virtuales en el visor; se toca desde el mismo panel que la mesa. Cómo probarla, en §1.4; cómo está desplegada, en §2.4.
 
 > Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
 
@@ -96,14 +98,25 @@ https://github.com/7daysofrain/mood-table-v2
 
 > Proporciona imágenes y/o videotutorial mostrando la experiencia del usuario desde que aterriza en la aplicación, pasando por todas las funcionalidades principales.
 
-*Diseño previsto para la Entrega 2. Las capturas y el vídeo del producto real llegarán con la entrega final.*
+**Vídeo de la mesa (2-3 min):** VIDEO_PENDIENTE. El recorrido completo con la tira física: panel → motor → tira de la mesa → apagar y encender → vuelve al último estado.
+
+**Capturas del panel real**, en la demo pública (21-nov-2026):
+
+![El panel en la demo pública: dos tiras virtuales reaccionando a la pista de ejemplo, con Espectro activo en la tira frontal](docs/img/panel/02-panel.png)
+*El panel con la tira frontal seleccionada y el efecto Espectro. En el visor, una fila por tira; arriba, la fuente de audio con su nivel, el botón de oírla y la conexión con el motor; a la derecha, la intensidad.*
+
+![La tira frontal con Respiración: los controles de color y periodo generados desde el esquema del efecto](docs/img/panel/03-respiracion-controles.png)
+*Con Respiración, la zona Controles muestra los parámetros que declara el efecto: un selector de color y el periodo en segundos. El panel no conoce el efecto: los genera desde su esquema.*
+
+![El aviso que explica la demo pública la primera vez que se abre](docs/img/panel/01-aviso-demo.png)
+*Solo en la demo pública, un aviso explica qué es y qué probar la primera vez que se abre (`MOO-181`).*
 
 La interfaz del MVP es **un único panel web**, técnico y pensado para escritorio, que sirve igual para la **demo pública** y para la **mesa**. El panel no sabe si detrás hay una tira física: solo ve las tiras declaradas. Pasar del simulador a la mesa es cambiar la configuración del despliegue (fuente de audio y salidas), no la interfaz (§2.1).
 
 La **interfaz de performance** para tocar en directo (pantalla táctil, Traktor F1 o un mando propio) queda **fuera del MVP**; se conectará al mismo puerto de mandos.
 
 ![Wireframe del panel del MVP](docs/img/panel-wireframe.png)
-*Wireframe de baja fidelidad: estructura prevista, no diseño final.*
+*El wireframe de baja fidelidad de la Entrega 1, que fijó la estructura. El panel construido mantiene sus zonas, con tres diferencias: la intensidad se añadió después, a la derecha (`MOO-97`); los fps del motor aún no se muestran; y los efectos reactivos, portados tal cual de la v1, no tienen parámetros.*
 
 #### Zonas del panel
 
@@ -203,6 +216,29 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 4. Desde cualquier dispositivo de la red local, abre `http://<ip-de-la-pi>:8080`. Lo que ves en el visor lo pinta la tira real (**H3**).
 5. Desenchufa la Pi y vuelve a enchufarla: arranca sola y vuelve al último estado (**H5**).
 
+### **1.5. El PR Babysitter: la herramienta con la que se construye**
+
+El producto es la Mood Table. Pero construirla con IA, una tarea por PR, hizo que el cuello de botella fuera **vigilar cada PR**: esperar las comprobaciones, pedir la revisión de Codex, leer cada hallazgo y decidir qué hacer con él. Casi todas esas vueltas solo piden atención, no criterio. De ahí salió el **PR Babysitter**, un agente que sigue cada PR del repo hasta dejarla lista para integrar y avisa al mantenedor solo cuando hace falta criterio. Integrar sigue siendo siempre humano. El qué y el porqué están en [`docs/pr-babysitter.md`](docs/pr-babysitter.md); el diseño, en §2.2; el despliegue, en §2.4.
+
+**Qué hace hoy**, en el repo y desplegado en un contenedor Docker en casa:
+
+- Sigue cada PR y avisa en su tarea de Linear de cómo va: comprobaciones terminadas, estado final o detenida (BH1).
+- Pide la revisión de Codex cuando las comprobaciones del último push están en verde, y no antes (BH5).
+- Tría **en modo sombra** cada hallazgo del revisor: lo clasifica sin actuar y publica el resumen en la PR, para medir su criterio antes de dejarle arreglar (BH2).
+- Ante el primer fallo de una comprobación, decide si lo causa la PR. Si no la causa, o no se sabe, la relanza.
+
+**Su peso en el proyecto:** 28 de las 148 PR integradas y unas 15.500 líneas de TypeScript con sus tests, frente a unas 19.200 del motor, el panel y `shared` juntos.
+
+**Por qué es interesante para la evaluación:**
+
+- **Arquitectura:** el mismo patrón hexagonal que el motor, en un paquete que no importa nada del producto (D72), y un grafo de LangGraph.js con un hilo por PR que sobrevive entre pushes. El triaje reparte los hallazgos en paralelo, uno por rama (*fan-out*, D115).
+- **IA dentro del sistema:** no usa un LLM. Pregunta a un **modelo de decisión** (Clef en Ollama, D90), que contesta con una probabilidad, con un umbral medido (D124), un tope de gasto por PR, un presupuesto mensual y trazas en LangSmith.
+- **IA en el proceso:** se construye con la misma vía de la Mood Table (épica, historias, OpenSpec, una tarea por PR), y vigila sus propias PR (*dogfooding*).
+
+**Lo que falta:** que arregle los hallazgos reales y conteste sus hilos (BH3), y que se pause y pregunte en los casos que exigen criterio (BH4).
+
+**A futuro**, la intención es **independizarlo** en un proyecto propio, generalizado para cualquier repositorio, cuando funcione como se espera aquí. Por eso ya vive aislado del producto ([`docs/pr-babysitter.md`](docs/pr-babysitter.md) §5.2).
+
 ---
 
 ## 2. Arquitectura del Sistema
@@ -278,7 +314,9 @@ flowchart LR
   wsout --> http
   http <-- "HTTP comandos · WS frames y estado" --> panel
   http -- Commands --> ctrl
-  store <-- StateStore --> ctrl
+  store -- "StateStore · restauración al arrancar" --> ctrl
+  ctrl -- "guardador (500 ms tras el último cambio)" --> store
+  dsp -. "nivel y posición del fichero<br/>LevelOutput · PositionOutput" .-> wsout
   cfg --> load
   load -- "tiras declaradas" --> ctrl
 
@@ -292,24 +330,26 @@ flowchart LR
   class strip2 opt
 ```
 
-*Naranja: plano de tiempo real, con un orden fijo en cada tira: efecto, intensidad, límite de potencia y salidas (el límite, el último, porque protege la fuente; D100). Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El MVP se demuestra con una tira física (la de la mesa, por Adalight), que el visor muestra en tiempo real, y con tiras virtuales en el simulador; el modelo admite N tiras.*
+*Naranja: plano de tiempo real, con un orden fijo en cada tira: efecto, intensidad, límite de potencia y salidas (el límite, el último, porque protege la fuente; D100). Azul: plano de control y datos. Gris: fuera del proceso. Discontinuo: should-have. El ritmo lo marca un temporizador (adaptador) que llama al bucle en cada pulso; el bucle es una función pura del instante. El MVP se demuestra con una tira física (la de la mesa, por Adalight), que el visor muestra en tiempo real, y con tiras virtuales en el simulador; el modelo admite N tiras.*
 
 #### Patrón: hexagonal ligera (puertos y adaptadores)
 
-El núcleo define **cuatro puertos** (interfaces de TypeScript) y no sabe qué hay detrás de ninguno:
+El núcleo define sus **puertos** (interfaces de TypeScript) y no sabe qué hay detrás de ninguno. Los cuatro principales:
 
 | Puerto | Para qué | Adaptadores en el MVP | Adaptadores previstos |
 |---|---|---|---|
 | `AudioSource` | Entregar la ventana de audio que pide el bucle en cada pulso (*pull*: el ritmo lo marca el motor, D50) | Tarjeta de sonido (`arecord` → `stdout`) · Fichero WAV | — |
 | `LightOutput` | Recibir los frames de una tira | Adalight por serie (una instancia por tira física) · Visor (WebSocket: una instancia por tira, todas por la misma conexión de cada navegador; D43) | Firmware propio ESP8266/ESP32 (should-have) |
-| `Commands` | Cambiar el efecto y los parámetros de una tira | API HTTP del panel | Traktor F1 (HID) · pantalla táctil |
-| `StateStore` | Guardar y recuperar el estado de cada tira | SQLite (ver §3) · En memoria (tests) | — |
+| `Commands` | Cambiar el efecto y los parámetros de una tira, y la intensidad del instrumento | API HTTP del panel | Traktor F1 (HID) · pantalla táctil |
+| `StateStore` | Guardar y recuperar el estado de cada tira | SQLite (ver §3) · En memoria (tests, E2E y demo pública) | — |
 
-Es una versión **ligera** de la hexagonal: los adaptadores se crean y se conectan **a mano** en un único punto de arranque (`main.ts`, la *raíz de composición*), que lee el fichero de configuración y decide, por ejemplo, "fuente = fichero, tira 1 → Adalight en `/dev/ttyUSB0`, todas → visor". **No hay contenedor de inyección de dependencias**, ni capas de casos de uso, ni mapeo de DTOs.
+Hay además dos puertos de salida menores, `LevelOutput` y `PositionOutput`, por los que el bucle entrega al visor el nivel del audio y la posición del fichero que suena.
+
+Es una versión **ligera** de la hexagonal: los adaptadores se crean y se conectan **a mano** en la *raíz de composición* (`main.ts`, con `engine.ts`, que monta el bucle y su temporizador), que lee el fichero de configuración y decide, por ejemplo, "fuente = fichero, tira 1 → Adalight en `/dev/ttyUSB0`, todas → visor". **No hay contenedor de inyección de dependencias**, ni capas de casos de uso, ni mapeo de DTOs.
 
 Dentro del proceso conviven **dos planos** con reglas distintas:
 
-- **Plano de tiempo real** (naranja): audio → análisis → efecto de cada tira → límite de potencia de cada tira física → salidas, a 30-60 fps. No puede retrasarse: trabaja con búferes preasignados y sin crear objetos en el bucle.
+- **Plano de tiempo real** (naranja): audio → análisis → efecto de cada tira → límite de potencia de cada tira física → salidas, hasta 60 fps (30 en la demo pública). No puede retrasarse: trabaja con búferes preasignados y sin crear objetos en el bucle.
 - **Plano de control** (azul): panel, API, configuración y persistencia. Puede ser lento, pero no debe estorbar: sus cambios se escriben en un **búfer de control** que el bucle lee **al inicio de cada frame**, nunca a mitad de un render.
 
 **Reactivo o ambiente es cosa del efecto, no de la tira.** Todos los efectos implementan la misma interfaz y declaran si usan audio (patrón *Strategy*). Un efecto reactivo lee los rasgos del audio; uno de ambiente anima con el tiempo y los ignora. Cualquier efecto va en cualquier tira.
@@ -329,10 +369,10 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 | Pieza | Tecnología | Por qué |
 |---|---|---|
 | Motor | TypeScript sobre Node.js (arm64) | El autor puede leer y corregir lo que genera el agente; tipos compartidos con el front. Confirmado por el spike de rendimiento en la Pi (`MOO-12`, D48). |
-| Panel y visor | React + Vite + TypeScript + **Mantine 9** (solo tema oscuro) | Stack conocido; comparte tipos (esquemas de parámetros) con el motor. El motor sirve el build estático: no hay servidor aparte. Mantine trae los controles que se generan del esquema (slider, desplegable y selector de color) con estilos estáticos y sin recursos de internet ([D40](docs/idea-mood-table.md)). |
+| Panel y visor | React + Vite + TypeScript + **Mantine 9** (solo tema oscuro) | Stack conocido; comparte tipos (esquemas de parámetros) con el motor. El motor sirve el build estático: no hay servidor aparte. Mantine trae los controles que se generan del esquema (slider, lineal o logarítmico, y selector de color) con estilos estáticos y sin recursos de internet ([D40](docs/idea-mood-table.md)). |
 | API | Fastify + TypeBox | Un solo esquema da el tipo de TypeScript, la validación y el OpenAPI (§4). El mismo esquema describe los parámetros de cada efecto y el fichero de configuración. |
 | Transporte | HTTP para comandos · WebSocket (motor → navegador) para frames binarios y estado | HTTP se documenta en OpenAPI; el WebSocket lleva el flujo continuo (300 LEDs × 3 bytes × 60 fps ≈ 54 KB/s por tira). |
-| Persistencia | SQLite tras el puerto `StateStore` | Transacciones seguras ante cortes de luz (§3). |
+| Persistencia | SQLite con `node:sqlite`, el que viene con Node, tras el puerto `StateStore` | Transacciones seguras ante cortes de luz (§3), sin nada nativo que compilar en la Pi (D103). |
 | Salida física | Protocolo Adalight por serie | Protocolo abierto que habla cualquier Arduino con el sketch Adalight (el de la mesa, D46) y controladores como el Light Box. Sin GPIO ni software de terceros. |
 
 #### Beneficios
@@ -345,9 +385,9 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 
 #### Sacrificios y déficits
 
-- **Un solo hilo compartido.** El bucle de frames y las peticiones HTTP se turnan en el mismo *event loop* de Node: una petición lenta retrasaría un frame. Mitigación: el plano de control solo escribe en el búfer. El spike de rendimiento no mostró tirones (`MOO-12`, D48), así que por ahora no hace falta un *worker thread*.
+- **Un solo hilo compartido.** El bucle de frames y las peticiones HTTP se turnan en el mismo *event loop* de Node: una petición lenta retrasaría un frame. Mitigación: el plano de control solo escribe en el búfer. El spike de rendimiento no mostró tirones (`MOO-12`, D48), así que el bucle y el HTTP siguen en el mismo hilo; solo la escritura en SQLite va a un *worker thread* (D105).
 - **Recolector de basura.** Node puede pausar para liberar memoria y provocar tirones. Mitigación: búferes preasignados y cero asignaciones en el bucle.
-- **Latencia de HTTP en los sliders.** Mover un parámetro por HTTP es algo más lento que por WebSocket (milisegundos en red local; el panel limita el envío mientras arrastras). Si en uso real no se siente inmediato, `setParam` pasaría a WebSocket; el cambio es acotado porque `Commands` es un puerto.
+- **Latencia de HTTP en los sliders.** Mover un parámetro por HTTP es algo más lento que por WebSocket (milisegundos en red local; mientras arrastras, el panel deja como mucho una petición en camino por control y, al volver, envía el último valor). Si en uso real no se siente inmediato, `setParam` pasaría a WebSocket; el cambio es acotado porque `Commands` es un puerto.
 - **Techo de Adalight por tira.** A 115.200 baudios, unos 19 fps con 200 LEDs en cada puerto serie; la mesa va a 500.000 baudios, con 59 fps a 173 LEDs (D96). Limita el número de LEDs por tira en el MVP (≤ 200-300); el firmware propio es la salida.
 - **Cambiar el hardware exige reiniciar.** La configuración de las tiras se lee al arrancar. Es aceptable en un aparato que se cablea una vez.
 - **Sin clave foránea hacia las tiras.** Como las tiras viven en el fichero, la base de datos no puede apuntar a ellas. Al arrancar, el motor **concilia** el estado guardado con las tiras del fichero, por su `id`: las nuevas arrancan como la primera vez y el estado de las que ya no se declaran se conserva, sin usarse (§3).
@@ -358,12 +398,12 @@ Dentro del proceso conviven **dos planos** con reglas distintas:
 
 > Describe los componentes más importantes, incluyendo la tecnología utilizada
 
-*El porqué de cada tecnología está en §2.1. Aquí se describe qué hace cada componente por dentro. Es el diseño previsto para la Entrega 2.*
+*El porqué de cada tecnología está en §2.1. Aquí se describe qué hace cada componente por dentro.*
 
 #### Núcleo (motor)
 
 **Bucle de frames** — TypeScript, sin dependencias de E/S.
-Marca el ritmo del sistema a una tasa objetivo configurable (30-60 fps). En cada vuelta: (1) lee del búfer de control el efecto de cada tira y la intensidad, una sola vez, así que todas las tiras del pulso llevan la misma, (2) si hay fuente de audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica la intensidad y, si es física, su límite de potencia, y entrega el frame a su salida y al visor. Mide cuánto tarda cada vuelta; si llega tarde, **se salta el frame en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
+Es una función pura del instante (`tick(now)`): no programa temporizadores. El ritmo lo marca un adaptador, el temporizador (`ticker.ts`), que lo llama a la tasa configurada (hasta 60 fps). En cada vuelta: (1) lee del búfer de control el efecto de cada tira y la intensidad, una sola vez, así que todas las tiras del pulso llevan la misma, (2) si hay fuente de audio, pide al análisis los rasgos del audio más reciente, y (3) para **cada tira declarada** llama a su efecto, aplica la intensidad y, si es física, su límite de potencia, y entrega el frame a su salida y al visor. Si un pulso llega tarde, el bucle calcula el pulso que toca por el instante y **se salta los intermedios en lugar de acumular retraso**, porque en luz en vivo importa más ir a tiempo que no perder ninguno. Cada tira tiene su búfer preasignado (`Uint8Array` de `LEDs × 3`) y no se crean objetos dentro del bucle, para evitar pausas del recolector de basura.
 
 **Análisis de audio** — TypeScript + FFT (`fft.js`, validada en el spike de rendimiento, D48).
 En cada pulso pide a la fuente de audio la ventana que acaba en el instante del pulso: el puerto es *pull*, así que el ritmo lo marca el motor y no la fuente (D50). Mientras haya fuente, mide su **nivel** (el RMS de la ventana, antes de cualquier ajuste) en cada pulso y lo envía al panel. Calcula además, en cada pulso, los **rasgos** que consumen los efectos, como la v1 (D49): una ventana de Hamming de 40 ms y una FFT, **24 bandas mel** de 200 Hz a 12 kHz (una escala parecida a la del oído) normalizadas con una ganancia automática y suavizadas, y si la ventana es silencio digital. **No detecta golpes**: *energía* marca cada uno con la subida rápida y la caída suave de su luz, y ningún efecto del MVP necesita más. Se calcula **una vez por frame** y lo comparten todas las tiras. Se calcula aunque ninguna tira tenga un efecto reactivo, para que una pueda pasar a uno en cualquier momento con el análisis ya estable (D79). Sin fuente de audio no se calcula, y el motor funciona igual.
@@ -396,7 +436,7 @@ Guarda lo que el bucle necesita **de cada tira**: su efecto activo, con sus valo
 #### Configuración de las tiras
 
 **Carga de configuración** — TypeScript + TypeBox.
-Al arrancar, lee el fichero de configuración del despliegue, que declara las tiras (identificador, nombre, salida y puerto, número de LEDs y, si es física, su chip y su fuente) y la fuente de audio. El orden de color de una tira física no se declara: lo fija su chip (D111). Lo valida contra su esquema TypeBox: si algo está mal, **el motor no arranca** y dice exactamente qué campo falla.
+Al arrancar, lee el fichero de configuración del despliegue, que declara las tiras (identificador, nombre, efecto inicial, salida, número de LEDs y, si es física, su puerto, sus baudios, su chip y su fuente), la fuente de audio y, si hacen falta, el pulso (`fps`), dónde escucha el motor (`server`) y dónde guarda el estado (`instrumentState`); todos los campos, en §3.2. El orden de color de una tira física no se declara: lo fija su chip (D111). Lo valida contra su esquema TypeBox: si algo está mal, **el motor no arranca** y dice exactamente qué campo falla.
 
 **Restauración del estado** — TypeScript + TypeBox, función pura del núcleo (`restore.ts`).
 Después, `main.ts` lee el estado guardado y lo concilia con las tiras del fichero, por su `id`: cambiar el nombre, los LEDs o la salida de una tira no la hace otra. Una tira sin estado guardado arranca como la primera vez, con el efecto que declara (`effect`) y los valores por defecto. Con estado, **manda lo que dejó el DJ**: su efecto activo y los valores de cada efecto. El efecto del fichero hace de **reserva** si el guardado ya no existe o necesita una fuente de audio que el fichero ya no declara; en este caso, el log lo dice. La reserva siempre se puede pintar, porque el fichero no deja declarar un efecto reactivo sin fuente. Los valores guardados de cada efecto se validan con su **esquema actual** (D104): los campos que faltan toman su valor por defecto y los que sobran se quitan, y si aun así no lo cumplen, solo ese efecto vuelve a sus valores por defecto. Los de un efecto que ya no existe se ignoran. Si el estado guardado no se puede leer, el motor arranca como la primera vez y lo dice en el log.
@@ -407,22 +447,24 @@ Después, `main.ts` lee el estado guardado y lo concilia con las tiras del fiche
 |---|---|---|---|
 | **Tarjeta de sonido** | `AudioSource` | `arecord` (ALSA) como proceso hijo | Lanza `arecord` con la cadena de dispositivo declarada (16 bits, mono, 48 kHz, periodos de 10 ms) y guarda lo que entrega por `stdout` en un búfer circular de medio segundo: cuando el bucle pide la ventana, da las últimas muestras, sin mirar el instante (D50). Tira los primeros 300 ms, el chasquido que hace la tarjeta al abrirse. El motor solo no arranca si `arecord` termina antes de entregar nada (no puede abrir la tarjeta, o no hay `arecord`: solo Linux); si termina en plena sesión, la fuente da silencio, lo dice en el log y cada segundo vuelve a lanzar `arecord` con la misma cadena hasta recuperarla, sin reiniciar el motor; al recuperarla, lo dice en el log y vuelve a tirar 300 ms (D57, D60). Avisa al servidor de si está conectada o perdida, para que lo sepan los paneles (D61). Declara su umbral de silencio, para que el ruido de fondo no encienda los efectos reactivos (D58). Sin binarios nativos en Node: lanzar el proceso está en `soundcard.hardware.ts`, y el resto, con tests. |
 | **Fichero WAV** | `AudioSource` | Lector WAV en TypeScript | Lee y decodifica el fichero entero al arrancar (PCM de 16 bits, mono o estéreo, que se mezcla a mono). Suena en bucle con el reloj del motor: en cada pulso da el audio de ese instante, contado desde el arranque, y al llegar al final vuelve a empezar. También dice en qué punto del fichero acaba la ventana de cada pulso (`positionAt`), con la misma cuenta, para que el panel lo oiga por ese punto (D53). Guarda los bytes que leyó, que el servidor sirve en `/audio` sin volver a leer el disco. Es la fuente del simulador y de los tests. |
-| **Adalight serie** | `LightOutput` | `serialport` | Una instancia **por tira física**, en su puerto y a sus baudios (§3). Corrige cada canal con la respuesta del LED del núcleo, la gamma 2,0 de la v1, para que la tira se vea como el visor (D96, D108), añade la cabecera Adalight (`Ada` + número de LEDs + checksum) y escribe por USB serie con `serialport`, la primera dependencia nativa del motor (D92). Escribe los canales de cada LED en el orden de color del chip de la tira (`WS2812B`: verde, rojo y azul; D111), junto con la gamma: el controlador los pasa tal como le llegan, y el visor los sigue recibiendo en RGB (D100). **Nunca encola:** mientras el frame anterior no ha salido por el cable (`drain()`), descarta el nuevo, así que cada frame que pinta es el del pulso en curso y el retraso queda acotado: lo que tarda un frame en salir más un pulso (D93). En la mesa, 11 ms por frame y 59 fps a 500.000 baudios con 173 LEDs (a 115.200 eran 45 ms y 20 fps, D96); los fps van a saltos, porque un envío ocupa un número entero de pulsos. Tras sus primeros 50 envíos, dice en el log una vez la mediana y los fps. Si el puerto no se abre al arrancar (no existe, sin permiso o bloqueado por otro programa), el motor no arranca, hasta `MOO-112`; si se pierde en plena sesión, lo dice una vez en el log y deja de escribir, y el resto del instrumento sigue. Abrir el puerto está en `adalight.hardware.ts`, y el resto, con tests. |
+| **Adalight serie** | `LightOutput` | `serialport` | Una instancia **por tira física**, en su puerto y a sus baudios (§3). Corrige cada canal con la respuesta del LED del núcleo, la gamma 2,0 de la v1, para que la tira se vea como el visor (D96, D108), añade la cabecera Adalight (`Ada` + número de LEDs menos uno + checksum) y escribe por USB serie con `serialport`, la primera dependencia nativa del motor (D92). Escribe los canales de cada LED en el orden de color del chip de la tira (`WS2812B`: verde, rojo y azul; D111), junto con la gamma: el controlador los pasa tal como le llegan, y el visor los sigue recibiendo en RGB (D100). **Nunca encola:** mientras el frame anterior no ha salido por el cable (`drain()`), descarta el nuevo, así que cada frame que pinta es el del pulso en curso y el retraso queda acotado: lo que tarda un frame en salir más un pulso (D93). En la mesa, 11 ms por frame y 59 fps a 500.000 baudios con 173 LEDs (a 115.200 eran 45 ms y 20 fps, D96); los fps van a saltos, porque un envío ocupa un número entero de pulsos. Tras sus primeros 50 envíos, dice en el log una vez la mediana y los fps. Si el puerto no se abre al arrancar (no existe, sin permiso o bloqueado por otro programa), el motor no arranca, hasta `MOO-112`; si se pierde en plena sesión, lo dice una vez en el log y deja de escribir, y el resto del instrumento sigue. Abrir el puerto está en `adalight.hardware.ts`, y el resto, con tests. |
 | **Visor** | `LightOutput` | WebSocket (`@fastify/websocket`) | Una instancia **por tira** (D43). Codifica cada frame con el [protocolo del visor](docs/instructions/viewer-protocol.md) y lo envía en binario a todos los navegadores conectados, por una sola conexión por navegador (D45). Por la misma conexión, cada navegador recibe la fuente de audio al conectarse y, en cada pulso, su nivel (D51) y, si la fuente es un fichero, el punto del fichero por el que va el motor (D53). Con la tarjeta de sonido, también su estado, al conectarse y cada vez que cambia (D61). Y las tiras con el efecto que pinta cada una, al conectarse y a todos cada vez que cambia el de una (mensaje `6`, D78), y la intensidad, al conectarse, después de las tiras, y a todos cada vez que cambia (mensaje `7`, D101). |
 | **API HTTP** | `Commands` | Fastify + TypeBox (`@fastify/swagger`) | Recibe los mandos del panel: `PUT /api/strips/{stripId}/effect` cambia el efecto de una tira, `PUT /api/strips/{stripId}/values`, sus valores, y `PUT /api/intensity`, la intensidad de todas las tiras (§4). Valida cada petición con los esquemas TypeBox de `@moodtable/shared` (los valores los valida el búfer de control, con el esquema del efecto activo: D87) y publica el OpenAPI generado de ellos en `/api/openapi.json` (D81). El estado no se lee por aquí: llega por el WebSocket del visor (D78). También sirve el build del panel. |
-| **Persistencia** | `StateStore` | SQLite (§3) · en memoria para tests | Guarda y carga el estado de cada tira: efecto activo y valores de cada efecto. Al arrancar, el motor recupera el último estado desde aquí, en su hilo; los guardados se escriben en un *worker* (`sqlite-writer.worker.ts`, D105). |
+| **Persistencia** | `StateStore` | SQLite con `node:sqlite` (§3) · en memoria para los tests, los E2E y la demo pública | Guarda y carga el estado de cada tira: efecto activo y valores de cada efecto. Al arrancar, el motor recupera el último estado desde aquí, en su hilo; los guardados se escriben en un *worker* (`sqlite-writer.worker.ts`, D105). |
 
-**Raíz de composición (`main.ts`).** Carga la configuración (`config/local.json`), crea el búfer de control con sus tiras, crea los adaptadores que indica (fuente de audio, las salidas de cada tira, API, persistencia), los conecta al núcleo y arranca el bucle con un temporizador. Abre los puertos serie de las tiras físicas después de la fuente de audio y antes del servidor, para no arrancar a medias. Cada tira tiene su lista de salidas: el visor siempre, más Adalight si es física (D43). Es el único punto del código que conoce todas las piezas.
+**Raíz de composición (`main.ts`).** Carga la configuración (`config/local.json`), crea el búfer de control con sus tiras, crea los adaptadores que indica (fuente de audio, las salidas de cada tira, API, persistencia), los conecta al núcleo y arranca el bucle con un temporizador. Abre los puertos serie de las tiras físicas después de la fuente de audio y antes del servidor, para no arrancar a medias. Cada tira tiene su lista de salidas: el visor siempre, más Adalight si es física (D43). Con `engine.ts`, que monta el bucle y su temporizador, es lo único del motor que conoce a la vez el núcleo y los adaptadores.
 
 #### Panel y visor (front)
 
 **Tecnología:** React + Vite + TypeScript, servido por el propio motor. No contiene lógica de luces: solo muestra y envía comandos.
 
 - **Selector de tira:** lista las tiras declaradas; lo que se toca se aplica a la tira seleccionada.
-- **Panel de control:** muestra los efectos, etiquetados como reactivos o de ambiente, y **genera los controles a partir del esquema** del efecto activo de la tira (un número con rango se convierte en slider, un color en selector de color, una lista de opciones en desplegable). Al mover un control, envía el cambio por HTTP, limitando la frecuencia de envío mientras se arrastra.
+- **Panel de control:** muestra los efectos, etiquetados como reactivos o de ambiente, y **genera los controles a partir del esquema** del efecto activo de la tira (un número con rango se convierte en slider, lineal o logarítmico, y un color en selector de color; ningún efecto del MVP tiene aún una lista de opciones). Al mover un control, envía el cambio por HTTP: mientras se arrastra, deja como mucho una petición en camino por control y guarda el último valor, que envía al volver la anterior, así que el ritmo lo marca lo que tarda la red.
+- **Intensidad:** un fader vertical, lineal y en porcentaje, que no depende de la tira seleccionada y manda `PUT /api/intensity` con la misma cola que los controles.
 - **Visor:** recibe los frames binarios por WebSocket ([protocolo del visor](docs/instructions/viewer-protocol.md)) y dibuja **todas las tiras** en un `<canvas>` del navegador, sin librería: una fila por tira, en el orden del fichero de configuración, con un punto de luz por LED. En cada `requestAnimationFrame` pinta el último frame recibido de cada tira, así que nunca acumula retraso. Sin conexión con el motor queda en negro, la cabecera lo avisa y el panel reintenta cada segundo hasta que el motor vuelve, sin recargar. Dibujar cada tira con su geometría declarada llega con H4.
-- **Cabecera:** el estado de la conexión y, por la misma conexión del visor, la fuente de audio (D51): «Fichero: nombre», sin la ruta, o «Sin fuente de audio». Si hay fuente, un vúmetro pinta su nivel en cada `requestAnimationFrame`, como el visor, en una escala de −60 a 0 dB.
+- **Cabecera:** el estado de la conexión y, por la misma conexión del visor, la fuente de audio (D51): «Fichero: nombre», sin la ruta, «Tarjeta de sonido: nombre», con la etiqueta «Desconectada» si se pierde (D61), o «Sin fuente de audio». Si hay fuente, un vúmetro pinta su nivel en cada `requestAnimationFrame`, como el visor, en una escala de −60 a 0 dB.
 - **Reproductor:** cuando la fuente es un fichero, el maker puede oírlo en el navegador con el botón de la cabecera, porque los navegadores no reproducen audio sin un gesto del usuario. Dejar de oír solo calla el panel: el motor y la tira siguen. El motor sirve en `/audio` el mismo fichero que analiza, tal cual y sin decir su ruta en disco: los bytes que leyó al arrancar, desde memoria, así que aunque el fichero cambie en el disco el panel oye lo que se analiza; y en cada pulso dice por qué punto del fichero va; el panel hace sonar el punto del último frame que muestra el visor, así que el retraso de la red afecta igual a la luz y al sonido (D53). Lo reproduce con Web Audio, con el fichero entero en memoria y en bucle, arrancado en el punto exacto en cuanto el reloj de audio está en marcha; la referencia es la mediana del último segundo de posiciones, para no seguir el temblor de la red. Unas pocas veces por segundo compara lo que suena con el visor y, si se separan más de 20 ms (la deriva entre los dos relojes, unos ms por minuto), salta al punto bueno con un empalme programado (D54). Solo compensa el retraso de salida que declara el navegador (D55). Sin conexión, calla.
+- **Aviso de la demo:** solo en `moodtable.josebaalonso.tech`, un diálogo explica qué es Mood Table y qué probar la primera vez que se abre, y el navegador recuerda que se cerró (`MOO-181`). Es temporal: se quita tras la corrección (`MOO-182`).
 
 **Tipos compartidos.** Los esquemas TypeBox (efectos, comandos, configuración de las tiras) viven en un paquete común que importan el motor y el panel. Si cambia un parámetro, el compilador avisa en los dos lados.
 
@@ -473,9 +515,7 @@ flowchart LR
 
 > Representa la estructura del proyecto y explica brevemente el propósito de las carpetas principales, así como si obedece a algún patrón o arquitectura específica.
 
-*Estructura prevista para la Entrega 2.*
-
-El repositorio es un **monorepo con pnpm workspaces** y tres paquetes: `engine` (el motor), `panel` (el front) y `shared` (los esquemas comunes). Se descartó un único paquete porque con paquetes separados la frontera entre motor y navegador la impone la estructura: el panel **solo puede importar lo que exporta `shared`**, así que no puede acabar lógica de luces en el navegador. Además, cada lado tiene sus dependencias y su configuración de TypeScript (Node frente a DOM), y en la Pi solo se instala el motor. No se usa Nx ni Turborepo porque con tres paquetes no aportan nada que los workspaces no den ya.
+El repositorio es un **monorepo con pnpm workspaces**. El producto son tres paquetes: `engine` (el motor), `panel` (el front) y `shared` (los esquemas comunes). Un cuarto, `pr-babysitter`, es una herramienta de desarrollo, y `e2e` y `tooling` son miembros del workspace sin ser paquetes del producto. Se descartó un único paquete porque con paquetes separados la frontera entre motor y navegador la impone la estructura: el panel **solo puede importar lo que exporta `shared`**, así que no puede acabar lógica de luces en el navegador. Además, cada lado tiene sus dependencias y su configuración de TypeScript (Node frente a DOM). En la Pi, el script de instalación clona el repositorio, instala las dependencias y construye el panel, que sirve el motor. No se usa Nx ni Turborepo porque con estos paquetes no aportan nada que los workspaces no den ya.
 
 ```
 mood-table-v2/
@@ -484,31 +524,34 @@ mood-table-v2/
 │   ├── engine/     # Motor (un proceso Node en la Pi): núcleo y adaptadores, separados
 │   ├── panel/      # Front (React + Vite): panel de control y visor
 │   └── pr-babysitter/  # Herramienta de desarrollo, no producto: sigue cada PR y avisa por Linear (§2.2)
-├── e2e/            # Tests E2E (Playwright) del flujo principal
-├── firmware/       # (should-have) Firmware C++ para ESP8266/ESP32
-├── openspec/       # Specs de SDD: specs vivas y cambios propuestos
-├── config/         # Configuración de cada instalación: demo.json (ejemplo versionado), local.json (ignorado por git) y audio/ (el tema de la demo)
-├── deploy/         # Servicio systemd y ejemplos de configuración de tiras (mesa y demo pública)
-├── docs/           # PRD, instrucciones de trabajo (workflow, Linear), ficha y decisiones
-├── .claude/        # Skills y subagentes de Claude Code
-└── AGENTS.md       # Instrucciones para agentes de código (estándar abierto)
+├── e2e/            # Tests E2E (Playwright) contra el motor real
+├── tooling/        # Scripts del repo con sus tests: la comprobación de incidencias de SonarQube, la preparación de config/local.json para pnpm dev…
+├── openspec/       # Specs de SDD: specs vivas, cambios en curso y archivados
+├── config/         # Configuración de cada instalación: demo.json (simulador), cloud.json (demo pública), local.json (ignorado por git) y audio/ (el tema de la demo)
+├── deploy/         # install.sh y la unidad systemd (mesa y demo), y demo/: Caddy, el drop-in y el temporizador de la demo pública
+├── docs/           # PRD, ficha y decisiones, instrucciones de trabajo, openapi.yaml, el documento del PR Babysitter y los spikes
+├── .github/        # CI (GitHub Actions) y Dependabot
+├── .claude/        # Skills, subagentes, comandos de OpenSpec, hooks y evals de Claude Code
+├── .agents/        # Skills de terceros (enlazadas desde .claude/skills/)
+├── AGENTS.md       # Instrucciones para agentes de código (estándar abierto)
+├── HARDWARE_SETUP.md  # Montaje y comprobación de la mesa
+└── prompts.md      # Registro del uso de IA (entrega del máster)
 ```
 
 **Cómo refleja la arquitectura hexagonal (§2.1):**
 
 - Dentro de **`engine`**, el **núcleo** (bucle, análisis de audio, efectos y los **puertos**, que son interfaces del núcleo) y los **adaptadores** (audio, luz, HTTP, persistencia) viven en carpetas separadas. El núcleo no conoce ALSA, el puerto serie, Fastify ni el disco; añadir la F1 o el firmware propio es añadir un adaptador.
-- Solo la **raíz de composición** conoce a la vez el núcleo y los adaptadores.
-- La regla "el núcleo no importa de los adaptadores" se comprueba con una **regla de lint** (restricción de rutas de import), así que no depende de la disciplina de quien escriba el código, sea persona o agente.
+- Solo la **raíz de composición** (`main.ts`, con `engine.ts`) conoce a la vez el núcleo y los adaptadores.
+- La regla "el núcleo no importa de los adaptadores" se comprueba con una **regla de lint** (`eslint-plugin-boundaries`, con los elementos `engine-core`, `engine-adapter` y `engine-main`; la misma regla limita el panel a la entrada de `shared`), así que no depende de la disciplina de quien escriba el código, sea persona o agente.
 
 **Por qué un efecto vive en dos paquetes:** su **esquema** de parámetros está en `shared`, porque lo necesitan el panel (para generar controles) y la API (para validar). Su **render** está en `engine`, porque es lógica de luces y el navegador no debe tenerla.
 
-**`e2e/` es un miembro del workspace, pero no un paquete del producto** (`@moodtable/e2e`): tiene sus propias dependencias (Playwright) y su `tsconfig`, y así el lint y la comprobación de tipos lo cubren como al resto. No importa código de los paquetes: prueba el sistema desde fuera, por el navegador. Los tests del flujo completo arrancan el motor con fuente = fichero y comprueban en el navegador que el visor reacciona y que mover un control cambia la luz.
+**`e2e/` es un miembro del workspace, pero no un paquete del producto** (`@moodtable/e2e`): tiene sus propias dependencias (Playwright) y su `tsconfig`, y así el lint y la comprobación de tipos lo cubren como al resto. No importa código de los paquetes: prueba el sistema desde fuera, por el navegador. El motor por defecto de los E2E tiene una tira con *respiración* y sin audio; los specs que necesitan audio, o pararlo y arrancarlo, lanzan el suyo en un puerto libre (`e2e/engine.ts`). Los 8 specs, en §2.6.
 
 **Carpetas fuera de los workspaces:**
 
-- `firmware/`: proyecto C++ independiente (should-have).
 - `openspec/`: las specs que guían cada cambio (Spec-Driven Development).
-- `.claude/` y `AGENTS.md`: la configuración del agente de código es parte de la evidencia del uso de IA (ver `prompts.md`). Donde existe un estándar se usa: las instrucciones del proyecto van en **`AGENTS.md`**, que leen distintas herramientas (Claude Code lo recibe a través de un `CLAUDE.md` que lo importa). Donde no existe, se usa la ubicación de la herramienta: las skills (por ejemplo, "nuevo efecto") y los subagentes (por ejemplo, revisión contra spec) van en `.claude/`, que es donde Claude Code los busca.
+- `.claude/` y `AGENTS.md`: la configuración del agente de código es parte de la evidencia del uso de IA (ver `prompts.md`). Donde existe un estándar se usa: las instrucciones del proyecto van en **`AGENTS.md`**, que leen distintas herramientas (Claude Code lo recibe a través de un `CLAUDE.md` que lo importa). Donde no existe, se usa la ubicación de la herramienta: las skills (`create-story`, `refine-story`, `estimate-story`, `create-spike`, `close-spike` y `capture`), los subagentes (`estimator` y `poke-holes`), los comandos de OpenSpec, los hooks y las evals van en `.claude/`, que es donde Claude Code los busca. El firmware propio (should-have) no se ha empezado: no hay carpeta `firmware/`.
 
 ### **2.4. Infraestructura y despliegue**
 
@@ -641,29 +684,28 @@ La herramienta de desarrollo que sigue las PR (§2.2) no se despliega con el ins
 
 > Enumera y describe las prácticas de seguridad principales que se han implementado en el proyecto, añadiendo ejemplos si procede
 
-*Diseño previsto para la Entrega 2.*
-
 La seguridad se plantea **por contexto**, porque el riesgo no es el mismo en la mesa que en internet. Buena parte la resuelven decisiones de arquitectura, sin código adicional.
 
 #### En la mesa (red local)
 
 - **Sin autenticación, por decisión explícita.** Es una red doméstica de confianza, el sistema no guarda datos personales y el peor caso es que alguien de la casa cambie las luces. Queda fuera del MVP.
+- **Solo local salvo que se pida.** Por defecto, el motor escucha únicamente en `127.0.0.1:8080`. La mesa declara `server.host: 0.0.0.0` para abrir el panel a la red local (lo escribe el script de instalación), y la demo pública solo escucha en `127.0.0.1`, detrás de Caddy.
 - **La API no puede tocar el hardware.** Las tiras (puertos, número de LEDs, límites de potencia) se declaran en el fichero de configuración, no en la base de datos (§3). Desde la red solo se puede cambiar el efecto y sus parámetros, nunca a qué puerto se escribe ni cuánta corriente se permite.
 - **El proceso no corre como root.** Es una de las razones para descartar la conexión por GPIO, que exige root. Corre con el **usuario propio** `moodtable`, un usuario de sistema sin shell de entrada que solo tiene los grupos de los puertos serie (`dialout`) y de la tarjeta de sonido (`audio`), y ningún permiso de administrador: quien comprometiera el motor desde la red local no podría usar `sudo` (D110). Es dueño de toda la instalación, código incluido; dejar el código a root no cambiaría nada para el maker, que necesita `sudo` en los dos casos para editar la configuración, y la API no puede escribir ficheros.
 
 #### En la demo pública (internet)
 
 - **Estado compartido y volátil.** La demo usa el adaptador de persistencia **en memoria** (su configuración declara `"instrumentState": { "type": "memory" }`, §3): nada se escribe en disco y el estado vuelve al inicial cada 3 horas (§2.4). Todos los visitantes ven el mismo visor; que uno vea lo que toca otro se asume como parte de la demo.
-- **Sin hardware.** La configuración de la demo solo declara tiras virtuales, así que no hay puertos serie expuestos.
-- **Límite de peticiones** por IP en la API (`@fastify/rate-limit`) y **máximo de conexiones WebSocket** simultáneas.
+- **Sin hardware.** La configuración de la demo solo declara tiras virtuales y un fichero de audio de ejemplo, que se sirve en `/audio` sin su ruta en disco, así que no hay puertos serie expuestos.
+- **Sin límite de peticiones ni de conexiones WebSocket: riesgo aceptado.** El diseño inicial preveía `@fastify/rate-limit` y un máximo de conexiones, y no se implementaron. Lo peor que puede hacer un visitante es cambiar el efecto o la intensidad de todos o cargar la instancia; el estado vuelve al inicial cada 3 horas y la instancia está en modo de créditos *standard*, que se ralentiza en vez de facturar más, con una alerta de presupuesto (§2.4).
 - **HTTPS** con Caddy y certificado de Let's Encrypt; la instancia solo abre los puertos 80 y 443 y se administra sin SSH, por AWS Systems Manager (§2.4).
 
 #### En todo el sistema
 
 - **Validación de todas las entradas** con los esquemas TypeBox: tipos, rangos y rechazo de campos desconocidos. Un parámetro fuera de rango se rechaza antes de llegar al motor. El fichero de configuración se valida igual al arrancar.
 - **Mismo origen:** el panel lo sirve el propio motor, así que no se abre CORS.
-- **Cabeceras de seguridad** HTTP con `@fastify/helmet`.
-- **Tamaño máximo** de los mensajes WebSocket entrantes.
+- **El WebSocket solo va del motor al navegador:** el motor no lee lo que le llega por él. Los cambios entran solo por la API HTTP, validada.
+- **Sin cabeceras de seguridad HTTP propias:** el diseño inicial preveía `@fastify/helmet`, y no se implementó. El panel no tiene login, ni cookies, ni datos de nadie, así que es una deuda menor; en la demo, Caddy podría añadirlas sin tocar el motor.
 - **Sin secretos:** el instrumento no necesita claves ni credenciales. No hay login: el README lo indica expresamente en las instrucciones de prueba. La única pieza con secretos es la herramienta de desarrollo (abajo).
 
 #### En el PR Babysitter (herramienta de desarrollo)
@@ -694,44 +736,41 @@ El código lo escribe en buena parte un agente, así que el análisis automátic
 
 | Herramienta | Qué revisa | Cómo actúa |
 |---|---|---|
-| **SonarQube Cloud** (plan gratuito para proyectos públicos) | Bugs, vulnerabilidades y *security hotspots* en el código, *code smells*, duplicados y cobertura de tests | **Quality gate** en cada PR: si el código nuevo no la supera, el PR no se integra |
+| **SonarQube Cloud** (plan gratuito para proyectos públicos) | Bugs, vulnerabilidades y *security hotspots* en el código, *code smells*, duplicados y cobertura de tests | **Quality gate** en cada PR: si el código nuevo no la supera, el PR no se integra. Además, el job `sonar-issues` de la CI falla en las PR contra `main` con cualquier incidencia nueva, que el *quality gate* gratuito no mira (`tooling/ci/check-sonar-issues.ts`) |
 | **Dependabot** (GitHub) | Vulnerabilidades conocidas en las dependencias | Alertas y PRs automáticos de actualización. Cubre lo que el plan gratuito de Sonar no analiza |
 
 ### **2.6. Tests**
 
 > Describe brevemente algunos de los tests realizados
 
-*Diseño previsto para la Entrega 2.*
-
 La estrategia sigue la arquitectura (§2.1): el núcleo no tiene E/S, así que casi todo se prueba con entradas controladas y resultados deterministas. Con fuente = fichero y salida = memoria, un efecto produce siempre los mismos frames.
 
 | Nivel | Qué se prueba | Herramienta |
 |---|---|---|
-| **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (una sinusoide de 100 Hz cae en su banda). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). Restauración del estado al arrancar (§3). | Vitest |
+| **Unitarios** | Efectos con **frames dorados**: una señal sintética entra y el frame se compara con uno de referencia. Análisis de audio (un tono de 400 Hz llena el tercio inferior de las bandas y uno de 8 kHz el superior, igual a 44,1 que a 48 kHz). Límite de potencia. Protocolo Adalight (cabecera y checksum, byte a byte). Restauración del estado al arrancar (§3). | Vitest |
 | **Integración** | API con `fastify.inject()`, sin abrir puertos. Tests de contrato de `StateStore` contra SQLite y en memoria. El guardador, con un reloj falso, y la escritura en segundo plano, con un *worker* falso y con el de verdad (§2.2). | Vitest |
-| **E2E (flujo principal)** | El motor arranca con fuente = WAV; en el navegador, el visor reacciona a la música, mover un control cambia la luz y, tras matar el motor con `SIGKILL` y volver a arrancarlo, vuelve el último estado guardado; un arrastre a medias no (§3). | Playwright |
+| **Componentes del panel** | Cada zona del panel en jsdom con Testing Library: qué muestra con y sin conexión, los controles generados desde el esquema, el fader de la intensidad, la cola de peticiones mientras se arrastra. | Vitest + Testing Library |
+| **E2E (flujo principal)** | 8 specs en `e2e/` contra el motor real, que sirve el build del panel: el visor (`viewer`), la fuente y el nivel (`audio`), oír el fichero (`playback`), cambiar de efecto (`effects`), mover un control (`controls`), la intensidad (`intensity`), las zonas del panel (`panel`) y, tras matar el motor con `SIGKILL` y volver a arrancarlo, el último estado guardado; un arrastre a medias no (`restart`, §3). Los que necesitan audio arrancan su propio motor con un WAV. | Playwright |
 | **Hardware** | Tira física de la mesa: lista de comprobación manual (`HARDWARE_SETUP.md`) y vídeo. | Manual |
 
 **Por qué así:**
 
-- **Un solo runner (Vitest)** para el motor, el panel y `shared`: misma sintaxis y un único informe de cobertura, que es el que lee SonarQube.
+- **Un solo runner (Vitest)** para todos los paquetes (el motor, el panel, `shared` y el PR Babysitter) y para `tooling/` (los hooks del arnés, la regla de fronteras, la unidad de systemd): misma sintaxis y un único informe de cobertura, que es el que lee SonarQube.
 - **Los frames dorados hacen testeable lo visual:** "la luz se ve bien" pasa a ser una comparación exacta. Es clave cuando el código lo escribe un agente.
 - **El E2E recorre el circuito completo:** panel → motor → tira → persistencia → arranque.
 
-Todos los niveles automáticos se ejecutan en cada PR (§2.4).
+Todos los niveles automáticos se ejecutan en cada PR contra `main`, en los jobs `lint` (con ShellCheck para `deploy/`), `typecheck`, `test` y `e2e` de la CI (§2.4).
 
 #### Cobertura
 
 - **Quality gate de SonarQube:** ≥ 80 % de cobertura en el **código nuevo** de cada PR; si no se cumple, el PR no se integra.
-- **Núcleo** (bucle, análisis, efectos, límite de potencia): objetivo cercano al 100 %, por ser lógica pura y determinista.
-- **Adaptadores de hardware** (serie, `arecord`) y la raíz de composición: excluidos del cálculo; se prueban a mano (nivel "Hardware").
+- **Núcleo** (bucle, análisis, efectos, límite de potencia): objetivo cercano al 100 %, por ser lógica pura y determinista. Es un objetivo, no un umbral que haga cumplir la herramienta.
+- **Excluidos del cálculo:** la E/S de los adaptadores de hardware (`*.hardware.ts`: serie, `arecord`), que se prueba a mano (nivel "Hardware"), las raíces de composición y los puntos de entrada que solo hacen E/S. La lista está en `vitest.config.ts` y es la misma que en `sonar-project.properties`.
 - **E2E:** no cuentan. La cobertura es la de los tests unitarios y de integración (Vitest). Un E2E recorre mucho código sin comprobarlo en detalle, e inflaría la del código nuevo, que es la que juzga el *quality gate*. SonarQube los analiza como código de test.
 
 ---
 
 ## 3. Modelo de Datos
-
-*Diseño previsto para la Entrega 2.*
 
 **Regla de reparto:** lo que sale de la hoja de características del hardware y no cambia se **declara en un fichero de configuración**; lo que cambia mientras se toca el instrumento se guarda en la **base de datos**.
 
@@ -765,7 +804,13 @@ erDiagram
     TEXT updated_at "NOT NULL, ISO 8601"
   }
   STRIP_EFFECTS ||--o| STRIP_STATE : "(strip_id, active_effect_id) es el efecto activo"
+  SCHEMA_MIGRATIONS {
+    INTEGER version PK "migración aplicada"
+    TEXT applied_at "NOT NULL, ISO 8601"
+  }
 ```
+
+*`SCHEMA_MIGRATIONS` es la tabla de control de las migraciones (§3.2), sin relación con las otras dos.*
 
 ### **3.2. Descripción de entidades principales:**
 
@@ -860,6 +905,15 @@ Por último, el fichero dice **dónde se guarda el estado del instrumento** (`in
 ```json
 "instrumentState": { "type": "sqlite", "path": "/var/lib/moodtable/estado.db" }
 ```
+
+Quedan dos campos de primer nivel, opcionales, para el motor:
+
+| Campo | Tipo | Validación | Para qué |
+|---|---|---|---|
+| `fps` | entero | De 1 a 60; por defecto 60 | El pulso del motor. La demo pública va a 30 (D30) |
+| `server` | objeto | `host`, texto no vacío, por defecto `127.0.0.1`; `port`, de 1 a 65535, por defecto 8080 | Dónde escucha el motor. Por defecto, solo local (§2.5); la mesa declara `0.0.0.0` |
+
+El fichero admite como mucho 256 tiras, el máximo que direcciona el protocolo del visor (`MAX_STRIPS`).
 
 #### Reconciliación al arrancar
 
@@ -973,7 +1027,7 @@ Los errores responden `{ "message": "…" }`, sin cambiar nada:
 | Código | Ruta | Cuándo | Ejemplo de `message` |
 |---|---|---|---|
 | `400` | `effect` | El cuerpo no es `{ "effect": "<id>" }` o el efecto no existe | «strobe» no es un efecto (hay: `breathing`, `spectrum`, `scroll`, `energy`) |
-| `400` | `values` | Los valores no cumplen el esquema del efecto activo: falta uno, sobra uno o está fuera de rango (D86) | la tira «demo», efecto `breathing`: `period` debe ser <= 20 |
+| `400` | `values` | El cuerpo no es un objeto JSON, o los valores no cumplen el esquema del efecto activo: falta uno, sobra uno o está fuera de rango (D86). Sin objeto JSON, el mensaje es «el cuerpo debe ser un objeto JSON con todos los valores del efecto activo» | la tira «demo», efecto `breathing`: `period` debe ser <= 20 |
 | `400` | `intensity` | El cuerpo no es `{ "intensity": <número de 0 a 1> }`: falta, sobra un campo, no es un número o está fuera de rango | el cuerpo debe ser un objeto JSON con el campo `intensity`, un número de 0 a 1, y ninguno más |
 | `404` | `effect` y `values` | La tira no existe | la tira «luces» no existe |
 | `409` | `effect` | El efecto es reactivo y el instrumento no tiene fuente de audio (D80) | la tira «demo», efecto `energy`: necesita una fuente de audio |
@@ -1205,7 +1259,7 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 > Documenta 3 de los tickets de trabajo principales del desarrollo, uno de backend, uno de frontend, y uno de bases de datos. Da todo el detalle requerido para desarrollar la tarea de inicio a fin teniendo en cuenta las buenas prácticas al respecto. 
 
-> **Copia para la entrega (25-sep-2026).** Un ticket es una **tarea** de Linear: un cambio de **una sola área** que se integra en **una PR** (`workflow.md` §2). En Linear, la tarea tiene una o dos líneas y enlaza su historia; el paso a paso vivirá en el `tasks.md` del **OpenSpec change** de la historia, que se escribe en la Entrega 2 (un paso = un commit). Esta ficha reúne lo que ya existe (criterios de la historia, diseño de §2-§3, riesgos) y marca como ***previsto*** lo que fijará la spec.
+> **Copia para la entrega (25-sep-2026).** Los cuatro tickets se conservan como se planificaron, sin reescribirlos con lo que se construyó; solo se actualizan su estado y su PR. Lo que cambió al implementarlos está en la descripción de cada PR, y tres de ellas, en el §7. Un ticket es una **tarea** de Linear: un cambio de **una sola área** que se integra en **una PR** (`workflow.md` §2). En Linear, la tarea tiene una o dos líneas y enlaza su historia; el paso a paso vivirá en el `tasks.md` del **OpenSpec change** de la historia, que se escribe en la Entrega 2 (un paso = un commit). Esta ficha reúne lo que ya existe (criterios de la historia, diseño de §2-§3, riesgos) y marca como ***previsto*** lo que fijará la spec.
 
 **Ticket 1**
 
@@ -1216,8 +1270,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 | **Tipo / área** | Backend · `engine` |
 | **Historia** | HU1 · `MOO-13` (8 puntos, compartidos por sus tres tareas) |
 | **Prioridad** | Alta (heredada de la historia) |
-| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-16/arrancar-el-motor-con-una-tira-virtual-y-el-efecto-respiracion) |
-| **Rama / PR** | `7daysofrain/moo-16-…` · PR con `Fixes MOO-16`; commits con `Refs MOO-16` |
+| **Estado** | Done, integrada el 15-oct · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-16/arrancar-el-motor-con-una-tira-virtual-y-el-efecto-respiracion) |
+| **Rama / PR** | `7daysofrain/moo-16-…` · [PR #28](https://github.com/7daysofrain/mood-table-v2/pull/28) con `Fixes MOO-16`; commits con `Refs MOO-16` |
 
 **Descripción.** Primer código del motor. Lee un fichero de configuración mínimo, arranca el bucle de frames y pinta una tira virtual con el efecto *respiración*. Los frames todavía no salen del motor (eso es `MOO-17`): se comprueban con una salida en memoria.
 
@@ -1278,8 +1332,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 | **Tipo / área** | Frontend · `panel` |
 | **Historia** | HU1 · `MOO-13` (8 puntos, compartidos por sus tres tareas) |
 | **Prioridad** | Alta (heredada de la historia) |
-| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-18/dibujar-las-tiras-en-el-visor-y-mostrar-la-conexion-con-el-motor) |
-| **Rama / PR** | `7daysofrain/moo-18-…` · PR con `Fixes MOO-18` |
+| **Estado** | Done, integrada el 15-oct · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-18/dibujar-las-tiras-en-el-visor-y-mostrar-la-conexion-con-el-motor) |
+| **Rama / PR** | `7daysofrain/moo-18-…` · [PR #31](https://github.com/7daysofrain/mood-table-v2/pull/31) con `Fixes MOO-18` |
 
 **Descripción.** El **visor** del panel: recibe los frames binarios que emite el motor por WebSocket y dibuja cada tira en un `<canvas>`, un punto de luz por LED. Muestra si hay conexión con el motor y se reconecta solo cuando el motor vuelve.
 
@@ -1337,8 +1391,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 | **Tipo / área** | Base de datos · `db` |
 | **Historia** | `MOO-25` · Volver al último estado del instrumento tras reiniciar el motor (épica H5, `MOO-9`). Sin refinar ni estimar: se refina justo a tiempo, como el resto de H5 |
 | **Prioridad** | Alta (heredada de la épica, must-have) |
-| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-26/crear-la-base-de-persistencia-del-estado-del-instrumento-sqlite) |
-| **Rama / PR** | `7daysofrain/moo-26-…` · PR con `Fixes MOO-26`; commits con `Refs MOO-26` |
+| **Estado** | Done, integrada el 8-nov · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-26/crear-la-base-de-persistencia-del-estado-del-instrumento-sqlite) |
+| **Rama / PR** | `7daysofrain/moo-26-…` · [PR #122](https://github.com/7daysofrain/mood-table-v2/pull/122) con `Fixes MOO-26`; commits con `Refs MOO-26` |
 
 **Descripción.** La base técnica de la persistencia del **estado del instrumento** (efecto activo y valores de cada tira, §3): el esquema con sus migraciones, el modelo en TypeScript, el puerto `StateStore` con sus dos adaptadores y la conexión al arrancar. No incluye la lógica que decide *cuándo* se guarda ni la reconciliación con el fichero de tiras: son tareas `engine` de la misma historia. Esta tarea deja la persistencia lista y probada para que esas tareas solo tengan que usarla.
 
@@ -1406,8 +1460,8 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 | **Tipo / área** | Backend · `engine` |
 | **Historia** | HU2 · `MOO-14` (8 puntos, compartidos por sus tres tareas) |
 | **Prioridad** | Alta (heredada de la historia) |
-| **Estado** | Backlog · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-20/analizar-el-audio-y-pintar-el-efecto-energia) |
-| **Rama / PR** | `7daysofrain/moo-20-…` · PR con `Fixes MOO-20` |
+| **Estado** | Done, integrada el 19-oct · [ver en Linear](https://linear.app/7daysofrain/issue/MOO-20/analizar-el-audio-y-pintar-el-efecto-energia) |
+| **Rama / PR** | `7daysofrain/moo-20-…` · [PR #40](https://github.com/7daysofrain/mood-table-v2/pull/40) con `Fixes MOO-20` |
 
 **Descripción.** El análisis del audio en el núcleo y el primer efecto reactivo. A partir de las muestras de la fuente de audio calcula, una vez por frame, los **rasgos** que consumen los efectos, y el efecto *energía* los convierte en luz. El motor envía además al panel el tipo de fuente y su nivel.
 
@@ -1461,5 +1515,50 @@ Escenario: Con varias tarjetas de sonido, usa la declarada
 
 > Documenta 3 de las Pull Requests realizadas durante la ejecución del proyecto
 
-**Llegan con la entrega final.** Las PRs salen de las tareas de Linear (una tarea, una PR; ver [`docs/instructions/workflow.md`](docs/instructions/workflow.md)).
+Son las PR de los tres tickets del §6, uno por área: backend, frontend y base de datos. Cada PR integra **una tarea** de Linear (`Fixes MOO-n`) y sale de la sección de esa tarea en el `tasks.md` de su OpenSpec change, **un commit por paso** ([`workflow.md`](docs/instructions/workflow.md) §2). Todas pasan las mismas puertas antes de integrarse: `lint` (con la regla de fronteras), `typecheck`, `test`, `e2e`, SonarQube Cloud y, desde el 22-oct, la revisión de Codex con todos sus hilos resueltos. A 21-nov-2026, el proyecto lleva 147 PR integradas.
+
+**Pull Request 1**
+
+### PR 1 · Backend · [#28](https://github.com/7daysofrain/mood-table-v2/pull/28) · Arrancar el motor con una tira virtual y el efecto respiración
+
+| | |
+|---|---|
+| **Tarea** | `MOO-16` · historia HU1 `MOO-13` · change [`virtual-strip-breathing`](openspec/changes/archive/2026-10-16-virtual-strip-breathing/) |
+| **Tamaño** | 22 commits · 52 ficheros · +2.536 / −63 · integrada el 15-oct-2026 |
+
+**Qué integra.** El primer código del motor. El esquema TypeBox del fichero de configuración y su validación, que nombra la tira y el campo que falla; el contrato `Effect` y la *respiración*, con frames dorados; el bucle de frames puro (`tick(now)`), con búferes preasignados, salto de los pulsos tardíos y el puerto `LightOutput`; los adaptadores (salida en memoria, lectura de `config/local.json`, temporizador) y la raíz de composición `main.ts`, la única que ve el núcleo y los adaptadores.
+
+**Cómo se hizo.** Cada escenario de la spec tiene su test, y la PR los enlaza en una tabla. Copilot no pudo revisarla por cuota, así que se hizo una revisión local con IA: cinco arreglos, y dos cambios de comportamiento que **decidió el usuario** (rechazar los campos que el esquema no declara y limitar `fps` a 60), cada uno con su escenario nuevo en la spec antes que el código.
+
+**Verificación.** 134 tests y E2E en verde; en un clon limpio, `pnpm dev` crea la configuración local y no la pisa en el segundo arranque; sin fichero, el motor termina con código 1 y dice qué falta.
+
+**Pull Request 2**
+
+### PR 2 · Frontend · [#31](https://github.com/7daysofrain/mood-table-v2/pull/31) · Dibujar las tiras en el visor y mostrar la conexión con el motor
+
+| | |
+|---|---|
+| **Tarea** | `MOO-18` · cierra la historia HU1 `MOO-13` · change `virtual-strip-breathing` |
+| **Tamaño** | 10 commits · 27 ficheros · +1.139 / −52 · integrada el 15-oct-2026 |
+
+**Qué integra.** La conexión del panel con el motor (`panel/src/engine/connection.ts`): un único WebSocket que se reintenta cada segundo y decodifica los frames con el protocolo de `shared`, sin saber nada de React. El visor, un `<canvas>` sin librería que dibuja el último frame de cada tira en cada `requestAnimationFrame`, con la geometría separada del dibujo en una función pura. La cabecera con el estado de la conexión. Y el primer E2E del flujo principal (`e2e/viewer.spec.ts`), con el motor real sirviendo el build del panel.
+
+**Cómo se hizo.** La PR traza cada escenario de la historia a sus tests unitarios y E2E. Un matiz de la D44 que **decidió el usuario** (cargar otro fichero de configuración solo en los tests, `MOODTABLE_CONFIG`) entró primero en la spec y después en el código. El escenario *Dos paneles ven lo mismo* se reformuló como *todos los paneles reciben los mismos frames*, porque así se puede probar.
+
+**Verificación.** 202 tests; los 5 E2E, 15 de 15 con `--repeat-each=3` para descartar intermitencias; `openspec validate --strict` pasa; a mano, el visor se recupera solo tras reiniciar el motor, sin recargar.
+
+**Pull Request 3**
+
+### PR 3 · Base de datos · [#122](https://github.com/7daysofrain/mood-table-v2/pull/122) · Crear la base de persistencia del estado del instrumento
+
+| | |
+|---|---|
+| **Tarea** | `MOO-26` · historia H5 `MOO-25` · change [`instrument-state-restore`](openspec/changes/archive/2026-11-10-instrument-state-restore/) |
+| **Tamaño** | 16 commits · 30 ficheros · +1.653 / −32 · integrada el 8-nov-2026 |
+
+**Qué integra.** El puerto `StateStore`, síncrono, en el núcleo, con **tests de contrato** que corren contra sus dos adaptadores. El adaptador SQLite con `node:sqlite`, que viene con Node y no obliga a compilar nada nativo en la Pi (D103): WAL, `synchronous = FULL`, claves foráneas, la migración 1 con `strip_state` y `strip_effects` y la tabla de control `schema_migrations` (§3). Al abrir cubre cuatro casos: sin fichero (lo crea), dañado (lo aparta con fecha y crea otro), imposible de crear (arranca sin guardar) y de una versión más nueva del motor (arranca sin tocarlo). Y el adaptador en memoria, que usan la demo pública y los E2E.
+
+**Cómo se hizo.** Con TDD: los commits de los tests en rojo van marcados. **Codex** dejó dos hallazgos P2 reales, los dos corregidos con su test: comprobar la versión del esquema antes de pasar el fichero a WAL, y que un identificador de tira como `__proto__` no se pierda (`Object.fromEntries`). El usuario dejó un tercer hilo, sobre dónde vivían los tests de contrato, que acabó moviéndolos fuera de `src/core` para que no contaran en la cobertura. La PR documenta además las desviaciones del change que salieron al implementar.
+
+**Verificación.** 1.174 tests y 21 E2E en verde; las dos incidencias del primer análisis de SonarQube, corregidas en un commit aparte; a mano, el motor con una carpeta de solo lectura arranca y lo dice en el log.
 

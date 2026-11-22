@@ -2,7 +2,49 @@
 Puedes añadir adicionalmente la conversación completa como link o archivo adjunto si así lo consideras
 
 
+## Resumen: el flujo en cinco prompts
+
+> Para leer primero. Este fichero es el registro completo del uso de IA, sección a sección y tarea a tarea (§6 tiene más de cien entradas). Aquí van los cinco prompts más representativos, uno por fase, copiados tal cual, con lo que cambió gracias a ellos. Las herramientas, los modelos y el arnés están en el §0.
+
+**Cómo se ha trabajado.** El humano decide y la IA propone, ejecuta y discute. La cadena es la misma en todo el proyecto: **PRD** (qué y por qué) → **historia en Linear**, escrita, refinada y estimada con tres skills propias y dos subagentes que no ven la conversación (`poke-holes` busca huecos; `estimator` estima a ciegas) → **OpenSpec change** (`/opsx:explore` punto por punto, `/opsx:propose`) → **implementación** (`/opsx:apply`, TDD y un commit por paso) → **PR** con puertas automáticas (CI, SonarQube, la revisión de Codex) y el **PR Babysitter**, un sistema multiagente propio que sigue cada PR y tría sus hallazgos → **archivo** del change. El merge siempre es humano.
+
+**1 · Producto (Entrega 1, Claude en Cowork).** [§1.1-1.2](#11-12-objetivo-y-funcionalidades)
+
+> Construir el simulador no seria una funcionalidad en si misma? por otro lado los efectos iniciales usaria los 3 que existen actualmente, claro
+
+*El simulador (audio desde fichero + tiras virtuales) pasó de herramienta interna a la primera historia del producto, H1. Por eso hoy existe una demo pública sin hardware y se pudo desarrollar casi todo sin la mesa.*
+
+**2 · Backlog: medir y corregir al propio agente (Claude Code, subagente `poke-holes`).** [§5.2](#52-historias-de-usuario)
+
+> 1,2,3 y 4. Pero antes de pasar al siguiente paso me gustaría que vieramos porque el agente nos ha dado tantos casos que nos aplican. Son muchisimos. Creo que podríamos deducir como optimizar el subagente en base a eso
+
+*La primera ejecución de `poke-holes` dio 14 huecos y solo la mitad servían. Se diagnosticó por qué (el rango «10-15» empujaba a rellenar), se rehízo con un filtro de observabilidad y se volvió a medir: 8 candidatos, todos útiles.*
+
+**3 · Diseño en la exploración de un change: la IA no da la razón por defecto (`/opsx:explore`).** [§6.33](#633-cambiar-el-efecto-de-una-tira-exploración-y-change-moo-94)
+
+> Aqui tengo una duda, no tendria sentido trasladar este API al websocket? Asi tenemos una via unica de comunicacion. Ahora mismo tenemos WS para el stream y API Rest para el control. No me parece que tenga mucho sentido partir el API en 2
+
+*La IA defendió mantener HTTP para los mandos, que necesitan respuesta y OpenAPI, pero vio la incoherencia real que señalaba el humano: el estado se leía por dos vías. Desde entonces todo el estado llega por el WebSocket y solo los mandos van por HTTP (D77, D78).*
+
+**4 · Verificación en el hardware real: el criterio que no dan los tests.** [§6.56](#656-la-tira-real-no-se-parecía-al-visor-gamma-baudios-y-un-wav-de-calibración-moo-123)
+
+> una cosa que se puede ver es que en la virtual veo muchos espacios "en blanco" como de pixeles apagados, sin embargo eso no ocurre en la fisica
+
+*Los tests pasaban y la tira no se parecía al visor. La observación del humano llevó a la gamma: la IA comprobó que la v1 la aplicaba, la probó en la Pi y, con los baudios a 500.000, la tira pasó de 20 a 59 fps (D96).*
+
+**5 · Un sistema multiagente para las PR, con el merge humano (PR Babysitter).** [§0.4](#04-pr-babysitter-exploración-moo-67)
+
+> antes de seguir con las preguntas hago algunas aclaraciones. Entraría en la epica de enablers, H2 se usuaria para la ejecución.
+> Por otro lado Codex no está orquestando nada, simplemente entra y revisa y deja comentarios. Igual que hacia copilot. No veo la competencia ahi.
+> El flujo a cubrir sería a partir de que se abre la PR. Se trataría de haber un babysit de la PR: Esperar a que pasen las QG y el revisor (o revisores de codigo) -> Evaluar los resultados y cuales son las cosas que merece la pena hacer y cuales no. Evaluar si se necesita intervención humana, realizar los fixes y terminar en merge. Es decir, que una vez que termine la parte de desarrollo automatizar toda esa parte y que solo tenga que intervenir en casos muy determinados
+
+*El problema pasó de «un revisor más» a un orquestador que conduce cada PR. La IA se opuso a que integrara solo, porque el merge es la única revisión humana del código (D64). Hoy el sistema (LangGraph.js, con un modelo de decisión que da probabilidades y no texto) avisa, pide la revisión, relanza los tests intermitentes y tría cada hallazgo en modo sombra, y su triaje se ha medido contra PR ya cerradas (§6.100).*
+
+---
+
 ## Índice
+
+[Resumen: el flujo en cinco prompts](#resumen-el-flujo-en-cinco-prompts)
 
 0. [Flujo de trabajo con IA](#0-flujo-de-trabajo-con-ia) · [0.1 Mantenimiento del arnés](#01-mantenimiento-del-arnés) · [0.2 OpenSpec](#02-openspec-inicialización-y-configuración) · [0.3 Hook `validate-ac`](#03-hook-validate-ac-moo-36) · [0.4 PR Babysitter](#04-pr-babysitter-exploración-moo-67)
 1. [Descripción general del producto](#1-descripción-general-del-producto)
@@ -28,17 +70,20 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 | Diseño del panel | Claude Design (artefacto de tipo *Design*) | — | Wireframe de baja fidelidad (`docs/img/panel-wireframe.png`) |
 | Herramienta de gestión | Claude (Cowork) + MCP de Linear + navegador integrado | Opus | Elegir Linear y configurarlo (estados, etiquetas, automatizaciones con GitHub) |
 | Arnés y backlog (en el repo) | **Claude Code** (app de escritorio) + MCP de Linear | `claude-opus-5-5` en la sesión principal · subagentes: `poke-holes` en **Opus**, `estimator` en **Sonnet** | `AGENTS.md`, skills y subagentes, historias en Linear, README §5-§6, commits |
-| E2 y E3 *(previsto)* | Claude Code + OpenSpec | Opus para specs, Sonnet para implementar | Spec-Driven Development: `propose → apply → archive`, con tests y SonarQube como puertas |
+| Especificación e implementación (E2 y E3) | Claude Code + OpenSpec + MCP de Linear y de Context7 (documentación actual de las librerías) | `claude-opus-5-5` en la sesión principal; subagentes de revisión y auditoría | Spec-Driven Development: `explore → propose → apply → verify → archive`, en TDD y con un commit por paso; tests, SonarQube y Codex como puertas (§6) |
+| Revisión de las PR | Codex (revisión automática, desde el 22-oct; antes Copilot) + `/code-review` local | — | Hallazgos que la IA verifica contra el código antes de tocar nada (§6.24) |
+| Seguimiento de las PR | **PR Babysitter**, sistema propio en LangGraph.js, en Docker en casa, con trazas en LangSmith | Modelo de decisión Clef (Ollama), que responde con probabilidades | Avisar del estado de cada PR, pedir la revisión, relanzar tests intermitentes y triar los hallazgos en modo sombra (§0.4, §6.28-§6.100) |
+| Despliegue | Claude Code + AWS (EC2) | `claude-opus-5-5` | La demo pública en EC2 y la instalación de la mesa con un solo script (§6.78, §6.101) |
 
 Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Claude Code** para todo lo que toca el repo como repo (git, Linear con reglas de permisos, código y tests).
 
 **Skills, subagentes, rules y comandos personalizados:**
 
 - **`AGENTS.md`** (estándar abierto) con el contexto y las 4 bases de trabajo; `CLAUDE.md` solo lo importa (`@AGENTS.md`). Un **índice** apunta a `docs/instructions/` (`workflow.md`, `linear.md`, `course.md`), que el agente lee *cuando toca*, no siempre. Solo contiene lo que hace falta en cada sesión; el resto se lee bajo demanda (§0.1).
-- **Tres skills de invocación manual** (`.claude/skills/`), una por estado de Linear: `/create-story` → `/refine-story` → `/estimate-story`. Son manuales a propósito: cada paso empieza con una decisión humana. Escritas con la guía de la *skill-creator*, en inglés; el contenido que generan (Linear) va en español.
+- **Tres skills de invocación manual** (`.claude/skills/`), una por estado de Linear: `/create-story` → `/refine-story` → `/estimate-story`. Son manuales a propósito: cada paso empieza con una decisión humana. Escritas con la guía de la *skill-creator*, en inglés; el contenido que generan (Linear) va en español. Después llegaron `/capture` (apuntar una necesidad a mitad de trabajo, §6.79) y `/create-spike` y `/close-spike` (la vía de los *spikes*, §6.80). Las skills tienen **evals**, que se corren antes de cambiarlas (§6.6).
 - **Subagentes** (`.claude/agents/`): **`poke-holes`** (Opus, solo lectura) busca huecos en una historia **sin ver la conversación**, para no compartir los puntos ciegos del autor; **`estimator`** (Sonnet) estima **a ciegas** en el planning poker. Además, un subagente de exploración contrastó el protocolo de las skills con los documentos del curso (módulo 4 y 11.2).
 - **Hook `validate-ac`** (`.claude/hooks/`, `PreToolUse` sobre `save_issue`): bloquea una historia con criterios GIVEN/WHEN/THEN mal formados antes de que llegue a la confirmación humana (§0.3).
-- **MCP de Linear** como configuración del proyecto (`.mcp.json`), con **reglas de permisos** versionadas (`.claude/settings.json`): lecturas permitidas, `save_issue`/`save_comment` piden confirmación, el resto (borrados, etiquetas, proyectos…) denegado. Conector de **Google Drive** para el material del curso.
+- **MCP de Linear** como configuración del proyecto (`.mcp.json`), con **reglas de permisos** versionadas (`.claude/settings.json`): lecturas permitidas, `save_issue`/`save_comment` piden confirmación (desde el 23-oct ya no: la confirmación repetía el sí de la puerta de cada skill, §6.27), el resto (borrados, etiquetas, proyectos…) denegado. Conector de **Google Drive** para el material del curso.
 
 **Cómo se trabaja con la IA (método):**
 
@@ -47,7 +92,7 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 - **Revisores con contexto limpio.** Los subagentes solo reciben la historia, no la conversación, y la estimación se hace a ciegas: la discrepancia entre cartas es el resultado útil, no se promedia.
 - **Una fuente de verdad por dato:** PRD (qué y por qué) · Linear (backlog y criterios) · OpenSpec (cómo) · README (diseño y entrega) · ficha (decisiones con su porqué).
 - **Se mide y se ajusta el propio arnés.** Ejemplo: `poke-holes` se rehízo tras analizar su primera ejecución y se comprobó en las dos siguientes (§5.2).
-- **Todo queda registrado:** decisiones D1-D36 en la ficha, prompts literales (máx. 3 por sección) aquí, y los prompts descartados se quedan fuera del repo.
+- **Todo queda registrado:** decisiones con su porqué en la ficha (D1-D125 a la entrega final; ninguna se borra, las superadas se tachan), prompts literales (máx. 3 por sección) aquí, y los prompts descartados se quedan fuera del repo.
 
 **Ajustes humanos más relevantes (resumen):**
 
@@ -346,7 +391,19 @@ Reparto: **Cowork** para idear, investigar, decidir y redactar documentos; **Cla
 
 ### 4. Especificación de la API
 
-*Se registrará con la Entrega 2.*
+La API no se diseñó aparte: nació con la primera historia que necesitaba un mando, cambiar el efecto de una tira (`MOO-94`), y creció con las de los valores (`MOO-95`) y la intensidad (`MOO-97`). Su OpenAPI sale de los mismos esquemas TypeBox que validan cada petición, y un test falla si `docs/openapi.yaml` se queda atrás. El detalle de cada paso está en §6.33, §6.35, §6.42 y §6.63.
+
+**Prompt 1** (en `/opsx:explore MOO-94`, copiado de §6.33):
+
+> Aqui tengo una duda, no tendria sentido trasladar este API al websocket? Asi tenemos una via unica de comunicacion. Ahora mismo tenemos WS para el stream y API Rest para el control. No me parece que tenga mucho sentido partir el API en 2
+
+*Claude Code (`claude-opus-5-5`, 28-oct). De aquí sale la forma de la API: los mandos por HTTP, con respuesta y OpenAPI, y todo el estado por el WebSocket, sin ningún `GET` (D77, D78).*
+
+**Prompt 2** (con la PR de `MOO-101` integrada, copiado de §6.35):
+
+> mergeado, sigue
+
+*La IA implementó la ruta `PUT /api/strips/{stripId}/effect` con su OpenAPI. Consultó en Context7 cómo se montan `@fastify/swagger` y el *type provider* de TypeBox, y vio en npm que el change pedía una versión que no admitía TypeBox 1.x, así que corrigió el change antes de instalar nada. Validó el cuerpo con TypeBox en un plugin propio, porque el AJV de Fastify habría quitado en silencio los campos de más que el esquema rechaza.*
 
 ---
 
@@ -2690,8 +2747,46 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La IA había reservado D123 para el veredicto, pero ya la usaba el montaje del hardware: pasó a D124.*
 - *Codex revisó la PR y encontró dos errores en las cifras, comprobados contra los datos del prototipo. La tabla de SonarQube contaba 19 incidencias arregladas y 3 aceptadas, y eran 18 y 4. Y las 49 filas «nuevas» incluían dos aceptadas que la propia nota daba por el mismo bucle que dos filas de D118: el grupo eran 47, con la cota del error en un 6,2 % y no por debajo del 6 %. El veredicto no cambia.*
 
+#### 6.101 Cerrar la entrega final: revisión contra el checklist, demo pública y documentación (`MOO-180`, `MOO-183`)
+
+**Prompt 1:**
+
+> yo creo que tras MOO-169 y MOO-76 es un buen punto para poder cerrar la entrega del proyecto, ¿como lo ves? Tenemos el ultimo google doc donde nos dan los ultimos consejos antes de la entrega. Mi idea es hacerla el lunes: [enlace al documento del curso]
+
+*Claude Code (`claude-opus-5-5`, 21-nov). El enlace al documento del curso se ha quitado; es lo único que no está tal cual. La IA leyó el checklist de cierre del máster por el conector de Google Drive y lo cruzó con el repo. No dio la razón: cortar la épica ahí tenía sentido, pero dos historias sin refinar y el empaquetado no cabían en un fin de semana. Recomendó empaquetar primero, hacer `MOO-76` si daba tiempo, porque mide un agente y pesa en la nota de IA, y dejar `MOO-169`. El humano cerró las dos.*
+
+**Prompt 2:**
+
+> Ya ha cerrado las dos. Haz una ultima verificación y si lo ves ready empezamos la verificacion
+
+*Al verificar, la IA encontró un bloqueante que nadie había visto: la demo pública que prometía el README no existía. El dominio no resolvía y no había despliegue continuo, ni releases, ni el `update.sh` que el README describía como hecho. Lo dijo así, con la lección del curso que lo pide, y planteó dos salidas: montar la demo en EC2 a mano, o entregar con el vídeo y el simulador en local.*
+
+**Prompt 3:**
+
+> EC2 manual, sin CD
+
+*La IA preparó el plan y señaló lo que el README prometía de la demo y el código no hacía (dos tiras, el reinicio del estado, la pausa del bucle), con una salida sin tocar el motor: un temporizador de systemd. Con el sí del humano creó `MOO-180`, que se hizo en una sesión aparte (D125), y después `MOO-183`. Para esta, dos subagentes cruzaron en paralelo cada sección de arquitectura del README con el código y devolvieron 33 discrepancias, entre ellas un `@fastify/rate-limit` y un `@fastify/helmet` que nunca se instalaron, una carpeta `firmware/` y dos skills que no existen. Todo se corrigió para contar lo construido: lo que faltaba de seguridad, como riesgo aceptado con su porqué.*
+
 ---
 
 ### 7. Pull Requests
 
-*Se registrará con la entrega final.*
+Las tres PR del README §7 son las de los tickets: [#28](https://github.com/7daysofrain/mood-table-v2/pull/28) (motor), [#31](https://github.com/7daysofrain/mood-table-v2/pull/31) (panel) y [#122](https://github.com/7daysofrain/mood-table-v2/pull/122) (persistencia). Su implementación está en §6.12 y §6.65. Aquí van los prompts de su revisión, que es donde más pesó el criterio humano.
+
+**Prompt 1** (las PR de `MOO-16`, `MOO-17` y `MOO-18`, sin revisión de Copilot por cuota; copiado de §6.12):
+
+> Run a local code review of the MOO-16 branch now as a stand-in, apply what holds up, and still request Copilot's review once the quota is back.
+
+*Claude Code (`claude-opus-5-5`, 15-oct). La IA revisó las tres PR en local con `/code-review` y verificó cada hallazgo antes de tocarlo. Aplicó los arreglos claros, cada uno con su test, y dejó al humano lo que cambiaba el comportamiento: rechazar los campos desconocidos y limitar los fps a 60 y las tiras a 256, primero en la spec y después en el código.*
+
+**Prompt 2** (con la #122 lista para revisar; copiado de §6.65):
+
+> No he visto saltar al triador, está encendido?
+
+*Codex había dejado dos hallazgos P2 en el push anterior y no los repitió en el siguiente, así que el PR Babysitter dio la PR por lista sin triarlos. La IA reconstruyó qué había pasado con el contenedor y las trazas.*
+
+**Prompt 3** (copiado de §6.65):
+
+> Primero hay que apuntar el hueco que tiene el triador en estas situaciones, asi que mete esta información en el historia que tenemos de calibración del triador.
+
+*El hueco quedó en `MOO-76` como dato para medir el triaje. Es el caso que cubre después `MOO-173`, que tría los hilos sin resolver del revisor de cualquier push (§6.95). Los dos P2 se arreglaron en la #122, cada uno con un test que primero falla.*
