@@ -1,0 +1,18 @@
+{
+  "confidence": 0.7,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": [
+    {
+      "type": "trigger",
+      "severity": "info",
+      "message": "The description hides that the skill writes to Linear (updates the story and creates task sub-issues) and that Spike-labelled issues are refused.",
+      "detail": "Current description: \"Refine a Mood Table user story that is in Backlog in Linear. ... adds the DoD by type, technical context and the proposed tasks.\" Body evidence: step 12 calls `save_issue` to update the story and create each approved task as a sub-issue; step 1 stops for issues labelled `Spike`. It does cue the moment (story in Backlog, second step of the flow), so the mismatch is minor. Suggested: \"Refine a Mood Table user story in Backlog in Linear (not a Spike): the user writes the happy path, the AI translates it to GIVEN/WHEN/THEN, the poke-holes subagent finds gaps and the user keeps 3-5; checks INVEST (stops to propose a split if it fails), adds the DoD by type and technical context, and after approval saves the story and creates its task sub-issues. Use after /create-story and before /estimate-story.\"",
+      "confidence": 0.35
+    }
+  ]
+}

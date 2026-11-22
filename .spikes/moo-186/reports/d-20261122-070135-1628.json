@@ -1,0 +1,18 @@
+{
+  "confidence": 0.65,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": [
+    {
+      "type": "redundancy",
+      "severity": "info",
+      "message": "That the user decides and approves the verdict before anything is written is stated twice (intro and step 2).",
+      "detail": "\"**The decision is the user's**: you draft, they decide.\" and \"The user corrects or rewrites it. Do not move on until they approve it, because every later step writes it down.\" Consolidate: keep step 2's gating rule and trim the intro to \"you draft the verdict; the user approves it (step 2).\"",
+      "confidence": 0.4
+    }
+  ]
+}

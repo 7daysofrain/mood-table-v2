@@ -1,0 +1,18 @@
+{
+  "confidence": 0.7,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": [
+    {
+      "type": "redundancy",
+      "severity": "info",
+      "message": "The ban on looking up the story's own estimate is stated three times (intro, first bullet of 'What not to read', and the ID-search bullet).",
+      "confidence": 0.4,
+      "detail": "\"the other card exists but you must not look for it\"; \"Never look for an estimate of the story you are estimating or of its tasks, wherever it is\"; \"Do not search the repo for the story's ID or its tasks' IDs.\" The last is a concrete means of the second, so it adds a little, but the intro line is a pure restatement. Consolidated wording: keep the 'What not to read' rule (\"Never look for an estimate of this story or its tasks, and do not search the repo for their IDs\") and shorten the intro to \"you estimate alone and blind\"."
+    }
+  ]
+}

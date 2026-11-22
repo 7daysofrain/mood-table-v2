@@ -1,0 +1,18 @@
+{
+  "confidence": 0.7,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": [
+    {
+      "type": "redundancy",
+      "severity": "info",
+      "message": "That `readme.md` and `prompts.md` are mandatory is stated twice in §3 (the template line and the closing bullet of the delivery mechanics).",
+      "confidence": 0.45,
+      "detail": "\"**Plantilla oficial:** un `readme.md` con 8 secciones + `prompts.md`.\" and \"`readme.md` y `prompts.md`, obligatorios siempre.\" Consolidated wording: keep only the template line and add \"(ambos obligatorios en cada entrega)\"."
+    }
+  ]
+}

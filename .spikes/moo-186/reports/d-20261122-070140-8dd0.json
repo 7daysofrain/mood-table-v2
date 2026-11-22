@@ -1,0 +1,25 @@
+{
+  "confidence": 0.7,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": [
+    {
+      "type": "vagueness",
+      "severity": "warn",
+      "message": "\"If it fails two or more\" INVEST criteria does not say whether a ⚠️ counts as a failure or only ❌ does.",
+      "detail": "Steps 3 and 9 grade each criterion ✅/⚠️/❌, then say \"If it fails **two or more**, the story is not ready\". Reading A: only ❌ counts; reading B: ⚠️ and ❌ both count. They lead to different actions (split vs. continue). Rewrite: \"If two or more criteria are ❌, the story is not ready: propose how to split it...\" (or state that ⚠️ counts too).",
+      "confidence": 0.6
+    },
+    {
+      "type": "vagueness",
+      "severity": "info",
+      "message": "\"show it briefly and carry on\" leaves the length of the passing INVEST summary unspecified.",
+      "detail": "\"If it passes, show it briefly and carry on; the full check comes back in step 9.\" Candidate readings: the six one-line results, or just a one-line verdict. Rewrite: \"If it passes, show the six one-line results and carry on.\"",
+      "confidence": 0.35
+    }
+  ]
+}

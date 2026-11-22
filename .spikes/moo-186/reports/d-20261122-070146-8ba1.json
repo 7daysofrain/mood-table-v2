@@ -1,0 +1,18 @@
+{
+  "confidence": 0.65,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": [
+    {
+      "type": "redundancy",
+      "severity": "info",
+      "message": "The ban on design and implementation questions is stated three times (What to read, Format, Guidelines).",
+      "detail": "Quotes: \"they pull you towards design questions, which belong to the OpenSpec change, not to the story\" (What to read); \"phrased as a concrete question or situation, not as a solution\" (Format); \"Do not ask about implementation (types, formats, protocols, internal contracts): that is the spec's job\" (Guidelines). Consolidated wording: keep the single rule in Guidelines (\"Do not ask about implementation or propose solutions: design belongs to the OpenSpec change\") and shorten the other two to the reading restriction only.",
+      "confidence": 0.6
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "confidence": 0.6,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": []
+}

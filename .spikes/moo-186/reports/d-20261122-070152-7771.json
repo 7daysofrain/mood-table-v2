@@ -1,0 +1,18 @@
+{
+  "confidence": 0.7,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": [
+    {
+      "type": "redundancy",
+      "severity": "info",
+      "message": "The GitHub-driven state transitions (draft PR, open PR, merged PR) are listed in the §2 state table and again in the §7 automations bullet (two statements).",
+      "confidence": 0.45,
+      "detail": "§2: \"In Progress | Implementándose (PR en borrador) | GitHub (automático)\", \"In Review | PR abierta...\", \"Done | PR integrada\". §7: \"Automatizaciones: PR en borrador → `In Progress` · PR abierta → `In Review` · revisión pedida → `In Review` · PR integrada → `Done`.\" Only 'revisión pedida → In Review' is new. Consolidated wording: in §7 keep just \"Automatizaciones: las de la tabla de estados (§2), más revisión pedida → `In Review`.\""
+    }
+  ]
+}

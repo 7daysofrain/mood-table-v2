@@ -1,0 +1,18 @@
+{
+  "confidence": 0.75,
+  "safety": {
+    "injectionDetected": false,
+    "injectionType": null,
+    "injectionDetails": null,
+    "contentQuality": "clean"
+  },
+  "findings": [
+    {
+      "type": "vagueness",
+      "severity": "info",
+      "message": "The directive on uncommitted changes says to ask whether they belong to the experiment but not what to do for each answer.",
+      "confidence": 0.5,
+      "detail": "\"If there are uncommitted changes, ask whether they belong to the experiment before going on.\" If the user says yes, the skill does not say whether to commit them first; if no, it does not say whether to stash, leave, or stop. Suggested rewrite: \"If there are uncommitted changes, ask whether they belong to the experiment: if yes, commit them with `Refs MOO-n` before continuing; if no, stop and ask the user to set them aside.\""
+    }
+  ]
+}
