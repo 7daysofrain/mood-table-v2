@@ -98,7 +98,7 @@ https://github.com/7daysofrain/mood-table-v2
 
 > Proporciona imágenes y/o videotutorial mostrando la experiencia del usuario desde que aterriza en la aplicación, pasando por todas las funcionalidades principales.
 
-**Vídeo de la mesa (2-3 min):** VIDEO_PENDIENTE. El recorrido completo con la tira física: panel → motor → tira de la mesa → apagar y encender → vuelve al último estado.
+**Vídeo de la mesa:** [youtu.be/SKcjWI1v5Rw](https://youtu.be/SKcjWI1v5Rw). El recorrido completo con la tira física: panel → motor → tira de la mesa → apagar y encender → vuelve al último estado.
 
 **Capturas del panel real**, en la demo pública (21-nov-2026):
 
@@ -657,7 +657,7 @@ flowchart LR
 #### Evidencia de funcionamiento (entrega final)
 
 - **URL pública** de la demo: suena un tema, las tiras virtuales reaccionan y el panel cambia los parámetros en vivo. Cómo probarla, en §1.4.
-- **Vídeo de 2-3 minutos** del flujo completo en la mesa: panel → motor → tira física → apagar y encender → vuelve al último estado.
+- **[Vídeo](https://youtu.be/SKcjWI1v5Rw)** del flujo completo en la mesa: panel → motor → tira física → apagar y encender → vuelve al último estado.
 
 #### PR Babysitter
 
