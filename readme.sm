@@ -1,0 +1,15 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: design.md
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: tasks.md
+    - analyzer: reference-broken
+      note: Texto, no una invocación ($/mes, /c…)
+      value: /mes
+identity:
+  bodyHash: 6c2b56eda53d659d15c77edeaeea05f65183fb10508a8e9c144322a223b33d88
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: readme.md

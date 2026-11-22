@@ -31,7 +31,7 @@ Spanish**, using the glossary of the epic's source document.
    - The spike (`get_issue`): it must carry the `Spike` label. Read its questions, timebox,
      deliverable, non-goals and DoD: they are what you close against. If it has no **Preguntas** or
      **Timebox** section, it never went through `/create-spike`: say so and stop.
-   - Its epic and the epic's source document, read through the table in `workflow.md` §3 (assumptions,
+   - Its epic and the epic's source document, read through the table in `docs/instructions/workflow.md` §3 (assumptions,
      open questions, glossary). `EN` has none.
    - **The branch and the PR.** The current branch must be the spike's (its ID is in the name), with
      an open draft PR (`gh pr view`). If you are on another branch, stop: closing from the wrong branch
@@ -100,6 +100,6 @@ Spanish**, using the glossary of the epic's source document.
 8. **Push and mark the PR ready.**
    - Push, and rewrite the PR description: `Fixes MOO-n` with the spike's ID, the verdict, the
      time against the timebox, the link to the prototype and the DoD as a checklist.
-   - `gh pr ready`. From here on the PR follows `workflow.md` §4 like any other: gates, Codex's review
+   - `gh pr ready`. From here on the PR follows `docs/instructions/workflow.md` §4 like any other: gates, Codex's review
      of the last push, and every finding verified before it is fixed or answered. The user merges it,
      and the spike moves to *Done* by itself.

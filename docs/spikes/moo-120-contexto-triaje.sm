@@ -1,0 +1,9 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: docs/spikes/design.md
+identity:
+  bodyHash: cc88846afe390a38b5666dd0887d1ee7ac6eb24f3a80b3512b854520f7153a75
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: docs/spikes/moo-120-contexto-triaje.md

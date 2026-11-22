@@ -3,5 +3,14 @@
   "activeProvider": "claude",
   "activeProviderMarkers": [
     "claude"
-  ]
+  ],
+  "plugins": {
+    "core": {
+      "extensions": {
+        "extractor-collision": {
+          "enabled": false
+        }
+      }
+    }
+  }
 }

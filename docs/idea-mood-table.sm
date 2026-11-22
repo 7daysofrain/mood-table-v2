@@ -1,0 +1,27 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: docs/PLAN-entregables.md
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: docs/tasks.md
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: docs/design.md
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: docs/workflow.md
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: docs/references/capturer.md
+    - analyzer: reference-broken
+      note: Texto, no una invocación ($/mes, /c…)
+      value: /pm2
+    - analyzer: reference-broken
+      note: Texto, no una invocación ($/mes, /c…)
+      value: /mes
+identity:
+  bodyHash: f7f212d7427edc8e2299ed9212ff8872de30a09d264888ca53404dd75c2fa7f5
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: docs/idea-mood-table.md

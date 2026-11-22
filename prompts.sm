@@ -1,0 +1,42 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: workflow.md
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: linear.md
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: course.md
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: SKILL.md
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: tasks.md
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: design.md
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: refine-story/assets/dod.md
+    - analyzer: reference-broken
+      note: 'Registro histórico: se cita tal como se escribió, no es un enlace'
+      value: viewer-protocol.md
+    - analyzer: reference-broken
+      note: 'Comando de OpenSpec (.claude/commands/opsx/): skill-map no resuelve el espacio de nombres'
+      value: /opsx:explore
+    - analyzer: reference-broken
+      note: 'Comando de OpenSpec (.claude/commands/opsx/): skill-map no resuelve el espacio de nombres'
+      value: /opsx:propose
+    - analyzer: reference-broken
+      note: 'Comando de OpenSpec (.claude/commands/opsx/): skill-map no resuelve el espacio de nombres'
+      value: /opsx:apply
+    - analyzer: reference-broken
+      note: Texto, no una invocación ($/mes, /c…)
+      value: /c
+identity:
+  bodyHash: c5976bbc14dff0b09246ab37feb35f7fb327befba76b208b554d5c1dc3a50bd7
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: prompts.md

@@ -1,0 +1,9 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: docs/instructions/design.md
+identity:
+  bodyHash: caa8ecda5b838f2f93cf97edd31320f849c6bb0d983b14828ba93fd4cbafe670
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: docs/instructions/viewer-protocol.md

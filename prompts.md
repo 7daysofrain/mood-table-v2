@@ -2767,6 +2767,30 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 
 *La IA preparó el plan y señaló lo que el README prometía de la demo y el código no hacía (dos tiras, el reinicio del estado, la pausa del bucle), con una salida sin tocar el motor: un temporizador de systemd. Con el sí del humano creó `MOO-180`, que se hizo en una sesión aparte (D125), y después `MOO-183`. Para esta, dos subagentes cruzaron en paralelo cada sección de arquitectura del README con el código y devolvieron 33 discrepancias, entre ellas un `@fastify/rate-limit` y un `@fastify/helmet` que nunca se instalaron, una carpeta `firmware/` y dos skills que no existen. Todo se corrigió para contar lo construido: lo que faltaba de seguridad, como riesgo aceptado con su porqué.*
 
+#### 6.102 Revisar el arnés con skill-map y dejar `sm check` sin errores (`MOO-185`)
+
+**Prompt 1:**
+
+> Vale, vamos a añadir un nuevo chore que creo que nos puede ayudar con la entrega ya que la tenemos casi lista. Diria que da tiempo. Vamos a usar skill-map para realizar un check y optimizacion de harness
+
+*Claude Code (`claude-opus-5-5`, 22-nov). La IA lanzó `sm scan` y `sm check`: 70 nodos, 33 errores y 34 avisos, casi todos de skills de terceros o de nombres de fichero sueltos que skill-map busca junto al fichero que los nombra. Recomendó dejar en el* chore *solo el check, porque optimizar el texto de las skills de historias o de sus subagentes obliga a pasar sus evals justo antes de la entrega.*
+
+**Prompt 2:**
+
+> Igual lo que hacemos es un spike para check y optimizar?
+
+*La IA no dio la razón del todo: un* spike *deja un veredicto y tira su código, así que la entrega no se llevaría el arnés limpio. Separó las dos partes: el check no tiene incógnita y es un* chore*; optimizar sí es una pregunta (si las revisiones con IA de skill-map mejoran las skills sin que fallen sus evals), y queda para un* spike *si hay tiempo. Con el sí del humano creó `MOO-185`.*
+
+**Prompt 3:**
+
+> Sí, sácalas
+
+*Al probar un descarte, la IA vio que `sm issues dismiss` no lo guarda en la base de datos sino en un fichero `.sm` junto al nodo, y en las skills de terceros ese fichero caería dentro de `.agents/skills/`. Paró y preguntó; el humano eligió sacarlas del escaneo. Resultado: 43 nodos, 0 errores y un escaneo de menos de 1 s (antes, 71 s). Rutas completas donde un nombre suelto apuntaba a un fichero real, descartes con su motivo donde no, y `extractor-collision` apagado, porque avisa de una convención del repo: enlazar una ruta usando la misma ruta, entre comillas de código, como texto del enlace. Quedan 10 avisos explicados en la PR.*
+
+*Ajustes:*
+- *Las skills con evals no se tocaron: sus nombres sueltos se descartan hasta que cambien con sus evals.*
+- *Los descartes solo valen para incidencias con destino: `name-mismatch` de los comandos `/opsx:*` y `frontmatter-invalid` de los subagentes siguen como avisos. El sidecar huérfano de `node_modules` es un fallo de skill-map 1.12.7, que no aplica `.skillmapignore` al buscarlos.*
+
 ---
 
 ### 7. Pull Requests

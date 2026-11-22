@@ -1,0 +1,9 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: 'Es docs/instructions/: la ruta completa se escribe cuando la skill cambie con sus evals (AGENTS.md)'
+      value: .claude/skills/create-story/linear.md
+identity:
+  bodyHash: 5463b94ccae96fb638896584d57b021be0e329a3df604a011dbb73d1fe191f32
+  frontmatterHash: d257f3e4e2da9c2976d39844c9ffbbe3db845d90ae2b0d8cb98f175968915cd5
+  path: .claude/skills/create-story/SKILL.md

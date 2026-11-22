@@ -1,0 +1,9 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: docs/instructions/tasks.md
+identity:
+  bodyHash: 1c17f386aecd627a14500ce2cf2c964b5f6324a7d58126215387f36e1b696c19
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: docs/instructions/workflow.md

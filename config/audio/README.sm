@@ -1,0 +1,9 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: config/audio/design.md
+identity:
+  bodyHash: ed41d81242203e8480ebd8737d8b3496a7f527ce587200dad5af11ae55798639
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: config/audio/README.md
