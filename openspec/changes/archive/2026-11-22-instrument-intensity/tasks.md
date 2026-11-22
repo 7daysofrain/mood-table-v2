@@ -170,13 +170,19 @@
   - `prompts.md`: la entrada de esta tarea.
 
   Verificar: lo que describe el README coincide con lo que muestra el panel.
-- [ ] 3.10 Comprobación a mano en la mesa, con música y la tira física, que confirma el DJ:
+- [x] 3.10 Comprobación a mano en la mesa, con música y la tira física, que confirma el DJ:
   - el fader atenúa a la vez la mesa y el visor, y abajo del todo se apaga todo;
   - por debajo del 10 %, si se ve el cambio de tono y desde qué porcentaje la mesa ya no se distingue
     de apagada (el tope del 25 % del sketch, D46).
 
   Se anota en la PR. No es documentación hasta que el DJ lo confirme.
   Verificar: el DJ da el visto bueno en la PR.
+
+  **Resultado (22-nov-2026, con la tira definitiva de 153 LEDs):** el DJ lo confirma. El fader
+  atenúa a la vez la mesa y el visor, y al 0 % se apaga todo. Por debajo del 10 % el tono cambia,
+  pero muy levemente y sin molestar, así que no hace falta la historia aparte del seguimiento. La
+  mesa deja de distinguirse de apagada hacia el 4 %. Como la PR de `MOO-127` (#124) ya estaba
+  integrada, el visto bueno se anota aquí y en la PR de archivar el change.
 
 ## Workflow follow-up
 
