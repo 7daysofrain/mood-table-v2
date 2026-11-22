@@ -1,0 +1,15 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: 'Comando generado por OpenSpec (no se edita): nombra un fichero de un change, no de esta carpeta'
+      value: .claude/commands/opsx/design.md
+    - analyzer: reference-broken
+      note: 'Comando generado por OpenSpec (no se edita): nombra un fichero de un change, no de esta carpeta'
+      value: .claude/commands/opsx/proposal.md
+    - analyzer: reference-broken
+      note: 'Comando generado por OpenSpec (no se edita): nombra un fichero de un change, no de esta carpeta'
+      value: .claude/commands/opsx/tasks.md
+identity:
+  bodyHash: f97ed7c8cb5f42712a51b26fc8b8bcc9f0db4817f122f8e0e52542c3c86b4076
+  frontmatterHash: 86507721b3a156df0b0cdd9926b7b445f121f3ac2d267b1c08a70ff01e07d13d
+  path: .claude/commands/opsx/explore.md

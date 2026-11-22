@@ -1,0 +1,9 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: 'Comando generado por OpenSpec (no se edita): nombra un fichero de un change, no de esta carpeta'
+      value: .claude/commands/opsx/tasks.md
+identity:
+  bodyHash: 3f311362fa2843063f42212910f7dd50b3053d8ee8ab90ddcc905a9823eef134
+  frontmatterHash: 088681303d0759a49f499afd69e01af15ce75aa473aa45c5d3cd59828a067cf0
+  path: .claude/commands/opsx/archive.md
