@@ -2,7 +2,7 @@
 # Encola las 5 revisiones con IA de skill-map sobre los nodos del spike MOO-186.
 # Uso (desde la raíz del repo): .spikes/moo-186/submit.sh
 set -u
-FINDERS="vagueness verbosity redundancy contradiction trigger"
+FINDERS=${FINDERS:-"vagueness verbosity redundancy contradiction trigger"}
 NODES="
 .claude/skills/capture/SKILL.md
 .claude/skills/capture/references/capturer.md
