@@ -1,3 +1,30 @@
+<h1 align="center">Mood Table</h1>
+
+<p align="center">
+  <a href="https://youtu.be/SKcjWI1v5Rw">
+    <img src="docs/img/portada.webp" width="900" alt="Portada de Mood Table: el autor en su mesa de DJ, con la Raspberry Pi, el Arduino y la tira LED. Abre el vídeo de la mesa en YouTube">
+  </a>
+</p>
+
+<p align="center">
+  <strong>Instrumento de luz para la mesa de DJ.</strong><br>
+  Tiras LED que reaccionan a la música, tocadas en directo desde un panel web, en una Raspberry Pi y sin conexión.
+</p>
+
+<p align="center">
+  <a href="https://moodtable.josebaalonso.tech"><img src="https://img.shields.io/badge/demo-en%20vivo-22c55e" alt="Demo en vivo"></a>
+  <a href="https://youtu.be/SKcjWI1v5Rw"><img src="https://img.shields.io/badge/v%C3%ADdeo-YouTube-ff0000?logo=youtube&amp;logoColor=white" alt="Vídeo en YouTube"></a>
+  <a href="https://github.com/7daysofrain/mood-table-v2/actions/workflows/ci.yml"><img src="https://github.com/7daysofrain/mood-table-v2/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://sonarcloud.io/summary/new_code?id=7daysofrain_mood-table-v2"><img src="https://sonarcloud.io/api/project_badges/measure?project=7daysofrain_mood-table-v2&amp;metric=alert_status" alt="Quality gate de SonarQube"></a>
+  <a href="https://sonarcloud.io/summary/new_code?id=7daysofrain_mood-table-v2"><img src="https://sonarcloud.io/api/project_badges/measure?project=7daysofrain_mood-table-v2&amp;metric=coverage" alt="Cobertura"></a>
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/SKcjWI1v5Rw">Ver el vídeo de la mesa</a> ·
+  <a href="https://moodtable.josebaalonso.tech">Probar la demo</a> ·
+  Proyecto final del máster <strong>AI4Devs</strong> (LIDR)
+</p>
+
 ## Índice
 
 0. [Ficha del proyecto](#0-ficha-del-proyecto)
