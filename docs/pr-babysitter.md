@@ -20,7 +20,7 @@ git. Es la fuente de verdad de la épica técnica *PR Babysitter* (`MOO-67` en L
 Cuando se abre una PR empieza un bucle que hoy conduce una persona: esperar a que pasen las
 comprobaciones (`lint`, `typecheck`, `test`, `e2e`, SonarQube) y a que Codex revise el último push;
 leer cada hallazgo, comprobarlo contra el código, arreglarlo o contestar por qué no aplica, resolver
-el hilo y volver a esperar. El protocolo está escrito (`workflow.md` §4.4) y un agente de código
+el hilo y volver a esperar. El protocolo está escrito (`docs/instructions/workflow.md` §4.4) y un agente de código
 puede seguirlo, pero **solo cuando el mantenedor se lo pide**, en una sesión abierta y vigilando cada
 vuelta.
 
@@ -45,7 +45,7 @@ review de que no había podido revisar, pero una PR podía integrarse sin revisi
 Se construye por tres razones:
 
 1. **Aprendizaje, el motivo principal.** El máster pide pensar qué agentes necesita el flujo
-   (multiagente, modelo por tarea: `course.md` §3). Diseñar un sistema así, con estado, pausas y
+   (multiagente, modelo por tarea: `docs/instructions/course.md` §3). Diseñar un sistema así, con estado, pausas y
    evaluación, es la mejor forma de aprenderlo.
 2. **Ninguna herramienta cubre el flujo completo.** Lo valioso no es arreglar, sino **decidir** qué
    merece la pena, qué no aplica y qué exige criterio humano, con el contexto de este repo
@@ -67,7 +67,7 @@ Se construye por tres razones:
 | BE2 | **El merge es mío.** | El sistema nunca integra una PR; no tiene permiso para hacerlo. |
 | BE3 | **Juzga bien antes de actuar.** | Antes de dejarle arreglar, su triaje se mide contra PR ya cerradas y acierta lo suficiente. |
 | BE4 | **Cada decisión se puede explicar.** | Para cada PR se ve qué decidió cada agente, por qué y cuánto costó. Sus comentarios en la PR se identifican como del sistema. Cuando decide un modelo de decisión, el porqué es su probabilidad frente al umbral, o la regla que ha decidido por él (`MOO-75`). |
-| BE5 | **Respeta las reglas del repo.** | Sigue el protocolo de la PR de `workflow.md` §4.4 y no se sale del alcance de la PR. |
+| BE5 | **Respeta las reglas del repo.** | Sigue el protocolo de la PR de `docs/instructions/workflow.md` §4.4 y no se sale del alcance de la PR. |
 | BE6 | **Un comentario ajeno no lo controla.** | Solo atiende a Codex, SonarQube y el mantenedor; un comentario de otra persona no le hace cambiar código ni publicar nada. |
 | BE7 | **Se recupera solo.** | Si la máquina se apaga, al volver retoma cada PR donde estaba. |
 | BE8 | **Coste acotado y visible.** | Cada PR tiene un tope de gasto y su coste queda registrado. |
@@ -109,7 +109,7 @@ su tamaño y su orden se deciden en el backlog, no aquí.
 
 ### 4.1 Política de escalado
 
-Sale de `workflow.md` §4.4. El sistema escala al mantenedor cuando:
+Sale de `docs/instructions/workflow.md` §4.4. El sistema escala al mantenedor cuando:
 
 - el arreglo cambia el diseño, contradice una D# o toca la spec del change;
 - hay que **aceptar** una incidencia de SonarQube;
@@ -227,4 +227,4 @@ Términos nuevos de esta épica (documentos en español, código en inglés).
 | **Lista para integrar** | `readyToMerge` | El *estado final* de un push con las comprobaciones en verde, la revisión del revisor de ese push terminada y ningún hilo del revisor sin resolver, de ningún push. Los hilos de otras personas, BH3. |
 | **Necesita intervención** | `needsIntervention` | El otro *estado final* de un push, cuando no está lista para integrar: falla una comprobación, el revisor tiene hallazgos (de ese push o de uno anterior) o algo no termina a tiempo. El aviso dice el motivo, y la PR queda en manos del mantenedor. |
 | **PR detenida** | `stopped` | PR cuyo seguimiento ha detenido alguien con permiso de escritura en el repo: el sistema no avanza en ella hasta que se reanuda. No es lo mismo que *escalar*, donde es el sistema quien pausa la PR. |
-| **Issue buzón** | `inboxIssue` | Issue fijo de Linear donde el sistema avisa de lo que no tiene tarea: una PR sin tarea enlazada o un fallo del propio sistema (`linear.md` §9). |
+| **Issue buzón** | `inboxIssue` | Issue fijo de Linear donde el sistema avisa de lo que no tiene tarea: una PR sin tarea enlazada o un fallo del propio sistema (`docs/instructions/linear.md` §9). |
