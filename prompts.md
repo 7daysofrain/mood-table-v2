@@ -2791,6 +2791,30 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Las skills con evals no se tocaron: sus nombres sueltos se descartan hasta que cambien con sus evals.*
 - *Los descartes solo valen para incidencias con destino: `name-mismatch` de los comandos `/opsx:*` y `frontmatter-invalid` de los subagentes siguen como avisos. El sidecar huérfano de `node_modules` es un fallo de skill-map 1.12.7, que no aplica `.skillmapignore` al buscarlos.*
 
+#### 6.103 Probar si las revisiones con IA de skill-map mejoran el arnés (`MOO-186`, *spike*)
+
+**Prompt 1:**
+
+> Vale, preguntas que tengo. Donde se ha lanzado esto y porque tiene coste?
+
+*Claude Code (`claude-opus-5-5`, 22-nov). La IA había procesado la cola de revisiones de skill-map con 4 sesiones de Claude Code sin interfaz (Sonnet 5.5), porque así cada una devuelve tokens, coste y duración exactos. Antes de eso, dos arranques fallaron: la sesión OAuth del CLI había caducado, y después las reglas de permisos no casaban con los comandos. Explicó que skill-map no llama a ningún modelo, solo prepara los prompts, y lo comprobó con `claude auth status`: la cuenta es una suscripción Team, así que los 6,67 $ eran coste equivalente a precio de API y no un cargo. El documento del spike lo dice así.*
+
+**Prompt 2** (con una captura de pantalla de la UI de skill-map, que no se reproduce):
+
+> Yo veo aqui un monton de finders y standalone. ¿cuales hemos probado y porque?
+
+*La IA reconoció que solo había pasado 5 de las 11 revisiones, las que nombraba la pregunta del spike, sin avisar de que había más, y que su filtro al listar los plugins le había ocultado el resto. Señaló que `incoherence`, una de las que faltaban, era la que más prometía para el arnés, y recomendó pasarlas todas: decidir con menos de la mitad sesgaba el veredicto. El humano aceptó. Las 6 nuevas añadieron 30 hallazgos y ninguno real; `incoherence` dio 0.*
+
+**Prompt 3:**
+
+> una pregunta mas, se podría llegar a pasar esto en el CI? sería a través de pr-babysitter?
+
+*La IA no dio la razón a ninguna de las dos vías. En la CI se podría, pero solo como comentario, con una clave de API de pago por uso, y nunca como puerta: con 5 reales de 57, fallaría por ruido. Por el PR Babysitter, no: no revisa código (PB §1.2), y añadir una fuente de hallazgos ampliaría la épica. Las dos quedaron como descartadas en D126. Después pasó las evals de `refine-story` con los hallazgos aplicados: empate, porque los cambios no alteran lo que ya hacía el modelo. Resultado: D126 (solo `vagueness`, a mano y de vez en cuando) y una captura con los 5 hallazgos de golpe, como pidió el humano. ½ día frente a ½ de* timebox*.*
+
+*Ajustes:*
+- *Un calificador detectó que la ejecución con cambios del caso 1 había guardado una descripción idéntica byte a byte a la de la otra versión, 12 s después. La IA lo comprobó, la descartó y la repitió aislada, fuera del workspace.*
+- *Los dos fallos de la versión actual eran el mismo caso límite que otro calificador dio por bueno en la versión con cambios: se cuentan como varianza, no como mejora.*
+
 ---
 
 ### 7. Pull Requests
