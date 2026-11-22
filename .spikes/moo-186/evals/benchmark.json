@@ -1,0 +1,843 @@
+{
+  "metadata": {
+    "skill_name": "refine-story",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-11-22T08:39:56Z",
+    "evals_run": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "eval-1-refinado-completo-aprobado",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 19,
+        "failed": 0,
+        "total": 19,
+        "time_seconds": 293.3,
+        "tokens": 146214,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "El primer turno pide al usuario el caso feliz en lenguaje natural y no ofrece ningún borrador, ejemplo de escenario ni punto de partida",
+          "passed": true,
+          "evidence": "Turno 1: 'Descríbeme con tus palabras, en lenguaje natural, el caso feliz ... No te doy borrador a propósito: el escenario tiene que ser tuyo.' Solo repite el Como/quiero/para y los non-goals del fixture; ningún escenario ni ejemplo."
+        },
+        {
+          "text": "Después de la respuesta 1 y antes de traducir el caso feliz y de lanzar poke-holes, muestra un INVEST rápido con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌, que no falla dos o más criterios",
+          "passed": true,
+          "evidence": "Turno 2 abre con 'INVEST rápido' antes de la traducción GWT y del lanzamiento de poke-holes (Turno 3): seis líneas Independiente ⚠️, Negociable ✅, Valiosa ✅, Estimable ⚠️, Pequeña ✅, Testeable ⚠️, y 'Ningún ❌'."
+        },
+        {
+          "text": "La traducción a GIVEN/WHEN/THEN del caso feliz no añade comportamiento que no esté en la respuesta 1; lo que haya tenido que completar va marcado (asumido) o preguntado",
+          "passed": true,
+          "evidence": "La traducción recoge fuente fichero, panel, 'pide oír', oye el fichero y a la vez ve la tira virtual reaccionando. Lo único movido ('abre el panel' pasado al Dado) se señala y se pregunta ('Si para ti lo importante es abrir el panel, dímelo'); la tolerancia de 'a la vez' se deja fuera explícitamente. 'en el visor' es solo el término del glosario donde se ve la tira virtual."
+        },
+        {
+          "text": "subagent-prompts.md tiene una sola llamada, a poke-holes, y su prompt solo contiene el ID MOO-22, el como/quiero/para, los non-goals, el caso feliz con las palabras del usuario (la respuesta 1, no la traducción GWT) y la línea de entorno: ni la conversación ni opiniones propias",
+          "passed": true,
+          "evidence": "Una sola llamada '#1 · poke-holes'. Prompt: 'Historia: MOO-22 · <título>', línea 'Épica: H1 · Expectativas: E7, E2', Como/quiero/para, los 3 non-goals originales, 'Caso feliz (palabras del usuario)' con la respuesta 1 literal entre comillas, y la línea 'Linear is offline...'. Sin traducción GWT, sin conversación ni opiniones. Nota: el título y la línea Épica/Expectativas son metadatos copiados del fixture (parte del bloque Historia), no contenido de la conversación; se aceptan como parte de la identidad de la historia."
+        },
+        {
+          "text": "poke-holes se lanza después de que el usuario valide la traducción (respuesta 2), no antes",
+          "passed": true,
+          "evidence": "'[ACTION] subagent poke-holes #1' aparece en el Turno 3, tras 'Respuesta del usuario (2): La traducción está bien.'"
+        },
+        {
+          "text": "Los candidatos de poke-holes se muestran numerados antes de la respuesta 3",
+          "passed": true,
+          "evidence": "Turno 3 lista 'Candidatos a criterio (elige 3-5)' numerados 1-8, antes de 'Respuesta del usuario (3)'."
+        },
+        {
+          "text": "La descripción guardada tiene entre 3 y 5 escenarios en Criterios de aceptación (el caso feliz más los candidatos 1, 2 y 3)",
+          "passed": true,
+          "evidence": "linear-writes.json[0]: 4 escenarios: caso feliz, 'La luz no va por detrás de lo que se oye' (cand. 1), 'El panel entra por donde va el motor' (cand. 2) y el 'Esquema del escenario: Lo que se oye y la tira siguen juntos' (cand. 3, con 3 ejemplos)."
+        },
+        {
+          "text": "Cada escenario tiene un solo When, usa términos del glosario del PRD y no menciona clics, botones, endpoints ni tablas",
+          "passed": true,
+          "evidence": "Cada escenario tiene un único 'Cuando' (el validador no da 'And tras When' ni 'When repetido'). Términos usados: maker, panel, fichero de audio, fuente de audio, visor, tira virtual, golpe, motor — todos en el glosario §8 del PRD. Ninguna mención a clics, botones, endpoints ni tablas de BD."
+        },
+        {
+          "text": "Los criterios guardados pasan validateAcceptanceCriteria de .claude/hooks/acceptance-criteria.ts sin errores (el hook validate-ac no corre en la eval porque no hay llamada real a save_issue)",
+          "passed": true,
+          "evidence": "Ejecutado validateAcceptanceCriteria sobre linear-writes.json[0].description con node: devuelve [] (sin errores)."
+        },
+        {
+          "text": "La sección '## Definition of Done (Feature)' es, carácter a carácter, el bloque Feature de .claude/skills/refine-story/assets/dod.md",
+          "passed": true,
+          "evidence": "Comparación programática del cuerpo de la sección contra el bloque '## Feature' de dod.md: igualdad exacta (true)."
+        },
+        {
+          "text": "Las secciones de la descripción van en este orden: Historia · Criterios de aceptación · Non-goals · Definition of Done · Contexto técnico",
+          "passed": true,
+          "evidence": "Cabeceras '## ' extraídas en orden: Historia, Criterios de aceptación, Non-goals, Definition of Done (Feature), Contexto técnico (para el agente)."
+        },
+        {
+          "text": "El texto de la sección Historia es idéntico al del fixture MOO-22; los non-goals originales siguen todos, y solo se añaden los que vengan de notas fuera de criterio",
+          "passed": true,
+          "evidence": "Comparación programática: sección Historia idéntica al fixture (true); los 3 non-goals originales presentes literalmente; se añade solo uno, 'Una vez que suena, el panel no se puede volver a callar... (asumido)', que viene de la nota fuera de criterio 'non-goal' de poke-holes."
+        },
+        {
+          "text": "El contexto técnico cita secciones de readme.md y termina con el marcador 'OpenSpec change: openspec/changes/<id> (pendiente)' o equivalente",
+          "passed": true,
+          "evidence": "Primera viñeta: '`readme.md` §1.3 ..., §2.1 ... y §2.2 ...'; última línea: '* OpenSpec change: `openspec/changes/<id>` (pendiente)'."
+        },
+        {
+          "text": "Antes de la respuesta 5 se muestra el INVEST con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌ con su motivo",
+          "passed": true,
+          "evidence": "Turno 5, 'INVEST completo': seis líneas, cada una con emoji y motivo (p. ej. 'Pequeña ⚠️ Cuatro escenarios en dos áreas (motor y panel)...'), antes de 'Respuesta del usuario (5)'."
+        },
+        {
+          "text": "linear-writes.json tiene primero la actualización de la historia (id MOO-22, state Backlog, sin estimate) y después las creaciones de tareas",
+          "passed": true,
+          "evidence": "Entrada 0: {id: 'MOO-22', description, state: 'Backlog', blockedBy: ['MOO-14']} sin campo estimate; entradas 1 y 2: creaciones de tareas (sin id, con title y parentId)."
+        },
+        {
+          "text": "Cada tarea creada tiene parentId MOO-22, exactamente una etiqueta de área y ninguna de tipo, state Backlog y sin estimate",
+          "passed": true,
+          "evidence": "Tarea 1: parentId 'MOO-22', labels ['engine'], state 'Backlog', sin estimate. Tarea 2: parentId 'MOO-22', labels ['panel'], state 'Backlog', sin estimate. Ninguna etiqueta de tipo."
+        },
+        {
+          "text": "Las descripciones de las tareas tienen 1-2 líneas de qué se integra y ningún paso a paso",
+          "passed": true,
+          "evidence": "Cada descripción: una frase de qué se integra ('El motor sirve al panel el mismo fichero de audio...' / 'El panel deja pedir oír el fichero de audio...') más una línea que remite los pasos al tasks.md del change. Sin lista de pasos."
+        },
+        {
+          "text": "No hay ninguna escritura en linear-writes.json antes de la respuesta 5",
+          "passed": true,
+          "evidence": "Los tres '[ACTION] save_issue #1-#3' aparecen solo en el Turno 6, después de 'Respuesta del usuario (5): Aprobado: guarda la historia y crea las tareas.'"
+        },
+        {
+          "text": "Al cerrar, indica /estimate-story MOO-22 como siguiente paso",
+          "passed": true,
+          "evidence": "Última línea del Turno 6: 'Siguiente paso: `/estimate-story MOO-22`.'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "eval-2-caso-feliz-con-pasos-de-interfaz",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 55.7,
+        "tokens": 109726,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Señala que la descripción usa pasos de interfaz (clic, botón, slider) que no sobrevivirían a un rediseño del panel",
+          "passed": true,
+          "evidence": "Turno 2, punto 2: «\"Clic\", \"botón de la cabecera\", \"slider\" y \"el endpoint /api/v1/audio devuelve 200\" atan el escenario al diseño actual del panel y de la API: no sobrevivirían a un rediseño.»"
+        },
+        {
+          "text": "Señala que hay dos acciones (play y subir el volumen) y que un escenario solo admite un When",
+          "passed": true,
+          "evidence": "Turno 2, punto 1: «Dos acciones en un solo When. \"Hace clic en play\" y \"luego sube el volumen\" son dos acciones. Un escenario lleva un solo When.» Añade además que el volumen choca con el non-goal «solo play»."
+        },
+        {
+          "text": "Señala que 'el endpoint devuelve 200' es un detalle técnico y no un resultado que el maker observe",
+          "passed": true,
+          "evidence": "Turno 2, punto 2: «el 200 no es algo que note el maker: es un detalle de implementación y su sitio es la spec del OpenSpec change, no el criterio de aceptación.»"
+        },
+        {
+          "text": "No presenta como definitiva una traducción que corrija esos problemas en silencio: si propone una versión corregida, dice qué ha cambiado y pide validarla",
+          "passed": true,
+          "evidence": "Antes de la traducción: «No las arreglo por mi cuenta; te las señalo». Tras el Gherkin, sección «Lo que he dejado fuera y por qué» (volumen, endpoint 200), marca (asumido) en los añadidos y termina con «¿Validas la traducción?» más las dos preguntas abiertas."
+        },
+        {
+          "text": "No lanza poke-holes (no existe subagent-prompts.md o no tiene ninguna llamada)",
+          "passed": true,
+          "evidence": "outputs/ solo contiene transcript.md; no existe subagent-prompts.md. Turno 3: «no he lanzado poke-holes ni he escrito nada en Linear»."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío",
+          "passed": true,
+          "evidence": "No existe outputs/linear-writes.json; el transcript confirma que MOO-22 sigue en Backlog sin cambios."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "eval-3-historia-demasiado-grande-falla-invest",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 62.0,
+        "tokens": 116387,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Señala que la respuesta 1 describe varias acciones (elegir fuente, cambiar efecto, mover controles), como motivo para dividir la historia o porque no caben en un solo When",
+          "passed": true,
+          "evidence": "Turno 2, Small ❌: «Tu descripción encadena al menos cinco acciones: *elige* la fuente, *ve* varias tiras..., *oye* el fichero, *cambia* el efecto de una tira y *mueve* sus controles. No caben en un solo `Cuando`»."
+        },
+        {
+          "text": "El INVEST marca al menos dos criterios con ❌, entre ellos Small",
+          "passed": true,
+          "evidence": "Independent ❌, Estimable ❌ y Small ❌; «Hay **tres ❌**, así que la historia no está lista»."
+        },
+        {
+          "text": "Propone dividir la historia en 2 o 3 historias, cada una con su comportamiento observable",
+          "passed": true,
+          "evidence": "Tres historias: 1) varias tiras virtuales cada una con su efecto respondiendo a la música; 2) cambiar el efecto de una tira y la luz pasa al nuevo al momento; 3) mover un control y la luz responde mientras arrastra. Cada una con su comportamiento observable; las fuentes y la reproducción se remiten a MOO-14, MOO-15 y MOO-22 en vez de duplicarlas."
+        },
+        {
+          "text": "Al menos una de las historias propuestas, o un comentario, señala que cambiar de efecto y mover controles en vivo es de H2, no de H1",
+          "passed": true,
+          "evidence": "Historias 2 y 3 etiquetadas «(H2 · E3)» y «(H2 · E1)»; en riesgos: «Las historias 2 y 3 son de **H2**. Lo coherente es crearlas en esa épica... y no colgarlas de H1 (MOO-5)»."
+        },
+        {
+          "text": "Propone dividir antes de traducir el caso feliz a GIVEN/WHEN/THEN: no pide validar ninguna traducción",
+          "passed": true,
+          "evidence": "«Antes de traducirlo a GIVEN/WHEN/THEN hago un INVEST rápido» y «no sigo con la traducción»; no aparece ningún escenario GIVEN/WHEN/THEN ni se pide validarlo."
+        },
+        {
+          "text": "Se para antes de lanzar poke-holes: no existe subagent-prompts.md o no tiene ninguna llamada",
+          "passed": true,
+          "evidence": "outputs/ solo contiene transcript.md; no hay subagent-prompts.md. El transcript dice «no he lanzado el subagente `poke-holes`»."
+        },
+        {
+          "text": "Se para tras proponer la división: no muestra DoD, contexto técnico ni tareas como si la historia siguiera adelante",
+          "passed": true,
+          "evidence": "Turno 3: «el refinamiento de MOO-901 acaba aquí» y solo da siguientes pasos (/create-story, decidir qué hacer con MOO-901). No hay DoD, contexto técnico ni tareas."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío: ni actualiza MOO-901 ni crea tareas",
+          "passed": true,
+          "evidence": "No existe linear-writes.json en outputs/; «no he escrito nada en Linear (MOO-901 sigue en Backlog, tal cual)»."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "eval-4-correccion-al-validar-la-traduccion",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 182.2,
+        "tokens": 119535,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Tras la respuesta 2 muestra la traducción corregida y pide validarla de nuevo, sin lanzar poke-holes antes de la respuesta 3",
+          "passed": true,
+          "evidence": "Turno 3 (after answer 2) shows the corrected Gherkin with the new Then 'Y ve en el visor que la tira virtual reacciona a lo que suena mientras lo oye' and asks '¿Así está bien?'. The [ACTION] subagent poke-holes #1 only appears in Turno 4, after 'Respuesta del usuario (3)'."
+        },
+        {
+          "text": "subagent-prompts.md tiene una sola llamada, a poke-holes",
+          "passed": true,
+          "evidence": "subagent-prompts.md has exactly one section, '## #1 · poke-holes'; no other subagent calls."
+        },
+        {
+          "text": "El caso feliz del prompt de poke-holes contiene la respuesta 1 con las palabras del usuario",
+          "passed": true,
+          "evidence": "Prompt has 'Caso feliz, en palabras del usuario:' followed by the verbatim answer 1: \"Con el instrumento funcionando con un fichero de audio como fuente, el maker abre el panel y pide oírlo; oye el fichero y ve la tira virtual.\""
+        },
+        {
+          "text": "El prompt de poke-holes incluye también la corrección de la respuesta 2 con las palabras del usuario (literal o casi literal), no solo la respuesta 1",
+          "passed": true,
+          "evidence": "Prompt has 'Corrección del usuario al validar la traducción:' followed by the verbatim answer 2: \"Te falta una cosa: la tira virtual tiene que reaccionar a lo que suena mientras el maker lo oye, no basta con que se vea.\""
+        },
+        {
+          "text": "El prompt de poke-holes no contiene la traducción GIVEN/WHEN/THEN (ni Given/When/Then ni Dado/Cuando/Entonces) ni la conversación",
+          "passed": true,
+          "evidence": "A case-insensitive grep of the prompt block for given/when/then/dado/cuando/entonces/turno/respuesta returns nothing. The prompt holds only the ID/title, epic, Como/quiero/para, non-goals, the two user quotes and the Linear offline line. It mentions 'la traducción' only in the label of the correction, not the translation itself."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío",
+          "passed": true,
+          "evidence": "The outputs directory holds only transcript.md and subagent-prompts.md: no linear-writes.json. The transcript ends: 'no se ha escrito nada en Linear'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "eval_name": "eval-5-poke-holes-en-historia-de-pb",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "time_seconds": 148.5,
+        "tokens": 117126,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "El primer turno pide al usuario el caso feliz en lenguaje natural y no ofrece ningún borrador, ejemplo de escenario ni punto de partida",
+          "passed": true,
+          "evidence": "Turno 1: 'Antes de traducir nada necesito tu caso feliz: cuéntame con tus palabras, en lenguaje natural, qué pasa cuando todo va bien... ¿En qué situación está el sistema, qué ocurre y qué nota el mantenedor?' No hay borrador, ejemplo ni escenario de partida."
+        },
+        {
+          "text": "Después de la respuesta 1 y antes de traducir el caso feliz, muestra un INVEST rápido con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌",
+          "passed": true,
+          "evidence": "Turno 2 abre con '### INVEST rápido' con seis líneas: Independent ✅, Negotiable ✅, Valuable ✅, Estimable ⚠️, Small ⚠️, Testable ✅, y después '### Traducción a GIVEN/WHEN/THEN'."
+        },
+        {
+          "text": "La traducción a GIVEN/WHEN/THEN usa los términos del glosario de PB §8 (mantenedor, comprobación, revisor, lista para integrar) y no añade comportamiento que no esté en la respuesta 1; lo que haya tenido que completar va marcado (asumido) o preguntado",
+          "passed": true,
+          "evidence": "El escenario usa 'mantenedor', 'comprobaciones en verde', 'revisión del revisor de ese push', '*lista para integrar*'. Los añadidos van señalados: 'ningún hilo del revisor sin resolver' *(asumido)* (nota 1); 'del mantenedor' preguntado ('Si lo prefieres sin ello, lo quito', nota 4); 'el mantenedor no ha mirado la PR' movido al Dado y señalado con alternativa (nota 3). El Entonces se limita al aviso de lista para integrar, sin comportamiento nuevo."
+        },
+        {
+          "text": "subagent-prompts.md tiene una sola llamada, a poke-holes, lanzada después de la respuesta 2, y su prompt solo contiene el ID MOO-902, el como/quiero/para, los non-goals, el caso feliz con las palabras del usuario y la línea de entorno",
+          "passed": true,
+          "evidence": "subagent-prompts.md solo tiene '## #1 · poke-holes'; el transcript muestra '[ACTION] subagent poke-holes #1' tras la Respuesta 2. El prompt contiene 'Historia: MOO-902', el Como/quiero/para, los cuatro non-goals, el caso feliz entre comillas literal y 'Linear is offline: follow ...'. Sin título, sin traducción GWT ni conversación."
+        },
+        {
+          "text": "En la respuesta de poke-holes (subagent-prompts.md), cada candidato a criterio es algo que notaría el mantenedor sin mirar el código; ninguno habla del maker, del DJ ni del instrumento (tiras, efectos, audio)",
+          "passed": true,
+          "evidence": "Los 8 candidatos se formulan como lo que recibe o nota el mantenedor ('¿El mantenedor recibe un aviso nuevo para ese push?', '¿Deja de recibir avisos de esa PR?', '¿El mantenedor recibe el aviso en el issue buzón...?'). Ninguno menciona maker, DJ, tiras, efectos ni audio."
+        },
+        {
+          "text": "Cada candidato de poke-holes lleva como origen un BE#, BA#, BQ#, una restricción o una sección de docs/pr-babysitter.md, o (asumido); ninguno cita un E#, A# ni Q# del PRD",
+          "passed": true,
+          "evidence": "Orígenes: 1 glosario PB §8, BE9, BE1; 2 PB §1.1, BA1, glosario; 3 BE7; 4 BE11, glosario; 5 BE6, PB §6.2, glosario; 6 glosario; 7 **(asumido)**; 8 PB §5.1, BQ1 (D70), glosario. Ningún E#, A# ni Q# del PRD."
+        },
+        {
+          "text": "Ninguna nota fuera de criterio de poke-holes tiene como destino 'PRD §7': si alguna es una decisión del mantenedor, va a las preguntas abiertas de PB (PB §7)",
+          "passed": true,
+          "evidence": "Destinos de las tres notas: `non-goal` (PB §5.3), `non-goal` (BQ6), `spec` (BQ5). Ninguna va a 'PRD §7'."
+        },
+        {
+          "text": "Los candidatos de poke-holes se muestran numerados antes de la respuesta 3",
+          "passed": true,
+          "evidence": "Turno 3, antes de 'Respuesta del usuario (3)', lista '### Candidatos a criterio' numerados 1-8, más las notas A-C."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío",
+          "passed": true,
+          "evidence": "outputs/ solo contiene transcript.md y subagent-prompts.md; el Turno 4 dice 'No he escrito nada en Linear'."
+        },
+        {
+          "text": "Sigue la skill sin tener que apartarse de ella: ni el transcript ni las respuestas de los subagentes dicen que la skill o un subagente están escritos para otras épicas o para el PRD, ni justifican usar un documento fuente, un rol o un destino distintos de los que indican sus instrucciones (p. ej. «la skill solo cubre MOO-5…MOO-11», «hace las veces de PRD»)",
+          "passed": true,
+          "evidence": "El transcript carga 'su documento fuente, docs/pr-babysitter.md' sin justificar desvío; poke-holes dice haber localizado docs/pr-babysitter.md 'mediante la tabla de workflow.md §3'. No hay frases sobre que la skill o el subagente sean para otras épicas o para el PRD."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "eval-6-spike-se-manda-a-create-spike",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 19.5,
+        "tokens": 91120,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Dice que MOO-138 es un spike (lleva la etiqueta Spike) y que los spikes no se refinan con esta skill",
+          "passed": true,
+          "evidence": "Turno 1: 'MOO-138 («Probar qué protege la mesa de los desenchufados») lleva la etiqueta **Spike**, así que no la refino con `/refine-story`.' Fixture MOO-138.json confirms labels ['infra', 'Spike']."
+        },
+        {
+          "text": "Remite a /create-spike MOO-138",
+          "passed": true,
+          "evidence": "Turno 1: 'Para darle forma, lanza: /create-spike MOO-138' (in a code block)."
+        },
+        {
+          "text": "No pide el caso feliz: la respuesta 1 queda sin usar",
+          "passed": true,
+          "evidence": "Single turn, no question asked; transcript closes with 'las respuestas guionizadas del usuario (1 y 2) no se usaron' and says 'No he hecho nada más: ni happy path...'."
+        },
+        {
+          "text": "No lanza poke-holes (no existe subagent-prompts.md o no tiene ninguna llamada)",
+          "passed": true,
+          "evidence": "outputs/ contains only transcript.md; no subagent-prompts.md and no '[ACTION] subagent' line in the transcript."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío",
+          "passed": true,
+          "evidence": "outputs/ contains only transcript.md; no linear-writes.json and no '[ACTION] save_issue' line."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "eval-1-refinado-completo-aprobado",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.95,
+        "passed": 18,
+        "failed": 1,
+        "total": 19,
+        "time_seconds": 255.7,
+        "tokens": 136260,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "El primer turno pide al usuario el caso feliz en lenguaje natural y no ofrece ningún borrador, ejemplo de escenario ni punto de partida",
+          "passed": true,
+          "evidence": "Turno 1 pide 'describe el caso feliz ... en lenguaje natural' y dice explícitamente que no da borrador para no condicionar; no aparece ningún ejemplo ni escenario."
+        },
+        {
+          "text": "Después de la respuesta 1 y antes de traducir el caso feliz y de lanzar poke-holes, muestra un INVEST rápido con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌, que no falla dos o más criterios",
+          "passed": true,
+          "evidence": "Turno 2, tras la respuesta 1 y antes de la traducción y del poke-holes: INVEST rápido con seis líneas Independent ⚠️, Negotiable ✅, Valuable ✅, Estimable ⚠️, Small ✅, Testable ✅, cada una con motivo; ningún ❌."
+        },
+        {
+          "text": "La traducción a GIVEN/WHEN/THEN del caso feliz no añade comportamiento que no esté en la respuesta 1; lo que haya tenido que completar va marcado (asumido) o preguntado",
+          "passed": true,
+          "evidence": "La traducción añade 'Y la tira virtual tiene un efecto reactivo (asumido)', marcada (asumido) y explicada en la nota 2; pasar 'panel abierto' al Dado se explica y se somete a validación; 'a la vez' sin cifra, señalado. No hay comportamiento nuevo sin marcar."
+        },
+        {
+          "text": "subagent-prompts.md tiene una sola llamada, a poke-holes, y su prompt solo contiene el ID MOO-22, el como/quiero/para, los non-goals, el caso feliz con las palabras del usuario (la respuesta 1, no la traducción GWT) y la línea de entorno: ni la conversación ni opiniones propias",
+          "passed": false,
+          "evidence": "subagent-prompts.md tiene una sola llamada, a poke-holes, sin conversación ni opiniones, pero el prompt incluye más de lo permitido: el título de la historia ('Historia: MOO-22 · Oír el fichero de audio en el panel mientras la tira reacciona') y la línea '**Épica:** H1 · **Expectativas:** E7, E2' tras el Como/quiero/para. La aserción (y el paso 5 de la skill: 'give it only the story ID, the Como/quiero/para, the non-goals and...') exige que solo contenga esos elementos; falla por contenido extra."
+        },
+        {
+          "text": "poke-holes se lanza después de que el usuario valide la traducción (respuesta 2), no antes",
+          "passed": true,
+          "evidence": "[ACTION] subagent poke-holes #1 aparece en el Turno 3, después de 'Respuesta del usuario (2): La traducción está bien.'"
+        },
+        {
+          "text": "Los candidatos de poke-holes se muestran numerados antes de la respuesta 3",
+          "passed": true,
+          "evidence": "En el Turno 3 se muestran los candidatos numerados 1-N con origen e impacto, antes de la Respuesta del usuario (3)."
+        },
+        {
+          "text": "La descripción guardada tiene entre 3 y 5 escenarios en Criterios de aceptación (el caso feliz más los candidatos 1, 2 y 3)",
+          "passed": true,
+          "evidence": "La descripción guardada tiene 4 escenarios: caso feliz; 'Se oye el punto del fichero por el que va la tira' (candidato 1); 'Sonido y luz siguen juntos durante toda la escucha' (candidato 2); 'Al volver a empezar el fichero...' (candidato 3)."
+        },
+        {
+          "text": "Cada escenario tiene un solo When, usa términos del glosario del PRD y no menciona clics, botones, endpoints ni tablas",
+          "passed": true,
+          "evidence": "Los 4 escenarios guardados tienen un solo 'Cuando' cada uno ('pide oír el fichero', 'pide oír el fichero', 'sigue escuchando durante varios minutos', 'el fichero de audio llega al final y vuelve a empezar'); usan términos del glosario (fichero de audio, fuente de audio, panel, visor, tira virtual, efecto reactivo, motor, maker); 'pide oír' evita clics/botones; no hay endpoints ni tablas."
+        },
+        {
+          "text": "Los criterios guardados pasan validateAcceptanceCriteria de .claude/hooks/acceptance-criteria.ts sin errores (el hook validate-ac no corre en la eval porque no hay llamada real a save_issue)",
+          "passed": true,
+          "evidence": "Ejecuté validateAcceptanceCriteria (node --experimental-strip-types) sobre la descripción de linear-writes.json[0]: devuelve [] (sin errores)."
+        },
+        {
+          "text": "La sección '## Definition of Done (Feature)' es, carácter a carácter, el bloque Feature de .claude/skills/refine-story/assets/dod.md",
+          "passed": true,
+          "evidence": "Comparé el bloque guardado bajo '## Definition of Done (Feature)' con el bloque '## Feature' de assets/dod.md: igualdad exacta (true)."
+        },
+        {
+          "text": "Las secciones de la descripción van en este orden: Historia · Criterios de aceptación · Non-goals · Definition of Done · Contexto técnico",
+          "passed": true,
+          "evidence": "Encabezados ## de la descripción guardada, en orden: Historia | Criterios de aceptación | Non-goals | Definition of Done (Feature) | Contexto técnico (para el agente)."
+        },
+        {
+          "text": "El texto de la sección Historia es idéntico al del fixture MOO-22; los non-goals originales siguen todos, y solo se añaden los que vengan de notas fuera de criterio",
+          "passed": true,
+          "evidence": "La sección Historia guardada es idéntica byte a byte a la del fixture MOO-22.json (comprobado por script). Los tres non-goals originales siguen; solo se añade 'Una vez suena, el panel no ofrece callarse ni cambiar su volumen... (asumido)', que viene de la nota fuera de criterio de tipo non-goal."
+        },
+        {
+          "text": "El contexto técnico cita secciones de readme.md y termina con el marcador 'OpenSpec change: openspec/changes/<id> (pendiente)' o equivalente",
+          "passed": true,
+          "evidence": "El contexto técnico cita readme.md §2.1, §2.2, §1.3 y §1.4 (existen en readme.md) y su última línea es '* OpenSpec change: `openspec/changes/<id>` (pendiente)'."
+        },
+        {
+          "text": "Antes de la respuesta 5 se muestra el INVEST con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌ con su motivo",
+          "passed": true,
+          "evidence": "Turno 5, antes de la respuesta 5: INVEST completo con seis líneas (Independent ⚠️, Negotiable ✅, Valuable ✅, Estimable ⚠️, Small ✅, Testable ✅), cada una con motivo."
+        },
+        {
+          "text": "linear-writes.json tiene primero la actualización de la historia (id MOO-22, state Backlog, sin estimate) y después las creaciones de tareas",
+          "passed": true,
+          "evidence": "linear-writes.json[0] = {id: MOO-22, state: Backlog, blockedBy: [MOO-14], description} sin campo estimate; [1] y [2] son creaciones de tareas."
+        },
+        {
+          "text": "Cada tarea creada tiene parentId MOO-22, exactamente una etiqueta de área y ninguna de tipo, state Backlog y sin estimate",
+          "passed": true,
+          "evidence": "Ambas tareas: parentId MOO-22, labels ['engine'] y ['panel'] respectivamente (una sola de área, ninguna de tipo), state Backlog, sin estimate."
+        },
+        {
+          "text": "Las descripciones de las tareas tienen 1-2 líneas de qué se integra y ningún paso a paso",
+          "passed": true,
+          "evidence": "Cada descripción de tarea tiene una línea de qué se integra más una línea de puntero ('Historia: MOO-22...' hacia tasks.md); sin pasos."
+        },
+        {
+          "text": "No hay ninguna escritura en linear-writes.json antes de la respuesta 5",
+          "passed": true,
+          "evidence": "Las tres líneas [ACTION] save_issue #1-#3 aparecen en el Turno 6, después de la Respuesta del usuario (5); no hay escrituras antes."
+        },
+        {
+          "text": "Al cerrar, indica /estimate-story MOO-22 como siguiente paso",
+          "passed": true,
+          "evidence": "El cierre del Turno 6 dice 'Siguiente paso: /estimate-story MOO-22'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "eval-2-caso-feliz-con-pasos-de-interfaz",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 66.4,
+        "tokens": 111137,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Señala que la descripción usa pasos de interfaz (clic, botón, slider) que no sobrevivirían a un rediseño del panel",
+          "passed": true,
+          "evidence": "Turno 2, punto 2: «\"Clic\", \"botón de play de la cabecera\" y \"slider\" describen el panel actual, y el escenario tiene que aguantar un rediseño.» También en INVEST Negotiable ⚠️."
+        },
+        {
+          "text": "Señala que hay dos acciones (play y subir el volumen) y que un escenario solo admite un When",
+          "passed": true,
+          "evidence": "Turno 2, punto 1: «\"Hace clic en play\" y \"luego sube el volumen\" son dos acciones, y un escenario solo lleva un Cuando.»"
+        },
+        {
+          "text": "Señala que 'el endpoint devuelve 200' es un detalle técnico y no un resultado que el maker observe",
+          "passed": true,
+          "evidence": "Turno 2, punto 3: «Hay un detalle técnico en el Entonces. El maker no ve que /api/v1/audio devuelva 200: no es algo que perciba.»"
+        },
+        {
+          "text": "No presenta como definitiva una traducción que corrija esos problemas en silencio: si propone una versión corregida, dice qué ha cambiado y pide validarla",
+          "passed": true,
+          "evidence": "Tras el Gherkin: «No lo he arreglado en silencio: te lo explico para que decidas tú», enumera cada cambio (puntos 1-5, incluidos los Dado propios marcados (asumido)) y cierra con «¿Das por buena la traducción, con tus respuestas a los puntos 1 y 4?»."
+        },
+        {
+          "text": "No lanza poke-holes (no existe subagent-prompts.md o no tiene ninguna llamada)",
+          "passed": true,
+          "evidence": "outputs/ solo contiene transcript.md; no existe subagent-prompts.md. Turno 3: «No he escrito nada en Linear ni he lanzado poke-holes»."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío",
+          "passed": true,
+          "evidence": "No existe outputs/linear-writes.json; Turno 3: «MOO-22 sigue en Backlog, sin cambios»."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "eval-3-historia-demasiado-grande-falla-invest",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 69.0,
+        "tokens": 110407,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Señala que la respuesta 1 describe varias acciones (elegir fuente, cambiar efecto, mover controles), como motivo para dividir la historia o porque no caben en un solo When",
+          "passed": true,
+          "evidence": "Small ❌: «Tu descripción encadena al menos cinco acciones del maker (elegir fuente, ver varias tiras, oír el fichero, cambiar el efecto, mover controles) que no caben en un solo `When`»."
+        },
+        {
+          "text": "El INVEST marca al menos dos criterios con ❌, entre ellos Small",
+          "passed": true,
+          "evidence": "Independent ❌ y Small ❌ (Estimable y Testable ⚠️): «Falla dos criterios (Independent y Small)»."
+        },
+        {
+          "text": "Propone dividir la historia en 2 o 3 historias, cada una con su comportamiento observable",
+          "passed": true,
+          "evidence": "Identifica tres comportamientos observables y propone crear dos historias: 1) varias tiras virtuales cada una pintando su efecto a la vez en el visor (con When/Then posible), 3) cambiar efecto y mover controles mientras suena (H2). El 2 (fuentes y reproducción) se remite a MOO-14/15/22 sin crear historia. Nota: la historia 3 junta dos acciones y el propio asistente avisa de que «probablemente pida dos escenarios o incluso dos historias»; aun así cada historia propuesta tiene un comportamiento observable."
+        },
+        {
+          "text": "Al menos una de las historias propuestas, o un comentario, señala que cambiar de efecto y mover controles en vivo es de H2, no de H1",
+          "passed": true,
+          "evidence": "Historia 3: «(épica **H2**, E1 y E3, no H1)»; también en Independent: «es, palabra por palabra, la H2 del PRD»."
+        },
+        {
+          "text": "Propone dividir antes de traducir el caso feliz a GIVEN/WHEN/THEN: no pide validar ninguna traducción",
+          "passed": true,
+          "evidence": "«No la traduzco, no lanzo poke-holes y no escribo nada en Linear». Solo esboza un When/Then orientativo de la historia 1 propuesta, no una traducción del caso feliz de MOO-901, y no pide validarlo."
+        },
+        {
+          "text": "Se para antes de lanzar poke-holes: no existe subagent-prompts.md o no tiene ninguna llamada",
+          "passed": true,
+          "evidence": "outputs/ solo contiene transcript.md; no hay subagent-prompts.md."
+        },
+        {
+          "text": "Se para tras proponer la división: no muestra DoD, contexto técnico ni tareas como si la historia siguiera adelante",
+          "passed": true,
+          "evidence": "Turno 3: «Aquí se para el refinamiento de MOO-901» y solo lista siguientes pasos del usuario. Sin DoD, contexto técnico ni tareas."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío: ni actualiza MOO-901 ni crea tareas",
+          "passed": true,
+          "evidence": "No existe linear-writes.json en outputs/; «no he escrito nada en Linear»."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "eval-4-correccion-al-validar-la-traduccion",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 180.2,
+        "tokens": 122032,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Tras la respuesta 2 muestra la traducción corregida y pide validarla de nuevo, sin lanzar poke-holes antes de la respuesta 3",
+          "passed": true,
+          "evidence": "Turno 3 (after answer 2) shows the corrected Gherkin with 'And la tira virtual del visor reacciona a lo que suena mientras el maker lo oye' and asks '¿Ahora sí la validas?'. Poke-holes ([ACTION] subagent poke-holes #1) is launched only in Turno 4, after 'Respuesta 3 del usuario'."
+        },
+        {
+          "text": "subagent-prompts.md tiene una sola llamada, a poke-holes",
+          "passed": true,
+          "evidence": "subagent-prompts.md has exactly one section, '## #1 · poke-holes'; no other subagent calls."
+        },
+        {
+          "text": "El caso feliz del prompt de poke-holes contiene la respuesta 1 con las palabras del usuario",
+          "passed": true,
+          "evidence": "Prompt has 'Caso feliz, en palabras del usuario:' followed by the verbatim answer 1: \"Con el instrumento funcionando con un fichero de audio como fuente, el maker abre el panel y pide oírlo; oye el fichero y ve la tira virtual.\""
+        },
+        {
+          "text": "El prompt de poke-holes incluye también la corrección de la respuesta 2 con las palabras del usuario (literal o casi literal), no solo la respuesta 1",
+          "passed": true,
+          "evidence": "Prompt has 'Corrección del usuario al validar la traducción:' followed by the verbatim answer 2: \"Te falta una cosa: la tira virtual tiene que reaccionar a lo que suena mientras el maker lo oye, no basta con que se vea.\""
+        },
+        {
+          "text": "El prompt de poke-holes no contiene la traducción GIVEN/WHEN/THEN (ni Given/When/Then ni Dado/Cuando/Entonces) ni la conversación",
+          "passed": true,
+          "evidence": "A case-insensitive grep of the prompt block for given/when/then/dado/cuando/entonces/turno/respuesta returns nothing. The prompt holds only the story ID, Como/quiero/para, epic and expectations, non-goals, the two user quotes and the Linear offline line."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío",
+          "passed": true,
+          "evidence": "The outputs directory holds only transcript.md and subagent-prompts.md: no linear-writes.json. The transcript ends: 'No se ha escrito nada en Linear.'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "eval_name": "eval-5-poke-holes-en-historia-de-pb",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9,
+        "passed": 9,
+        "failed": 1,
+        "total": 10,
+        "time_seconds": 153.5,
+        "tokens": 118591,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "El primer turno pide al usuario el caso feliz en lenguaje natural y no ofrece ningún borrador, ejemplo de escenario ni punto de partida",
+          "passed": true,
+          "evidence": "Turno 1: 'Describe el caso feliz con tus palabras, en lenguaje natural... No te propongo borrador a propósito: el escenario tiene que ser tuyo.' Solo repite el Como/quiero/para y los non-goals ya existentes, sin borrador ni ejemplo de escenario."
+        },
+        {
+          "text": "Después de la respuesta 1 y antes de traducir el caso feliz, muestra un INVEST rápido con una línea por criterio (Independent, Negotiable, Valuable, Estimable, Small, Testable) y un ✅/⚠️/❌",
+          "passed": true,
+          "evidence": "Turno 2: '### INVEST rápido' con Independent ✅, Negotiable ✅, Valuable ✅, Estimable ✅, Small ⚠️, Testable ✅, antes de '### Traducción a GIVEN/WHEN/THEN'."
+        },
+        {
+          "text": "La traducción a GIVEN/WHEN/THEN usa los términos del glosario de PB §8 (mantenedor, comprobación, revisor, lista para integrar) y no añade comportamiento que no esté en la respuesta 1; lo que haya tenido que completar va marcado (asumido) o preguntado",
+          "passed": true,
+          "evidence": "Escenario con 'mantenedor', 'comprobaciones en verde', 'revisión del revisor de ese push', 'lista para integrar'. 'del mantenedor' va marcado '(asumido: «del mantenedor», por los non-goals)'; el estrechamiento de hilos se pregunta ('Si querías decir cualquier hilo, dímelo'); 'Y no ha tenido que mirar la PR' sale de la respuesta 1 y se señala como no observable con propuesta de quitarlo. 'el PR Babysitter está en marcha' traduce 'el sistema en marcha' sin añadir comportamiento."
+        },
+        {
+          "text": "subagent-prompts.md tiene una sola llamada, a poke-holes, lanzada después de la respuesta 2, y su prompt solo contiene el ID MOO-902, el como/quiero/para, los non-goals, el caso feliz con las palabras del usuario y la línea de entorno",
+          "passed": false,
+          "evidence": "Una sola llamada a poke-holes tras la Respuesta 2, sin traducción ni conversación. Pero el prompt añade más de lo indicado: el título ('Historia: MOO-902 · Saber en qué punto está cada PR') y la línea '**Épica:** PB (BH1) · **Expectativas:** BE6, BE7, BE9, BE11', que no son ni el ID ni el Como/quiero/para (esa línea va en el bloque Historia del fixture, pero no forma parte de la frase Como/quiero/para). Dado el 'solo contiene', no basta para aprobar."
+        },
+        {
+          "text": "En la respuesta de poke-holes (subagent-prompts.md), cada candidato a criterio es algo que notaría el mantenedor sin mirar el código; ninguno habla del maker, del DJ ni del instrumento (tiras, efectos, audio)",
+          "passed": true,
+          "evidence": "Los 8 candidatos preguntan por lo que nota o recibe el mantenedor ('qué aviso recibe el mantenedor', '¿Sabe por ese aviso qué comprobación falla...?', '¿cómo sabe que ha quedado detenido?'). Ninguno menciona maker, DJ, tiras, efectos ni audio (el 8 nombra a Codex, pero desde lo que nota el mantenedor)."
+        },
+        {
+          "text": "Cada candidato de poke-holes lleva como origen un BE#, BA#, BQ#, una restricción o una sección de docs/pr-babysitter.md, o (asumido); ninguno cita un E#, A# ni Q# del PRD",
+          "passed": true,
+          "evidence": "Orígenes: 1 PB §1.1, §4.1, glosario; 2 glosario, BE9, BE1; 3 glosario, Como/quiero/para; 4 BE7, BA6; 5 BE11, glosario; 6 BE6, PB §6.2, glosario; 7 BQ1, glosario, PB §5.1; 8 'docs/instructions/workflow.md §4.4 (al que remite BE5)'. El 8 se ancla en BE5 (que en pr-babysitter.md remite a workflow.md §4.4), así que lo acepto, aunque el documento citado en primer lugar no es PB. Ningún E#, A# ni Q# del PRD."
+        },
+        {
+          "text": "Ninguna nota fuera de criterio de poke-holes tiene como destino 'PRD §7': si alguna es una decisión del mantenedor, va a las preguntas abiertas de PB (PB §7)",
+          "passed": true,
+          "evidence": "La nota de Dependabot (decisión del mantenedor) va a '→ **PB §7**'; las otras dos a non-goal. Ninguna a 'PRD §7'."
+        },
+        {
+          "text": "Los candidatos de poke-holes se muestran numerados antes de la respuesta 3",
+          "passed": true,
+          "evidence": "Turno 3 lista los candidatos numerados 1-8 y las notas A-C antes de '→ Respuesta 3 del usuario'."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío",
+          "passed": true,
+          "evidence": "outputs/ solo contiene transcript.md y subagent-prompts.md; el Turno 4 dice 'No he escrito nada en Linear'."
+        },
+        {
+          "text": "Sigue la skill sin tener que apartarse de ella: ni el transcript ni las respuestas de los subagentes dicen que la skill o un subagente están escritos para otras épicas o para el PRD, ni justifican usar un documento fuente, un rol o un destino distintos de los que indican sus instrucciones (p. ej. «la skill solo cubre MOO-5…MOO-11», «hace las veces de PRD»)",
+          "passed": true,
+          "evidence": "El transcript carga 'el documento fuente de la tabla del §3: docs/pr-babysitter.md' sin justificar ningún desvío; la nota final de poke-holes solo explica que usa fixtures porque Linear está offline (lo que pide environment.md). No hay frases sobre que la skill o el subagente sean para otras épicas o para el PRD."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "eval_name": "eval-6-spike-se-manda-a-create-spike",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 17.7,
+        "tokens": 90593,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Dice que MOO-138 es un spike (lleva la etiqueta Spike) y que los spikes no se refinan con esta skill",
+          "passed": true,
+          "evidence": "Turno 1: 'Lleva la etiqueta **Spike**, así que no la refino con `/refine-story`: un spike es una pregunta con un plazo, no un comportamiento'. Fixture MOO-138.json confirms labels ['infra', 'Spike']."
+        },
+        {
+          "text": "Remite a /create-spike MOO-138",
+          "passed": true,
+          "evidence": "Turno 1: 'Para darle forma usa **`/create-spike MOO-138`**'."
+        },
+        {
+          "text": "No pide el caso feliz: la respuesta 1 queda sin usar",
+          "passed": true,
+          "evidence": "Single turn, no question; transcript notes 'Las respuestas guionizadas 1 y 2 no se usan, porque la skill se detiene en el paso 1 sin preguntar nada.'"
+        },
+        {
+          "text": "No lanza poke-holes (no existe subagent-prompts.md o no tiene ninguna llamada)",
+          "passed": true,
+          "evidence": "outputs/ contains only transcript.md; no subagent-prompts.md and no '[ACTION] subagent' line."
+        },
+        {
+          "text": "No existe linear-writes.json o es un array vacío",
+          "passed": true,
+          "evidence": "outputs/ contains only transcript.md; no linear-writes.json. Transcript: 'No he escrito nada en Linear: MOO-138 sigue igual, en Backlog.'"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 126.8667,
+        "stddev": 102.0096,
+        "min": 19.5,
+        "max": 293.3
+      },
+      "tokens": {
+        "mean": 116684.6667,
+        "stddev": 17789.6854,
+        "min": 91120,
+        "max": 146214
+      }
+    },
+    "old_skill": {
+      "pass_rate": {
+        "mean": 0.975,
+        "stddev": 0.0418,
+        "min": 0.9,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 123.75,
+        "stddev": 88.3353,
+        "min": 17.7,
+        "max": 255.7
+      },
+      "tokens": {
+        "mean": 114836.6667,
+        "stddev": 15138.6387,
+        "min": 90593,
+        "max": 136260
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.03",
+      "time_seconds": "+3.1",
+      "tokens": "+1848"
+    }
+  },
+  "notes": [
+    "Los dos fallos de old_skill (eval 1 y 5) son la misma situación límite: el ejecutor pasó a poke-holes también el título y la línea Épica/Expectativas de la historia. El calificador de la repetición del eval 1 con cambios vio lo mismo y lo dio por bueno: es varianza del ejecutor y del calificador, no efecto de los cambios. Con un criterio uniforme, las dos versiones empatan.",
+    "#9 (solo ❌ cuenta como fallo en INVEST) no cambia la conducta observada: con la versión actual, ejecuciones con 2-3 ⚠️ y ningún ❌ (evals 1 y 2) ya seguían adelante. El cambio deja escrito lo que el modelo ya hacía.",
+    "#14 (spec como mucho una vez) no cambia la conducta observada: en las 6 respuestas de poke-holes de las dos versiones, spec aparece 0 o 1 vez.",
+    "tools como lista YAML: probado aparte con dos subagentes de prueba; recibe exactamente las mismas herramientas que con la lista separada por comas.",
+    "La ejecución original del eval 1 con cambios se descartó por contaminación (guardó una descripción idéntica byte a byte a la de old_skill, 12 s después) y se repitió aislada fuera del workspace.",
+    "Ningún caso cubre la zona ambigua de #9 (0-1 ❌ con 2 o más ⚠️) a propósito, ni pide a poke-holes varias preguntas de diseño: los evals no discriminan estos cambios."
+  ]
+}

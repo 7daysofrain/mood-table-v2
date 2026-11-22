@@ -86,3 +86,48 @@ Clasificación provisional (pendiente de que el usuario la confirme): **5 reales
 Límites: cada revisión mira **un solo nodo**, así que no ve deriva entre `AGENTS.md` y
 `docs/instructions/`; y no conoce el contexto del repo (claves propias de Claude Code, reglas citadas,
 repeticiones deliberadas).
+
+## Evals con los hallazgos aplicados (P2)
+
+Solo dos hallazgos reales caen en algo con evals: #9 y #14, más `tools` como lista en `poke-holes`. Los
+tres se aplicaron a una copia de `refine-story` y `poke-holes` (`.spikes/moo-186/evals/cambios.diff`), y
+se pasaron los 6 casos de `refine-story` con la versión actual (línea base) y con la copia cambiada,
+siguiendo `.claude/evals/README.md`. `poke-holes` se emuló en las dos versiones con un subagente
+`general-purpose` en `opus` que lee su fichero (MOO-71), para que el cambio de `tools` no dependiera
+de reiniciar la sesión. Lo demás no tiene evals: `close-spike` y `linear.md` no tienen ninguna, y las
+de `capture` prueban `capturer.md`, no el `SKILL.md` de #27.
+
+| | Con cambios | Versión actual |
+|---|---|---|
+| Afirmaciones superadas | 54/54 (100 %) | 52/54 (97,5 %) |
+| Tiempo medio por caso | 127 s | 124 s |
+| Tokens medios por caso | 117 k | 115 k |
+
+- **Empate en la práctica.** Los dos fallos de la versión actual son el mismo caso límite: el ejecutor
+  pasó a `poke-holes` también el título y la línea Épica/Expectativas. En la versión con cambios pasó
+  lo mismo y el calificador lo dio por bueno. Es varianza del ejecutor y del calificador, no efecto de
+  los cambios.
+- **#9 no cambia la conducta:** con la versión actual, ejecuciones con 2-3 ⚠️ y ningún ❌ ya seguían
+  adelante. El cambio deja escrito lo que el modelo ya hacía.
+- **#14 no cambia la conducta:** `spec` sale 0 o 1 vez en las 6 respuestas de `poke-holes`, en las dos
+  versiones.
+- **`tools` como lista YAML es seguro:** probado aparte con dos subagentes de prueba; reciben las
+  mismas herramientas con la lista que con el texto separado por comas.
+- **Los evals no discriminan estos cambios:** ningún caso cae en la zona ambigua de #9 (0-1 ❌ con
+  varios ⚠️) ni empuja a `poke-holes` a varias preguntas de diseño. Los calificadores apuntaron más
+  huecos de los evals en sus `grading.json`.
+- **Una ejecución contaminada, descartada:** la del caso 1 con cambios guardó una descripción idéntica
+  byte a byte a la de la otra versión, 12 s después. Se repitió aislada, fuera del *workspace*. Lección
+  para el README de las evals: las ejecuciones en paralelo del mismo caso pueden leerse entre sí.
+
+## Coste de una ronda de evals (P3)
+
+| | Valor |
+|---|---|
+| Ejecuciones | 12 (6 casos × 2 versiones) + 1 repetida |
+| Tokens de los ejecutores | 1,39 M (válidas) + 0,14 M (contaminada) |
+| Tokens de los calificadores | 0,76 M |
+| Tiempo de reloj | ~7 min en paralelo (ejecución más larga 4,3 min + calificación 2 min), ~15 min con la repetición |
+
+Las ejecuciones corrieron como subagentes de esta sesión (Opus 5.5, con `poke-holes` en `opus`), que no
+dan coste en dólares, solo tokens totales.
