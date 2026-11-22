@@ -2815,6 +2815,30 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Un calificador detectó que la ejecución con cambios del caso 1 había guardado una descripción idéntica byte a byte a la de la otra versión, 12 s después. La IA lo comprobó, la descartó y la repitió aislada, fuera del workspace.*
 - *Los dos fallos de la versión actual eran el mismo caso límite que otro calificador dio por bueno en la versión con cambios: se cuentan como varianza, no como mejora.*
 
+#### 6.104 Aplicar los hallazgos reales de `vagueness` del spike de skill-map (`MOO-187`)
+
+**Prompt 1:**
+
+> vamos a triar [MOO-187](https://linear.app/7daysofrain/issue/MOO-187/hallazgos-reales-de-vagueness-del-spike-moo-186-pendientes-de-aplicar)
+
+*Claude Code (`claude-opus-5-5`, 22-nov). La IA clasificó la captura como* chore *de EN, con área `infra` y prioridad Low, porque D126 manda los hallazgos reales a un* chore *con sus evals. Vio que Linear había convertido los números de hallazgo («#5», «#27», «#21») en enlaces a PR que no tenían nada que ver, y los reescribió. También avisó de un hueco en la propia captura: las evals de `capture` prueban su subagente, no el `SKILL.md` donde está el hallazgo 27. La única pregunta fue si aceptarla, porque los cambios no movían las evals; recomendó aceptarla para después de la entrega.*
+
+**Prompt 2:**
+
+> porque dices que para despues de la entrega? No crees que puede favorecer la nota?
+
+*La IA admitió que había puesto «después» por la prioridad Low, sin comparar con lo que queda de la entrega: el vídeo y la prueba de intensidad son del día siguiente, en la mesa, así que ese día nada competía con ella. Dio la razón con matices: aplicarla cierra el ciclo que D126 describe (medir, decidir y aplicar con evals), que cuenta en el eje del uso de la IA, pero son cinco cambios de texto que no cambian la conducta del modelo, un remate y no un salto de nota.*
+
+**Prompt 3:**
+
+> si, hazla hoy
+
+*La IA escribió el plan en la tarea, porque un* chore *sin change lo lleva en su descripción, y aplicó un hallazgo por commit. Para `refine-story` y `poke-holes` copió las versiones del spike tras comprobar con `diff` que su base era idéntica byte a byte a `main`, así que sus evals (54/54 frente a 52/54) siguen valiendo sin repetirlas. En los otros tres decidió la redacción: commitear o apartar los cambios sin commitear al cerrar un spike, 10 líneas de log como mucho y clasificar una herramienta nueva de Linear en la PR que la use. Pasó las 3 evals de `capture`: 33/33. `sm check` baja a 9 avisos, porque desaparece el de `poke-holes`.*
+
+*Ajustes:*
+- *Su primer calificador por script dio 3 fallos falsos en la línea de la épica: partía en el primer «·», que también está dentro de los títulos de épica. Lo corrigió antes de dar el resultado.*
+- *`estimator` sigue con `tools` como texto separado por comas hasta `MOO-153`, como pedía la captura.*
+
 ---
 
 ### 7. Pull Requests
