@@ -39,3 +39,19 @@ docs/borradores/
 .claude/evals/workspace/
 .claude/worktrees/
 .agents/
+
+# Third-party skills (skills-lock.json): symlinks into .agents/skills/, not our
+# harness. A dismissal would write a .sm sidecar inside them (MOO-185).
+# Keep this list in sync when adding or removing one with `npx skills`.
+.claude/skills/deep-agents-core/
+.claude/skills/deep-agents-memory/
+.claude/skills/deep-agents-orchestration/
+.claude/skills/ecosystem-primer/
+.claude/skills/eval-engineering/
+.claude/skills/langchain-dependencies/
+.claude/skills/langchain-middleware/
+.claude/skills/langgraph-cli/
+.claude/skills/langgraph-decision-models/
+.claude/skills/langgraph-fundamentals/
+.claude/skills/langgraph-human-in-the-loop/
+.claude/skills/langgraph-persistence/
