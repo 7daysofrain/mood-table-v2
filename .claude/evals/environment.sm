@@ -1,0 +1,12 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: Fichero que genera cada ejecución de las evals en su workspace, no del repo
+      value: .claude/evals/transcript.md
+    - analyzer: reference-broken
+      note: Fichero que genera cada ejecución de las evals en su workspace, no del repo
+      value: .claude/evals/subagent-prompts.md
+identity:
+  bodyHash: 382a413fcc9bfe46c1cb69f301559bd1d8a4f950279aaf4905035c4dbb174f63
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: .claude/evals/environment.md

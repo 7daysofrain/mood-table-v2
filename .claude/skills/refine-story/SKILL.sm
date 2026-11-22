@@ -1,0 +1,12 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: 'Es docs/instructions/: la ruta completa se escribe cuando la skill cambie con sus evals (AGENTS.md)'
+      value: .claude/skills/refine-story/workflow.md
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: .claude/skills/refine-story/tasks.md
+identity:
+  bodyHash: 95b70d06be13398ddc907603de20ee7a83da54eb7fc1617deb8308a29e8858c7
+  frontmatterHash: b39e856269b71e71b24fd28e7e43b8cc2d0a24ea5d34dada7b890376c2bd3221
+  path: .claude/skills/refine-story/SKILL.md

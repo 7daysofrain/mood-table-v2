@@ -1,0 +1,9 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: docs/design.md
+identity:
+  bodyHash: 8bae9bb05c3eb5fef2c3fdf2064cfc57ac1e76135ef4478dd881272f55b2d54a
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: docs/umbrales-para-specs.md

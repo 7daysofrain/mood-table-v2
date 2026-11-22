@@ -1,0 +1,9 @@
+annotations:
+  issueSuppressions:
+    - analyzer: reference-broken
+      note: Nombra un fichero de un OpenSpec change (openspec/changes/<id>/), no de esta carpeta
+      value: docs/instructions/tasks.md
+identity:
+  bodyHash: 7528c68ea292e168399cd3951847fca5376a3850d640b87f04802162da1e9736
+  frontmatterHash: ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356
+  path: docs/instructions/linear.md
