@@ -183,7 +183,8 @@ escritura completa, y en el MCP crear y editar son la misma herramienta (`save_i
   su tabla de ejemplos. Sin esa sección, o con la marca de pendiente de `/create-story`, no valida
   nada. Solo mira la forma, no el contenido.
 - Las herramientas nuevas que publique Linear no quedan cubiertas: caen en el modo de permisos por
-  defecto. Hay que revisar la lista si aparece alguna.
+  defecto. Una herramienta de `mcp__linear__*` que no esté en `allow`, `ask` ni `deny` se añade a una
+  de las tres en la misma PR que la use por primera vez.
 
 ## 9. PR Babysitter (app de Linear)
 
