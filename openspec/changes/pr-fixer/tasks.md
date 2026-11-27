@@ -17,7 +17,7 @@
 
 ## 1. MOO-192 · infra
 
-- [ ] 1.1 Las decisiones y el documento de la épica:
+- [x] 1.1 Las decisiones y el documento de la épica:
   - **`docs/idea-mood-table.md` §10:** D127 a D131 (`design.md` decisiones 1 a 5), y notas en D64, D71
     y D124 de que las matizan. D124 no se borra ni se renumera.
   - **`docs/pr-babysitter.md`:**
