@@ -50,7 +50,7 @@
   - README §2.5 (*En el PR Babysitter*): la tercera identidad, sus permisos y lo que no puede hacer;
   - `.env.example` del *fixer* (nombres sin valores);
   - `prompts.md`: la entrada de la historia (refinamiento, exploración, verificación de BQ7).
-- [ ] 1.6 **Prueba a mano** (sin commit), con un script de un solo uso que usa `src/fixer/push.ts`:
+- [x] 1.6 **Prueba a mano** (sin commit), con un script de un solo uso que usa `src/fixer/push.ts`:
   - en una PR de prueba, la App sube un commit a su rama;
   - la CI se lanza sobre ese push;
   - la App intenta integrarla por la API, y GitHub responde 405;
