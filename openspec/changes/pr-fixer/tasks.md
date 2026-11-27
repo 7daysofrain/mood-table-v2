@@ -65,7 +65,7 @@
   - `fix` en la ronda final con un hallazgo *real* arreglable;
   - `publish` sin hallazgos reales, con solo una relanzable que ha fallado dos veces, sin tope de
     gasto o con `FIX_ENABLED=false`, cada uno con su regla (tabla de la decisión 11).
-- [ ] 2.2 La acción `fix` y sus reglas en `core/decision.ts`.
+- [x] 2.2 La acción `fix` y sus reglas en `core/decision.ts`.
 
   Verificar: los tests de 2.1 y los que ya había en verde.
 - [ ] 2.3 **(test en rojo)** El arreglo en el grafo (`core/graph.test.ts`, un `describe` por requisito

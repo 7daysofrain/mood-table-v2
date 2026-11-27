@@ -338,6 +338,9 @@ const AFTER_CHECKS = {
 const AFTER_DECISION = {
   rerun: RERUN_NODE,
   skipRerun: 'esperarComprobaciones',
+  // Hasta que el grafo pida el arreglo (change pr-fixer, tasks.md 2.4), `decidir` no le pasa a
+  // `decide()` el contexto del arreglo, así que nunca elige `fix`.
+  fix: SUMMARY_NODE,
   publish: SUMMARY_NODE,
 } as const satisfies Record<Decision['action'], string>;
 
