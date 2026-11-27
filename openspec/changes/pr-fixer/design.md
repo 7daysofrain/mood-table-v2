@@ -271,8 +271,19 @@ todo esto:
 - su clase es *real*;
 - no es una relanzable que ha fallado dos veces. Se relanzó porque el triaje no dio que la causara la
   PR: o no la causa o no está claro, y en los dos casos se avisa sin arreglar (`MOO-166` la captura);
-- la PR no es de Dependabot (`MOO-191`);
 - no se han agotado las vueltas ni el tope (decisiones 7 y 8).
+
+Además, el arreglo tiene que estar encendido (`FIX_ENABLED`, la vuelta atrás). Las PR de Dependabot no
+llegan a `decide()`: el sistema solo sigue las del mantenedor (`pr-tracking`), y seguirlas es de
+`MOO-191`.
+
+| Regla (`decision.rule`) | Acción | Cuándo |
+|---|---|---|
+| `finalState` | `publish` | no hay hallazgos reales, o no es la ronda final |
+| `fixDisabled` | `publish` | hay reales, pero `FIX_ENABLED=false` |
+| `notCausedByPr` | `publish` | los únicos reales son relanzables que han fallado dos veces |
+| `fixBudgetSpent` | `publish` | no queda tope de gasto para arreglar en la PR |
+| `fixable` | `fix` | queda al menos un hallazgo arreglable |
 
 La regla que decide queda en el estado (`decision.rule`) y en la traza (BE4), como hoy.
 
@@ -284,7 +295,7 @@ La regla que decide queda en el estado (`decision.rule`) y en la traza (BE4), co
 | Qué contexto recibe cada uno | El agente recibe un hallazgo cada vez, con su contexto, el alcance de la PR y `AGENTS.md`. No recibe tokens, ni el diff entero, ni los demás hallazgos. Con un contexto equivocado, lo frena el código: si no pasa `lint`, `typecheck` y `test` no hay commit, y después la CI, el triaje del push nuevo y el límite de vueltas |
 | Dónde vive el estado y qué pasa si algo falla a mitad | El trabajo, en el SQLite del *fixer*; las vueltas, en GitHub; el hilo, en el `MemorySaver` hasta BE7. Si el *fixer* cae, reintenta una vez (decisión 9); si cae el babysitter, el trabajo sigue y el *driver* vuelve a preguntar por él |
 | Qué decisiones no necesitan un LLM | Arreglar o no, las vueltas, el tope, la PR que cambia, el orden de los hallazgos, los commits y el push |
-| Cuándo vuelve el control a una persona | Con un criterio explícito: los hallazgos que exigen criterio, la relanzable que falla dos veces, las vueltas, el tope, el arreglo que no pasa, la interrupción doble y las PR de Dependabot. Y siempre en el merge (BE2) |
+| Cuándo vuelve el control a una persona | Con un criterio explícito: los hallazgos que exigen criterio, la relanzable que falla dos veces, las vueltas, el tope, el arreglo que no pasa y la interrupción doble. Y siempre en el merge (BE2) |
 
 ## Risks / Trade-offs
 

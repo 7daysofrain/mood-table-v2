@@ -180,17 +180,18 @@ reales y avisar al mantenedor de los que exigen criterio, sin tocarlos.
 - **AND** el mantenedor recibe un aviso con el hallazgo que exige criterio
 
 ### Requirement: Las PR de Dependabot no se arreglan
-En una PR de Dependabot, el sistema MUST NOT subir arreglos: SHALL avisar del estado final como hasta
-ahora.
+El sistema SHALL arreglar solo en las PR que sigue, las del mantenedor (`pr-tracking`). En una PR de
+Dependabot, que no sigue, MUST NOT subir arreglos.
 
-> Traza: non-goal de `MOO-77` (*en ellas el sistema avisa en vez de arreglar*); BQ3, que pasa a la
-> captura `MOO-191`.
+> Traza: non-goal de `MOO-77` (*arreglar las PR de Dependabot*); BQ3, que pasa a la captura
+> `MOO-191`. La historia decía que en ellas «el sistema avisa en vez de arreglar», pero hoy no las
+> sigue (`pr-tracking`, *El sistema sigue las PR del mantenedor…*), así que tampoco avisa: hallado
+> al implementar `MOO-193` (27-nov). Seguirlas es de `MOO-191`.
 
-#### Scenario: Una PR de Dependabot con un hallazgo real
-- **GIVEN** una PR de Dependabot cuyo último push tiene un hallazgo real
-- **WHEN** el triaje de ese push termina
+#### Scenario: Una PR de Dependabot con una comprobación que falla
+- **GIVEN** una PR de Dependabot contra main cuya comprobación `test` falla
+- **WHEN** terminan las comprobaciones de su último push
 - **THEN** la rama de la PR no tiene commits nuevos del sistema
-- **AND** el mantenedor recibe el aviso del estado final
 
 ### Requirement: Un arreglo interrumpido se reintenta una vez
 Si el arreglo se interrumpe porque el servicio que arregla se reinicia, el sistema SHALL reintentarlo

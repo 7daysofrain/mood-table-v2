@@ -63,8 +63,8 @@
 - [ ] 2.1 **(test en rojo)** `decide()` elige arreglar (`core/decision.test.ts`, `design.md`
   decisión 11):
   - `fix` en la ronda final con un hallazgo *real* arreglable;
-  - `publish` sin hallazgos reales, con solo una relanzable que ha fallado dos veces, en una PR de
-    Dependabot o con `FIX_ENABLED=false`, cada uno con su regla.
+  - `publish` sin hallazgos reales, con solo una relanzable que ha fallado dos veces, sin tope de
+    gasto o con `FIX_ENABLED=false`, cada uno con su regla (tabla de la decisión 11).
 - [ ] 2.2 La acción `fix` y sus reglas en `core/decision.ts`.
 
   Verificar: los tests de 2.1 y los que ya había en verde.
@@ -137,7 +137,7 @@
   - en la primera, un push del sistema con dos commits, cada uno con su *trailer*, a nombre de la App;
     la CI se lanza; no hay aviso del estado final del primer push, y sí del push del arreglo;
   - en la segunda, el arreglo del real y un aviso con el que exige criterio;
-  - en la de Dependabot, ningún commit del sistema y el aviso de siempre;
+  - en la de Dependabot, ningún commit del sistema (no la sigue);
   - en LangSmith, el camino de nodos de cada hilo (`decidir` → `publicarResumen` → `pedirArreglo` →
     `esperarArreglo`), la decisión con su regla y la foto que lo decidió;
   - en el log del *fixer*, el coste de cada trabajo, para el tope y el de turnos.

@@ -38,8 +38,8 @@ mantenedor lo descartó: el modo ensayo no aporta nada por sí solo, y la puerta
   - la misma comprobación falla dos veces seguidas, tras un arreglo cada vez;
   - se agotan las N vueltas de arreglo de la PR (N = 3, *asumido*);
   - se agota el tope de gasto del arreglo (2 $ por PR, *asumido*).
-- **Lo que no arregla, lo avisa:** los hallazgos que exigen criterio, una comprobación que la PR no
-  causa y las PR de Dependabot.
+- **Lo que no arregla, lo avisa:** los hallazgos que exigen criterio y una comprobación que la PR no
+  causa. Las PR de Dependabot no se arreglan: el sistema no las sigue (`MOO-191`).
 - **Un arreglo no pisa a nadie:** si llega un push nuevo, la PR se detiene, se cierra o se integra
   mientras arregla, el sistema no sube su arreglo.
 - **D# nuevas:** arreglar en la rama de la PR (matiza D124), la identidad propia (resuelve BQ7 y
@@ -73,7 +73,8 @@ Tomados de la historia `MOO-77`:
   con BH4, se escalan (`MOO-79`).
 - **Capturar en *Triage* la comprobación que la PR no causa:** aquí solo se avisa; la captura es
   `MOO-166`.
-- **Arreglar las PR de Dependabot:** en ellas el sistema avisa en vez de arreglar (`MOO-191`, BQ3).
+- **Arreglar las PR de Dependabot:** el sistema no las sigue, así que tampoco avisa de ellas; seguirlas
+  y decidir qué hacer es `MOO-191` (BQ3).
 - **Pasar SonarQube antes del push:** lo comprueba la PR después (BE10).
 
 Fuera también, decidido al explorar el change (27-nov):
