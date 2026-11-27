@@ -68,7 +68,7 @@
 - [x] 2.2 La acción `fix` y sus reglas en `core/decision.ts`.
 
   Verificar: los tests de 2.1 y los que ya había en verde.
-- [ ] 2.3 **(test en rojo)** El arreglo en el grafo (`core/graph.test.ts`, un `describe` por requisito
+- [x] 2.3 **(test en rojo)** El arreglo en el grafo (`core/graph.test.ts`, un `describe` por requisito
   de `pr-fix` y por cada requisito cambiado de `pr-tracking` y `pr-triage`, con un `Fixer` falso):
   - un hallazgo real: `decidir` da `fix`, se publica el resumen, `pedirArreglo` pide un trabajo con
     ese hallazgo y su contexto, y el hilo espera en `esperarArreglo` sin avisar;
