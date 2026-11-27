@@ -264,12 +264,11 @@ describe('un trabajo del fixer (design.md decisiones 5, 6 y 8)', () => {
   });
 
   it('borra el clon al acabar, también si falla', async () => {
-    const { agent } = fakeAgent([{ write: { 'lint.txt': 'x' } }]);
-
-    await runJob(job([lint]), deps(agent));
-    await expect(
-      runJob(job([lint]), deps(agent, { push: () => Promise.reject(new Error('sin red')) })),
-    ).rejects.toThrow('sin red');
+    await runJob(job([lint]), deps(fakeAgent([{ write: { 'lint.txt': 'x' } }]).agent));
+    const offline = deps(fakeAgent([{ write: { 'lint.txt': 'y' } }]).agent, {
+      push: () => Promise.reject(new Error('sin red')),
+    });
+    await expect(runJob(job([lint]), offline)).rejects.toThrow('sin red');
 
     expect(await readdir(workRoot)).toEqual([]);
   });

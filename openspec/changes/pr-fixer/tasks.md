@@ -98,7 +98,7 @@
   - un solo push al final; sin ningún commit, no hay push;
   - el coste de cada `query()` se guarda, y `status` da lo gastado por la PR;
   - el trabajo se corta al pasar del tope que queda.
-- [ ] 2.6 El servicio en `src/fixer/`:
+- [x] 2.6 El servicio en `src/fixer/`:
   - la cola en `node:sqlite`;
   - las rutas HTTP;
   - el bucle del trabajo;
@@ -110,6 +110,12 @@
 
   Las fronteras: `src/core` no importa nada de `src/fixer/`, y el lint lo comprueba
   (`specs/module-boundaries`).
+
+  Al implementar (`design.md` decisión 4, «Implementado así»): `src/fixer/` importa de `src/core` el
+  contrato (`fixJobSchema`, `fixStatusSchema`), como los adaptadores; hay una tercera ruta para lo
+  gastado; la rama se lee de GitHub; los *trailers* de hilos e incidencias van con su fichero y línea;
+  lo ya arreglado se sube aunque se agote el tope; y un arreglo con un secreto del *fixer* en su diff no
+  se sube.
 
   Verificar: los tests de 2.5 en verde; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
 - [ ] 2.7 El cableado:

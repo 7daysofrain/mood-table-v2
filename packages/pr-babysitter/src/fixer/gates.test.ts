@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type CommandRunner, pnpmGates, withoutSecrets } from './gates.ts';
+import { type CommandRunner, execRunner, pnpmGates, withoutSecrets } from './gates.ts';
 
 function fakeRunner(failing: string[] = []) {
   const calls: { command: string; args: string[]; cwd: string; env: NodeJS.ProcessEnv }[] = [];
@@ -54,5 +54,17 @@ describe('el entorno sin secretos (design.md decisión 4)', () => {
         FIXER_APP_PRIVATE_KEY_FILE: '/run/secrets/key.pem',
       }),
     ).toEqual({ PATH: '/usr/bin', HOME: '/home/node' });
+  });
+});
+
+describe('el CommandRunner de verdad', () => {
+  it('dice si el comando acaba bien, y deja en el log el que falla', async () => {
+    const logged: string[] = [];
+    const runner = execRunner(10_000, (message) => logged.push(message));
+    const options = { cwd: process.cwd(), env: process.env };
+
+    expect(await runner(process.execPath, ['-e', 'process.exit(0)'], options)).toBe(true);
+    expect(await runner(process.execPath, ['-e', 'process.exit(1)'], options)).toBe(false);
+    expect(logged).toHaveLength(1);
   });
 });

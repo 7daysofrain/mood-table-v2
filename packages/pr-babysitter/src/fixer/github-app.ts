@@ -36,9 +36,9 @@ export function appJwt(app: GitHubApp, now: Date): string {
   return `${header}.${payload}.${signer.sign(app.privateKey, 'base64url')}`;
 }
 
-function headers(jwt: string): Record<string, string> {
+function headers(bearer: string): Record<string, string> {
   return {
-    authorization: `Bearer ${jwt}`,
+    authorization: `Bearer ${bearer}`,
     accept: 'application/vnd.github+json',
     'x-github-api-version': '2022-11-28',
   };
@@ -77,4 +77,21 @@ export async function installationToken(
   }
   const body = (await response.json()) as { token: string; expires_at: string };
   return { token: body.token, expiresAt: body.expires_at };
+}
+
+/** La rama de la PR, leída de GitHub con el token de instalación. El mensaje de error no lleva el token. */
+export async function pullRequestBranch(
+  fetch: typeof globalThis.fetch,
+  token: string,
+  repository: string,
+  pullRequestNumber: number,
+): Promise<string> {
+  const response = await fetch(`${GITHUB_API}/repos/${repository}/pulls/${pullRequestNumber}`, {
+    headers: headers(token),
+  });
+  if (!response.ok) {
+    throw new Error(`GitHub no da la PR #${pullRequestNumber} de ${repository}: ${response.status}`);
+  }
+  const body = (await response.json()) as { head: { ref: string } };
+  return body.head.ref;
 }

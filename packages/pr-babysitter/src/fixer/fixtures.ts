@@ -2,9 +2,12 @@
  * Datos de prueba del *fixer*: trabajos y hallazgos de los tres orígenes. Solo para los tests.
  */
 import type { FixJob } from '../core/fix.ts';
-import type { Finding } from '../core/triage.ts';
+import type { CheckFinding, Finding } from '../core/triage.ts';
 
-export const lint: Finding = {
+type SonarFinding = Extract<Finding, { source: 'sonarIssue' }>;
+type ReviewerFinding = Extract<Finding, { source: 'reviewer' }>;
+
+export const lint: CheckFinding = {
   source: 'check',
   name: 'lint',
   conclusion: 'failure',
@@ -17,7 +20,7 @@ export const lint: Finding = {
   },
 };
 
-export const sonar: Finding = {
+export const sonar: SonarFinding = {
   source: 'sonarIssue',
   rule: 'typescript:S3358',
   ruleName: 'Ternary operators should not be nested',
@@ -28,7 +31,7 @@ export const sonar: Finding = {
   code: '12 >> const x = a ? b : c ? d : e;',
 };
 
-export const codex: Finding = {
+export const codex: ReviewerFinding = {
   source: 'reviewer',
   reviewer: 'Codex',
   badge: 'P1',

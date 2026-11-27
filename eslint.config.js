@@ -106,7 +106,7 @@ export default defineConfig(
             },
             {
               from: { element: { type: 'pb-fixer' } },
-              allow: { to: { element: { type: 'pb-fixer' } } },
+              allow: { to: { element: { type: ['pb-fixer', 'pb-core'] } } },
             },
             {
               from: { element: { type: 'pb-main' } },

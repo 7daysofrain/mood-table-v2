@@ -5,19 +5,24 @@
  */
 import * as z from 'zod';
 
-import { type Finding, findingSchema, type PullRequestContext } from './triage.ts';
+import { type Finding, findingSchema } from './triage.ts';
 
-/** Lo que se pide arreglar de un push: los hallazgos reales arreglables y lo que queda del tope. */
-export interface FixJob {
-  number: number;
+/**
+ * Lo que se pide arreglar de un push: los hallazgos reales arreglables, el alcance de la PR y lo que
+ * queda del tope. Se valida también al llegar al *fixer*, que lo recibe por HTTP (decisión 4).
+ */
+export const fixJobSchema = z.object({
+  number: z.number().int().positive(),
   /** El push que se arregla: el *fixer* no sube nada si la cabeza de la PR ya no es esta. */
-  sha: string;
+  sha: z.string().min(1),
   /** El título y la descripción de la PR: su alcance, para el agente. */
-  pr: PullRequestContext;
-  findings: Finding[];
+  pr: z.object({ title: z.string(), description: z.string() }),
+  findings: z.array(findingSchema).min(1),
   /** Lo que le queda a la PR del tope de gasto del arreglo (decisión 8). */
-  budgetUsd: number;
-}
+  budgetUsd: z.number().min(0),
+});
+
+export type FixJob = z.infer<typeof fixJobSchema>;
 
 /**
  * Por qué un hallazgo se queda sin arreglar: exige criterio, es una relanzable que la PR no causa,

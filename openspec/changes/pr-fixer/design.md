@@ -176,6 +176,20 @@ pierde. Sin *fixer* configurado, `decidir` decide como antes del arreglo.
 - **Código:** en `src/fixer/` del mismo paquete, con su raíz de composición (`src/fixer/main.ts`) y la
   misma regla de fronteras: `src/core` no lo importa. La imagen es otro *target* del mismo
   `Dockerfile`, con `git` y lo que pida el SDK.
+*Implementado así en `MOO-193` (27-nov):*
+
+- **El contrato es uno:** `src/fixer/` importa de `src/core` los esquemas del trabajo y de su estado
+  (`fixJobSchema`, `fixStatusSchema`), como los adaptadores. `src/core` sigue sin importar nada del
+  *fixer*.
+- **Tres rutas, no dos:** `GET /pulls/:pr/spent` da lo gastado por la PR, que el puerto pide aparte
+  (`Fixer.spent`).
+- **La rama no va en el trabajo:** el *fixer* la lee de GitHub con el token de la App, la misma
+  lectura que hará la comprobación antes del push (`MOO-194`).
+- **El clon sale de la URL pública, sin token,** para que el agente no lo encuentre en `.git/config`;
+  el token solo va en la URL del push. `pnpm install`, las comprobaciones y el agente corren sin la
+  clave de la App ni los ajustes del *fixer* en su entorno, y un arreglo que lleve en su diff un
+  secreto del *fixer* no se sube.
+
 - **Descartados:**
   - **una cola en un volumen compartido:** acopla los dos contenedores a un fichero y a su esquema;
   - **el arreglo en el mismo proceso:** el agente con Bash vería todos los secretos del `.env`, y un
@@ -219,6 +233,9 @@ solo push. Así se lanza una sola vuelta de CI y de revisión.
   thread:<id>`. Lo lee la decisión 7.
 - **Antes del push**, el *fixer* lee con el token de la App que la PR sigue abierta, sin la etiqueta
   `babysitter:stop`, y con la cabeza en el SHA del trabajo. Si no, no sube nada.
+- *Implementado así:* el hallazgo no trae el id del hilo ni la clave de la incidencia, así que sus
+  *trailers* van con el fichero y la línea: `thread:src/a.ts:7` y `sonar:typescript:S3358
+  src/b.ts:12`. Solo los de las comprobaciones los lee la decisión 7.
 - **El push es normal, sin forzar:** si la rama ha avanzado en el último segundo, GitHub lo rechaza y no
   se pisa nada.
 
@@ -245,6 +262,9 @@ de partida que se mide en la prueba a mano (`docs/umbrales-para-specs.md`).
   `FIX_BUDGET_USD`)*.
 - **Dentro de un trabajo**, el *fixer* corta en cuanto se pasa, con lo que quede del tope. El hallazgo
   en curso no se sube, y el trabajo acaba como `failed` con el motivo.
+- *Implementado así:* lo ya arreglado en ese trabajo sí se sube, con el resto sin arreglar por el
+  tope (los arreglos que pasan se suben, `pr-fix`); el trabajo acaba como `failed` solo si no ha
+  llegado a arreglar nada.
 - **Es aparte del tope del triaje** (0,05 $, D90), que paga otro proveedor con otro saldo.
 - **Por qué 2 $:** no está para ahorrar, sino para frenar lo anómalo. Se mide en la prueba a mano, como
   se hizo con el tope del triaje.
