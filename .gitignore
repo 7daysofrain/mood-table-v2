@@ -22,8 +22,10 @@ e2e/test-results/
 # Ejecuciones de las evals de skill-creator (.claude/evals/README.md)
 .claude/evals/workspace/
 
-# Secretos del PR Babysitter (packages/pr-babysitter/.env.example)
+# Secretos del PR Babysitter (packages/pr-babysitter/.env.example) y de su fixer (fixer.env.example)
 .env
+fixer.env
+*.pem
 
 # Credenciales locales del mantenedor (p. ej. de las pruebas a mano del PR Babysitter)
 .local/

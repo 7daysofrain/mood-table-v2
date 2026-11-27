@@ -28,7 +28,7 @@
     - en el glosario, *modo ensayo* tachado y marcado como obsoleto, y *arreglador* (`fixer`) nuevo.
 
   Verificar: los enlaces llevan a su sitio; `pnpm lint` en verde.
-- [ ] 1.2 La identidad (`design.md` decisión 2):
+- [x] 1.2 La identidad (`design.md` decisión 2):
   - **El mantenedor** crea la GitHub App del PR Babysitter con *Contents* y *Pull requests* en
     escritura y *Metadata* en lectura, la instala solo en `mood-table-v2` y guarda su clave privada.
   - **El *ruleset* nuevo sobre `main`,** «solo el mantenedor integra», con *Restrict updates* y el
@@ -45,7 +45,7 @@
   la URL con el token) se prueba.
 
   Verificar: los tests de 1.3 en verde; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 1.5 Documentación:
+- [x] 1.5 Documentación:
   - README §2.4 (*PR Babysitter*): la App y el *ruleset* al desplegar;
   - README §2.5 (*En el PR Babysitter*): la tercera identidad, sus permisos y lo que no puede hacer;
   - `.env.example` del *fixer* (nombres sin valores);

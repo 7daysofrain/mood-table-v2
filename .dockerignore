@@ -1,7 +1,9 @@
 # Contexto de la imagen del PR Babysitter (packages/pr-babysitter/Dockerfile): el repo sin lo que se
-# instala o se genera, sin las carpetas de herramientas y sin ningún `.env`.
+# instala o se genera, sin las carpetas de herramientas y sin ningún `.env`, `fixer.env` ni clave.
 **/node_modules
 **/.env
+**/fixer.env
+**/*.pem
 **/dist
 coverage
 .git
