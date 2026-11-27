@@ -25,6 +25,9 @@ services:
     env_file: fixer.env
     environment:
       FIXER_APP_PRIVATE_KEY_FILE: /run/secrets/fixer-app-key
+      # El lint con tipos del monorepo entero no cabe en el heap que Node da por defecto en el
+      # contenedor (~2 GB): sin esto, `pnpm lint` se queda sin memoria y ningún arreglo pasa.
+      NODE_OPTIONS: --max-old-space-size=4096
     secrets:
       - fixer-app-key
     volumes:
