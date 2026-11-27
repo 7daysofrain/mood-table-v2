@@ -82,9 +82,9 @@ describe('subir a la rama de la PR (design.md decisión 6)', () => {
     // Un remoto con el token en la URL que no contesta: git falla y su mensaje lleva la URL.
     const unreachable = 'https://x-access-token:ghs_secreto@127.0.0.1:1/7daysofrain/mood-table-v2.git';
 
-    const error = await pushBranch(fixer, unreachable, 'pr-branch').catch((thrown: unknown) => thrown as Error);
+    const attempt = pushBranch(fixer, unreachable, 'pr-branch');
 
-    expect(error).toBeInstanceOf(Error);
-    expect(error.message).not.toContain('ghs_secreto');
+    await expect(attempt).rejects.toThrow(/git push a pr-branch ha fallado/);
+    await expect(attempt).rejects.not.toThrow(/ghs_secreto/);
   });
 });

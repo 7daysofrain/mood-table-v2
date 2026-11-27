@@ -43,18 +43,18 @@ interface Call {
 
 function fakeFetch(responses: Record<string, { status: number; body: unknown }>) {
   const calls: Call[] = [];
-  const fetch = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = String(input);
+  const fetch = ((input: string | URL | Request, init?: RequestInit) => {
+    const url = input instanceof Request ? input.url : input.toString();
     const method = init?.method ?? 'GET';
     calls.push({
       url,
       method,
       headers: init?.headers as Record<string, string>,
-      body: init?.body ? JSON.parse(String(init.body)) : undefined,
+      body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
     });
     const response = responses[`${method} ${url}`];
-    if (!response) throw new Error(`petición inesperada: ${method} ${url}`);
-    return new Response(JSON.stringify(response.body), { status: response.status });
+    if (!response) return Promise.reject(new Error(`petición inesperada: ${method} ${url}`));
+    return Promise.resolve(new Response(JSON.stringify(response.body), { status: response.status }));
   }) as typeof globalThis.fetch;
   return { fetch, calls };
 }
@@ -108,10 +108,9 @@ describe('el token de instalación', () => {
       },
     });
 
-    const error = await installationToken(fetch, app, '7daysofrain/mood-table-v2', now).catch(
-      (thrown: unknown) => thrown as Error,
-    );
-    expect(error.message).toMatch(/401/);
-    expect(error.message).not.toMatch(/Bearer/);
+    const attempt = installationToken(fetch, app, '7daysofrain/mood-table-v2', now);
+
+    await expect(attempt).rejects.toThrow(/401/);
+    await expect(attempt).rejects.not.toThrow(/Bearer/);
   });
 });

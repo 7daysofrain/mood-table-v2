@@ -40,7 +40,7 @@
   - se pide el token de instalación con un JWT firmado con la clave privada (`fetch` falso);
   - el push es normal, sin forzar, a la rama de la PR, sobre un repo *bare* local;
   - si la rama ha avanzado, el push se rechaza y se informa como «la rama ha cambiado».
-- [ ] 1.4 `src/fixer/push.ts` y `src/fixer/github-app.ts`: el token de instalación y el push. Hacen la
+- [x] 1.4 `src/fixer/push.ts` y `src/fixer/github-app.ts`: el token de instalación y el push. Hacen la
   E/S de red y de git y se excluyen de la cobertura como los `*.hardware.ts`; la parte pura (el JWT,
   la URL con el token) se prueba.
 

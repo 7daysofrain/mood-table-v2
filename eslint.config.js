@@ -60,6 +60,9 @@ export default defineConfig(
         // motor y ninguna dependencia con los paquetes del producto (change pr-tracking, decisión 5).
         { type: 'pb-core', pattern: 'packages/pr-babysitter/src/core' },
         { type: 'pb-adapter', pattern: 'packages/pr-babysitter/src/adapters' },
+        // El servicio que arregla (change pr-fixer, decisión 4): solo se importa a sí mismo, así que
+        // no ve los adaptadores con las credenciales del babysitter, y nadie lo importa.
+        { type: 'pb-fixer', pattern: 'packages/pr-babysitter/src/fixer' },
         { type: 'pb-main', pattern: 'packages/pr-babysitter/src' },
       ],
     },
@@ -100,6 +103,10 @@ export default defineConfig(
             {
               from: { element: { type: 'pb-adapter' } },
               allow: { to: { element: { type: ['pb-adapter', 'pb-core'] } } },
+            },
+            {
+              from: { element: { type: 'pb-fixer' } },
+              allow: { to: { element: { type: 'pb-fixer' } } },
             },
             {
               from: { element: { type: 'pb-main' } },
