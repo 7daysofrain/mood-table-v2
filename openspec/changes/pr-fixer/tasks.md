@@ -60,7 +60,7 @@
 
 ## 2. MOO-193 · infra
 
-- [ ] 2.1 **(test en rojo)** `decide()` elige arreglar (`core/decision.test.ts`, `design.md`
+- [x] 2.1 **(test en rojo)** `decide()` elige arreglar (`core/decision.test.ts`, `design.md`
   decisión 11):
   - `fix` en la ronda final con un hallazgo *real* arreglable;
   - `publish` sin hallazgos reales, con solo una relanzable que ha fallado dos veces, sin tope de
