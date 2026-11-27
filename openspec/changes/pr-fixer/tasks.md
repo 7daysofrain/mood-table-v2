@@ -84,7 +84,10 @@
   `pedirArreglo`, `esperarArreglo` y `avisarArreglo` (`core/graph.ts`), el *fixer* y sus opciones a
   través del *driver* (`core/driver.ts`) y los avisos nuevos (`core/notice.ts`, `core/tracking.ts`).
   Al implementar (`design.md` decisión 3): el estado del trabajo lo pregunta `esperarArreglo`, no va en
-  la foto, y el *fixer* es opcional, así que `src/studio.ts` no cambia.
+  la foto, y el *fixer* es opcional, así que `src/studio.ts` no cambia. Después, al documentar (27-nov,
+  decidido por el usuario): la cabecera del resumen del triaje decía «modo sombra: no arregla», que
+  deja de ser verdad con el arreglo; ahora dice «pide el arreglo de los hallazgos reales» o «no arregla
+  este push» (`core/triage-summary.ts`).
 
   Verificar: los tests de 2.3 en verde; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
 - [x] 2.5 **(test en rojo)** El servicio *fixer* (`src/fixer/*.test.ts`, con un agente falso y un repo

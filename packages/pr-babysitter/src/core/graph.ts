@@ -873,6 +873,7 @@ export function createTrackingGraph(
           sonarIssues: triaged?.sonarIssues,
           rerunPassed: passed,
           firstTriage: pushIn(state).firstTriage,
+          fixing: state.decision?.action === 'fix' && state.fix?.sha === snapshot.headSha,
         },
         triage.threshold,
       );
