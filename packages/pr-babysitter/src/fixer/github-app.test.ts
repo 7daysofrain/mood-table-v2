@@ -2,7 +2,7 @@ import { createVerify, generateKeyPairSync } from 'node:crypto';
 
 import { describe, expect, it } from 'vitest';
 
-import { appJwt, installationToken } from './github-app.ts';
+import { appJwt, installationToken, pullRequestBranch } from './github-app.ts';
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const privateKeyPem = privateKey.export({ type: 'pkcs1', format: 'pem' }).toString();
@@ -112,5 +112,32 @@ describe('el token de instalación', () => {
 
     await expect(attempt).rejects.toThrow(/401/);
     await expect(attempt).rejects.not.toThrow(/Bearer/);
+  });
+});
+
+describe('la rama de la PR', () => {
+  it('la lee de GitHub con el token de instalación', async () => {
+    const { fetch, calls } = fakeFetch({
+      'GET https://api.github.com/repos/7daysofrain/mood-table-v2/pulls/12': {
+        status: 200,
+        body: { head: { ref: '7daysofrain/moo-193-arreglar', sha: 'abc123' } },
+      },
+    });
+
+    const branch = await pullRequestBranch(fetch, 'ghs_token', '7daysofrain/mood-table-v2', 12);
+
+    expect(branch).toBe('7daysofrain/moo-193-arreglar');
+    expect(calls[0]?.headers.authorization).toBe('Bearer ghs_token');
+  });
+
+  it('si GitHub no la da, lanza con su estado y sin el token', async () => {
+    const { fetch } = fakeFetch({
+      'GET https://api.github.com/repos/7daysofrain/mood-table-v2/pulls/12': { status: 404, body: {} },
+    });
+
+    const attempt = pullRequestBranch(fetch, 'ghs_token', '7daysofrain/mood-table-v2', 12);
+
+    await expect(attempt).rejects.toThrow(/404/);
+    await expect(attempt).rejects.not.toThrow(/ghs_token/);
   });
 });

@@ -87,7 +87,7 @@
   la foto, y el *fixer* es opcional, así que `src/studio.ts` no cambia.
 
   Verificar: los tests de 2.3 en verde; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 2.5 **(test en rojo)** El servicio *fixer* (`src/fixer/*.test.ts`, con un agente falso y un repo
+- [x] 2.5 **(test en rojo)** El servicio *fixer* (`src/fixer/*.test.ts`, con un agente falso y un repo
   *bare* local):
   - `POST /jobs` encola un trabajo, y repetirlo con la misma PR y el mismo SHA no crea otro;
     `GET /jobs/:pr/:sha` da su estado; los cuerpos se validan con zod;
