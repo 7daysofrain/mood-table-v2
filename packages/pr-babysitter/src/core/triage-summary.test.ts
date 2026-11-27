@@ -67,11 +67,17 @@ function rows(text: string): string[] {
 }
 
 describe('el resumen del triaje (design.md, decisión 7)', () => {
-  it('dice que es del PR Babysitter, que no arregla, y de qué push, con su SHA corto', () => {
+  it('dice que es del PR Babysitter, que no arregla este push, y de qué push, con su SHA corto', () => {
     const text = triageSummary({ sha: SHA, findings: [] }, 0.8);
 
+    expect(text.split('\n')[0]).toBe('**Triaje del PR Babysitter** (no arregla este push) · push `abc1234`');
+  });
+
+  it('si el sistema pide el arreglo del push, lo dice en la cabecera (change pr-fixer)', () => {
+    const text = triageSummary({ sha: SHA, findings: [], fixing: true }, 0.8);
+
     expect(text.split('\n')[0]).toBe(
-      '**Triaje del PR Babysitter** (modo sombra: no arregla) · push `abc1234`',
+      '**Triaje del PR Babysitter** (pide el arreglo de los hallazgos reales) · push `abc1234`',
     );
   });
 
@@ -516,7 +522,7 @@ describe('lo relanzado (change pr-check-rerun, decisiones 1, 6 y 8)', () => {
 
     expect(text).not.toContain('| Hallazgo |');
     expect(text.split('\n')).toEqual([
-      '**Triaje del PR Babysitter** (modo sombra: no arregla) · push `abc1234`',
+      '**Triaje del PR Babysitter** (no arregla este push) · push `abc1234`',
       '',
       'La comprobación `test` se relanzó y pasó.',
       'La comprobación `e2e` se relanzó y pasó.',

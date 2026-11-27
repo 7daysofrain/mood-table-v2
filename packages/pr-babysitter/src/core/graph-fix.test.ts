@@ -108,13 +108,20 @@ function recordingNotifier() {
 function setup(found: Finding[], { enabled = true } = {}) {
   const { notifier, notices } = recordingNotifier();
   const { fixer, recorded } = fakeFixer();
+  const summaries: string[] = [];
   const graph = createTrackingGraph(
     {
       notifier,
       reviewRequests: { requested: () => Promise.resolve(false), request: () => Promise.resolve() },
       findings: findingsFor(found),
       decisionModel: unsureModel,
-      summaries: { published: () => Promise.resolve(false), publish: () => Promise.resolve() },
+      summaries: {
+        published: () => Promise.resolve(false),
+        publish: (_number, _sha, text) => {
+          summaries.push(text);
+          return Promise.resolve();
+        },
+      },
       checkReruns: { rerun: () => Promise.resolve() },
       fixer,
     },
@@ -138,6 +145,7 @@ function setup(found: Finding[], { enabled = true } = {}) {
     graph,
     notices,
     recorded,
+    summaries,
     start: (first: PullRequestSnapshot) => graph.invoke({ snapshot: first }, config),
     resume: (next: PullRequestSnapshot) => graph.invoke(new Command({ resume: next }), config),
     state: () => graph.getState(config),
@@ -168,6 +176,26 @@ describe('pr-fix · El sistema arregla los hallazgos reales y los sube a la PR',
     const state = await run.state();
     expect(state.next).toEqual(['esperarArreglo']);
     expect(state.values).toMatchObject({ decision: { action: 'fix', rule: 'fixable' } });
+  });
+
+  it('el resumen del push que se arregla dice que pide el arreglo', async () => {
+    const run = setup([checkFinding('lint')]);
+    await run.start(snapshot(0));
+    await run.resume(snapshot(5, { checks: LINT_FAILS }));
+
+    expect(run.summaries.map((text) => text.split('\n')[0])).toEqual([
+      `**Triaje del PR Babysitter** (pide el arreglo de los hallazgos reales) · push \`${HEAD.slice(0, 7)}\``,
+    ]);
+  });
+
+  it('con el arreglo apagado, el resumen dice que no arregla ese push', async () => {
+    const run = setup([checkFinding('lint')], { enabled: false });
+    await run.start(snapshot(0));
+    await run.resume(snapshot(5, { checks: LINT_FAILS }));
+
+    expect(run.summaries.map((text) => text.split('\n')[0])).toEqual([
+      `**Triaje del PR Babysitter** (no arregla este push) · push \`${HEAD.slice(0, 7)}\``,
+    ]);
   });
 
   it('mientras el trabajo está en marcha, sigue esperando sin avisar', async () => {
