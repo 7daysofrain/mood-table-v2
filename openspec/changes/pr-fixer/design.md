@@ -103,11 +103,21 @@ pasando por «ramas de integración», que no tiene *bypass*.
 ```
 ... reunirTriaje --> decidir --(publish)--> publicarResumen --> avisarEstadoFinal --> END
                         |
-                        +--(fix)--> publicarResumen --> avisarSinArreglo? --> pedirArreglo --> esperarArreglo
-                                                                                                   |
-                                     +--(subido: el push nuevo lo recoge el driver)----------------+--> END
-                                     +--(no subido, fallido o interrumpido dos veces)--------------+--> avisarEstadoFinal
+                        +--(fix)--> publicarResumen --> pedirArreglo --> esperarArreglo <--+ (en cola o en marcha)
+                                                            |                 |  |  |      |
+                                     (el fixer no contesta) +                 |  |  +------+
+                                                            v                 |  |
+                                                    avisarEstadoFinal <-------+  |  (fallido, interrumpido dos
+                                                                                 |   veces o fuera de tiempo)
+                                       push nuevo (del arreglo o del mantenedor) v
+                                       avisarArreglo --> esperarComprobaciones (el push nuevo, sin aviso)
 ```
+
+*Implementado así en `MOO-193` (27-nov).* `esperarArreglo` pregunta él mismo al puerto en qué está el
+trabajo al reanudarse, en vez de que el *driver* lo meta en la foto. Así el *driver* no cambia, y solo
+pregunta el hilo que espera. Un trabajo que no termina en `FIX_TIMEOUT_MINUTES` (60, *asumido*) desde que
+se pidió va al aviso final, para que una PR no se quede esperando para siempre si el *fixer* se
+pierde. Sin *fixer* configurado, `decidir` decide como antes del arreglo.
 
 - **`decide()`** gana la acción `fix` en la ronda final, con sus reglas (decisión 11). Si no hay nada
   que arreglar, o no se puede, sigue en `publish`, y el motivo va al aviso.
@@ -115,11 +125,12 @@ pasando por «ramas de integración», que no tiene *bypass*.
   espera. Pedirlo dos veces para el mismo push no crea dos trabajos (la clave es la PR y su SHA). Está
   en `PR_ACTION_NODES`, así que el *driver* se lo salta con un push viejo o una PR detenida, como hoy.
 - **`esperarArreglo`** se para con `interrupt()`, como las esperas de comprobaciones y revisión. El
-  *driver* reanuda el hilo cada vuelta con una foto que trae el estado del trabajo (`Fixer.status`).
-  Esperar al arreglo es el mismo mecanismo que esperar a la CI: nada se bloquea.
-- **Arreglo subido:** el hilo termina sin avisar del estado final de ese push (decisión 10). El push
-  nuevo lo recoge el *driver* en la vuelta siguiente y vuelve a empezar el seguimiento, como cualquier
-  push.
+  *driver* lo reanuda cada vuelta con la foto, y el nodo pregunta a `Fixer.status` en qué está el
+  trabajo. Esperar al arreglo es el mismo mecanismo que esperar a la CI: nada se bloquea.
+- **Arreglo subido:** no hay aviso del estado final de ese push (decisión 10). Cuando la foto trae el
+  push nuevo, `avisarArreglo` avisa de lo que no se ha arreglado, si queda algo, y el hilo sigue con
+  ese push sin el aviso de seguimiento: el sistema no ha dejado de seguir la PR. Un push del
+  mantenedor mientras arregla sigue el mismo camino, sin aviso.
 - **El puerto, en `core/ports.ts`:**
 
   ```ts
@@ -258,8 +269,9 @@ ruido.
 - **El resumen del triaje se publica igual,** antes de pedir el arreglo, para que la PR cuente qué se
   ha visto y por qué.
 - **Si hay hallazgos que no se arreglan** (exigen criterio, una relanzable que ha fallado dos veces) o
-  el arreglo deja alguno sin subir, `avisarSinArreglo` manda un aviso con cada uno y su motivo.
-  Reutiliza el canal de BH1 (D70) y el reintento de los avisos.
+  el arreglo deja alguno sin subir, `avisarArreglo` manda un aviso con cada uno y su motivo cuando llega
+  el push del arreglo: uno solo por trabajo. Reutiliza el canal de BH1 (D70) y el reintento de los
+  avisos.
 - **Si el trabajo falla entero** (vueltas, tope, interrumpido dos veces o nada subido), el aviso es el
   del estado final de siempre, «necesita intervención», con el motivo del arreglo.
 

@@ -12,7 +12,7 @@ import { createTrackingGraph, PR_ACTION_NODES, threadConfig } from './graph.ts';
 import { type Notice, noticeSummary } from './notice.ts';
 import type { DecisionModel, Findings, Fixer, Notifier } from './ports.ts';
 import type { Check, PullRequestSnapshot } from './pull-request.ts';
-import type { Finding, PullRequestContext } from './triage.ts';
+import type { CheckFinding, Finding, PullRequestContext } from './triage.ts';
 
 const MINUTE = 60_000;
 const HEAD = 'a1b2c3d';
@@ -47,7 +47,7 @@ function snapshot(minute: number, overrides: Partial<PullRequestSnapshot> = {}):
   };
 }
 
-const checkFinding = (name: string): Finding => ({
+const checkFinding = (name: string): CheckFinding => ({
   source: 'check',
   name,
   conclusion: 'failure',
@@ -167,7 +167,7 @@ describe('pr-fix · El sistema arregla los hallazgos reales y los sube a la PR',
     expect(after(run.notices)).toEqual([]);
     const state = await run.state();
     expect(state.next).toEqual(['esperarArreglo']);
-    expect(state.values.decision).toEqual({ action: 'fix', rule: 'fixable' });
+    expect(state.values).toMatchObject({ decision: { action: 'fix', rule: 'fixable' } });
   });
 
   it('mientras el trabajo está en marcha, sigue esperando sin avisar', async () => {
@@ -191,7 +191,7 @@ describe('pr-fix · El sistema arregla los hallazgos reales y los sube a la PR',
     expect(after(run.notices)).toEqual([]);
     const state = await run.state();
     expect(state.next).toEqual(['esperarComprobaciones']);
-    expect(state.values.push).toMatchObject({ sha: FIXED, seenAt: 8 * MINUTE });
+    expect(state.values).toMatchObject({ push: { sha: FIXED, seenAt: 8 * MINUTE } });
   });
 
   it('subido pero sin que la foto lo vea todavía: sigue esperando', async () => {
@@ -374,7 +374,7 @@ describe('pr-tracking · el push que se arregla no tiene aviso de estado final',
     expect(after(run.notices)).toEqual([]);
     const state = await run.state();
     expect(state.next).toEqual(['esperarComprobaciones']);
-    expect(state.values.push).toMatchObject({ sha: 'm41nt41' });
+    expect(state.values).toMatchObject({ push: { sha: 'm41nt41' } });
   });
 });
 
@@ -384,7 +384,9 @@ describe('pr-triage · La decisión de arreglar queda registrada', () => {
     await run.start(snapshot(0));
     await run.resume(snapshot(5, { checks: E2E_FAILED_TWICE }));
 
-    expect((await run.state()).values.decision).toEqual({ action: 'publish', rule: 'notCausedByPr' });
+    expect((await run.state()).values).toMatchObject({
+      decision: { action: 'publish', rule: 'notCausedByPr' },
+    });
   });
 });
 

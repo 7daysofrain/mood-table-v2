@@ -74,15 +74,17 @@
     ese hallazgo y su contexto, y el hilo espera en `esperarArreglo` sin avisar;
   - el arreglo subido: el hilo termina sin aviso del estado final; el push nuevo lo vuelve a empezar
     el *driver*;
-  - un hallazgo que no se sube: `avisarSinArreglo` con el hallazgo y su motivo;
+  - un hallazgo que no se sube: `avisarArreglo` con el hallazgo y su motivo;
   - un real y uno que exige criterio: se pide el real y se avisa del otro;
   - una relanzable que ha fallado dos veces: no se pide, se avisa;
   - el trabajo `failed`: aviso del estado final «necesita intervención» con el motivo;
   - pedir dos veces el mismo push no crea dos trabajos;
   - con un push viejo o una PR detenida, el *driver* se salta `pedirArreglo` (`core/driver.test.ts`).
-- [ ] 2.4 El puerto `Fixer` (`core/ports.ts`), los nodos `pedirArreglo`, `esperarArreglo` y
-  `avisarSinArreglo` (`core/graph.ts`), el estado del trabajo en la foto (`core/pull-request.ts`,
-  `core/driver.ts`), los avisos nuevos (`core/notice.ts`) y los puertos falsos de `src/studio.ts`.
+- [x] 2.4 El puerto `Fixer` (`core/ports.ts`), los tipos del arreglo (`core/fix.ts`), los nodos
+  `pedirArreglo`, `esperarArreglo` y `avisarArreglo` (`core/graph.ts`), el *fixer* y sus opciones a
+  través del *driver* (`core/driver.ts`) y los avisos nuevos (`core/notice.ts`, `core/tracking.ts`).
+  Al implementar (`design.md` decisión 3): el estado del trabajo lo pregunta `esperarArreglo`, no va en
+  la foto, y el *fixer* es opcional, así que `src/studio.ts` no cambia.
 
   Verificar: los tests de 2.3 en verde; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
 - [ ] 2.5 **(test en rojo)** El servicio *fixer* (`src/fixer/*.test.ts`, con un agente falso y un repo
