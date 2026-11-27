@@ -2864,6 +2864,39 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *La App se creó en el navegador integrado; su clave privada tardó en llegar a disco y la IA creyó que se había perdido. El usuario la adjuntó al chat y decidió no rotarla.*
 - *`src/fixer` es una capa propia en la regla de fronteras, y su push se prueba con un repo* bare *local en vez de excluirse de la cobertura.*
 
+#### 6.106 Construir el arreglador: el camino del arreglo en el grafo y el servicio *fixer* (`MOO-193`)
+
+**Prompt 1** (con la #206 integrada, siguiendo `/opsx:apply pr-fixer`):
+
+> mergeada
+
+*Claude Code (`claude-opus-5-5`, 27-nov). La IA abrió la rama de `MOO-193` desde `main` y siguió el change con TDD, un commit por paso: primero `decide()` con la acción `fix` y sus reglas, después el camino del arreglo en el grafo (`pedirArreglo`, `esperarArreglo`, `avisarArreglo`) con un* `Fixer` *falso. Al escribir los tests vio que un escenario de la spec era falso: las PR de Dependabot no llegan al triaje, porque el sistema solo sigue las del mantenedor. Corrigió el change antes de seguir, en vez de añadir una regla que nunca se ejecutaría.*
+
+**Prompt 2** (cuando la IA paró antes del servicio *fixer* y preguntó si seguía):
+
+> porque parar?
+
+*La IA reconoció que no había motivo técnico: era un buen punto de corte, nada más. Siguió con el servicio y lo dejó funcionando:*
+
+- *La cola en SQLite y las rutas HTTP.*
+- *El bucle de un trabajo a la vez.*
+- *Por cada hallazgo, el agente del Claude Agent SDK, `lint`, `typecheck` y `test`, y un commit con su* trailer*.*
+- *Un solo push, con la App.*
+- *El cliente del puerto y el compose.*
+
+*Tomó por su cuenta algunas decisiones de seguridad que el design no fijaba, y las dejó apuntadas en él:*
+
+- *el clon sale sin token;*
+- *los comandos corren sin los secretos del* fixer*;*
+- *un diff con un secreto no se sube.*
+
+*Verificó el compose en un proyecto aparte, para no tocar el contenedor de `main` que vigila las PR. Al documentar encontró un hueco que no cubrían ni la spec ni las tasks: la cabecera del resumen del triaje seguía diciendo «modo sombra: no arregla».*
+
+*Ajustes:*
+- *La protección del worktree también rechaza los* heredocs *que nombran `git`: la IA pasó a escribir los ficheros con sus herramientas y los cambios largos con un script aparte.*
+- *Los datos de prueba se tiparon por su origen (`CheckFinding`…): con el tipo unión, un* spread *no compilaba.*
+- *El SDK trae el binario de Claude Code de su plataforma: no hace falta instalarlo aparte en la imagen, y eso cierra una pregunta abierta del design.*
+
 ---
 
 ### 7. Pull Requests
