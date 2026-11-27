@@ -2839,6 +2839,31 @@ Instrucciones de `poke-holes` antes y después ([commit `4f7738f`](https://githu
 - *Su primer calificador por script dio 3 fallos falsos en la línea de la épica: partía en el primer «·», que también está dentro de los títulos de épica. Lo corrigió antes de dar el resultado.*
 - *`estimator` sigue con `tools` como texto separado por comas hasta `MOO-153`, como pedía la captura.*
 
+#### 6.105 Refinar y especificar el arreglador del PR Babysitter (`MOO-77`, `MOO-192`)
+
+**Prompt 1** (al empezar `/refine-story MOO-77`, antes del caso feliz):
+
+> no me cuadra el tema de local, mi idea es que el fixer se lanze desde langchain y en un proceso en algún lado (mi docker, github, o claude.ai...) se haga el arreglo y lanze el commit sobre la rama. Esto siempre que sea clasificado como real por el triador
+
+*Claude Code (`claude-opus-5-5`, 27-nov). La IA separó dos cosas: dónde corre el arreglo no chocaba con nada, pero hacer commit en la rama de la PR contradecía D124 (empezar en modo ensayo) y abría BQ7, porque en GitHub el permiso que sube commits también deja integrar. Propuso una rama aparte. El usuario eligió la rama de la PR y preguntó qué valor tenía un arreglo sin publicar; la IA le dio la razón y cambió el corte entre las dos historias de BH3: arreglar y subir (`MOO-77`) frente a contestar y resolver los hilos (`MOO-78`). Tras el poke-holes, el usuario se quedó con 5 de 8 criterios y mandó las PR de Dependabot a una captura (`MOO-191`). Planning poker: 8 y 8.*
+
+**Prompt 2** (al explorar el change):
+
+> Por favor, verifica que podemos antes de tomar ninguna decision. A mi me gusta mas la idea de que sea el contenedor ya que de esta manera no creamos una dependencia del sistema con Github pero no quiero que sea bloqueante [...] me interesaría que se resolviese con un puerto
+
+*La IA había recomendado GitHub Actions. Antes de seguir, comprobó BQ7 de verdad, con permiso: creó un repo de prueba con un* ruleset *de* Restrict updates *y probó con el bot de Actions que una App sin* bypass *sube a la rama de la PR pero no integra (405) ni sube a `main` (GH013). Encontró además que el modo `exempt` deja integrar al mantenedor con el botón normal, sin marcar «bypass» en cada merge, y que estar exento de un* ruleset *no salta las comprobaciones de otro. Borró el repo al acabar. Para no bloquear el* driver*, que despierta las PR una tras otra, propuso un servicio aparte en el compose detrás de un puerto `Fixer`, al que el grafo espera como espera a la CI.*
+
+**Prompt 3:**
+
+> Aqui tengo una duda, realmente el worker tiene que pasarlo? Luego cuando haga el push a la PR van a volver a saltar ahi, no?
+
+*La IA separó lo que mejora el arreglo (que el agente compile y pase los tests en su bucle) de lo que solo duplica la CI (`e2e`, que pedía Chromium en la imagen). El usuario eligió pasar `lint`, `typecheck` y `test` antes del push y dejar `e2e` a la CI, matizando BE10 (D131). También eligió que un trabajo interrumpido se reintente solo, «para evitar ruido». El change `pr-fixer` salió con 12 decisiones, las cinco de arquitectura del curso respondidas, y D127-D131.*
+
+*Ajustes:*
+- *La protección del worktree rechaza cualquier comando que contenga `git`, también en `.github`: para el repo de prueba, la IA salió del worktree con permiso y volvió a entrar.*
+- *La App se creó en el navegador integrado; su clave privada tardó en llegar a disco y la IA creyó que se había perdido. El usuario la adjuntó al chat y decidió no rotarla.*
+- *`src/fixer` es una capa propia en la regla de fronteras, y su push se prueba con un repo* bare *local en vez de excluirse de la cobertura.*
+
 ---
 
 ### 7. Pull Requests
