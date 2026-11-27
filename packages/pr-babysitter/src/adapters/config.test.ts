@@ -36,6 +36,7 @@ describe('la configuración del entorno', () => {
         triageRuleChecks: ['lint', 'typecheck', 'SonarCloud Code Analysis'],
         triageSonarIssuesCheck: 'sonar-issues',
         rerunChecks: ['test', 'e2e'],
+        fix: null,
       },
     });
   });
@@ -78,6 +79,36 @@ describe('la configuración del entorno', () => {
   it('lee la cuenta del revisor', () => {
     const result = loadConfig({ ...env, GITHUB_REVIEWER: 'otro-revisor[bot]' });
     expect(result.ok && result.config.githubReviewer).toBe('otro-revisor[bot]');
+  });
+
+  it('con FIXER_URL, arregla: por defecto encendido, con 2 $ de tope y una hora de espera (change pr-fixer)', () => {
+    const result = loadConfig({ ...env, FIXER_URL: 'http://fixer:8080' });
+
+    expect(result.ok && result.config.fix).toEqual({
+      url: 'http://fixer:8080',
+      enabled: true,
+      budgetUsd: 2,
+      timeoutMs: 60 * 60_000,
+    });
+  });
+
+  it('lee si se arregla, el tope y la espera del arreglo', () => {
+    const result = loadConfig({
+      ...env,
+      FIXER_URL: 'http://fixer:8080',
+      FIX_ENABLED: 'false',
+      FIX_BUDGET_USD: '0.5',
+      FIX_TIMEOUT_MINUTES: '30',
+    });
+
+    expect(result.ok && result.config.fix).toMatchObject({ enabled: false, budgetUsd: 0.5, timeoutMs: 30 * 60_000 });
+  });
+
+  it('FIX_ENABLED solo vale true o false', () => {
+    const result = loadConfig({ ...env, FIX_ENABLED: 'no' });
+
+    expect(result.ok).toBe(false);
+    expect(result.ok ? '' : result.error).toContain('- FIX_ENABLED: tiene que ser true o false');
   });
 
   it('lee el tiempo de espera en minutos', () => {

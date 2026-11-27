@@ -118,7 +118,7 @@
   se sube.
 
   Verificar: los tests de 2.5 en verde; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 2.7 El cableado:
+- [x] 2.7 El cableado:
   - **el cliente HTTP del puerto,** `adapters/fixer-client.ts`, con su test contra un servidor falso;
   - **`main.ts`,** que lo conecta;
   - **la configuración:** `FIX_ENABLED`, `FIX_BUDGET_USD`, `FIXER_URL` y el modelo, con valor por
@@ -129,6 +129,12 @@
   Verificar: `docker compose build` y `docker compose up -d` levantan los dos servicios, y el
   babysitter llega al *fixer* por la red interna. `pnpm lint`, `pnpm typecheck` y `pnpm test` en
   verde.
+
+  Al implementar: `FIXER_URL` lo pone el compose, y sin él el sistema no arregla; el modelo va en el
+  `fixer.env` (`FIXER_MODEL`), no en el del babysitter; la clave de la App es un secreto del compose,
+  `~/.config/pr-babysitter/app-private-key.pem`. Verificado el 27-nov en un proyecto de compose aparte,
+  sin tocar el contenedor de `main`: las dos imágenes se construyen, el *fixer* arranca sin puertos al
+  *host*, lee la clave y responde al babysitter en `http://fixer:8080`.
 - [ ] 2.8 Documentación:
   - README §2.2 (*PR Babysitter*): el *fixer*, el puerto y el camino nuevo del grafo, con el diagrama;
   - README §2.4: el servicio `fixer`, su `.env` y la clave de Anthropic;

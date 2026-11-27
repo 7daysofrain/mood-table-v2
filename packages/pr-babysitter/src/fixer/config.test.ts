@@ -28,6 +28,13 @@ describe('la configuración del fixer', () => {
     });
   });
 
+  it('una variable vacía vale su valor por defecto', () => {
+    expect(loadFixerConfig({ ...minimal, FIXER_MODEL: '', FIXER_MAX_TURNS: '' })).toMatchObject({
+      model: 'claude-sonnet-5-5',
+      maxTurns: 40,
+    });
+  });
+
   it('si falta algo o no vale, no arranca y dice qué variable', () => {
     expect(() => loadFixerConfig({ ...minimal, ANTHROPIC_API_KEY: '', FIXER_REPOSITORY: 'mood-table-v2' })).toThrow(
       /ANTHROPIC_API_KEY: falta[\s\S]*FIXER_REPOSITORY: no es owner\/name/,

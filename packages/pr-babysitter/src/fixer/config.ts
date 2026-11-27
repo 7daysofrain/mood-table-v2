@@ -49,9 +49,14 @@ export interface FixerConfig {
 
 /** Lee la configuración del entorno. Lanza con cada variable que falta o no vale. */
 export function loadFixerConfig(env: NodeJS.ProcessEnv): FixerConfig {
-  const parsed = envSchema.safeParse(env);
+  // Una variable vacía del `fixer.env` cuenta como que no está: vale su valor por defecto.
+  const present = Object.fromEntries(Object.entries(env).filter(([, value]) => value !== ''));
+  const parsed = envSchema.safeParse(present);
   if (!parsed.success) {
-    const problems = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
+    const problems = parsed.error.issues.map((issue) => {
+      const name = issue.path.join('.');
+      return `${name}: ${name in present ? issue.message : 'falta'}`;
+    });
     throw new Error(`La configuración del fixer no vale:\n${problems.join('\n')}`);
   }
   const e = parsed.data;

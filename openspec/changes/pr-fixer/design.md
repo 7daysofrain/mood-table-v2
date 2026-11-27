@@ -367,5 +367,6 @@ La regla que decide queda en el estado (`decision.rule`) y en la traza (BE4), co
 
 - Qué tope de turnos por hallazgo se le pone al agente. Se fija con la prueba a mano, junto con el
   coste.
-- Si la imagen del *fixer* necesita el binario de Claude Code aparte o le basta el SDK. Se ve al montar
-  la imagen en `MOO-193`.
+- ~~Si la imagen del *fixer* necesita el binario de Claude Code aparte o le basta el SDK.~~ Le basta el
+  SDK: trae el binario de su plataforma como dependencia opcional (`linux-arm64` en la imagen de casa),
+  visto al montar la imagen en `MOO-193` (27-nov).
