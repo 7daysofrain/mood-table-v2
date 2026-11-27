@@ -36,7 +36,7 @@
 
   Verificar: `gh api repos/7daysofrain/mood-table-v2/rulesets` lista los dos *rulesets*, y el nuevo
   con su regla y su *bypass*.
-- [ ] 1.3 **(test en rojo)** Subir a la rama de una PR con la App (`src/fixer/push.test.ts`):
+- [x] 1.3 **(test en rojo)** Subir a la rama de una PR con la App (`src/fixer/push.test.ts`):
   - se pide el token de instalación con un JWT firmado con la clave privada (`fetch` falso);
   - el push es normal, sin forzar, a la rama de la PR, sobre un repo *bare* local;
   - si la rama ha avanzado, el push se rechaza y se informa como «la rama ha cambiado».
