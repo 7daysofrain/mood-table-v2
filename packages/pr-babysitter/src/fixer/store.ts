@@ -17,6 +17,7 @@ const SCHEMA = `
     state TEXT NOT NULL,
     result TEXT,
     attempts INTEGER NOT NULL DEFAULT 0,
+    spent_at_enqueue REAL NOT NULL DEFAULT 0,
     UNIQUE (pr, sha)
   );
   CREATE TABLE IF NOT EXISTS costs (
@@ -39,13 +40,21 @@ export class JobStore {
   constructor(path: string) {
     this.#db = new DatabaseSync(path);
     this.#db.exec(SCHEMA);
+    // Una base de datos de antes de la columna: se añade, con 0 en los trabajos que ya tenía.
+    const columns = this.#db.prepare('PRAGMA table_info(jobs)').all() as { name: string }[];
+    if (!columns.some(({ name }) => name === 'spent_at_enqueue')) {
+      this.#db.exec('ALTER TABLE jobs ADD COLUMN spent_at_enqueue REAL NOT NULL DEFAULT 0');
+    }
   }
 
-  /** Encola el trabajo. Si ya hay uno de esa PR y ese SHA, no crea otro y devuelve `false`. */
+  /**
+   * Encola el trabajo, con lo que lleva gastado la PR en ese momento. Si ya hay uno de esa PR y ese
+   * SHA, no crea otro y devuelve `false`.
+   */
   enqueue(job: FixJob): boolean {
     const { changes } = this.#db
-      .prepare("INSERT OR IGNORE INTO jobs (pr, sha, job, state) VALUES (?, ?, ?, 'queued')")
-      .run(job.number, job.sha, JSON.stringify(job));
+      .prepare("INSERT OR IGNORE INTO jobs (pr, sha, job, state, spent_at_enqueue) VALUES (?, ?, ?, 'queued', ?)")
+      .run(job.number, job.sha, JSON.stringify(job), this.spent(job.number));
     return changes > 0;
   }
 
@@ -59,12 +68,19 @@ export class JobStore {
     return fixStatusSchema.parse(JSON.parse(row.result));
   }
 
-  /** El trabajo en cola que llegó antes, o nada. */
+  /**
+   * El trabajo en cola que llegó antes, o nada. Su tope es lo que le quedaba al encolarse menos lo que
+   * la PR ha gastado desde entonces (decisión 8): otro trabajo de la misma PR puede haber seguido
+   * gastando mientras este esperaba.
+   */
   next(): FixJob | undefined {
-    const row = this.#db.prepare("SELECT job FROM jobs WHERE state = 'queued' ORDER BY seq LIMIT 1").get() as
-      | Pick<JobRow, 'job'>
-      | undefined;
-    return row ? fixJobSchema.parse(JSON.parse(row.job)) : undefined;
+    const row = this.#db
+      .prepare("SELECT job, spent_at_enqueue FROM jobs WHERE state = 'queued' ORDER BY seq LIMIT 1")
+      .get() as (Pick<JobRow, 'job'> & { spent_at_enqueue: number }) | undefined;
+    if (!row) return undefined;
+    const job = fixJobSchema.parse(JSON.parse(row.job));
+    const spentSince = this.spent(job.number) - row.spent_at_enqueue;
+    return { ...job, budgetUsd: Math.max(0, job.budgetUsd - spentSince) };
   }
 
   /** Lo pone en marcha y cuenta el intento (decisión 9). */

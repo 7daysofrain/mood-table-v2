@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 import { describe, expect, it } from 'vitest';
 
@@ -82,6 +83,31 @@ describe('la cola de trabajos (design.md decisión 4)', () => {
       expect(after.status(12, 'abc123')).toEqual({ state: 'queued' });
       expect(after.spent(12)).toBe(0.3);
       after.close();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('abre una base de datos de antes de guardar lo gastado al encolar, y sus trabajos siguen', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'pr-fixer-store-'));
+    try {
+      const path = join(dir, 'fixer.sqlite');
+      const old = new DatabaseSync(path);
+      old.exec(`
+        CREATE TABLE jobs (
+          seq INTEGER PRIMARY KEY AUTOINCREMENT, pr INTEGER NOT NULL, sha TEXT NOT NULL, job TEXT NOT NULL,
+          state TEXT NOT NULL, result TEXT, attempts INTEGER NOT NULL DEFAULT 0, UNIQUE (pr, sha)
+        );
+        CREATE TABLE costs (pr INTEGER NOT NULL, sha TEXT NOT NULL, usd REAL NOT NULL);
+      `);
+      old.prepare("INSERT INTO jobs (pr, sha, job, state) VALUES (12, 'abc123', ?, 'queued')").run(JSON.stringify(fixJob()));
+      old.close();
+
+      const store = new JobStore(path);
+
+      expect(store.next()).toEqual(fixJob());
+      expect(store.enqueue(fixJob({ sha: 'def456' }))).toBe(true);
+      store.close();
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
