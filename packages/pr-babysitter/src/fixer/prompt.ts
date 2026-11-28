@@ -66,6 +66,8 @@ export function fixPrompt(pr: PullRequestContext, finding: Finding): string {
     '',
     '## How to work',
     '- Fix only this finding, with the smallest change that does it, inside the scope of the pull request.',
+    '- Change only what this finding needs. Do not fix anything else you notice, even an obvious bug next',
+    '  to it: the other findings are handled apart, and some of them are for the maintainer to decide.',
     '- Follow the conventions in AGENTS.md.',
     '- Check your change with `pnpm lint`, `pnpm typecheck` and `pnpm test`. They must pass.',
     '- Do not commit and do not push: that is done for you if the checks pass.',
