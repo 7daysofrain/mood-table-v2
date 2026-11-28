@@ -3,8 +3,7 @@
  * alcance de la PR. No recibe tokens, ni el diff entero, ni los demás hallazgos. `AGENTS.md` lo carga
  * el SDK con `settingSources: ["project"]`. Va en inglés: solo lo lee el agente.
  */
-import type { PullRequestContext } from '../core/triage.ts';
-import type { Finding } from '../core/triage.ts';
+import type { Finding, PullRequestContext } from '../core/triage.ts';
 
 function place(file: string, line: number | null): string {
   return line === null ? file : `${file}:${line}`;
