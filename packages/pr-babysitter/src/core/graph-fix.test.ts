@@ -81,6 +81,7 @@ function fakeFixer() {
     status: { state: 'queued' } as FixStatus,
     spentUsd: 0,
     requestFails: false,
+    statusFails: false,
   };
   const fixer: Fixer = {
     request(job) {
@@ -88,7 +89,8 @@ function fakeFixer() {
       recorded.jobs.push(job);
       return Promise.resolve();
     },
-    status: () => Promise.resolve(recorded.status),
+    status: () =>
+      recorded.statusFails ? Promise.reject(new Error('el fixer no contesta')) : Promise.resolve(recorded.status),
     spent: () => Promise.resolve(recorded.spentUsd),
   };
   return { fixer, recorded };
@@ -220,6 +222,43 @@ describe('pr-fix · El sistema arregla los hallazgos reales y los sube a la PR',
     const state = await run.state();
     expect(state.next).toEqual(['esperarComprobaciones']);
     expect(state.values).toMatchObject({ push: { sha: FIXED, seenAt: 8 * MINUTE } });
+  });
+
+  it('la foto ve el push del arreglo antes de que el fixer lo dé por subido: espera y luego avisa', async () => {
+    const run = setup([checkFinding('lint'), checkFinding('build')]);
+    await run.start(snapshot(0));
+    await run.resume(snapshot(5, { checks: LINT_AND_BUILD_FAIL }));
+    run.recorded.status = { state: 'running' };
+    await run.resume(snapshot(8, { headSha: FIXED }));
+
+    expect(after(run.notices)).toEqual([]);
+    expect((await run.state()).next).toEqual(['esperarArreglo']);
+
+    run.recorded.status = { state: 'pushed', sha: FIXED, unfixed: [] };
+    await run.resume(snapshot(9, { headSha: FIXED }));
+
+    expect(after(run.notices)).toMatchObject([
+      { type: 'notFixed', items: [{ label: '`build`', reason: 'needsJudgment' }] },
+    ]);
+    expect((await run.state()).next).toEqual(['esperarComprobaciones']);
+  });
+
+  it('el fixer no contesta cuando la foto ve el push del arreglo: espera en vez de perder el aviso', async () => {
+    const run = setup([checkFinding('lint'), checkFinding('build')]);
+    await run.start(snapshot(0));
+    await run.resume(snapshot(5, { checks: LINT_AND_BUILD_FAIL }));
+    run.recorded.status = { state: 'running' };
+    await run.resume(snapshot(6, { checks: LINT_AND_BUILD_FAIL }));
+    run.recorded.statusFails = true;
+    await run.resume(snapshot(8, { headSha: FIXED }));
+
+    expect((await run.state()).next).toEqual(['esperarArreglo']);
+
+    run.recorded.statusFails = false;
+    run.recorded.status = { state: 'pushed', sha: FIXED, unfixed: [] };
+    await run.resume(snapshot(9, { headSha: FIXED }));
+
+    expect(after(run.notices)).toMatchObject([{ type: 'notFixed' }]);
   });
 
   it('subido pero sin que la foto lo vea todavía: sigue esperando', async () => {
@@ -392,12 +431,35 @@ describe('pr-tracking · el push que se arregla no tiene aviso de estado final',
     ]);
   });
 
-  it('un push del mantenedor mientras arregla: se sigue el push nuevo, sin avisar de lo que no se arregló', async () => {
+  it('un push del mantenedor mientras arregla: en cuanto el trabajo queda obsoleto, se sigue el push nuevo, sin avisar', async () => {
     const run = setup([checkFinding('lint'), checkFinding('build')]);
     await run.start(snapshot(0));
     await run.resume(snapshot(5, { checks: LINT_AND_BUILD_FAIL }));
     run.recorded.status = { state: 'running' };
     await run.resume(snapshot(7, { headSha: 'm41nt41' }));
+
+    expect((await run.state()).next).toEqual(['esperarArreglo']);
+
+    run.recorded.status = { state: 'obsolete' };
+    await run.resume(snapshot(8, { headSha: 'm41nt41' }));
+
+    expect(after(run.notices)).toEqual([]);
+    const state = await run.state();
+    expect(state.next).toEqual(['esperarComprobaciones']);
+    expect(state.values).toMatchObject({ push: { sha: 'm41nt41' } });
+  });
+
+  it('un push del mantenedor y el trabajo sigue en marcha: pasados 3 min, se sigue el push nuevo igual', async () => {
+    const run = setup([checkFinding('lint'), checkFinding('build')]);
+    await run.start(snapshot(0));
+    await run.resume(snapshot(5, { checks: LINT_AND_BUILD_FAIL }));
+    run.recorded.status = { state: 'running' };
+    await run.resume(snapshot(7, { headSha: 'm41nt41' }));
+    await run.resume(snapshot(9, { headSha: 'm41nt41' }));
+
+    expect((await run.state()).next).toEqual(['esperarArreglo']);
+
+    await run.resume(snapshot(10, { headSha: 'm41nt41' }));
 
     expect(after(run.notices)).toEqual([]);
     const state = await run.state();
