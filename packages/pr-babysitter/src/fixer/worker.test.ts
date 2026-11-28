@@ -49,6 +49,24 @@ describe('el bucle del fixer: un trabajo a la vez (design.md decisión 4)', () =
     expect(seen).toEqual({ state: 'running' });
   });
 
+  it('al empezar un trabajo, descuenta de su tope lo que la PR ha gastado desde que se encoló (design.md decisión 8)', async () => {
+    const store = new JobStore(':memory:');
+    const budgets: Record<string, number> = {};
+    const worker = createWorker(store, (job) => {
+      budgets[job.sha] = job.budgetUsd;
+      if (job.sha === 'a') store.addCost(7, 'a', 0.5);
+      return Promise.resolve({ state: 'obsolete' });
+    });
+
+    store.addCost(7, 'antes', 0.25);
+    store.enqueue(fixJob({ number: 7, sha: 'a', budgetUsd: 1.75 }));
+    store.enqueue(fixJob({ number: 7, sha: 'b', budgetUsd: 1.75 }));
+    worker.wake();
+    await worker.idle();
+
+    expect(budgets).toEqual({ a: 1.75, b: 1.25 });
+  });
+
   it('un trabajo que lanza acaba como fallido, y el bucle sigue con el siguiente', async () => {
     const store = new JobStore(':memory:');
     const worker = createWorker(store, (job) =>
