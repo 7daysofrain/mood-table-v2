@@ -1,0 +1,500 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1990 1997" width="1990" height="1997" role="img" aria-label="Fábrica de software de Mood Table: de la idea al despliegue">
+<defs>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#CBD5E1" opacity="0.55"/></pattern>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.08"/></filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9 z" fill="#94A3B8"/></marker>
+  <marker id="arr-pink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9 z" fill="#DB2777"/></marker>
+  <marker id="arr-teal" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9 z" fill="#0891B2"/></marker>
+  <marker id="arr-blue" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9 z" fill="#2563EB"/></marker>
+  <marker id="arr-dark" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9 z" fill="#334155"/></marker>
+  <linearGradient id="globe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B82F6"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient>
+</defs>
+<rect width="1990" height="1997" rx="28" fill="#F8FAFC"/>
+<rect width="1990" height="1997" rx="28" fill="url(#dots)"/>
+<text x="60.0" y="62.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#16A34A" text-anchor="start" letter-spacing="2.5">AUTOMATED SOFTWARE FACTORY</text>
+<text x="58.0" y="108.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="44" font-weight="800" fill="#0F172A" text-anchor="start">Mood Table</text>
+<text x="60.0" y="140.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">Cómo se construye cada cambio, de la idea al despliegue: qué decide el humano,</text>
+<text x="60.0" y="160.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#334155" text-anchor="start">qué ejecutan los agentes y cuánto tiempo humano pide cada fase.</text>
+<rect x="1170" y="40" width="780" height="128" rx="16" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="1192.0" y="68.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#64748B" text-anchor="start" letter-spacing="1.5">CÓMO LEERLO</text>
+<rect x="1192" y="87" width="85.6" height="22" rx="11" fill="#EEF2FF"/>
+<g transform="translate(1200.0,91.0) scale(0.5833)" fill="none" stroke="#4338CA" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<text x="1219.0" y="102.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#4338CA" text-anchor="start">Humano</text>
+<text x="1285.6" y="102.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">decide</text>
+<rect x="1400" y="87" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(1408.0,91.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1427.0" y="102.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<text x="1486.0" y="102.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">ejecuta</text>
+<rect x="1610" y="87" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(1618.0,91.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(1634.0,91.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1653.0" y="102.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<text x="1745.5" y="102.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">en sesión conjunta</text>
+<rect x="1199.9" y="126" width="68.3" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(1206.9,132.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="1220.9" y="142.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/skill</text>
+<text x="1284.0" y="142.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">skill o comando</text>
+<rect x="1408.0" y="127" width="66.0" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="1419.0149999999999" cy="138" r="4.4" fill="none" stroke="#16A34A" stroke-width="1.6"/><path d="M1419.0149999999999,135.2 A2.8,2.8 0 0 1 1419.0149999999999,140.8 Z" fill="#16A34A"/>
+<text x="1428.0" y="142.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Review</text>
+<text x="1484.0" y="142.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">estado en Linear</text>
+<line x1="1610" y1="138" x2="1652" y2="138" stroke="#0891B2" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="1662.0" y="142.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">camino opcional</text>
+<g transform="translate(1790.0,130.0) scale(0.6667)" fill="none" stroke="#64748B" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></g>
+<text x="1812.0" y="142.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">tiempo humano</text>
+<rect x="210" y="200" width="1110" height="475" rx="22" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1.5"/>
+<circle cx="254" cy="236" r="16" fill="#16A34A"/>
+<text x="254.0" y="242.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="282.0" y="234.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#166534" text-anchor="start">Intent</text>
+<text x="282.0" y="254.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">De la idea a una historia en el backlog</text>
+<rect x="1206.5" y="220" width="93.5" height="30" rx="15" fill="#FFFFFF" stroke="#BBF7D0"/>
+<g transform="translate(1217.5,227.0) scale(0.6667)" fill="none" stroke="#16A34A" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></g>
+<text x="1239.5" y="240.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#166534" text-anchor="start">~10 min</text>
+<rect x="260" y="275" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="274" y="289" width="34" height="34" rx="9" fill="#DCFCE7"/>
+<g transform="translate(281.0,296.0) scale(0.8333)" fill="none" stroke="#16A34A" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></g>
+<text x="316.0" y="311.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">1.1</text>
+<text x="276.0" y="347.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Tengo una idea</text>
+<text x="276.0" y="368.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Una mejora, un fallo</text>
+<text x="276.0" y="385.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">o una duda</text>
+<rect x="274" y="412" width="85.6" height="22" rx="11" fill="#EEF2FF"/>
+<g transform="translate(282.0,416.0) scale(0.5833)" fill="none" stroke="#4338CA" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<text x="301.0" y="427.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#4338CA" text-anchor="start">Humano</text>
+<rect x="540" y="275" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="554" y="289" width="34" height="34" rx="9" fill="#DCFCE7"/>
+<g transform="translate(561.0,296.0) scale(0.8333)" fill="none" stroke="#16A34A" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></g>
+<text x="596.0" y="311.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">1.2</text>
+<rect x="650.2" y="295" width="59.8" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="661.21625" cy="306" r="5" fill="#F97316"/>
+<text x="670.2" y="310.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Triage</text>
+<text x="556.0" y="347.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Se apunta en</text>
+<text x="556.0" y="366.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Linear</text>
+<text x="556.0" y="387.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Sin refinar todavía</text>
+<rect x="554" y="412" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(562.0,416.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="581.0" y="427.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<rect x="820" y="275" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="834" y="289" width="34" height="34" rx="9" fill="#DCFCE7"/>
+<g transform="translate(841.0,296.0) scale(0.8333)" fill="none" stroke="#16A34A" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></g>
+<text x="876.0" y="311.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">1.3</text>
+<text x="836.0" y="347.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Triaje</text>
+<text x="836.0" y="368.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">¿Épica, feature, bug,</text>
+<text x="836.0" y="385.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">spike…?</text>
+<rect x="834" y="412" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(842.0,416.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(858.0,416.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="877.0" y="427.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<rect x="260" y="475" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="274" y="489" width="34" height="34" rx="9" fill="#DCFCE7"/>
+<g transform="translate(281.0,496.0) scale(0.8333)" fill="none" stroke="#16A34A" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></g>
+<text x="316.0" y="511.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">1.4</text>
+<text x="276.0" y="547.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Captura desde</text>
+<text x="276.0" y="566.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">el PRD</text>
+<text x="276.0" y="587.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Historias que salen del</text>
+<text x="276.0" y="604.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">documento de producto</text>
+<rect x="274" y="612" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(282.0,616.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(298.0,616.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="317.0" y="627.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<rect x="1100" y="375" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1114" y="389" width="34" height="34" rx="9" fill="#DCFCE7"/>
+<g transform="translate(1121.0,396.0) scale(0.8333)" fill="none" stroke="#16A34A" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></g>
+<text x="1156.0" y="411.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">1.5</text>
+<rect x="1198.9" y="395" width="71.1" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="1209.88625" cy="406" r="4.4" fill="none" stroke="#94A3B8" stroke-width="1.6" stroke-dasharray="2 1.6"/>
+<text x="1218.9" y="410.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Backlog</text>
+<text x="1116.0" y="447.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Historia en</text>
+<text x="1116.0" y="466.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">backlog</text>
+<text x="1116.0" y="487.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Lista para entrar en</text>
+<text x="1116.0" y="504.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">refinamiento</text>
+<rect x="1114" y="512" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(1122.0,516.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1141.0" y="527.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<circle cx="115" cy="360" r="34" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<g transform="translate(99.0,344.0) scale(1.3333)" fill="none" stroke="#4338CA" stroke-width="1.80" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<text x="115.0" y="416.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#0F172A" text-anchor="middle">Operador</text>
+<text x="115.0" y="433.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="middle">(yo)</text>
+<circle cx="115" cy="560" r="34" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<g transform="translate(99.0,544.0) scale(1.3333)" fill="none" stroke="#64748B" stroke-width="1.80" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></g>
+<text x="115.0" y="616.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#0F172A" text-anchor="middle">Documento</text>
+<text x="115.0" y="633.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#64748B" text-anchor="middle">PRD</text>
+<path d="M115,444 L115,522" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M149,360 L260,360" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M149,560 L260,560" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M440,360 L540,360" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="449.2" y="318" width="81.7" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(456.2,324.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="470.2" y="334.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/capture</text>
+<path d="M720,360 L820,360" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M910.0,445 L910.0,456 Q910.0,468 922.0,468 L1100,468" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="953.4" y="456" width="115.2" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(960.4,462.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="974.4" y="472.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/create-story</text>
+<path d="M440,560 L1048,560 Q1060,560 1060,548 L1060,532 Q1060,520 1072,520 L1100,520" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="692.4" y="548" width="115.2" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(699.4,554.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="713.4" y="564.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/create-story</text>
+<rect x="1350" y="200" width="600" height="475" rx="22" fill="#ECFEFF" stroke="#A5F3FC" stroke-width="1.5"/>
+<circle cx="1394" cy="236" r="16" fill="#0891B2"/>
+<g transform="translate(1384.0,226.0) scale(0.8333)" fill="none" stroke="#FFFFFF" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></g>
+<text x="1422.0" y="234.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#155E75" text-anchor="start">Spike</text>
+<text x="1422.0" y="254.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">Cuando hay una pregunta abierta antes que la historia</text>
+<rect x="1430" y="275" width="190" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1444" y="289" width="34" height="34" rx="9" fill="#CFFAFE"/>
+<g transform="translate(1451.0,296.0) scale(0.8333)" fill="none" stroke="#0891B2" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></g>
+<text x="1486.0" y="311.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">S.1</text>
+<rect x="1557.1" y="295" width="52.9" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="1568.0534375" cy="306" r="4.4" fill="none" stroke="#64748B" stroke-width="1.6"/>
+<text x="1577.1" y="310.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Todo</text>
+<text x="1446.0" y="347.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Historia sin</text>
+<text x="1446.0" y="366.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">refinar</text>
+<text x="1446.0" y="387.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Con su timebox</text>
+<rect x="1444" y="412" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(1452.0,416.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(1468.0,416.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1487.0" y="427.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<rect x="1730" y="275" width="190" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1744" y="289" width="34" height="34" rx="9" fill="#CFFAFE"/>
+<g transform="translate(1751.0,296.0) scale(0.8333)" fill="none" stroke="#0891B2" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></g>
+<text x="1786.0" y="311.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">S.2</text>
+<text x="1746.0" y="347.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Ejecución</text>
+<text x="1746.0" y="366.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">del spike</text>
+<text x="1746.0" y="387.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Código desechable</text>
+<rect x="1744" y="412" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(1752.0,416.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1771.0" y="427.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<rect x="1730" y="475" width="190" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1744" y="489" width="34" height="34" rx="9" fill="#CFFAFE"/>
+<g transform="translate(1751.0,496.0) scale(0.8333)" fill="none" stroke="#0891B2" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></g>
+<text x="1786.0" y="511.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">S.3</text>
+<text x="1746.0" y="547.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Análisis de</text>
+<text x="1746.0" y="566.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">resultados</text>
+<text x="1746.0" y="587.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Se responde la</text>
+<text x="1746.0" y="604.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">pregunta</text>
+<rect x="1744" y="612" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(1752.0,616.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(1768.0,616.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1787.0" y="627.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<rect x="1430" y="475" width="190" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1444" y="489" width="34" height="34" rx="9" fill="#CFFAFE"/>
+<g transform="translate(1451.0,496.0) scale(0.8333)" fill="none" stroke="#0891B2" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></g>
+<text x="1486.0" y="511.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">S.4</text>
+<text x="1446.0" y="547.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Limpieza, archivo</text>
+<text x="1446.0" y="566.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">y cierre</text>
+<rect x="1446" y="579" width="158" height="22" rx="6" fill="#CFFAFE"/>
+<g transform="translate(1452.0,583.0) scale(0.5833)" fill="none" stroke="#155E75" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></g>
+<text x="1470.0" y="594.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="600" fill="#155E75" text-anchor="start">resultado-spike.md</text>
+<rect x="1444" y="612" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(1452.0,616.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1471.0" y="627.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<path d="M1620,360 L1730,360" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M1825.0,445 L1825.0,475" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M1730,560 L1620,560" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M1280,415 L1430,415" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="1297.4" y="403" width="115.2" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(1304.4,409.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="1318.4" y="419.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/create-spike</text>
+<path d="M1430,518 L1280,518" fill="none" stroke="#0891B2" stroke-width="2" stroke-dasharray="7 6" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-teal)"/>
+<rect x="1297.4" y="506" width="115.2" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(1304.4,512.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="1318.4" y="522.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/create-story</text>
+<text x="1355.0" y="547.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#155E75" text-anchor="middle" font-style="italic">opcional</text>
+<rect x="210" y="735" width="1740" height="274" rx="22" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1.5"/>
+<circle cx="254" cy="771" r="16" fill="#EA580C"/>
+<text x="254.0" y="777.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="282.0" y="769.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#9A3412" text-anchor="start">Refinamiento</text>
+<text x="282.0" y="789.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">Se decide el qué: criterios de aceptación y estimación</text>
+<rect x="1811.7" y="755" width="118.3" height="30" rx="15" fill="#FFFFFF" stroke="#FED7AA"/>
+<g transform="translate(1822.7,762.0) scale(0.6667)" fill="none" stroke="#EA580C" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></g>
+<text x="1844.7" y="775.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#9A3412" text-anchor="start">30 min – 1 h</text>
+<rect x="260" y="811" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="274" y="825" width="34" height="34" rx="9" fill="#FFEDD5"/>
+<g transform="translate(281.0,832.0) scale(0.8333)" fill="none" stroke="#EA580C" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></g>
+<text x="316.0" y="847.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">2.1</text>
+<text x="276.0" y="883.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Sesión funcional</text>
+<text x="276.0" y="904.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Se decide el qué.</text>
+<text x="276.0" y="921.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Acaba con el happy path</text>
+<rect x="274" y="948" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(282.0,952.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(298.0,952.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="317.0" y="963.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<rect x="570" y="811" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="584" y="825" width="34" height="34" rx="9" fill="#FFEDD5"/>
+<g transform="translate(591.0,832.0) scale(0.8333)" fill="none" stroke="#EA580C" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></g>
+<text x="626.0" y="847.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">2.2</text>
+<text x="586.0" y="883.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Edge cases</text>
+<text x="586.0" y="904.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Se listan y yo elijo</text>
+<text x="586.0" y="921.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">los que entran</text>
+<rect x="584" y="948" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(592.0,952.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(608.0,952.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="627.0" y="963.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<rect x="880" y="811" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="894" y="825" width="34" height="34" rx="9" fill="#FFEDD5"/>
+<g transform="translate(901.0,832.0) scale(0.8333)" fill="none" stroke="#EA580C" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></g>
+<text x="936.0" y="847.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">2.3</text>
+<rect x="997.1" y="831" width="52.9" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="1008.0534375" cy="842" r="4.4" fill="none" stroke="#64748B" stroke-width="1.6"/>
+<text x="1017.1" y="846.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Todo</text>
+<text x="896.0" y="883.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Plantilla de la</text>
+<text x="896.0" y="902.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">US completa</text>
+<text x="896.0" y="923.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Criterios aprobados</text>
+<rect x="894" y="948" width="85.6" height="22" rx="11" fill="#EEF2FF"/>
+<g transform="translate(902.0,952.0) scale(0.5833)" fill="none" stroke="#4338CA" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<text x="921.0" y="963.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#4338CA" text-anchor="start">Humano</text>
+<rect x="1190" y="811" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1204" y="825" width="34" height="34" rx="9" fill="#FFEDD5"/>
+<g transform="translate(1211.0,832.0) scale(0.8333)" fill="none" stroke="#EA580C" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></g>
+<text x="1246.0" y="847.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">2.4</text>
+<text x="1206.0" y="883.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">La US queda</text>
+<text x="1206.0" y="902.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">estimada</text>
+<text x="1206.0" y="923.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">En puntos (Fibonacci)</text>
+<rect x="1204" y="948" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(1212.0,952.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(1228.0,952.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1247.0" y="963.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<path d="M440,896 L570,896" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="454.1" y="854" width="101.8" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(461.1,860.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="475.1" y="870.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/poke-holes</text>
+<path d="M750,896 L880,896" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="770.2" y="854" width="89.6" height="24" rx="12" fill="#FFFFFF" stroke="#FED7AA"/>
+<text x="815.0" y="870.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#9A3412" text-anchor="middle">Aprobación</text>
+<path d="M1060,896 L1190,896" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="1060.7" y="854" width="128.6" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(1067.7,860.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="1081.7" y="870.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/estimate-story</text>
+<rect x="1440" y="811" width="490" height="78" rx="12" fill="#FFFFFF" fill-opacity="0.75" stroke="#EA580C" stroke-opacity="0.45" stroke-dasharray="5 4"/>
+<g transform="translate(1454.0,825.0) scale(0.7500)" fill="none" stroke="#EA580C" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></g>
+<text x="1480.0" y="839.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#9A3412" text-anchor="start">/poke-holes</text>
+<text x="1480.0" y="859.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Un subagente adversarial propone criterios</text>
+<text x="1480.0" y="876.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">de aceptación candidatos, trazados al PRD.</text>
+<rect x="1440" y="903" width="490" height="78" rx="12" fill="#FFFFFF" fill-opacity="0.75" stroke="#EA580C" stroke-opacity="0.45" stroke-dasharray="5 4"/>
+<g transform="translate(1454.0,917.0) scale(0.7500)" fill="none" stroke="#EA580C" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></g>
+<text x="1480.0" y="931.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#9A3412" text-anchor="start">/estimate-story</text>
+<text x="1480.0" y="951.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Planning poker a ciegas: el estimador IA</text>
+<text x="1480.0" y="968.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">saca su carta sin ver la mía.</text>
+<path d="M1250,545 L1250,693 Q1250,705 1238,705 L244,705 Q232,705 232,717 L232,884 Q232,896 244,896 L260,896" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="538.9" y="693" width="162.2" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(545.9,699.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="559.9" y="709.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/refine-story MOO-XX</text>
+<rect x="306.2" y="1066.2" width="87.7" height="87.7" rx="10" fill="#FFFFFF" stroke="#EA580C" stroke-width="2" filter="url(#shadow)" transform="rotate(45 350.0 1110)"/>
+<text x="350.0" y="1106.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#0F172A" text-anchor="middle">¿Es</text>
+<text x="350.0" y="1123.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#0F172A" text-anchor="middle">compleja?</text>
+<path d="M1280.0,981 L1280.0,1098 Q1280.0,1110 1268.0,1110 L414.0,1110" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="24" y="1051" width="166" height="118" rx="14" fill="#0F172A" filter="url(#shadow)"/>
+<rect x="36" y="1063" width="30" height="30" rx="8" fill="#334155"/>
+<g transform="translate(42.0,1069.0) scale(0.7500)" fill="none" stroke="#FACC15" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></g>
+<text x="74.0" y="1083.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#FACC15" text-anchor="start" letter-spacing="1.2">FAST LANE</text>
+<text x="36.0" y="1115.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="start">Desarrollo</text>
+<text x="36.0" y="1133.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="start">autónomo directo</text>
+<rect x="36" y="1143" width="98" height="20" rx="10" fill="#1E293B"/>
+<circle cx="47" cy="1153" r="3.9" fill="none" stroke="#EAB308" stroke-width="1.6"/><path d="M47,1150.7 A2.3,2.3 0 0 1 47,1155.3 Z" fill="#EAB308"/>
+<text x="56.0" y="1157.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#E2E8F0" text-anchor="start">In Progress</text>
+<path d="M286.0,1110 L190,1110" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-dark)"/>
+<rect x="218.4" y="1074" width="39.2" height="24" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="238.0" y="1090.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#334155" text-anchor="middle">NO</text>
+<rect x="1440" y="1056" width="490" height="108" rx="12" fill="#FFFFFF" fill-opacity="0.75" stroke="#475569" stroke-opacity="0.45" stroke-dasharray="5 4"/>
+<g transform="translate(1454.0,1070.0) scale(0.7500)" fill="none" stroke="#475569" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></g>
+<text x="1480.0" y="1084.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1E293B" text-anchor="start">¿Por qué dos vías?</text>
+<text x="1480.0" y="1104.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Lo simple va directo a la PR por la fast lane.</text>
+<text x="1480.0" y="1121.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Lo complejo fija antes el cómo en specs</text>
+<text x="1480.0" y="1138.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">(OpenSpec), y el código sale de ellas.</text>
+<rect x="210" y="1240" width="1510" height="274" rx="22" fill="#FEFCE8" stroke="#FDE68A" stroke-width="1.5"/>
+<circle cx="254" cy="1276" r="16" fill="#CA8A04"/>
+<text x="254.0" y="1282.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="282.0" y="1274.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#854D0E" text-anchor="start">Spec Driven Development</text>
+<text x="282.0" y="1294.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">Se decide el cómo y se implementa con OpenSpec</text>
+<rect x="1581.7" y="1260" width="118.3" height="30" rx="15" fill="#FFFFFF" stroke="#FDE68A"/>
+<g transform="translate(1592.7,1267.0) scale(0.6667)" fill="none" stroke="#CA8A04" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></g>
+<text x="1614.7" y="1280.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#854D0E" text-anchor="start">30 min – 1 h</text>
+<rect x="260" y="1316" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="274" y="1330" width="34" height="34" rx="9" fill="#FEF3C7"/>
+<g transform="translate(281.0,1337.0) scale(0.8333)" fill="none" stroke="#CA8A04" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></g>
+<text x="316.0" y="1352.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">3.1</text>
+<text x="276.0" y="1388.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Sesión técnica</text>
+<text x="276.0" y="1409.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Se decide el cómo</text>
+<rect x="274" y="1453" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(282.0,1457.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(298.0,1457.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="317.0" y="1468.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<rect x="570" y="1316" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="584" y="1330" width="34" height="34" rx="9" fill="#FEF3C7"/>
+<g transform="translate(591.0,1337.0) scale(0.8333)" fill="none" stroke="#CA8A04" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></g>
+<text x="626.0" y="1352.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">3.2</text>
+<rect x="686.2" y="1336" width="53.8" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="697.18890625" cy="1347" r="4.4" fill="none" stroke="#8B5CF6" stroke-width="1.6"/><path d="M697.18890625,1344.2 A2.8,2.8 0 0 1 697.18890625,1349.8 Z" fill="#8B5CF6"/>
+<text x="706.2" y="1351.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Spec</text>
+<text x="586.0" y="1388.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Artefactos SDD</text>
+<text x="586.0" y="1409.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">proposal · design ·</text>
+<text x="586.0" y="1426.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">specs · tasks</text>
+<rect x="584" y="1453" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(592.0,1457.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="611.0" y="1468.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<rect x="880" y="1316" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="894" y="1330" width="34" height="34" rx="9" fill="#FEF3C7"/>
+<g transform="translate(901.0,1337.0) scale(0.8333)" fill="none" stroke="#CA8A04" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></g>
+<text x="936.0" y="1352.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">3.3</text>
+<rect x="961.1" y="1336" width="88.9" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="972.1109375" cy="1347" r="4.4" fill="none" stroke="#EAB308" stroke-width="1.6"/><path d="M972.1109375,1344.2 A2.8,2.8 0 0 1 972.1109375,1349.8 Z" fill="#EAB308"/>
+<text x="981.1" y="1351.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">In Progress</text>
+<text x="896.0" y="1388.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Se aplica el</text>
+<text x="896.0" y="1407.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">cambio</text>
+<text x="896.0" y="1428.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Desarrollo autónomo</text>
+<rect x="894" y="1453" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(902.0,1457.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="921.0" y="1468.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<rect x="1190" y="1316" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1204" y="1330" width="34" height="34" rx="9" fill="#FEF3C7"/>
+<g transform="translate(1211.0,1337.0) scale(0.8333)" fill="none" stroke="#CA8A04" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></g>
+<text x="1246.0" y="1352.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">3.4</text>
+<text x="1206.0" y="1388.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Verificación</text>
+<text x="1206.0" y="1409.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">¿Hace lo que pide la</text>
+<text x="1206.0" y="1426.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">tarea, funcionalmente?</text>
+<rect x="1204" y="1453" width="127.5" height="22" rx="11" fill="#F5F3FF"/>
+<g transform="translate(1212.0,1457.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<g transform="translate(1228.0,1457.0) scale(0.5833)" fill="none" stroke="#6D28D9" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1247.0" y="1468.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#6D28D9" text-anchor="start">Humano + IA</text>
+<rect x="1500" y="1316" width="180" height="170" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1514" y="1330" width="34" height="34" rx="9" fill="#FEF3C7"/>
+<g transform="translate(1521.0,1337.0) scale(0.8333)" fill="none" stroke="#CA8A04" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></g>
+<text x="1556.0" y="1352.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">3.5</text>
+<rect x="1614.9" y="1336" width="55.1" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="1625.905" cy="1347" r="5" fill="#6366F1"/>
+<text x="1634.9" y="1351.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Done</text>
+<text x="1516.0" y="1388.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Cambio archivado</text>
+<text x="1516.0" y="1409.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Specs al día,</text>
+<text x="1516.0" y="1426.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">historia cerrada</text>
+<rect x="1514" y="1453" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(1522.0,1457.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1541.0" y="1468.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<path d="M440,1401 L570,1401" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="447.4" y="1359" width="115.2" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(454.4,1365.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="468.4" y="1375.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/opsx:propose</text>
+<path d="M750,1401 L880,1401" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="764.1" y="1359" width="101.8" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(771.1,1365.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="785.1" y="1375.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/opsx:apply</text>
+<path d="M1370,1401 L1500,1401" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="1377.4" y="1359" width="115.2" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(1384.4,1365.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="1398.4" y="1375.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/opsx:archive</text>
+<path d="M350.0,1174 L350.0,1196 Q350.0,1208 338.0,1208 L244,1208 Q232,1208 232,1220 L232,1389 Q232,1401 244,1401 L260,1401" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="366.0" y="1180" width="31.9" height="24" rx="12" fill="#FFFFFF" stroke="#FDE68A"/>
+<text x="382.0" y="1196.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#854D0E" text-anchor="middle">SÍ</text>
+<rect x="233.4" y="1196" width="115.2" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(240.4,1202.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="254.4" y="1212.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/opsx:explore</text>
+<rect x="210" y="1572" width="1510" height="322" rx="22" fill="#FDF2F8" stroke="#FBCFE8" stroke-width="1.5"/>
+<circle cx="254" cy="1608" r="16" fill="#DB2777"/>
+<text x="254.0" y="1614.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="282.0" y="1606.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="20" font-weight="700" fill="#9D174D" text-anchor="start">QA</text>
+<text x="282.0" y="1626.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#64748B" text-anchor="start">Cada cambio pasa por una PR antes de integrarse</text>
+<rect x="1593.2" y="1592" width="106.8" height="30" rx="15" fill="#FFFFFF" stroke="#FBCFE8"/>
+<g transform="translate(1604.2,1599.0) scale(0.6667)" fill="none" stroke="#DB2777" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></g>
+<text x="1626.2" y="1612.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#9D174D" text-anchor="start">5 – 10 min</text>
+<rect x="260" y="1648" width="180" height="180" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="274" y="1662" width="34" height="34" rx="9" fill="#FCE7F3"/>
+<g transform="translate(281.0,1669.0) scale(0.8333)" fill="none" stroke="#DB2777" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" x2="6" y1="9" y2="21"/></g>
+<text x="316.0" y="1684.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">4.1</text>
+<rect x="364.0" y="1668" width="66.0" height="22" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+<circle cx="375.015" cy="1679" r="4.4" fill="none" stroke="#16A34A" stroke-width="1.6"/><path d="M375.015,1676.2 A2.8,2.8 0 0 1 375.015,1681.8 Z" fill="#16A34A"/>
+<text x="384.0" y="1683.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#0F172A" text-anchor="start">Review</text>
+<text x="276.0" y="1720.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Se crea la PR</text>
+<text x="276.0" y="1741.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Una tarea = una PR</text>
+<rect x="274" y="1795" width="78.0" height="22" rx="11" fill="#F1F5F9"/>
+<g transform="translate(282.0,1799.0) scale(0.5833)" fill="none" stroke="#334155" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="301.0" y="1810.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155" text-anchor="start">Agente</text>
+<rect x="570" y="1648" width="232" height="180" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="584" y="1662" width="34" height="34" rx="9" fill="#FCE7F3"/>
+<g transform="translate(591.0,1669.0) scale(0.8333)" fill="none" stroke="#DB2777" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></g>
+<text x="626.0" y="1684.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">4.2</text>
+<text x="586.0" y="1720.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Pruebas automáticas</text>
+<rect x="586.0" y="1732" width="57.4" height="19" rx="6" fill="#FCE7F3"/>
+<text x="593.0" y="1745.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#9D174D" text-anchor="start">Sintaxis</text>
+<rect x="648.4" y="1732" width="94.2" height="19" rx="6" fill="#FCE7F3"/>
+<text x="655.4" y="1745.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#9D174D" text-anchor="start">Tests unitarios</text>
+<rect x="586.0" y="1756" width="65.8" height="19" rx="6" fill="#FCE7F3"/>
+<text x="593.0" y="1769.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#9D174D" text-anchor="start">Tests e2e</text>
+<rect x="656.8" y="1756" width="83.1" height="19" rx="6" fill="#FCE7F3"/>
+<text x="663.8" y="1769.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#9D174D" text-anchor="start">Code quality</text>
+<rect x="586.0" y="1780" width="125.8" height="19" rx="6" fill="#FCE7F3"/>
+<text x="593.0" y="1793.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#9D174D" text-anchor="start">Agentic code review</text>
+<rect x="716.8" y="1780" width="70.2" height="19" rx="6" fill="#FCE7F3"/>
+<text x="723.8" y="1793.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#9D174D" text-anchor="start">Seguridad</text>
+<rect x="586.0" y="1804" width="80.9" height="19" rx="6" fill="#EEF2FF"/>
+<g transform="translate(591.0,1807.5) scale(0.5000)" fill="none" stroke="#4338CA" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<text x="606.0" y="1817.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#4338CA" text-anchor="start">Human gate</text>
+<rect x="930.4" y="1698.4" width="79.2" height="79.2" rx="10" fill="#FFFFFF" stroke="#DB2777" stroke-width="2" filter="url(#shadow)" transform="rotate(45 970.0 1738)"/>
+<text x="970.0" y="1734.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#0F172A" text-anchor="middle">¿Todo</text>
+<text x="970.0" y="1751.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#0F172A" text-anchor="middle">OK?</text>
+<rect x="1190" y="1648" width="180" height="180" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+<rect x="1204" y="1662" width="34" height="34" rx="9" fill="#FCE7F3"/>
+<g transform="translate(1211.0,1669.0) scale(0.8333)" fill="none" stroke="#DB2777" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></g>
+<text x="1246.0" y="1684.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#64748B" text-anchor="start">4.3</text>
+<text x="1206.0" y="1720.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">Merge a la</text>
+<text x="1206.0" y="1739.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">rama principal</text>
+<text x="1206.0" y="1760.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">Integrar es siempre</text>
+<text x="1206.0" y="1777.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#334155" text-anchor="start">humano</text>
+<rect x="1204" y="1795" width="85.6" height="22" rx="11" fill="#EEF2FF"/>
+<g transform="translate(1212.0,1799.0) scale(0.5833)" fill="none" stroke="#4338CA" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></g>
+<text x="1231.0" y="1810.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#4338CA" text-anchor="start">Humano</text>
+<path d="M440,1738 L570,1738" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M802,1738 L912.0,1738" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M1028.0,1738 L1190,1738" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="1093.0" y="1700" width="31.9" height="24" rx="12" fill="#FFFFFF" stroke="#FBCFE8"/>
+<text x="1109.0" y="1716.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#9D174D" text-anchor="middle">SÍ</text>
+<path d="M970.0,1657 L970.0,1486" fill="none" stroke="#DB2777" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-pink)"/>
+<rect x="982.4" y="1622" width="39.2" height="24" rx="12" fill="#FFFFFF" stroke="#FBCFE8"/>
+<text x="1002.0" y="1638.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#DB2777" text-anchor="middle">NO</text>
+<path d="M920,1486 L920,1531 Q920,1543 908,1543 L244,1543 Q232,1543 232,1555 L232,1726 Q232,1738 244,1738 L260,1738" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="525.8" y="1531" width="68.5" height="24" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="560.0" y="1547.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">git push</text>
+<path d="M107.0,1169 L107.0,1726 Q107.0,1738 119.0,1738 L260,1738" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-dark)"/>
+<path d="M1280.0,1648 L1280.0,1486" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="1225.7" y="1531" width="108.5" height="24" rx="12" fill="#0F172A"/>
+<g transform="translate(1232.7,1537.0) scale(0.5000)" fill="none" stroke="#94A3B8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></g>
+<text x="1246.7" y="1547.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="600" fill="#F8FAFC" text-anchor="start">/opsx:verify</text>
+<rect x="1410" y="1644" width="290" height="214" rx="12" fill="#FFFFFF" fill-opacity="0.8" stroke="#DB2777" stroke-opacity="0.45" stroke-dasharray="5 4"/>
+<g transform="translate(1424.0,1657.0) scale(0.7500)" fill="none" stroke="#DB2777" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></g>
+<text x="1450.0" y="1671.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#9D174D" text-anchor="start">PR Babysitter</text>
+<text x="1450.0" y="1688.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#64748B" text-anchor="start">Agentes que acompañan cada PR</text>
+<line x1="1433" y1="1721" x2="1433" y2="1730" stroke="#FBCFE8" stroke-width="2"/>
+<circle cx="1433" cy="1714" r="8" fill="#FCE7F3"/>
+<text x="1433.0" y="1717.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#9D174D" text-anchor="middle">1</text>
+<text x="1450.0" y="1718.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">Sigue la PR y sus comprobaciones</text>
+<line x1="1433" y1="1744" x2="1433" y2="1753" stroke="#FBCFE8" stroke-width="2"/>
+<circle cx="1433" cy="1737" r="8" fill="#FCE7F3"/>
+<text x="1433.0" y="1740.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#9D174D" text-anchor="middle">2</text>
+<text x="1450.0" y="1741.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">Pide la revisión de Codex en verde</text>
+<line x1="1433" y1="1767" x2="1433" y2="1776" stroke="#FBCFE8" stroke-width="2"/>
+<circle cx="1433" cy="1760" r="8" fill="#FCE7F3"/>
+<text x="1433.0" y="1763.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#9D174D" text-anchor="middle">3</text>
+<text x="1450.0" y="1764.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">Tría cada hallazgo</text>
+<line x1="1433" y1="1790" x2="1433" y2="1799" stroke="#FBCFE8" stroke-width="2"/>
+<circle cx="1433" cy="1783" r="8" fill="#FCE7F3"/>
+<text x="1433.0" y="1786.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#9D174D" text-anchor="middle">4</text>
+<text x="1450.0" y="1787.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">Arregla y publica</text>
+<rect x="1552.8" y="1774" width="44.0" height="18" rx="5" fill="#0F172A"/>
+<text x="1558.8" y="1787.0" font-family="'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="600" fill="#F8FAFC" text-anchor="start">fixer</text>
+<line x1="1433" y1="1813" x2="1433" y2="1822" stroke="#FBCFE8" stroke-width="2"/>
+<circle cx="1433" cy="1806" r="8" fill="#FCE7F3"/>
+<text x="1433.0" y="1809.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#9D174D" text-anchor="middle">5</text>
+<text x="1450.0" y="1810.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">Escala si hace falta criterio</text>
+<circle cx="1433" cy="1829" r="8" fill="#FCE7F3"/>
+<text x="1433.0" y="1832.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#9D174D" text-anchor="middle">6</text>
+<text x="1450.0" y="1833.5" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#334155" text-anchor="start">Avisa: lista para integrar</text>
+<circle cx="1845" cy="1401" r="78" fill="url(#globe)" filter="url(#shadow)"/>
+<circle cx="1845" cy="1401" r="92" fill="none" stroke="#BFDBFE" stroke-width="2" stroke-dasharray="4 6"/>
+<g transform="translate(1805.0,1361.0) scale(3.3333)" fill="none" stroke="#FFFFFF" stroke-width="1.40" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></g>
+<text x="1845.0" y="1529.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="26" font-weight="800" fill="#1E40AF" text-anchor="middle">Deploy</text>
+<path d="M1680,1401 L1749,1401" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-blue)"/>
+<path d="M1320.0,1828 L1320.0,1864 Q1320.0,1876 1332.0,1876 L1833,1876 Q1845,1876 1845,1864 L1845,1547" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr-blue)"/>
+<rect x="1532.0" y="1864" width="116.0" height="24" rx="12" fill="#FFFFFF" stroke="#BFDBFE"/>
+<text x="1590.0" y="1880.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#1E40AF" text-anchor="middle">Cambio no SDD</text>
+<rect x="210" y="1922" width="1740" height="42" rx="21" fill="#FFFFFF" stroke="#E2E8F0"/>
+<g transform="translate(230.0,1934.0) scale(0.7500)" fill="none" stroke="#64748B" stroke-width="2.20" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></g>
+<text x="256.0" y="1948.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#0F172A" text-anchor="start">Tiempo humano por historia:</text>
+<text x="462.0" y="1948.0" font-family="Inter, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#334155" text-anchor="start">≈ 1 h 15 – 2 h 20 por la vía SDD   ·   ≈ 45 – 80 min por la fast lane   ·   el resto lo ejecutan los agentes</text>
+</svg>
