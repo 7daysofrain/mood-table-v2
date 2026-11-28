@@ -247,7 +247,7 @@ pnpm --filter @moodtable/e2e exec playwright install chromium
 
 Así se construye cada cambio, de la idea al despliegue: captura y triaje, refinamiento de la historia, desarrollo guiado por specs con OpenSpec (o directo, si el cambio no es complejo) y control de calidad en la PR, con el tiempo humano que pide cada fase. Las preguntas abiertas van por la vía del *spike*. El PR Babysitter trabaja en la fase de QA.
 
-![La fábrica de software de Mood Table: de la idea (captura y triaje en Linear) al refinamiento de la historia; si es compleja, desarrollo guiado por specs con OpenSpec y, si no, desarrollo directo; después, control de calidad en la PR hasta el despliegue. Aparte, la vía del spike. Cada fase indica su tiempo humano aproximado](docs/img/fabrica-de-software.webp)
+![La fábrica de software de Mood Table: de la idea (captura y triaje en Linear) al refinamiento de la historia; si es compleja, desarrollo guiado por specs con OpenSpec y, si no, desarrollo directo; después, control de calidad en la PR hasta el despliegue. Aparte, la vía del spike. Cada fase indica su tiempo humano aproximado](docs/img/fabrica-de-software.svg)
 
 El producto es la Mood Table. Pero construirla con IA, una tarea por PR, hizo que el cuello de botella fuera **vigilar cada PR**: esperar las comprobaciones, pedir la revisión de Codex, leer cada hallazgo y decidir qué hacer con él. Casi todas esas vueltas solo piden atención, no criterio. De ahí salió el **PR Babysitter**, un agente que sigue cada PR del repo hasta dejarla lista para integrar y avisa al mantenedor solo cuando hace falta criterio. Integrar sigue siendo siempre humano. El qué y el porqué están en [`docs/pr-babysitter.md`](docs/pr-babysitter.md); el diseño, en §2.2; el despliegue, en §2.4.
 
