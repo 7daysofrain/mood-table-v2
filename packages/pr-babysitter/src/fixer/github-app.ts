@@ -6,7 +6,11 @@
  */
 import { createSign } from 'node:crypto';
 
+import * as z from 'zod';
+
 const GITHUB_API = 'https://api.github.com';
+
+const INSTALLATION = z.object({ id: z.number().int().positive() });
 
 /** Lo que identifica a la App: su *client ID* y su clave privada en PEM. */
 export interface GitHubApp {
@@ -64,7 +68,12 @@ export async function installationToken(
   if (!installation.ok) {
     throw new Error(`GitHub no da la instalación de la App en ${repository}: ${installation.status}`);
   }
-  const { id } = (await installation.json()) as { id: number };
+  // El id va en la ruta de la siguiente petición: solo un entero positivo.
+  const parsed = INSTALLATION.safeParse(await installation.json());
+  if (!parsed.success) {
+    throw new Error(`GitHub da una instalación de la App sin un id válido en ${repository}`);
+  }
+  const { id } = parsed.data;
 
   const name = repository.split('/')[1];
   const response = await fetch(`${GITHUB_API}/app/installations/${id}/access_tokens`, {
