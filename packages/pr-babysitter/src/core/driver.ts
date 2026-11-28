@@ -83,7 +83,7 @@ export interface DriverOptions {
   log: (line: string) => void;
   /** El que arregla y sus opciones (change pr-fixer). Sin ellos, el sistema no arregla. */
   fixer?: Fixer;
-  fix?: TrackingOptions['fix'];
+  fix?: NonNullable<TrackingOptions['fix']>;
 }
 
 export interface Driver {
