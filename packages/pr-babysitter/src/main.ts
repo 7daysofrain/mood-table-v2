@@ -104,10 +104,11 @@ const running = runDriver(driver, {
   clock: Date.now,
   sleep: (ms) => sleep(ms),
 });
+const fixOff = config.fix?.enabled ? '' : ' (apagado)';
+const fixNote = config.fix ? `Arregla con el fixer de ${config.fix.url}${fixOff}.` : 'No arregla.';
 console.log(
   `PR Babysitter en marcha: sigue las PR de ${config.githubMaintainer} contra ${BASE_BRANCH} en ` +
-    `${OWNER}/${REPO}, cada ${config.pollIntervalMs / 1000} s. ` +
-    (config.fix ? `Arregla con el fixer de ${config.fix.url}${config.fix.enabled ? '' : ' (apagado)'}.` : 'No arregla.'),
+    `${OWNER}/${REPO}, cada ${config.pollIntervalMs / 1000} s. ${fixNote}`,
 );
 
 // Docker para el contenedor con SIGTERM, y Node, como PID 1, no termina solo con esa señal.
