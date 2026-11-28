@@ -201,8 +201,9 @@ const TrackingState = new StateSchema({
   decision: decisionSchema.optional(),
   /**
    * El arreglo del push (change pr-fixer, decisión 3): de qué push es, lo que se pide arreglar, lo
-   * que queda del tope, lo que no se arregla (para avisar al subir), cuándo se pidió y en qué está el
-   * trabajo. Lo deja `decidir` y lo completan `pedirArreglo` y `esperarArreglo`.
+   * que queda del tope, lo que no se arregla (para avisar al subir), cuándo se pidió, en qué está el
+   * trabajo y cuándo se vio otro SHA en la PR. Lo deja `decidir` y lo completan `pedirArreglo` y
+   * `esperarArreglo`.
    */
   fix: z
     .object({
@@ -212,6 +213,7 @@ const TrackingState = new StateSchema({
       notFixed: z.array(notFixedItemSchema),
       requestedAt: z.number().optional(),
       status: fixStatusSchema.optional(),
+      headChangedAt: z.number().optional(),
     })
     .optional(),
   /**
@@ -299,6 +301,16 @@ export const FIX_REQUEST_NODE = 'pedirArreglo';
  * que ya no es el último, ni al terminar la parada de una PR: actuarían sobre lo que ya no toca.
  */
 export const PR_ACTION_NODES = [REVIEW_REQUEST_NODE, RERUN_NODE, FIX_REQUEST_NODE] as const;
+
+/** Los estados de un trabajo del *fixer* que ya no cambian (`none`: el *fixer* no lo conoce). */
+const FIX_ENDED = new Set<FixStatus['state']>(['pushed', 'failed', 'obsolete', 'none']);
+
+/**
+ * Cuánto espera `esperarArreglo`, con otro SHA en la PR, a que el trabajo acabe: 3 min *(asumido)*,
+ * tres vueltas del sondeo. Al push del arreglo le sobra (el *fixer* lo da por subido en segundos), y
+ * un push del mantenedor no se queda sin seguir mientras el trabajo, ya inútil, termina.
+ */
+const FIX_SETTLE_MS = 3 * 60_000;
 
 type PrActionNode = (typeof PR_ACTION_NODES)[number];
 
@@ -808,8 +820,11 @@ export function createTrackingGraph(
   };
 
   // Espera al arreglo como espera a la CI (decisión 3): cada vuelta pregunta en qué está. Un push
-  // nuevo, del arreglo o del mantenedor, pasa a `avisarArreglo`; un trabajo que no ha subido nada o
-  // que no termina a tiempo, al aviso final con su motivo.
+  // nuevo, del arreglo o del mantenedor, pasa a `avisarArreglo` cuando el trabajo ha acabado: GitHub
+  // puede enseñar el push del arreglo antes de que el *fixer* lo dé por subido, y sin esperar se
+  // perdería el aviso de lo no arreglado. Si no acaba en `FIX_SETTLE_MS`, pasa igual: un push del
+  // mantenedor no se queda sin seguir. Un trabajo que no ha subido nada o que no termina a tiempo va
+  // al aviso final con su motivo.
   const esperarArreglo: GraphNode<{
     InputSchema: typeof TrackingState;
     Nodes: 'esperarArreglo' | 'avisarArreglo' | 'avisarEstadoFinal';
@@ -824,7 +839,16 @@ export function createTrackingGraph(
       log(`El fixer no dice en qué está el arreglo de la PR #${snapshot.number}: ${describeError(error)}`);
     }
     const update = { snapshot, fix: { ...fix, status } };
-    if (snapshot.headSha !== push.sha) return new Command({ update, goto: 'avisarArreglo' });
+    if (snapshot.headSha !== push.sha) {
+      const changedAt = fix.headChangedAt ?? snapshot.observedAt;
+      if (!FIX_ENDED.has(status.state) && snapshot.observedAt - changedAt < FIX_SETTLE_MS) {
+        return new Command({
+          update: { ...update, fix: { ...update.fix, headChangedAt: changedAt } },
+          goto: 'esperarArreglo',
+        });
+      }
+      return new Command({ update, goto: 'avisarArreglo' });
+    }
     const failure = failedFixReason(status);
     const late =
       fix.requestedAt !== undefined &&
