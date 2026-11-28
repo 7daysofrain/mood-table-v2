@@ -96,6 +96,20 @@ describe('el token de instalación', () => {
     );
   });
 
+  it('si GitHub no da un id de instalación entero, lanza sin pedir el token', async () => {
+    const { fetch, calls } = fakeFetch({
+      'GET https://api.github.com/repos/7daysofrain/mood-table-v2/installation': {
+        status: 200,
+        body: { id: '../../user' },
+      },
+    });
+
+    await expect(installationToken(fetch, app, '7daysofrain/mood-table-v2', now)).rejects.toThrow(
+      /instalación/,
+    );
+    expect(calls).toHaveLength(1);
+  });
+
   it('si GitHub rechaza el token, lanza con su estado y sin el JWT', async () => {
     const { fetch } = fakeFetch({
       'GET https://api.github.com/repos/7daysofrain/mood-table-v2/installation': {
