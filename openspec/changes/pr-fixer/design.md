@@ -119,6 +119,13 @@ pregunta el hilo que espera. Un trabajo que no termina en `FIX_TIMEOUT_MINUTES` 
 se pidió va al aviso final, para que una PR no se quede esperando para siempre si el *fixer* se
 pierde. Sin *fixer* configurado, `decidir` decide como antes del arreglo.
 
+*Implementado así, tras la revisión de Codex en la #209 (28-nov).* Con otro SHA en la PR,
+`esperarArreglo` no pasa a `avisarArreglo` hasta que el trabajo acaba (subido, fallido, obsoleto o
+desconocido para el *fixer*), o hasta 3 min *(asumido)* desde que vio el SHA nuevo. GitHub puede enseñar
+el push del arreglo antes de que el *fixer* lo dé por subido: borra el clon después del push. Sin
+esperar, `avisarArreglo` veía el trabajo en marcha y el aviso de lo no arreglado se perdía. Los 3 min
+acotan lo que tarda en seguirse un push del mantenedor mientras el trabajo, ya inútil, termina.
+
 - **`decide()`** gana la acción `fix` en la ronda final, con sus reglas (decisión 11). Si no hay nada
   que arreglar, o no se puede, sigue en `publish`, y el motivo va al aviso.
 - **`pedirArreglo`** es un nodo de acción, como `relanzar`: pide el arreglo al puerto `Fixer` y no
@@ -265,6 +272,10 @@ de partida que se mide en la prueba a mano (`docs/umbrales-para-specs.md`).
 - *Implementado así:* lo ya arreglado en ese trabajo sí se sube, con el resto sin arreglar por el
   tope (los arreglos que pasan se suben, `pr-fix`); el trabajo acaba como `failed` solo si no ha
   llegado a arreglar nada.
+- *Implementado así, tras la revisión de Codex en la #209 (28-nov):* la cola guarda lo gastado por la
+  PR al encolar cada trabajo y, al sacarlo, le resta lo gastado desde entonces. Si no, un trabajo
+  encolado mientras otro de la misma PR seguía gastando conservaba el tope calculado al encolarse, y
+  la PR podía pasar de su tope.
 - **Es aparte del tope del triaje** (0,05 $, D90), que paga otro proveedor con otro saldo.
 - **Por qué 2 $:** no está para ahorrar, sino para frenar lo anómalo. Se mide en la prueba a mano, como
   se hizo con el tope del triaje.

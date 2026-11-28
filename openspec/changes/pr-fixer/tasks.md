@@ -173,6 +173,10 @@
   El aviso final de las tres pide intervención porque el comentario del revisor sigue sin resolver en
   un push anterior. Es lo esperado: resolver los hilos es MOO-78.
 
+  Tras la prueba, Codex señaló en la #209 dos condiciones de carrera reales, ya arregladas (`design.md`
+  decisiones 3 y 8): el aviso de lo no arreglado se podía perder, y un trabajo encolado podía pasar del
+  tope de la PR.
+
 ## 3. MOO-194 · infra
 
 - [ ] 3.1 **(test en rojo)** Las vueltas (`design.md` decisión 7):
