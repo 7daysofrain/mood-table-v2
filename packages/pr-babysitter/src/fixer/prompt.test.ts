@@ -15,6 +15,14 @@ describe('lo que recibe el agente (design.md decisión 12)', () => {
     expect(prompt).toMatch(/do not push/i);
   });
 
+  it('no arregla otros problemas que vea, aunque sean fallos claros: algunos los decide el mantenedor', () => {
+    const prompt = fixPrompt(pr, lint);
+
+    expect(prompt).toMatch(/do not fix anything else/i);
+    expect(prompt).toMatch(/even an obvious bug/i);
+    expect(prompt).toMatch(/maintainer/i);
+  });
+
   it('una comprobación, con su resumen y cada error que señala', () => {
     const prompt = fixPrompt(pr, lint);
 
