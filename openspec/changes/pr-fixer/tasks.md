@@ -145,7 +145,7 @@
   - `packages/pr-babysitter/README.md`: el arreglador ya funciona;
   - `docs/umbrales-para-specs.md`: el tope de 2 $ *(asumido)*;
   - `prompts.md`, si la sección 1 dejó algo por contar.
-- [ ] 2.9 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 2.9 **Prueba a mano** (sin commit), con el sistema en marcha:
   - una PR de prueba con un error de `lint` y un comentario de Codex que se arregla en una línea;
   - una con un hallazgo real y otro que exige criterio;
   - la PR de Dependabot que esté abierta.
@@ -160,6 +160,18 @@
   - en el log del *fixer*, el coste de cada trabajo, para el tope y el de turnos.
 
   Los enlaces y los costes, en la descripción de la PR de la tarea.
+
+  Al implementar (27 y 28-nov, PR #211, #212 y #213, cerradas sin integrar): pasa, con tres desvíos.
+  - **Memoria del lint.** En el contenedor, `pnpm lint` se quedaba sin memoria y ningún arreglo pasaba.
+    Se arregla con `NODE_OPTIONS=--max-old-space-size=4096` en el servicio `fixer`.
+  - **Alcance del arreglo.** En la segunda prueba, el agente arregló también el fallo que exigía
+    criterio, dentro del commit del `lint`. Ahora el mensaje le dice que cambie solo lo que pide su
+    hallazgo. La prueba repetida (#213) solo toca el `lint`.
+  - **Hallazgos ya arreglados.** Una incidencia de SonarQube que otro commit del mismo push ya había
+    arreglado se avisa como «el agente no ha podido arreglarlo»: capturado en MOO-195.
+
+  El aviso final de las tres pide intervención porque el comentario del revisor sigue sin resolver en
+  un push anterior. Es lo esperado: resolver los hilos es MOO-78.
 
 ## 3. MOO-194 · infra
 
