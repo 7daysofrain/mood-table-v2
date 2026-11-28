@@ -3,6 +3,7 @@
  * del canal. El adaptador del canal decide a quién menciona, dónde lo publica y con qué formato;
  * aquí solo se decide qué se dice.
  */
+import { FIX_FAILURES, type NotFixedItem, notFixedLine } from './fix.ts';
 import { type OpenPullRequest, STOP_LABEL } from './pull-request.ts';
 import type { FinalState, FindingPushes, InterventionReason } from './tracking.ts';
 
@@ -32,6 +33,16 @@ export interface FinalNotice {
   state: FinalState;
 }
 
+/**
+ * El sistema ha subido arreglos al último push y algunos hallazgos se han quedado sin arreglar, cada
+ * uno con su motivo (change pr-fixer, decisión 10). Sigue la PR: el push del arreglo tendrá su aviso.
+ */
+export interface NotFixedNotice {
+  type: 'notFixed';
+  pullRequest: NoticePullRequest;
+  items: NotFixedItem[];
+}
+
 /** Alguien ha detenido el seguimiento de la PR: el sistema no avanza en ella (change pr-stop). */
 export interface StoppedNotice {
   type: 'stopped';
@@ -53,6 +64,7 @@ export type PullRequestNotice =
   | TrackingNotice
   | ChecksFinishedNotice
   | FinalNotice
+  | NotFixedNotice
   | StoppedNotice
   | ResumedNotice;
 export type SystemNotice = GitHubUnauthorizedNotice;
@@ -72,6 +84,10 @@ export function checksFinishedNotice(pullRequest: OpenPullRequest): ChecksFinish
 
 export function finalNotice(pullRequest: OpenPullRequest, state: FinalState): FinalNotice {
   return { type: 'final', pullRequest: noticePullRequest(pullRequest), state };
+}
+
+export function notFixedNotice(pullRequest: OpenPullRequest, items: NotFixedItem[]): NotFixedNotice {
+  return { type: 'notFixed', pullRequest: noticePullRequest(pullRequest), items };
 }
 
 export function stoppedNotice(pullRequest: OpenPullRequest): StoppedNotice {
@@ -104,6 +120,11 @@ export function noticeSummary(notice: Notice): string {
       return 'Han terminado sus comprobaciones: espero a la revisión.';
     case 'final':
       return `${finalSummary(notice.state)} Dejo de seguirla.`;
+    case 'notFixed':
+      return (
+        'He subido arreglos al último push; quedan sin arreglar ' +
+        `${list(notice.items.map(notFixedLine))}. Sigo la PR.`
+      );
     case 'stopped':
       return `Detengo su seguimiento. Para reanudarlo, quítale la etiqueta \`${STOP_LABEL}\`.`;
     case 'resumed':
@@ -132,6 +153,14 @@ function reasonSummary(reason: InterventionReason): string {
       return 'la revisión no ha terminado';
     case 'rerunRejected':
       return `no he podido relanzar ${list(reason.checks)}`;
+    case 'notCausedByPr':
+      return `no arreglo ${list(reason.checks)}, que no causa la PR`;
+    case 'fixBudgetSpent':
+      return 'se ha agotado el tope de gasto del arreglo';
+    case 'fixFailed':
+      return reason.unfixed.length === 0
+        ? FIX_FAILURES[reason.reason]
+        : `${FIX_FAILURES[reason.reason]}: sin arreglar ${list(reason.unfixed)}`;
   }
 }
 

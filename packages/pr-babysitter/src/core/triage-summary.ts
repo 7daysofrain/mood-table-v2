@@ -33,6 +33,8 @@ export interface TriagedPush {
    * decisión 8): el resumen lo dice de las que se relanzaron.
    */
   firstTriage?: FirstTriage;
+  /** Si el sistema pide el arreglo de los hallazgos reales de este push (change pr-fixer). */
+  fixing?: boolean;
 }
 
 const CLASS_NAMES: Record<TriageClass, string> = {
@@ -47,8 +49,8 @@ const CLASS_NAMES: Record<TriageClass, string> = {
  * relanzó, dice además qué respondió el triaje de su primer fallo (change pr-first-failure-triage,
  * decisión 8).
  *
- * La cabecera dice «no arregla», como el glosario de PB (*modo sombra*): el sistema ya relanza, y lo
- * decide con el triaje.
+ * La cabecera dice si el sistema pide el arreglo de los hallazgos reales de ese push o no lo arregla
+ * (change pr-fixer): el resumen se publica antes de pedirlo.
  */
 export function triageSummary(triage: TriagedPush, threshold: number): string {
   const firstTriage = triage.firstTriage ?? [];
@@ -59,7 +61,7 @@ export function triageSummary(triage: TriagedPush, threshold: number): string {
   );
   const table = rows.length === 0 ? [] : ['| Hallazgo | Clase | Por qué |', '|---|---|---|', ...rows, ''];
   return [
-    `**Triaje del PR Babysitter** (modo sombra: no arregla) · push \`${triage.sha.slice(0, 7)}\``,
+    `**Triaje del PR Babysitter** (${triage.fixing === true ? 'pide el arreglo de los hallazgos reales' : 'no arregla este push'}) · push \`${triage.sha.slice(0, 7)}\``,
     '',
     ...table,
     ...cutList(triage.sonarIssues),

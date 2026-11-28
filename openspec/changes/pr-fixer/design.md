@@ -103,11 +103,28 @@ pasando por «ramas de integración», que no tiene *bypass*.
 ```
 ... reunirTriaje --> decidir --(publish)--> publicarResumen --> avisarEstadoFinal --> END
                         |
-                        +--(fix)--> publicarResumen --> avisarSinArreglo? --> pedirArreglo --> esperarArreglo
-                                                                                                   |
-                                     +--(subido: el push nuevo lo recoge el driver)----------------+--> END
-                                     +--(no subido, fallido o interrumpido dos veces)--------------+--> avisarEstadoFinal
+                        +--(fix)--> publicarResumen --> pedirArreglo --> esperarArreglo <--+ (en cola o en marcha)
+                                                            |                 |  |  |      |
+                                     (el fixer no contesta) +                 |  |  +------+
+                                                            v                 |  |
+                                                    avisarEstadoFinal <-------+  |  (fallido, interrumpido dos
+                                                                                 |   veces o fuera de tiempo)
+                                       push nuevo (del arreglo o del mantenedor) v
+                                       avisarArreglo --> esperarComprobaciones (el push nuevo, sin aviso)
 ```
+
+*Implementado así en `MOO-193` (27-nov).* `esperarArreglo` pregunta él mismo al puerto en qué está el
+trabajo al reanudarse, en vez de que el *driver* lo meta en la foto. Así el *driver* no cambia, y solo
+pregunta el hilo que espera. Un trabajo que no termina en `FIX_TIMEOUT_MINUTES` (60, *asumido*) desde que
+se pidió va al aviso final, para que una PR no se quede esperando para siempre si el *fixer* se
+pierde. Sin *fixer* configurado, `decidir` decide como antes del arreglo.
+
+*Implementado así, tras la revisión de Codex en la #209 (28-nov).* Con otro SHA en la PR,
+`esperarArreglo` no pasa a `avisarArreglo` hasta que el trabajo acaba (subido, fallido, obsoleto o
+desconocido para el *fixer*), o hasta 3 min *(asumido)* desde que vio el SHA nuevo. GitHub puede enseñar
+el push del arreglo antes de que el *fixer* lo dé por subido: borra el clon después del push. Sin
+esperar, `avisarArreglo` veía el trabajo en marcha y el aviso de lo no arreglado se perdía. Los 3 min
+acotan lo que tarda en seguirse un push del mantenedor mientras el trabajo, ya inútil, termina.
 
 - **`decide()`** gana la acción `fix` en la ronda final, con sus reglas (decisión 11). Si no hay nada
   que arreglar, o no se puede, sigue en `publish`, y el motivo va al aviso.
@@ -115,11 +132,12 @@ pasando por «ramas de integración», que no tiene *bypass*.
   espera. Pedirlo dos veces para el mismo push no crea dos trabajos (la clave es la PR y su SHA). Está
   en `PR_ACTION_NODES`, así que el *driver* se lo salta con un push viejo o una PR detenida, como hoy.
 - **`esperarArreglo`** se para con `interrupt()`, como las esperas de comprobaciones y revisión. El
-  *driver* reanuda el hilo cada vuelta con una foto que trae el estado del trabajo (`Fixer.status`).
-  Esperar al arreglo es el mismo mecanismo que esperar a la CI: nada se bloquea.
-- **Arreglo subido:** el hilo termina sin avisar del estado final de ese push (decisión 10). El push
-  nuevo lo recoge el *driver* en la vuelta siguiente y vuelve a empezar el seguimiento, como cualquier
-  push.
+  *driver* lo reanuda cada vuelta con la foto, y el nodo pregunta a `Fixer.status` en qué está el
+  trabajo. Esperar al arreglo es el mismo mecanismo que esperar a la CI: nada se bloquea.
+- **Arreglo subido:** no hay aviso del estado final de ese push (decisión 10). Cuando la foto trae el
+  push nuevo, `avisarArreglo` avisa de lo que no se ha arreglado, si queda algo, y el hilo sigue con
+  ese push sin el aviso de seguimiento: el sistema no ha dejado de seguir la PR. Un push del
+  mantenedor mientras arregla sigue el mismo camino, sin aviso.
 - **El puerto, en `core/ports.ts`:**
 
   ```ts
@@ -165,6 +183,20 @@ pasando por «ramas de integración», que no tiene *bypass*.
 - **Código:** en `src/fixer/` del mismo paquete, con su raíz de composición (`src/fixer/main.ts`) y la
   misma regla de fronteras: `src/core` no lo importa. La imagen es otro *target* del mismo
   `Dockerfile`, con `git` y lo que pida el SDK.
+*Implementado así en `MOO-193` (27-nov):*
+
+- **El contrato es uno:** `src/fixer/` importa de `src/core` los esquemas del trabajo y de su estado
+  (`fixJobSchema`, `fixStatusSchema`), como los adaptadores. `src/core` sigue sin importar nada del
+  *fixer*.
+- **Tres rutas, no dos:** `GET /pulls/:pr/spent` da lo gastado por la PR, que el puerto pide aparte
+  (`Fixer.spent`).
+- **La rama no va en el trabajo:** el *fixer* la lee de GitHub con el token de la App, la misma
+  lectura que hará la comprobación antes del push (`MOO-194`).
+- **El clon sale de la URL pública, sin token,** para que el agente no lo encuentre en `.git/config`;
+  el token solo va en la URL del push. `pnpm install`, las comprobaciones y el agente corren sin la
+  clave de la App ni los ajustes del *fixer* en su entorno, y un arreglo que lleve en su diff un
+  secreto del *fixer* no se sube.
+
 - **Descartados:**
   - **una cola en un volumen compartido:** acopla los dos contenedores a un fichero y a su esquema;
   - **el arreglo en el mismo proceso:** el agente con Bash vería todos los secretos del `.env`, y un
@@ -208,6 +240,9 @@ solo push. Así se lanza una sola vuelta de CI y de revisión.
   thread:<id>`. Lo lee la decisión 7.
 - **Antes del push**, el *fixer* lee con el token de la App que la PR sigue abierta, sin la etiqueta
   `babysitter:stop`, y con la cabeza en el SHA del trabajo. Si no, no sube nada.
+- *Implementado así:* el hallazgo no trae el id del hilo ni la clave de la incidencia, así que sus
+  *trailers* van con el fichero y la línea: `thread:src/a.ts:7` y `sonar:typescript:S3358
+  src/b.ts:12`. Solo los de las comprobaciones los lee la decisión 7.
 - **El push es normal, sin forzar:** si la rama ha avanzado en el último segundo, GitHub lo rechaza y no
   se pisa nada.
 
@@ -234,6 +269,13 @@ de partida que se mide en la prueba a mano (`docs/umbrales-para-specs.md`).
   `FIX_BUDGET_USD`)*.
 - **Dentro de un trabajo**, el *fixer* corta en cuanto se pasa, con lo que quede del tope. El hallazgo
   en curso no se sube, y el trabajo acaba como `failed` con el motivo.
+- *Implementado así:* lo ya arreglado en ese trabajo sí se sube, con el resto sin arreglar por el
+  tope (los arreglos que pasan se suben, `pr-fix`); el trabajo acaba como `failed` solo si no ha
+  llegado a arreglar nada.
+- *Implementado así, tras la revisión de Codex en la #209 (28-nov):* la cola guarda lo gastado por la
+  PR al encolar cada trabajo y, al sacarlo, le resta lo gastado desde entonces. Si no, un trabajo
+  encolado mientras otro de la misma PR seguía gastando conservaba el tope calculado al encolarse, y
+  la PR podía pasar de su tope.
 - **Es aparte del tope del triaje** (0,05 $, D90), que paga otro proveedor con otro saldo.
 - **Por qué 2 $:** no está para ahorrar, sino para frenar lo anómalo. Se mide en la prueba a mano, como
   se hizo con el tope del triaje.
@@ -258,8 +300,9 @@ ruido.
 - **El resumen del triaje se publica igual,** antes de pedir el arreglo, para que la PR cuente qué se
   ha visto y por qué.
 - **Si hay hallazgos que no se arreglan** (exigen criterio, una relanzable que ha fallado dos veces) o
-  el arreglo deja alguno sin subir, `avisarSinArreglo` manda un aviso con cada uno y su motivo.
-  Reutiliza el canal de BH1 (D70) y el reintento de los avisos.
+  el arreglo deja alguno sin subir, `avisarArreglo` manda un aviso con cada uno y su motivo cuando llega
+  el push del arreglo: uno solo por trabajo. Reutiliza el canal de BH1 (D70) y el reintento de los
+  avisos.
 - **Si el trabajo falla entero** (vueltas, tope, interrumpido dos veces o nada subido), el aviso es el
   del estado final de siempre, «necesita intervención», con el motivo del arreglo.
 
@@ -271,8 +314,19 @@ todo esto:
 - su clase es *real*;
 - no es una relanzable que ha fallado dos veces. Se relanzó porque el triaje no dio que la causara la
   PR: o no la causa o no está claro, y en los dos casos se avisa sin arreglar (`MOO-166` la captura);
-- la PR no es de Dependabot (`MOO-191`);
 - no se han agotado las vueltas ni el tope (decisiones 7 y 8).
+
+Además, el arreglo tiene que estar encendido (`FIX_ENABLED`, la vuelta atrás). Las PR de Dependabot no
+llegan a `decide()`: el sistema solo sigue las del mantenedor (`pr-tracking`), y seguirlas es de
+`MOO-191`.
+
+| Regla (`decision.rule`) | Acción | Cuándo |
+|---|---|---|
+| `finalState` | `publish` | no hay hallazgos reales, o no es la ronda final |
+| `fixDisabled` | `publish` | hay reales, pero `FIX_ENABLED=false` |
+| `notCausedByPr` | `publish` | los únicos reales son relanzables que han fallado dos veces |
+| `fixBudgetSpent` | `publish` | no queda tope de gasto para arreglar en la PR |
+| `fixable` | `fix` | queda al menos un hallazgo arreglable |
 
 La regla que decide queda en el estado (`decision.rule`) y en la traza (BE4), como hoy.
 
@@ -284,7 +338,7 @@ La regla que decide queda en el estado (`decision.rule`) y en la traza (BE4), co
 | Qué contexto recibe cada uno | El agente recibe un hallazgo cada vez, con su contexto, el alcance de la PR y `AGENTS.md`. No recibe tokens, ni el diff entero, ni los demás hallazgos. Con un contexto equivocado, lo frena el código: si no pasa `lint`, `typecheck` y `test` no hay commit, y después la CI, el triaje del push nuevo y el límite de vueltas |
 | Dónde vive el estado y qué pasa si algo falla a mitad | El trabajo, en el SQLite del *fixer*; las vueltas, en GitHub; el hilo, en el `MemorySaver` hasta BE7. Si el *fixer* cae, reintenta una vez (decisión 9); si cae el babysitter, el trabajo sigue y el *driver* vuelve a preguntar por él |
 | Qué decisiones no necesitan un LLM | Arreglar o no, las vueltas, el tope, la PR que cambia, el orden de los hallazgos, los commits y el push |
-| Cuándo vuelve el control a una persona | Con un criterio explícito: los hallazgos que exigen criterio, la relanzable que falla dos veces, las vueltas, el tope, el arreglo que no pasa, la interrupción doble y las PR de Dependabot. Y siempre en el merge (BE2) |
+| Cuándo vuelve el control a una persona | Con un criterio explícito: los hallazgos que exigen criterio, la relanzable que falla dos veces, las vueltas, el tope, el arreglo que no pasa y la interrupción doble. Y siempre en el merge (BE2) |
 
 ## Risks / Trade-offs
 
@@ -324,5 +378,6 @@ La regla que decide queda en el estado (`decision.rule`) y en la traza (BE4), co
 
 - Qué tope de turnos por hallazgo se le pone al agente. Se fija con la prueba a mano, junto con el
   coste.
-- Si la imagen del *fixer* necesita el binario de Claude Code aparte o le basta el SDK. Se ve al montar
-  la imagen en `MOO-193`.
+- ~~Si la imagen del *fixer* necesita el binario de Claude Code aparte o le basta el SDK.~~ Le basta el
+  SDK: trae el binario de su plataforma como dependencia opcional (`linux-arm64` en la imagen de casa),
+  visto al montar la imagen en `MOO-193` (27-nov).

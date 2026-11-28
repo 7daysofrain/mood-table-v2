@@ -7,6 +7,7 @@
  * la fecha del commit; el de la revisión, desde que las ve pasar, que es cuando la pide. Un push
  * nuevo los reinicia.
  */
+import type { FixReason } from './fix.ts';
 import type { Check, PullRequestSnapshot } from './pull-request.ts';
 import type { FirstTriage } from './triage.ts';
 
@@ -53,7 +54,8 @@ export type InterventionReason =
   | { kind: 'checksNotRun'; checks: string[] }
   | { kind: 'reviewFindings'; pushes: FindingPushes }
   | { kind: 'reviewUnfinished' }
-  | { kind: 'rerunRejected'; checks: string[] };
+  | { kind: 'rerunRejected'; checks: string[] }
+  | FixReason;
 
 /** El estado final de una PR (`specs/pr-tracking`; glosario de PB, *lista para integrar*). */
 export type FinalState =

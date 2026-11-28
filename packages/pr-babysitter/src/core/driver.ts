@@ -36,6 +36,7 @@ import {
   type CheckReruns,
   type DecisionModel,
   type Findings,
+  type Fixer,
   GitHubUnauthorizedError,
   type GitHubReader,
   type Notifier,
@@ -80,6 +81,9 @@ export interface DriverOptions {
   notRunMarginMs: number;
   /** Una línea por fallo, para el log de errores. */
   log: (line: string) => void;
+  /** El que arregla y sus opciones (change pr-fixer). Sin ellos, el sistema no arregla. */
+  fixer?: Fixer;
+  fix?: NonNullable<TrackingOptions['fix']>;
 }
 
 export interface Driver {
@@ -115,11 +119,13 @@ export function createDriver({
   rerunChecks,
   notRunMarginMs,
   log,
+  fixer,
+  fix,
 }: DriverOptions): Driver {
   const graph = createTrackingGraph(
-    { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns },
+    { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns, fixer },
     checkpointer,
-    { timeoutMs, rerunChecks, notRunMarginMs, log, triage },
+    { timeoutMs, rerunChecks, notRunMarginMs, log, triage, fix },
   );
   /** Las PR con un hilo arrancado. */
   const tracked = new Set<number>();

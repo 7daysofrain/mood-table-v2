@@ -1,7 +1,7 @@
 /**
  * Raíz de composición del PR Babysitter (change pr-tracking, decisión 5): el único módulo que
  * conoce a la vez el núcleo y los adaptadores. Lee la configuración del entorno, monta GitHub,
- * Linear, el modelo de decisión del triaje y el driver, y da vueltas hasta que el contenedor lo pare. Si la configuración no vale,
+ * Linear, el modelo de decisión del triaje, el *fixer* si lo hay y el driver, y da vueltas hasta que el contenedor lo pare. Si la configuración no vale,
  * dice qué variable falla y termina con código 1. Sin persistencia: al reiniciar, el estado se
  * reconstruye desde GitHub (`MemorySaver` hasta BE7, D73).
  */
@@ -17,6 +17,7 @@ import {
 import { loadConfig } from './adapters/config.ts';
 import { createDecisionModel } from './adapters/decision-model.ts';
 import { createFindings } from './adapters/findings.ts';
+import { createFixerClient } from './adapters/fixer-client.ts';
 import { createGitHubReader } from './adapters/github.ts';
 import { createLinearNotifier } from './adapters/linear.ts';
 import { createTriageSummaries } from './adapters/triage-summary.ts';
@@ -90,6 +91,11 @@ const driver = createDriver({
   timeoutMs: config.trackingTimeoutMs,
   rerunChecks: config.rerunChecks,
   notRunMarginMs: config.trackingNotRunMarginMs,
+  // Sin FIXER_URL, el sistema no arregla y avisa como antes (change pr-fixer, decisión 3).
+  ...(config.fix && {
+    fixer: createFixerClient({ baseUrl: config.fix.url }),
+    fix: { enabled: config.fix.enabled, budgetUsd: config.fix.budgetUsd, timeoutMs: config.fix.timeoutMs },
+  }),
   log,
 });
 
@@ -98,9 +104,11 @@ const running = runDriver(driver, {
   clock: Date.now,
   sleep: (ms) => sleep(ms),
 });
+const fixOff = config.fix?.enabled ? '' : ' (apagado)';
+const fixNote = config.fix ? `Arregla con el fixer de ${config.fix.url}${fixOff}.` : 'No arregla.';
 console.log(
   `PR Babysitter en marcha: sigue las PR de ${config.githubMaintainer} contra ${BASE_BRANCH} en ` +
-    `${OWNER}/${REPO}, cada ${config.pollIntervalMs / 1000} s.`,
+    `${OWNER}/${REPO}, cada ${config.pollIntervalMs / 1000} s. ${fixNote}`,
 );
 
 // Docker para el contenedor con SIGTERM, y Node, como PID 1, no termina solo con esa señal.

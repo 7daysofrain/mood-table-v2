@@ -11,17 +11,21 @@ enseña cómo encajan las piezas.
 
 ## Quién habla con quién
 
-![Arquitectura: GitHub, el contenedor con driver, grafo, triador y arreglador, Linear y el mantenedor](docs/arquitectura.svg)
+![Arquitectura: GitHub, el compose con driver, grafo, triador y arreglador, Linear y el mantenedor](docs/arquitectura.svg)
 
 - **GitHub** es la fuente de verdad. El sistema lo consulta por polling y no abre nada hacia dentro.
 - **Driver:** en cada vuelta lee las PR abiertas, saca una foto de cada una y reanuda su hilo del grafo.
 - **Grafo de LangGraph:** un hilo por PR, con estado entre pushes y pausas con `interrupt()`.
 - **Triador:** clasifica cada hallazgo con un modelo de decisión (Clef) y reglas en código.
-- **Arreglador:** un agente con herramientas que arregla en un worktree local y publica.
+- **Arreglador (*fixer*):** otro servicio del mismo compose, al que el grafo pide el arreglo por HTTP
+  interno y no espera bloqueado. Arregla cada hallazgo real con un agente del Claude Agent SDK y lo
+  sube a la rama de la PR con su propia GitHub App, que no puede integrar.
 - **Linear:** avisa al mantenedor y recoge su respuesta cuando escala.
 
 En el código, `src/core` tiene el grafo, el driver y el triaje sin E/S; `src/adapters`, las
-integraciones (GitHub, Linear, modelo de decisión), y `src/main.ts` los une.
+integraciones (GitHub, Linear, modelo de decisión, el cliente del *fixer*), y `src/main.ts` los une.
+`src/fixer` es el *fixer*, con su propia raíz de composición (`src/fixer/main.ts`); de `src/core` solo
+toma el contrato del trabajo, y `src/core` no sabe nada de él.
 
 ## Qué pasa con cada push
 
@@ -32,5 +36,6 @@ vuelve a empezar, hasta que la PR queda lista o hace falta el mantenedor. Qué h
 specs [`pr-tracking`](../../openspec/specs/pr-tracking/spec.md) y
 [`pr-triage`](../../openspec/specs/pr-triage/spec.md).
 
-> A 21-nov-2026 funcionan el seguimiento, la petición de revisión, el relanzamiento y el triaje en modo
-> sombra. Arreglar (BH3) y escalar (BH4) están por construir.
+> A 27-nov-2026 funcionan el seguimiento, la petición de revisión, el relanzamiento, el triaje y el
+> arreglo de los hallazgos reales (BH3, `MOO-77`). Faltan contestar y resolver los hilos (`MOO-78`), los
+> límites de vueltas y el reintento del arreglo (`MOO-194`), y escalar (BH4).

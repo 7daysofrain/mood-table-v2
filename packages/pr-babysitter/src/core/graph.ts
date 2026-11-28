@@ -49,13 +49,25 @@ import {
 } from '@langchain/langgraph';
 import * as z from 'zod';
 
-import { type Decision, decide, decisionSchema } from './decision.ts';
-import { checksFinishedNotice, finalNotice, trackingNotice } from './notice.ts';
+import { type Decision, decide, decisionSchema, isFixable } from './decision.ts';
+import {
+  findingLabel,
+  type FixReason,
+  fixReasonSchema,
+  type FixStatus,
+  fixStatusSchema,
+  type NotFixedItem,
+  notFixedItemSchema,
+  notFixedLine,
+  unfixedItems,
+} from './fix.ts';
+import { checksFinishedNotice, finalNotice, notFixedNotice, trackingNotice } from './notice.ts';
 import {
   type CheckReruns,
   type DecisionModel,
   DecisionModelError,
   type Findings,
+  type Fixer,
   GitHubRequestRejectedError,
   type Notifier,
   type ReviewRequests,
@@ -187,13 +199,35 @@ const TrackingState = new StateSchema({
    * (BE4).
    */
   decision: decisionSchema.optional(),
+  /**
+   * El arreglo del push (change pr-fixer, decisión 3): de qué push es, lo que se pide arreglar, lo
+   * que queda del tope, lo que no se arregla (para avisar al subir), cuándo se pidió, en qué está el
+   * trabajo y cuándo se vio otro SHA en la PR. Lo deja `decidir` y lo completan `pedirArreglo` y
+   * `esperarArreglo`.
+   */
+  fix: z
+    .object({
+      sha: z.string(),
+      findings: z.array(findingSchema),
+      budgetUsd: z.number(),
+      notFixed: z.array(notFixedItemSchema),
+      requestedAt: z.number().optional(),
+      status: fixStatusSchema.optional(),
+      headChangedAt: z.number().optional(),
+    })
+    .optional(),
+  /**
+   * Lo que el arreglo añade a los motivos del aviso final de un push (decisión 10): solo cuenta si
+   * es del push del aviso.
+   */
+  fixReasons: z.object({ sha: z.string(), reasons: z.array(fixReasonSchema) }).optional(),
 });
 
 type State = typeof TrackingState.State;
 
 /** Lo que el hilo pide al driver cuando se para a esperar (lo devuelve `getState`). */
 export interface TrackingWait {
-  waitingFor: 'checks' | 'review';
+  waitingFor: 'checks' | 'review' | 'fix';
 }
 
 /** Lo que el grafo necesita de fuera. */
@@ -204,6 +238,8 @@ export interface TrackingPorts {
   decisionModel: DecisionModel;
   summaries: TriageSummaries;
   checkReruns: CheckReruns;
+  /** El que arregla (change pr-fixer). Sin él, el sistema no arregla nada, como antes. */
+  fixer?: Fixer;
 }
 
 export interface TrackingOptions {
@@ -240,6 +276,12 @@ export interface TrackingOptions {
     ruleChecks: string[];
     sonarIssuesCheck: string;
   };
+  /**
+   * El arreglo (change pr-fixer, decisiones 8 y 11): si está encendido (`FIX_ENABLED`, la vuelta
+   * atrás), el tope de gasto por PR y cuánto se espera a un trabajo desde que se pide. Sin él, no se
+   * arregla.
+   */
+  fix?: { enabled: boolean; budgetUsd: number; timeoutMs: number };
 }
 
 /**
@@ -251,11 +293,24 @@ export const REVIEW_REQUEST_NODE = 'pedirRevision';
 /** El nodo que relanza las comprobaciones (change pr-check-rerun, decisión 4). */
 export const RERUN_NODE = 'relanzar';
 
+/** El nodo que pide el arreglo de un push (change pr-fixer, decisión 3). */
+export const FIX_REQUEST_NODE = 'pedirArreglo';
+
 /**
  * Los nodos que actúan sobre la PR en GitHub. El driver no entra en ellos con la foto de un push
  * que ya no es el último, ni al terminar la parada de una PR: actuarían sobre lo que ya no toca.
  */
-export const PR_ACTION_NODES = [REVIEW_REQUEST_NODE, RERUN_NODE] as const;
+export const PR_ACTION_NODES = [REVIEW_REQUEST_NODE, RERUN_NODE, FIX_REQUEST_NODE] as const;
+
+/** Los estados de un trabajo del *fixer* que ya no cambian (`none`: el *fixer* no lo conoce). */
+const FIX_ENDED = new Set<FixStatus['state']>(['pushed', 'failed', 'obsolete', 'none']);
+
+/**
+ * Cuánto espera `esperarArreglo`, con otro SHA en la PR, a que el trabajo acabe: 3 min *(asumido)*,
+ * tres vueltas del sondeo. Al push del arreglo le sobra (el *fixer* lo da por subido en segundos), y
+ * un push del mantenedor no se queda sin seguir mientras el trabajo, ya inútil, termina.
+ */
+const FIX_SETTLE_MS = 3 * 60_000;
 
 type PrActionNode = (typeof PR_ACTION_NODES)[number];
 
@@ -338,6 +393,9 @@ const AFTER_CHECKS = {
 const AFTER_DECISION = {
   rerun: RERUN_NODE,
   skipRerun: 'esperarComprobaciones',
+  // Antes de pedir el arreglo se publica el resumen del triaje, para que la PR cuente qué se ha
+  // visto y por qué (change pr-fixer, decisión 10).
+  fix: SUMMARY_NODE,
   publish: SUMMARY_NODE,
 } as const satisfies Record<Decision['action'], string>;
 
@@ -407,10 +465,51 @@ function waitFor(waitingFor: TrackingWait['waitingFor']) {
   return pullRequestSnapshotSchema.parse(resumed);
 }
 
+type Triaged = NonNullable<State['triage']>['findings'];
+
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Lo que no se arregla de un triaje y por qué (change pr-fixer, decisión 10): los que exigen
+ * criterio y las relanzables reales que la PR no causa.
+ */
+function notFixedOf(triaged: Triaged): NotFixedItem[] {
+  return triaged.flatMap(({ finding, verdict }): NotFixedItem[] => {
+    if (verdict.class === 'needsJudgment') return [{ label: findingLabel(finding), reason: 'needsJudgment' }];
+    if (verdict.class === 'valid' && !isFixable({ finding, verdict })) {
+      return [{ label: findingLabel(finding), reason: 'notCausedByPr' }];
+    }
+    return [];
+  });
+}
+
+/** Lo que el arreglo añade a los motivos del aviso final cuando `decidir` no arregla. */
+function skippedFixReasons(decision: Decision, triaged: Triaged): FixReason[] {
+  if (decision.rule === 'fixBudgetSpent') return [{ kind: 'fixBudgetSpent' }];
+  if (decision.rule !== 'notCausedByPr') return [];
+  const checks = triaged.flatMap(({ finding, verdict }) =>
+    finding.source === 'check' && verdict.class === 'valid' && !isFixable({ finding, verdict })
+      ? [finding.name]
+      : [],
+  );
+  return [{ kind: 'notCausedByPr', checks }];
+}
+
+/** Lo que un trabajo que no ha subido nada añade a los motivos del aviso final. */
+function failedFixReason(status: FixStatus): FixReason[] {
+  if (status.state === 'interrupted') return [{ kind: 'fixFailed', reason: 'interrupted', unfixed: [] }];
+  if (status.state !== 'failed') return [];
+  return [
+    { kind: 'fixFailed', reason: status.reason, unfixed: unfixedItems(status.unfixed).map(notFixedLine) },
+  ];
+}
+
 export function createTrackingGraph(
-  { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns }: TrackingPorts,
+  { notifier, reviewRequests, findings, decisionModel, summaries, checkReruns, fixer }: TrackingPorts,
   checkpointer: BaseCheckpointSaver,
-  { timeoutMs, rerunChecks, notRunMarginMs, log, triage }: TrackingOptions,
+  { timeoutMs, rerunChecks, notRunMarginMs, log, triage, fix: fixOptions }: TrackingOptions,
 ) {
   const avisarSeguimiento: GraphNode<typeof TrackingState> = async ({ snapshot }) => {
     await notifier.notify(trackingNotice(snapshot));
@@ -651,12 +750,130 @@ export function createTrackingGraph(
   // `decide()`, sin el modelo, con lo que respondió el primer triaje del push, y queda en el estado
   // con su regla. La arista siguiente lo lee. Si no relanza porque la PR causa el fallo, apunta en el
   // push las que no relanza, y el hilo vuelve a esperar (decisión 9).
-  const decidir: GraphNode<typeof TrackingState> = (state) => {
+  //
+  // En la ronda final decide también si se arregla (change pr-fixer, decisión 11), con lo que lleva
+  // gastado la PR en arreglos. Si el *fixer* no contesta, se decide como si quedara tope, y pedir el
+  // arreglo dirá que no se ha podido.
+  const decidir: GraphNode<typeof TrackingState> = async (state) => {
     const push = pushIn(state);
-    const decision = decide(state.triageRound?.kind ?? 'final', push.firstTriage);
-    if (decision.action !== 'skipRerun') return { decision };
-    const rerunSkipped = checksToRerun(state.snapshot, rerunChecks).map(({ name }) => name);
-    return { decision, push: { ...push, rerunSkipped } };
+    const { snapshot } = state;
+    const round = state.triageRound?.kind ?? 'final';
+    const triaged = state.triage?.sha === snapshot.headSha ? state.triage.findings : [];
+    const spent = await fixSpent(round, triaged, snapshot.number);
+    // Sin *fixer* configurado, la ronda final decide como antes del arreglo.
+    const decision = decide(
+      round,
+      push.firstTriage,
+      fixer && fixOptions
+        ? { findings: triaged, enabled: fixOptions.enabled, budgetLeft: spent < fixOptions.budgetUsd }
+        : undefined,
+    );
+    if (decision.action === 'skipRerun') {
+      const rerunSkipped = checksToRerun(snapshot, rerunChecks).map(({ name }) => name);
+      return { decision, push: { ...push, rerunSkipped } };
+    }
+    if (decision.action === 'fix') {
+      return {
+        decision,
+        fix: {
+          sha: snapshot.headSha,
+          findings: triaged.filter(isFixable).map(({ finding }) => finding),
+          budgetUsd: (fixOptions?.budgetUsd ?? 0) - spent,
+          notFixed: notFixedOf(triaged),
+        },
+      };
+    }
+    return { decision, fixReasons: { sha: snapshot.headSha, reasons: skippedFixReasons(decision, triaged) } };
+  };
+
+  // Lo gastado en arreglos de la PR, solo si hay algo real que arreglar en la ronda final.
+  async function fixSpent(round: string, triaged: Triaged, number: number): Promise<number> {
+    if (!fixer || round !== 'final' || !triaged.some(isFixable)) return 0;
+    try {
+      return await fixer.spent(number);
+    } catch (error) {
+      log(`El fixer no dice lo gastado en la PR #${number}: ${describeError(error)}`);
+      return 0;
+    }
+  }
+
+  // Pide el arreglo (change pr-fixer, decisión 3) y no espera. Es un nodo de acción: el driver se lo
+  // salta con un push viejo o una PR detenida. Si el *fixer* no contesta, avisa del estado final con
+  // ese motivo en vez de dejar la PR sin aviso.
+  const pedirArreglo: GraphNode<typeof TrackingState> = async (state) => {
+    const { snapshot, fix, triageRound } = state;
+    if (!fix || !fixer) return {};
+    try {
+      await fixer.request({
+        number: snapshot.number,
+        sha: fix.sha,
+        pr: triageRound?.pr ?? { title: snapshot.title, description: '' },
+        findings: fix.findings,
+        budgetUsd: fix.budgetUsd,
+      });
+      return { fix: { ...fix, requestedAt: snapshot.observedAt } };
+    } catch (error) {
+      log(`No se ha podido pedir el arreglo de la PR #${snapshot.number}: ${describeError(error)}`);
+      const reasons: FixReason[] = [{ kind: 'fixFailed', reason: 'fixerUnavailable', unfixed: [] }];
+      return { fixReasons: { sha: fix.sha, reasons } };
+    }
+  };
+
+  // Espera al arreglo como espera a la CI (decisión 3): cada vuelta pregunta en qué está. Un push
+  // nuevo, del arreglo o del mantenedor, pasa a `avisarArreglo` cuando el trabajo ha acabado: GitHub
+  // puede enseñar el push del arreglo antes de que el *fixer* lo dé por subido, y sin esperar se
+  // perdería el aviso de lo no arreglado. Si no acaba en `FIX_SETTLE_MS`, pasa igual: un push del
+  // mantenedor no se queda sin seguir. Un trabajo que no ha subido nada o que no termina a tiempo va
+  // al aviso final con su motivo.
+  const esperarArreglo: GraphNode<{
+    InputSchema: typeof TrackingState;
+    Nodes: 'esperarArreglo' | 'avisarArreglo' | 'avisarEstadoFinal';
+  }> = async (state) => {
+    const snapshot = waitFor('fix');
+    const push = pushIn(state);
+    const fix = state.fix ?? { sha: push.sha, findings: [], budgetUsd: 0, notFixed: [] };
+    let status: FixStatus = fix.status ?? { state: 'queued' };
+    try {
+      if (fixer) status = await fixer.status(snapshot.number, push.sha);
+    } catch (error) {
+      log(`El fixer no dice en qué está el arreglo de la PR #${snapshot.number}: ${describeError(error)}`);
+    }
+    const update = { snapshot, fix: { ...fix, status } };
+    if (snapshot.headSha !== push.sha) {
+      const changedAt = fix.headChangedAt ?? snapshot.observedAt;
+      if (!FIX_ENDED.has(status.state) && snapshot.observedAt - changedAt < FIX_SETTLE_MS) {
+        return new Command({
+          update: { ...update, fix: { ...update.fix, headChangedAt: changedAt } },
+          goto: 'esperarArreglo',
+        });
+      }
+      return new Command({ update, goto: 'avisarArreglo' });
+    }
+    const failure = failedFixReason(status);
+    const late =
+      fix.requestedAt !== undefined &&
+      snapshot.observedAt - fix.requestedAt > (fixOptions?.timeoutMs ?? Number.POSITIVE_INFINITY);
+    if (failure.length > 0 || late) {
+      const reasons: FixReason[] =
+        failure.length > 0 ? failure : [{ kind: 'fixFailed', reason: 'timedOut', unfixed: [] }];
+      return new Command({
+        update: { ...update, fixReasons: { sha: push.sha, reasons } },
+        goto: 'avisarEstadoFinal',
+      });
+    }
+    return new Command({ update, goto: 'esperarArreglo' });
+  };
+
+  // Un push nuevo tras pedir el arreglo (decisión 10). Si es el del arreglo, avisa de lo que no se
+  // ha arreglado, si queda algo; si es del mantenedor, nada: su push tendrá su aviso. Después sigue
+  // con el push nuevo, sin aviso de seguimiento: el sistema no ha dejado de seguir la PR.
+  const avisarArreglo: GraphNode<typeof TrackingState> = async ({ snapshot, fix }) => {
+    const status = fix?.status;
+    if (status?.state === 'pushed' && status.sha === snapshot.headSha) {
+      const items = [...(fix?.notFixed ?? []), ...unfixedItems(status.unfixed)];
+      if (items.length > 0) await notifier.notify(notFixedNotice(snapshot, items));
+    }
+    return { push: { sha: snapshot.headSha, seenAt: snapshot.observedAt } };
   };
 
   // Publica en la PR el triaje del push (decisión 7) y lo que el sistema relanzó y pasó (change
@@ -680,6 +897,7 @@ export function createTrackingGraph(
           sonarIssues: triaged?.sonarIssues,
           rerunPassed: passed,
           firstTriage: pushIn(state).firstTriage,
+          fixing: state.decision?.action === 'fix' && state.fix?.sha === snapshot.headSha,
         },
         triage.threshold,
       );
@@ -694,9 +912,17 @@ export function createTrackingGraph(
     return {};
   };
 
+  // El estado final del push, con los motivos del arreglo si son de este push (change pr-fixer,
+  // decisión 10).
   const avisarEstadoFinal: GraphNode<typeof TrackingState> = async (state) => {
     const { snapshot } = state;
-    await notifier.notify(finalNotice(snapshot, finalState(snapshot, pushIn(state))));
+    const base = finalState(snapshot, pushIn(state));
+    const extra = state.fixReasons?.sha === snapshot.headSha ? state.fixReasons.reasons : [];
+    const final =
+      base.status === 'needsIntervention' && extra.length > 0
+        ? { ...base, reasons: [...base.reasons, ...extra] }
+        : base;
+    await notifier.notify(finalNotice(snapshot, final));
     return {};
   };
 
@@ -717,6 +943,11 @@ export function createTrackingGraph(
     .addNode(GATHER_NODE, reunirTriaje)
     .addNode(DECIDE_NODE, decidir)
     .addNode(SUMMARY_NODE, publicarResumen)
+    .addNode(FIX_REQUEST_NODE, pedirArreglo)
+    .addNode('esperarArreglo', esperarArreglo, {
+      ends: ['esperarArreglo', 'avisarArreglo', 'avisarEstadoFinal'],
+    })
+    .addNode('avisarArreglo', avisarArreglo)
     .addNode('avisarEstadoFinal', avisarEstadoFinal)
     .addConditionalEdges(
       START,
@@ -756,7 +987,21 @@ export function createTrackingGraph(
       'esperarComprobaciones',
       SUMMARY_NODE,
     ])
-    .addEdge(SUMMARY_NODE, 'avisarEstadoFinal')
+    // Tras el resumen, pedir el arreglo si `decidir` lo eligió para este push; si no, el aviso final.
+    .addConditionalEdges(
+      SUMMARY_NODE,
+      ({ decision, fix, snapshot }) =>
+        decision?.action === 'fix' && fix?.sha === snapshot.headSha ? FIX_REQUEST_NODE : 'avisarEstadoFinal',
+      [FIX_REQUEST_NODE, 'avisarEstadoFinal'],
+    )
+    // Una arista y no un `Command`, como la de `relanzar`: así el driver puede saltarse el nodo.
+    .addConditionalEdges(
+      FIX_REQUEST_NODE,
+      ({ fixReasons, fix }) =>
+        fix && fixReasons?.sha === fix.sha && fix.requestedAt === undefined ? 'avisarEstadoFinal' : 'esperarArreglo',
+      ['esperarArreglo', 'avisarEstadoFinal'],
+    )
+    .addEdge('avisarArreglo', 'esperarComprobaciones')
     .addEdge('avisarEstadoFinal', END)
     .compile({ checkpointer });
 }

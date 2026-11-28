@@ -56,6 +56,15 @@ const envSchema = z.object({
     .transform((name) => name.trim()),
   // Separadas por comas. Sin ningún nombre (`,`), no se relanza ninguna.
   RERUN_CHECKS: z.string().default('test,e2e').transform(names),
+  // El fixer del compose (change pr-fixer, decisión 4). Sin él, el sistema no arregla.
+  FIXER_URL: z.url('no es una URL').optional(),
+  // La vuelta atrás del arreglo (decisión 11): con `false`, avisa en vez de arreglar.
+  FIX_ENABLED: z
+    .enum(['true', 'false'], 'tiene que ser true o false')
+    .default('true')
+    .transform((value) => value === 'true'),
+  FIX_BUDGET_USD: positiveNumber.default(2),
+  FIX_TIMEOUT_MINUTES: positiveInteger.default(60),
 });
 
 export interface Config {
@@ -119,6 +128,12 @@ export interface Config {
    * se relanzan una vez antes del estado final (change pr-check-rerun, decisión 7).
    */
   rerunChecks: string[];
+  /**
+   * El arreglo (change pr-fixer, decisiones 3, 8 y 11): dónde está el *fixer*, si se arregla, el tope
+   * de gasto de cada PR en dólares y cuánto se espera un trabajo desde que se pide. `null` sin
+   * `FIXER_URL`: el sistema no arregla.
+   */
+  fix: { url: string; enabled: boolean; budgetUsd: number; timeoutMs: number } | null;
 }
 
 export type ConfigResult = { ok: true; config: Config } | { ok: false; error: string };
@@ -160,6 +175,15 @@ export function loadConfig(env: Record<string, string | undefined>): ConfigResul
       triageRuleChecks: vars.TRIAGE_RULE_CHECKS,
       triageSonarIssuesCheck: vars.TRIAGE_SONAR_ISSUES_CHECK,
       rerunChecks: vars.RERUN_CHECKS,
+      fix:
+        vars.FIXER_URL === undefined
+          ? null
+          : {
+              url: vars.FIXER_URL,
+              enabled: vars.FIX_ENABLED,
+              budgetUsd: vars.FIX_BUDGET_USD,
+              timeoutMs: vars.FIX_TIMEOUT_MINUTES * 60_000,
+            },
     },
   };
 }

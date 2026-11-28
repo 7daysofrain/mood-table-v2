@@ -3,6 +3,7 @@
  * sin saber quién se lo da. Los adaptadores de GitHub y Linear los implementan; los tests, con
  * falsos.
  */
+import type { FixJob, FixStatus } from './fix.ts';
 import type { Notice } from './notice.ts';
 import type { Check, OpenPullRequest, Review, ReviewerThreads } from './pull-request.ts';
 import type {
@@ -74,6 +75,20 @@ export interface ReviewRequests {
  */
 export interface CheckReruns {
   rerun(runId: number): Promise<void>;
+}
+
+/**
+ * Arreglar los hallazgos reales de un push (change pr-fixer, decisiones 3 y 4): pedirlo y preguntar
+ * en qué está. Dónde y con qué se arregla es del adaptador; el núcleo solo pide y espera, como espera
+ * a la CI. Pedir dos veces el mismo push no crea dos trabajos. Lanza si no puede hablar con el
+ * *fixer*.
+ */
+export interface Fixer {
+  request(job: FixJob): Promise<void>;
+  /** En qué está el trabajo de ese push; `none` si no hay. */
+  status(pullRequestNumber: number, sha: string): Promise<FixStatus>;
+  /** Lo que llevan gastado en dólares los arreglos de la PR, entre todos sus pushes (decisión 8). */
+  spent(pullRequestNumber: number): Promise<number>;
 }
 
 /**

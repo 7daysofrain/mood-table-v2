@@ -1,10 +1,43 @@
 # El PR Babysitter en una máquina de casa (D66): `docker compose up -d` desde esta carpeta, con el
-# `.env` al lado. No abre ningún puerto: consulta GitHub, le pide la revisión de cada PR y publica en
-# Linear.
+# `.env` y el `fixer.env` al lado. No abre ningún puerto al host: consulta GitHub, le pide la revisión
+# de cada PR y publica en Linear; el fixer solo escucha en la red interna del compose.
 services:
   pr-babysitter:
     build:
       context: ../..
       dockerfile: packages/pr-babysitter/Dockerfile
+      target: babysitter
     env_file: .env
+    environment:
+      # El fixer del mismo compose (change pr-fixer, decisión 4).
+      FIXER_URL: http://fixer:8080
+    depends_on:
+      - fixer
     restart: unless-stopped
+
+  # Arregla los hallazgos reales (change pr-fixer). Sus secretos van aparte: la clave de Anthropic en
+  # `fixer.env` y la clave privada de la App como secreto, fuera del repo.
+  fixer:
+    build:
+      context: ../..
+      dockerfile: packages/pr-babysitter/Dockerfile
+      target: fixer
+    env_file: fixer.env
+    environment:
+      FIXER_APP_PRIVATE_KEY_FILE: /run/secrets/fixer-app-key
+      # El lint con tipos del monorepo entero no cabe en el heap que Node da por defecto en el
+      # contenedor (~2 GB): sin esto, `pnpm lint` se queda sin memoria y ningún arreglo pasa.
+      NODE_OPTIONS: --max-old-space-size=4096
+    secrets:
+      - fixer-app-key
+    volumes:
+      - fixer-data:/data
+    restart: unless-stopped
+
+secrets:
+  fixer-app-key:
+    file: ${HOME}/.config/pr-babysitter/app-private-key.pem
+
+volumes:
+  # La cola y lo gastado por cada PR: sobreviven a los reinicios (design.md decisiones 4 y 8).
+  fixer-data:

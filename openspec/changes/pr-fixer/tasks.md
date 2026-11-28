@@ -60,32 +60,37 @@
 
 ## 2. MOO-193 · infra
 
-- [ ] 2.1 **(test en rojo)** `decide()` elige arreglar (`core/decision.test.ts`, `design.md`
+- [x] 2.1 **(test en rojo)** `decide()` elige arreglar (`core/decision.test.ts`, `design.md`
   decisión 11):
   - `fix` en la ronda final con un hallazgo *real* arreglable;
-  - `publish` sin hallazgos reales, con solo una relanzable que ha fallado dos veces, en una PR de
-    Dependabot o con `FIX_ENABLED=false`, cada uno con su regla.
-- [ ] 2.2 La acción `fix` y sus reglas en `core/decision.ts`.
+  - `publish` sin hallazgos reales, con solo una relanzable que ha fallado dos veces, sin tope de
+    gasto o con `FIX_ENABLED=false`, cada uno con su regla (tabla de la decisión 11).
+- [x] 2.2 La acción `fix` y sus reglas en `core/decision.ts`.
 
   Verificar: los tests de 2.1 y los que ya había en verde.
-- [ ] 2.3 **(test en rojo)** El arreglo en el grafo (`core/graph.test.ts`, un `describe` por requisito
+- [x] 2.3 **(test en rojo)** El arreglo en el grafo (`core/graph.test.ts`, un `describe` por requisito
   de `pr-fix` y por cada requisito cambiado de `pr-tracking` y `pr-triage`, con un `Fixer` falso):
   - un hallazgo real: `decidir` da `fix`, se publica el resumen, `pedirArreglo` pide un trabajo con
     ese hallazgo y su contexto, y el hilo espera en `esperarArreglo` sin avisar;
   - el arreglo subido: el hilo termina sin aviso del estado final; el push nuevo lo vuelve a empezar
     el *driver*;
-  - un hallazgo que no se sube: `avisarSinArreglo` con el hallazgo y su motivo;
+  - un hallazgo que no se sube: `avisarArreglo` con el hallazgo y su motivo;
   - un real y uno que exige criterio: se pide el real y se avisa del otro;
   - una relanzable que ha fallado dos veces: no se pide, se avisa;
   - el trabajo `failed`: aviso del estado final «necesita intervención» con el motivo;
   - pedir dos veces el mismo push no crea dos trabajos;
   - con un push viejo o una PR detenida, el *driver* se salta `pedirArreglo` (`core/driver.test.ts`).
-- [ ] 2.4 El puerto `Fixer` (`core/ports.ts`), los nodos `pedirArreglo`, `esperarArreglo` y
-  `avisarSinArreglo` (`core/graph.ts`), el estado del trabajo en la foto (`core/pull-request.ts`,
-  `core/driver.ts`), los avisos nuevos (`core/notice.ts`) y los puertos falsos de `src/studio.ts`.
+- [x] 2.4 El puerto `Fixer` (`core/ports.ts`), los tipos del arreglo (`core/fix.ts`), los nodos
+  `pedirArreglo`, `esperarArreglo` y `avisarArreglo` (`core/graph.ts`), el *fixer* y sus opciones a
+  través del *driver* (`core/driver.ts`) y los avisos nuevos (`core/notice.ts`, `core/tracking.ts`).
+  Al implementar (`design.md` decisión 3): el estado del trabajo lo pregunta `esperarArreglo`, no va en
+  la foto, y el *fixer* es opcional, así que `src/studio.ts` no cambia. Después, al documentar (27-nov,
+  decidido por el usuario): la cabecera del resumen del triaje decía «modo sombra: no arregla», que
+  deja de ser verdad con el arreglo; ahora dice «pide el arreglo de los hallazgos reales» o «no arregla
+  este push» (`core/triage-summary.ts`).
 
   Verificar: los tests de 2.3 en verde; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 2.5 **(test en rojo)** El servicio *fixer* (`src/fixer/*.test.ts`, con un agente falso y un repo
+- [x] 2.5 **(test en rojo)** El servicio *fixer* (`src/fixer/*.test.ts`, con un agente falso y un repo
   *bare* local):
   - `POST /jobs` encola un trabajo, y repetirlo con la misma PR y el mismo SHA no crea otro;
     `GET /jobs/:pr/:sha` da su estado; los cuerpos se validan con zod;
@@ -96,7 +101,7 @@
   - un solo push al final; sin ningún commit, no hay push;
   - el coste de cada `query()` se guarda, y `status` da lo gastado por la PR;
   - el trabajo se corta al pasar del tope que queda.
-- [ ] 2.6 El servicio en `src/fixer/`:
+- [x] 2.6 El servicio en `src/fixer/`:
   - la cola en `node:sqlite`;
   - las rutas HTTP;
   - el bucle del trabajo;
@@ -109,8 +114,14 @@
   Las fronteras: `src/core` no importa nada de `src/fixer/`, y el lint lo comprueba
   (`specs/module-boundaries`).
 
+  Al implementar (`design.md` decisión 4, «Implementado así»): `src/fixer/` importa de `src/core` el
+  contrato (`fixJobSchema`, `fixStatusSchema`), como los adaptadores; hay una tercera ruta para lo
+  gastado; la rama se lee de GitHub; los *trailers* de hilos e incidencias van con su fichero y línea;
+  lo ya arreglado se sube aunque se agote el tope; y un arreglo con un secreto del *fixer* en su diff no
+  se sube.
+
   Verificar: los tests de 2.5 en verde; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 2.7 El cableado:
+- [x] 2.7 El cableado:
   - **el cliente HTTP del puerto,** `adapters/fixer-client.ts`, con su test contra un servidor falso;
   - **`main.ts`,** que lo conecta;
   - **la configuración:** `FIX_ENABLED`, `FIX_BUDGET_USD`, `FIXER_URL` y el modelo, con valor por
@@ -121,14 +132,20 @@
   Verificar: `docker compose build` y `docker compose up -d` levantan los dos servicios, y el
   babysitter llega al *fixer* por la red interna. `pnpm lint`, `pnpm typecheck` y `pnpm test` en
   verde.
-- [ ] 2.8 Documentación:
+
+  Al implementar: `FIXER_URL` lo pone el compose, y sin él el sistema no arregla; el modelo va en el
+  `fixer.env` (`FIXER_MODEL`), no en el del babysitter; la clave de la App es un secreto del compose,
+  `~/.config/pr-babysitter/app-private-key.pem`. Verificado el 27-nov en un proyecto de compose aparte,
+  sin tocar el contenedor de `main`: las dos imágenes se construyen, el *fixer* arranca sin puertos al
+  *host*, lee la clave y responde al babysitter en `http://fixer:8080`.
+- [x] 2.8 Documentación:
   - README §2.2 (*PR Babysitter*): el *fixer*, el puerto y el camino nuevo del grafo, con el diagrama;
   - README §2.4: el servicio `fixer`, su `.env` y la clave de Anthropic;
   - README §2.5: qué sale hacia Anthropic y qué secretos ve el *fixer*;
   - `packages/pr-babysitter/README.md`: el arreglador ya funciona;
   - `docs/umbrales-para-specs.md`: el tope de 2 $ *(asumido)*;
   - `prompts.md`, si la sección 1 dejó algo por contar.
-- [ ] 2.9 **Prueba a mano** (sin commit), con el sistema en marcha:
+- [x] 2.9 **Prueba a mano** (sin commit), con el sistema en marcha:
   - una PR de prueba con un error de `lint` y un comentario de Codex que se arregla en una línea;
   - una con un hallazgo real y otro que exige criterio;
   - la PR de Dependabot que esté abierta.
@@ -137,12 +154,28 @@
   - en la primera, un push del sistema con dos commits, cada uno con su *trailer*, a nombre de la App;
     la CI se lanza; no hay aviso del estado final del primer push, y sí del push del arreglo;
   - en la segunda, el arreglo del real y un aviso con el que exige criterio;
-  - en la de Dependabot, ningún commit del sistema y el aviso de siempre;
+  - en la de Dependabot, ningún commit del sistema (no la sigue);
   - en LangSmith, el camino de nodos de cada hilo (`decidir` → `publicarResumen` → `pedirArreglo` →
     `esperarArreglo`), la decisión con su regla y la foto que lo decidió;
   - en el log del *fixer*, el coste de cada trabajo, para el tope y el de turnos.
 
   Los enlaces y los costes, en la descripción de la PR de la tarea.
+
+  Al implementar (27 y 28-nov, PR #211, #212 y #213, cerradas sin integrar): pasa, con tres desvíos.
+  - **Memoria del lint.** En el contenedor, `pnpm lint` se quedaba sin memoria y ningún arreglo pasaba.
+    Se arregla con `NODE_OPTIONS=--max-old-space-size=4096` en el servicio `fixer`.
+  - **Alcance del arreglo.** En la segunda prueba, el agente arregló también el fallo que exigía
+    criterio, dentro del commit del `lint`. Ahora el mensaje le dice que cambie solo lo que pide su
+    hallazgo. La prueba repetida (#213) solo toca el `lint`.
+  - **Hallazgos ya arreglados.** Una incidencia de SonarQube que otro commit del mismo push ya había
+    arreglado se avisa como «el agente no ha podido arreglarlo»: capturado en MOO-195.
+
+  El aviso final de las tres pide intervención porque el comentario del revisor sigue sin resolver en
+  un push anterior. Es lo esperado: resolver los hilos es MOO-78.
+
+  Tras la prueba, Codex señaló en la #209 dos condiciones de carrera reales, ya arregladas (`design.md`
+  decisiones 3 y 8): el aviso de lo no arreglado se podía perder, y un trabajo encolado podía pasar del
+  tope de la PR.
 
 ## 3. MOO-194 · infra
 
